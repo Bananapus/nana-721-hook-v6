@@ -1034,7 +1034,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             if (price > leftoverAmount) revert JB721TiersHookStore_PriceExceedsAmount(price, leftoverAmount);
 
             // Make sure there are enough NFTs available to mint.
-            if (storedTier.remainingSupply <= _numberOfPendingReservesFor(msg.sender, tierId, storedTier)) {
+            if (storedTier.remainingSupply <= 1 + _numberOfPendingReservesFor(msg.sender, tierId, storedTier)) {
                 revert JB721TiersHookStore_InsufficientSupplyRemaining();
             }
 
