@@ -45,6 +45,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     error JB721TiersHook_Overspending(uint256 leftoverAmount);
     error JB721TiersHook_MintReserveNftsPaused();
     error JB721TiersHook_TierTransfersPaused();
+    error JB721TiersHook_CurrencyMismatch(uint256 paymentCurrency, uint256 tierCurrency);
 
     //*********************************************************************//
     // --------------- public immutable stored properties ---------------- //
@@ -605,7 +606,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                         })
                     );
                 } else {
-                    return;
+                    revert JB721TiersHook_CurrencyMismatch(context.amount.currency, pricingCurrency);
                 }
             }
         }
