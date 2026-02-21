@@ -951,6 +951,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     }
 
     /// @notice Records 721 burns.
+    /// @dev This function trusts `msg.sender` (the hook contract) to only call it after actually burning the
+    /// tokens. It does not verify ownership or existence of the token IDs — the hook is responsible for
+    /// performing those checks before calling this function.
     /// @param tokenIds The token IDs of the NFTs to burn.
     function recordBurn(uint256[] calldata tokenIds) external override {
         // Iterate through all token IDs to increment the burn count.
@@ -1084,6 +1087,8 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     }
 
     /// @notice Record tiers being removed.
+    /// @dev Removing a tier only marks it in a bitmap — it does not update the sorted tier linked list.
+    /// Call `cleanTiers()` after removing tiers to update the sorting sequence and prevent stale tier iteration.
     /// @param tierIds The IDs of the tiers being removed.
     function recordRemoveTierIds(uint256[] calldata tierIds) external override {
         for (uint256 i; i < tierIds.length; i++) {
