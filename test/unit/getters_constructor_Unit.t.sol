@@ -26,6 +26,8 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
     )
         public
     {
+        // Decimals must be <= 18 per validation in initialize.
+        vm.assume(decimals <= 18);
         JBDeploy721TiersHookConfig memory hookConfig = JBDeploy721TiersHookConfig(
             name,
             symbol,
