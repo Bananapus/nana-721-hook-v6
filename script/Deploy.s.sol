@@ -11,6 +11,7 @@ import {JB721TiersHookDeployer} from "../src/JB721TiersHookDeployer.sol";
 import {JB721TiersHookProjectDeployer} from "../src/JB721TiersHookProjectDeployer.sol";
 import {JB721TiersHookStore} from "../src/JB721TiersHookStore.sol";
 import {JB721TiersHook} from "../src/JB721TiersHook.sol";
+import {IJBRulesets} from "@bananapus/core-v5/src/interfaces/IJBRulesets.sol";
 
 contract DeployScript is Script, Sphinx {
     /// @notice tracks the deployment of the core contracts for the chain we are deploying to.
@@ -28,7 +29,6 @@ contract DeployScript is Script, Sphinx {
     bytes32 PROJECT_DEPLOYER_SALT = "JB721TiersHookProjectDeployer_";
 
     function configureSphinx() public override {
-        // TODO: Update to contain JB Emergency Developers
         sphinxConfig.projectName = "nana-721-hook-v5";
         sphinxConfig.mainnets = ["ethereum", "optimism", "base", "arbitrum"];
         sphinxConfig.testnets = ["ethereum_sepolia", "optimism_sepolia", "base_sepolia", "arbitrum_sepolia"];
@@ -75,13 +75,15 @@ contract DeployScript is Script, Sphinx {
             (address _hook, bool _hookIsDeployed) = _isDeployed(
                 HOOK_SALT,
                 type(JB721TiersHook).creationCode,
-                abi.encode(core.directory, core.permissions, core.rulesets, store, TRUSTED_FORWARDER)
+                abi.encode(
+                    core.directory, core.permissions, IJBRulesets(address(core.rulesets)), store, TRUSTED_FORWARDER
+                )
             );
 
             // Deploy it if it has not been deployed yet.
             hook = !_hookIsDeployed
                 ? new JB721TiersHook{salt: HOOK_SALT}(
-                    core.directory, core.permissions, core.rulesets, store, TRUSTED_FORWARDER
+                    core.directory, core.permissions, IJBRulesets(address(core.rulesets)), store, TRUSTED_FORWARDER
                 )
                 : JB721TiersHook(_hook);
         }
@@ -96,7 +98,9 @@ contract DeployScript is Script, Sphinx {
             );
 
             hookDeployer = !_hookDeployerIsDeployed
-                ? new JB721TiersHookDeployer{salt: HOOK_DEPLOYER_SALT}(hook, store, registry.registry, TRUSTED_FORWARDER)
+                ? new JB721TiersHookDeployer{salt: HOOK_DEPLOYER_SALT}(
+                    hook, store, registry.registry, TRUSTED_FORWARDER
+                )
                 : JB721TiersHookDeployer(_hookDeployer);
         }
 
