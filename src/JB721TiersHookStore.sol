@@ -455,7 +455,11 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             // Keep a reference to the stored tier.
             JBStored721Tier memory storedTier = _storedTierOf[hook][i];
 
-            // Add the tier's price multiplied by the number of NFTs minted from the tier.
+            // Add the tier's price multiplied by the number of minted NFTs plus pending reserves.
+            // Pending reserves are included by design — they represent committed obligations that will be
+            // minted to the reserve beneficiary. Including them in the denominator ensures cash-out values
+            // account for the full diluted supply, preventing early cashers from extracting more than their
+            // fair share before reserves are minted.
             weight += storedTier.price
                 * (
                     (storedTier.initialSupply - (storedTier.remainingSupply + numberOfBurnedFor[hook][i]))
