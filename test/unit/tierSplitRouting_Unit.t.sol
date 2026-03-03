@@ -218,7 +218,7 @@ contract Test_TierSplitRouting is UnitTestSetup {
             hook: IJBSplitHook(address(0))
         });
 
-        uint256 groupId = testHook.splitGroupIdOf(tierIds[0]);
+        uint256 groupId = uint256(uint160(address(testHook))) | (uint256(tierIds[0]) << 160);
         mockAndExpect(
             mockSplits,
             abi.encodeWithSelector(IJBSplits.splitsOf.selector, projectId, 0, groupId),

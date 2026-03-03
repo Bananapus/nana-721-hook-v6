@@ -24,7 +24,7 @@ import {JBSplit} from "@bananapus/core-v5/src/structs/JBSplit.sol";
 /// power. If `useVotingUnits` is false, voting power is based on the tier's price.
 /// @custom:member cannotBeRemoved If the tier cannot be removed once added.
 /// @custom:member cannotIncreaseDiscount If the tier cannot have its discount increased.
-/// @custom:member splitPercent The percentage of the tier's price that gets routed to the project's split group when
+/// @custom:member splitPercent The percentage of the tier's price that gets routed to the tier's split group when
 /// an NFT from this tier is minted. Out of `JBConstants.SPLITS_TOTAL_PERCENT`.
 /// @custom:member splits The splits to use for this tier's split group. These define where the split portion of the
 /// tier's price gets routed when an NFT from this tier is minted.
