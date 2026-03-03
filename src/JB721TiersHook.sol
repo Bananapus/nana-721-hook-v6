@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
+import {IJBController} from "@bananapus/core-v5/src/interfaces/IJBController.sol";
 import {IJBDirectory} from "@bananapus/core-v5/src/interfaces/IJBDirectory.sol";
 import {IJBPermissions} from "@bananapus/core-v5/src/interfaces/IJBPermissions.sol";
 import {IJBPrices} from "@bananapus/core-v5/src/interfaces/IJBPrices.sol";
@@ -10,6 +11,7 @@ import {JBRulesetMetadataResolver} from "@bananapus/core-v5/src/libraries/JBRule
 import {JBAfterPayRecordedContext} from "@bananapus/core-v5/src/structs/JBAfterPayRecordedContext.sol";
 import {JBBeforeCashOutRecordedContext} from "@bananapus/core-v5/src/structs/JBBeforeCashOutRecordedContext.sol";
 import {JBRuleset} from "@bananapus/core-v5/src/structs/JBRuleset.sol";
+import {JBSplitGroup} from "@bananapus/core-v5/src/structs/JBSplitGroup.sol";
 import {JBOwnable} from "@bananapus/ownable-v5/src/JBOwnable.sol";
 import {JBPermissionIds} from "@bananapus/permission-ids-v5/src/JBPermissionIds.sol";
 import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
@@ -143,6 +145,13 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         decimals = uint256(uint8(packed >> 32));
         // prices contract in bits 40-199 (160 bits).
         prices = IJBPrices(address(uint160(packed >> 40)));
+    }
+
+    /// @notice The split group ID for a given tier, for use with JBSplits.
+    /// @param tierId The tier's ID.
+    /// @return The split group ID.
+    function splitGroupIdOf(uint256 tierId) external view returns (uint256) {
+        return _splitGroupIdOf(tierId);
     }
 
     //*********************************************************************//
@@ -309,6 +318,13 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         return ERC2771Context._msgSender();
     }
 
+    /// @notice The split group ID for a given tier.
+    /// @param tierId The tier's ID.
+    /// @return groupId The split group ID derived from this hook's address and the tier ID.
+    function _splitGroupIdOf(uint256 tierId) internal view returns (uint256) {
+        return uint256(keccak256(abi.encode(address(this), tierId)));
+    }
+
     //*********************************************************************//
     // ---------------------- external transactions ---------------------- //
     //*********************************************************************//
@@ -340,9 +356,29 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             // Record the added tiers in the store.
             uint256[] memory tierIdsAdded = STORE.recordAddTiers(tiersToAdd);
 
-            // Emit events for each added tier.
+            // Count tiers with splits.
+            uint256 splitGroupCount;
             for (uint256 i; i < tiersToAdd.length; i++) {
                 emit AddTier({tierId: tierIdsAdded[i], tier: tiersToAdd[i], caller: _msgSender()});
+                if (tiersToAdd[i].splits.length != 0) splitGroupCount++;
+            }
+
+            // Write splits to JBSplits via the controller.
+            if (splitGroupCount != 0) {
+                JBSplitGroup[] memory splitGroups = new JBSplitGroup[](splitGroupCount);
+                uint256 groupIndex;
+                for (uint256 i; i < tiersToAdd.length; i++) {
+                    if (tiersToAdd[i].splits.length != 0) {
+                        splitGroups[groupIndex] = JBSplitGroup({
+                            groupId: _splitGroupIdOf(tierIdsAdded[i]),
+                            splits: tiersToAdd[i].splits
+                        });
+                        groupIndex++;
+                    }
+                }
+                IJBController(address(DIRECTORY.controllerOf(PROJECT_ID))).setSplitGroupsOf(
+                    PROJECT_ID, 0, splitGroups
+                );
             }
         }
     }

@@ -549,7 +549,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: true,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
-                splitPercent: 0
+                splitPercent: 0,
+                splits: new JBSplit[](0)
             });
             tiers[i] = JB721Tier({
                 id: uint32(i + 1),
@@ -674,7 +675,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: true,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
-                splitPercent: 0
+                splitPercent: 0,
+                splits: new JBSplit[](0)
             });
             tiers[i] = JB721Tier({
                 id: uint32(i + 1),
@@ -742,7 +744,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                     useVotingUnits: true,
                     cannotBeRemoved: false,
                     cannotIncreaseDiscountPercent: false,
-                splitPercent: 0
+                splitPercent: 0,
+                splits: new JBSplit[](0)
                 });
                 tiersRemaining[arrayIndex] = JB721Tier({
                     id: uint32(i + 1),
@@ -790,7 +793,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: true,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
-                splitPercent: 0
+                splitPercent: 0,
+                splits: new JBSplit[](0)
             });
             tiersAdded[i] = JB721Tier({
                 id: uint32(tiers.length + (i + 1)),
@@ -863,7 +867,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: true,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
-                splitPercent: 0
+                splitPercent: 0,
+                splits: new JBSplit[](0)
             });
             tiers[i] = JB721Tier({
                 id: uint32(i + 1),
@@ -922,7 +927,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: true,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
-                splitPercent: 0
+                splitPercent: 0,
+                splits: new JBSplit[](0)
             });
             tiersAdded[i] = JB721Tier({
                 id: uint32(tiers.length + (i + 1)),
@@ -976,7 +982,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: true,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
-                splitPercent: 0
+                splitPercent: 0,
+                splits: new JBSplit[](0)
             });
             tiers[i] = JB721Tier({
                 id: uint32(i + 1),
@@ -1035,7 +1042,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: true,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
-                splitPercent: 0
+                splitPercent: 0,
+                splits: new JBSplit[](0)
             });
             tiersAdded[i] = JB721Tier({
                 id: uint32(tiers.length + (i + 1)),
@@ -1087,7 +1095,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             useVotingUnits: true,
             cannotBeRemoved: true,
             cannotIncreaseDiscountPercent: false,
-                splitPercent: 0
+                splitPercent: 0,
+                splits: new JBSplit[](0)
         });
         tierConfigs[1] = JB721TierConfig({
             price: 10,
@@ -1104,7 +1113,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             useVotingUnits: true,
             cannotBeRemoved: false,
             cannotIncreaseDiscountPercent: false,
-                splitPercent: 0
+                splitPercent: 0,
+                splits: new JBSplit[](0)
         });
         //  Deploy the hook and its store with the initial tiers.
         vm.etch(hook_i, address(hook).code);
@@ -1160,7 +1170,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: true,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
-                splitPercent: 0
+                splitPercent: 0,
+                splits: new JBSplit[](0)
             });
             tiers[i] = JB721Tier({
                 id: uint32(i + 1),
@@ -1219,7 +1230,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: false,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
-                splitPercent: 0
+                splitPercent: 0,
+                splits: new JBSplit[](0)
             });
             tiersAdded[i] = JB721Tier({
                 id: uint32(tiers.length + (i + 1)),
@@ -1275,7 +1287,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 cannotBeRemoved: false,
                 useVotingUnits: true,
                 cannotIncreaseDiscountPercent: false,
-                splitPercent: 0
+                splitPercent: 0,
+                splits: new JBSplit[](0)
             });
         }
         // Set the second to last tier to have a category of `99`, which is less than the last tier's category of `100`.
@@ -1316,7 +1329,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: false,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
-                splitPercent: 0
+                splitPercent: 0,
+                splits: new JBSplit[](0)
             });
         }
 
@@ -1358,7 +1372,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: false, // <-- If false, voting power is based on tier price
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
-                splitPercent: 0
+                splitPercent: 0,
+                splits: new JBSplit[](0)
             });
         }
 
@@ -1395,7 +1410,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: true,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
-                splitPercent: 0
+                splitPercent: 0,
+                splits: new JBSplit[](0)
             });
         }
 
@@ -1437,7 +1453,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: true, // <-- If false, voting power is based on tier price
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
-                splitPercent: 0
+                splitPercent: 0,
+                splits: new JBSplit[](0)
             });
         }
 
@@ -1505,7 +1522,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: false,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
-                splitPercent: 0
+                splitPercent: 0,
+                splits: new JBSplit[](0)
             });
             tiers[i] = JB721Tier({
                 id: uint32(i + 1),
@@ -1627,7 +1645,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             useVotingUnits: true,
             cannotBeRemoved: true,
             cannotIncreaseDiscountPercent: true,
-                splitPercent: 0
+                splitPercent: 0,
+                splits: new JBSplit[](0)
         });
         //  Deploy the hook and its store with the initial tiers.
         vm.etch(hook_i, address(hook).code);
@@ -1683,7 +1702,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             useVotingUnits: true,
             cannotBeRemoved: true,
             cannotIncreaseDiscountPercent: true,
-                splitPercent: 0
+                splitPercent: 0,
+                splits: new JBSplit[](0)
         });
         initialConfig[1] = JB721TierConfig({
             price: 10,
@@ -1700,7 +1720,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             useVotingUnits: true,
             cannotBeRemoved: true,
             cannotIncreaseDiscountPercent: false,
-                splitPercent: 0
+                splitPercent: 0,
+                splits: new JBSplit[](0)
         });
 
         //  Deploy the hook and its store with the initial tiers.

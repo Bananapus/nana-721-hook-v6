@@ -8,6 +8,7 @@ import {StdUtils} from "forge-std/StdUtils.sol";
 import {JB721TiersHookStore} from "../../../src/JB721TiersHookStore.sol";
 import {JB721TierConfig} from "../../../src/structs/JB721TierConfig.sol";
 import {JB721TiersHookFlags} from "../../../src/structs/JB721TiersHookFlags.sol";
+import {JBSplit} from "@bananapus/core-v5/src/structs/JBSplit.sol";
 
 /// @notice Handler for JB721TiersHookStore invariant tests.
 /// @dev Acts as the "hook" address itself, so msg.sender (this) == hook in the store.
@@ -67,7 +68,8 @@ contract TierStoreHandler is CommonBase, StdCheats, StdUtils {
             useVotingUnits: false,
             cannotBeRemoved: false,
             cannotIncreaseDiscountPercent: false,
-            splitPercent: 0
+            splitPercent: 0,
+            splits: new JBSplit[](0)
         });
 
         try this._doAddTiers(configs) {

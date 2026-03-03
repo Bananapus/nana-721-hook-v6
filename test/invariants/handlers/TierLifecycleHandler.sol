@@ -169,7 +169,8 @@ contract TierLifecycleHandler is Test {
             useVotingUnits: false,
             cannotBeRemoved: false,
             cannotIncreaseDiscountPercent: false,
-            splitPercent: 0
+            splitPercent: 0,
+            splits: new JBSplit[](0)
         });
 
         vm.prank(hookAddress);

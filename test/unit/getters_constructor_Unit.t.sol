@@ -511,7 +511,8 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                 useVotingUnits: true,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
-                splitPercent: 0
+                splitPercent: 0,
+                splits: new JBSplit[](0)
             });
         }
 

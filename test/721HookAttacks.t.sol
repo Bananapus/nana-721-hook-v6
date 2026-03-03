@@ -86,7 +86,8 @@ contract NFTHookAttacks is UnitTestSetup {
             cannotBeRemoved: false,
             cannotIncreaseDiscountPercent: false,
             useVotingUnits: false,
-            splitPercent: 0
+            splitPercent: 0,
+            splits: new JBSplit[](0)
         });
 
         vm.prank(owner);
@@ -386,7 +387,8 @@ contract NFTHookAttacks is UnitTestSetup {
             cannotBeRemoved: false,
             cannotIncreaseDiscountPercent: false,
             useVotingUnits: false,
-            splitPercent: 0
+            splitPercent: 0,
+            splits: new JBSplit[](0)
         });
 
         vm.prank(attacker);
