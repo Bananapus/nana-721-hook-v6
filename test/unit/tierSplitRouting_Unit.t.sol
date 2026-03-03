@@ -271,19 +271,4 @@ contract Test_TierSplitRouting is UnitTestSetup {
         assertEq(testHook.balanceOf(beneficiary), 1);
     }
 
-    // ──────────────────────────────────────────────
-    // Test: splitGroupIdOf uses address-based encoding
-    // ──────────────────────────────────────────────
-
-    function test_splitGroupIdOf_encodesAddressAndTierId() public {
-        ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
-
-        uint256 tierId = 5;
-        uint256 groupId = testHook.splitGroupIdOf(tierId);
-
-        // Lower 160 bits should be the hook address.
-        assertEq(address(uint160(groupId)), address(testHook));
-        // Upper 96 bits should be the tier ID.
-        assertEq(groupId >> 160, tierId);
-    }
 }

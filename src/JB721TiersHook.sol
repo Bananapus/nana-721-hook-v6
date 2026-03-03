@@ -156,13 +156,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         prices = IJBPrices(address(uint160(packed >> 40)));
     }
 
-    /// @notice The split group ID for a given tier, for use with JBSplits.
-    /// @param tierId The tier's ID.
-    /// @return The split group ID.
-    function splitGroupIdOf(uint256 tierId) external view returns (uint256) {
-        return _splitGroupIdOf(tierId);
-    }
-
     //*********************************************************************//
     // -------------------------- public views --------------------------- //
     //*********************************************************************//
@@ -391,12 +384,12 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         return ERC2771Context._msgSender();
     }
 
-    /// @notice The split group ID for a given tier.
+    /// @notice The split group ID for a given tier, for use with JBSplits.
     /// @dev The lower 160 bits are this hook's address, allowing the hook to set splits in JBSplits directly
     /// (without going through the controller). The upper 96 bits hold the tier ID.
     /// @param tierId The tier's ID.
     /// @return groupId The split group ID.
-    function _splitGroupIdOf(uint256 tierId) internal view returns (uint256) {
+    function splitGroupIdOf(uint256 tierId) public view returns (uint256) {
         return uint256(uint160(address(this))) | (tierId << 160);
     }
 
@@ -446,7 +439,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                 for (uint256 i; i < tiersToAdd.length; i++) {
                     if (tiersToAdd[i].splits.length != 0) {
                         splitGroups[groupIndex] = JBSplitGroup({
-                            groupId: _splitGroupIdOf(tierIdsAdded[i]),
+                            groupId: splitGroupIdOf(tierIdsAdded[i]),
                             splits: tiersToAdd[i].splits
                         });
                         groupIndex++;
@@ -851,7 +844,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         uint256 amount
     ) internal {
         JBSplit[] memory tierSplits =
-            splitsContract.splitsOf(PROJECT_ID, 0, _splitGroupIdOf(tierId));
+            splitsContract.splitsOf(PROJECT_ID, 0, splitGroupIdOf(tierId));
 
         bool isNativeToken = token == JBConstants.NATIVE_TOKEN;
         uint256 leftoverPercentage = JBConstants.SPLITS_TOTAL_PERCENT;
