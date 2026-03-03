@@ -32,7 +32,8 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                     reserveFrequency: uint16(reserveFrequency),
                     category: uint24(100),
                     discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false)
+                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false),
+                    splitPercent: 0
                 })
             );
             hook.test_store().ForTest_setReservesMintedFor(address(hook), i + 1, reservedMinted);
@@ -78,7 +79,8 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                 reserveFrequency: uint16(reserveFrequency),
                 category: uint24(100),
                 discountPercent: uint8(0),
-                packedBools: hook.test_store().ForTest_packBools(true, false, true, false, false)
+                packedBools: hook.test_store().ForTest_packBools(true, false, true, false, false),
+                    splitPercent: 0
             })
         );
 
@@ -180,7 +182,8 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                     reserveFrequency: uint16(reserveFrequency),
                     category: uint24(100),
                     discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false)
+                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false),
+                    splitPercent: 0
                 })
             );
 
@@ -277,7 +280,8 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                     reserveFrequency: uint16(reserveFrequency),
                     category: uint24(100),
                     discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false)
+                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false),
+                    splitPercent: 0
                 })
             );
             hook.test_store().ForTest_setReservesMintedFor(address(hook), i + 1, reservedMinted);
@@ -314,7 +318,8 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                     reserveFrequency: uint16(reserveFrequency),
                     category: uint24(100),
                     discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false)
+                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false),
+                    splitPercent: 0
                 })
             );
             hook.test_store().ForTest_setReservesMintedFor(address(hook), i + 1, reservedMinted);
@@ -361,7 +366,8 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                     reserveFrequency: uint16(reserveFrequency),
                     category: uint24(100),
                     discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false)
+                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false),
+                    splitPercent: 0
                 })
             );
             hook.test_store().ForTest_setReservesMintedFor(address(hook), i + 1, reservedMinted);

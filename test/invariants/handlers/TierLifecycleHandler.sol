@@ -168,7 +168,8 @@ contract TierLifecycleHandler is Test {
             transfersPausable: false,
             useVotingUnits: false,
             cannotBeRemoved: false,
-            cannotIncreaseDiscountPercent: false
+            cannotIncreaseDiscountPercent: false,
+            splitPercent: 0
         });
 
         vm.prank(hookAddress);

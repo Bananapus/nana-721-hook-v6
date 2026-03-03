@@ -15,6 +15,8 @@ pragma solidity ^0.8.0;
 /// @custom:member transfersPausable A boolean indicating whether transfers for NFTs in tier can be paused.
 /// @custom:member useVotingUnits A boolean indicating whether the `votingUnits` should be used to calculate voting
 /// power. If `useVotingUnits` is false, voting power is based on the tier's price.
+/// @custom:member splitPercent The percentage of the tier's price that gets routed to the project's split group when
+/// an NFT from this tier is minted. Out of `JBConstants.SPLITS_TOTAL_PERCENT`.
 struct JBStored721Tier {
     uint104 price;
     uint32 remainingSupply;
@@ -24,4 +26,5 @@ struct JBStored721Tier {
     uint8 discountPercent;
     uint16 reserveFrequency;
     uint8 packedBools;
+    uint32 splitPercent;
 }

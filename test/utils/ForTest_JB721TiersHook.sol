@@ -130,6 +130,7 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
                 transfersPausable: transfersPausable,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
+                splitPercent: storedTier.splitPercent,
                 resolvedUri: ""
             });
             // Set the next sort index.

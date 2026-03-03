@@ -778,7 +778,8 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
                 transfersPausable: false,
                 useVotingUnits: false,
                 cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false
+                cannotIncreaseDiscountPercent: false,
+                splitPercent: 0
             });
         }
         tiersHookConfig = JBDeploy721TiersHookConfig({
@@ -871,7 +872,8 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
             transfersPausable: false,
             useVotingUnits: false,
             cannotBeRemoved: false,
-            cannotIncreaseDiscountPercent: false
+            cannotIncreaseDiscountPercent: false,
+            splitPercent: 0
         });
 
         tiersHookConfig = JBDeploy721TiersHookConfig({

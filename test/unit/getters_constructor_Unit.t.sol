@@ -158,6 +158,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                     transfersPausable: false,
                     cannotBeRemoved: false,
                     cannotIncreaseDiscountPercent: false,
+                    splitPercent: 0,
                     resolvedUri: ""
                 })
             );
@@ -184,7 +185,8 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                     reserveFrequency: uint16(0),
                     category: uint24(100),
                     discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false)
+                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false),
+                    splitPercent: 0
                 })
             );
         }
@@ -236,7 +238,8 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                     reserveFrequency: uint16(reserveFrequency),
                     category: uint24(100),
                     discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false)
+                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false),
+                    splitPercent: 0
                 })
             );
             // Manually set the number of reserve mints for each tier.
@@ -276,7 +279,8 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                 reserveFrequency: uint16(100),
                 category: uint24(100),
                 discountPercent: uint8(0),
-                packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false)
+                packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false),
+                    splitPercent: 0
             })
         );
 
@@ -399,7 +403,8 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                     reserveFrequency: uint16(0),
                     category: uint24(100),
                     discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false)
+                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false),
+                    splitPercent: 0
                 })
             );
             // Calculate the theoretical weight for the current tier. 10 the price multiplier.
@@ -505,7 +510,8 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                 transfersPausable: false,
                 useVotingUnits: true,
                 cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false
+                cannotIncreaseDiscountPercent: false,
+                splitPercent: 0
             });
         }
 

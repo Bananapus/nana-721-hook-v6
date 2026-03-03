@@ -22,6 +22,8 @@ pragma solidity ^0.8.0;
 /// power. If `useVotingUnits` is false, voting power is based on the tier's price.
 /// @custom:member cannotBeRemoved If the tier cannot be removed once added.
 /// @custom:member cannotIncreaseDiscount If the tier cannot have its discount increased.
+/// @custom:member splitPercent The percentage of the tier's price that gets routed to the project's split group when
+/// an NFT from this tier is minted. Out of `JBConstants.SPLITS_TOTAL_PERCENT`.
 struct JB721TierConfig {
     uint104 price;
     uint32 initialSupply;
@@ -37,4 +39,5 @@ struct JB721TierConfig {
     bool useVotingUnits;
     bool cannotBeRemoved;
     bool cannotIncreaseDiscountPercent;
+    uint32 splitPercent;
 }

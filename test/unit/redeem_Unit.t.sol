@@ -24,7 +24,8 @@ contract Test_cashOut_Unit is UnitTestSetup {
                     reserveFrequency: uint16(0),
                     category: uint24(100),
                     discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false)
+                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false),
+                    splitPercent: 0
                 })
             );
             totalWeight += (10 * i - 5 * i) * i * 10;
@@ -97,7 +98,8 @@ contract Test_cashOut_Unit is UnitTestSetup {
                     reserveFrequency: uint16(0),
                     category: uint24(100),
                     discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false)
+                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false),
+                    splitPercent: 0
                 })
             );
             totalWeight += (10 * i - 5 * i) * i * 10;
@@ -156,7 +158,8 @@ contract Test_cashOut_Unit is UnitTestSetup {
                     reserveFrequency: uint16(0),
                     category: uint24(100),
                     discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false)
+                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false),
+                    splitPercent: 0
                 })
             );
             totalWeight += (10 * i - 5 * i) * i * 10;

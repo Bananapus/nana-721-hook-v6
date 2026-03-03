@@ -146,7 +146,8 @@ contract UnitTestSetup is Test {
             transfersPausable: false,
             cannotBeRemoved: false,
             cannotIncreaseDiscountPercent: false,
-            useVotingUnits: true
+            useVotingUnits: true,
+            splitPercent: 0
         });
 
         // Create 10 tiers, each with 100 NFTs available to mint.
@@ -166,7 +167,8 @@ contract UnitTestSetup is Test {
                     transfersPausable: false,
                     useVotingUnits: true,
                     cannotBeRemoved: false,
-                    cannotIncreaseDiscountPercent: false
+                    cannotIncreaseDiscountPercent: false,
+                    splitPercent: 0
                 })
             );
         }
@@ -495,7 +497,8 @@ contract UnitTestSetup is Test {
                 transfersPausable: tierConfig.transfersPausable,
                 useVotingUnits: tierConfig.useVotingUnits,
                 cannotBeRemoved: tierConfig.cannotBeRemoved,
-                cannotIncreaseDiscountPercent: tierConfig.cannotIncreaseDiscountPercent
+                cannotIncreaseDiscountPercent: tierConfig.cannotIncreaseDiscountPercent,
+                splitPercent: tierConfig.splitPercent
             });
 
             newTiers[i] = JB721Tier({
@@ -513,6 +516,7 @@ contract UnitTestSetup is Test {
                 transfersPausable: tierConfigs[i].transfersPausable,
                 cannotBeRemoved: tierConfigs[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigs[i].cannotIncreaseDiscountPercent,
+                splitPercent: tierConfigs[i].splitPercent,
                 resolvedUri: defaultTierConfig.encodedIPFSUri == bytes32(0)
                     ? ""
                     : string(abi.encodePacked("resolverURI", _generateTokenId(initialId + i + 1, 0)))
@@ -683,7 +687,8 @@ contract UnitTestSetup is Test {
                 transfersPausable: false,
                 useVotingUnits: true,
                 cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false
+                cannotIncreaseDiscountPercent: false,
+                splitPercent: 0
             });
         }
         tiersHookConfig = JBDeploy721TiersHookConfig({

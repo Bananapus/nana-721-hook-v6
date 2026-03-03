@@ -66,7 +66,8 @@ contract TierStoreHandler is CommonBase, StdCheats, StdUtils {
             transfersPausable: false,
             useVotingUnits: false,
             cannotBeRemoved: false,
-            cannotIncreaseDiscountPercent: false
+            cannotIncreaseDiscountPercent: false,
+            splitPercent: 0
         });
 
         try this._doAddTiers(configs) {

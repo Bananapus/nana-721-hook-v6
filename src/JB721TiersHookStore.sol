@@ -533,6 +533,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             transfersPausable: transfersPausable,
             cannotBeRemoved: cannotBeRemoved,
             cannotIncreaseDiscountPercent: cannotIncreaseDiscountPercent,
+            splitPercent: storedTier.splitPercent,
             resolvedUri: !includeResolvedUri || tokenUriResolverOf[hook] == IJB721TokenUriResolver(address(0))
                 ? ""
                 : tokenUriResolverOf[hook].tokenUriOf(hook, _generateTokenId(tierId, 0))
@@ -843,7 +844,8 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                     tierToAdd.useVotingUnits,
                     tierToAdd.cannotBeRemoved,
                     tierToAdd.cannotIncreaseDiscountPercent
-                )
+                ),
+                splitPercent: uint32(tierToAdd.splitPercent)
             });
 
             // If this is the first tier in a new category, store it as the first tier in that category.

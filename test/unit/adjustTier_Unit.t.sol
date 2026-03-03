@@ -548,7 +548,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: false,
                 useVotingUnits: true,
                 cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false
+                cannotIncreaseDiscountPercent: false,
+                splitPercent: 0
             });
             tiers[i] = JB721Tier({
                 id: uint32(i + 1),
@@ -565,6 +566,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: tierConfigs[i].transfersPausable,
                 cannotBeRemoved: tierConfigs[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigs[i].cannotIncreaseDiscountPercent,
+                splitPercent: 0,
                 resolvedUri: ""
             });
         }
@@ -671,7 +673,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: false,
                 useVotingUnits: true,
                 cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false
+                cannotIncreaseDiscountPercent: false,
+                splitPercent: 0
             });
             tiers[i] = JB721Tier({
                 id: uint32(i + 1),
@@ -688,6 +691,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: tierConfigs[i].transfersPausable,
                 cannotBeRemoved: tierConfigs[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigs[i].cannotIncreaseDiscountPercent,
+                splitPercent: 0,
                 resolvedUri: ""
             });
         }
@@ -737,7 +741,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                     transfersPausable: false,
                     useVotingUnits: true,
                     cannotBeRemoved: false,
-                    cannotIncreaseDiscountPercent: false
+                    cannotIncreaseDiscountPercent: false,
+                splitPercent: 0
                 });
                 tiersRemaining[arrayIndex] = JB721Tier({
                     id: uint32(i + 1),
@@ -754,6 +759,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                     transfersPausable: tierConfigsRemaining[arrayIndex].transfersPausable,
                     cannotBeRemoved: tierConfigsRemaining[arrayIndex].cannotBeRemoved,
                     cannotIncreaseDiscountPercent: tierConfigsRemaining[arrayIndex].cannotIncreaseDiscountPercent,
+                    splitPercent: 0,
                     resolvedUri: ""
                 });
                 arrayIndex++;
@@ -783,7 +789,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: false,
                 useVotingUnits: true,
                 cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false
+                cannotIncreaseDiscountPercent: false,
+                splitPercent: 0
             });
             tiersAdded[i] = JB721Tier({
                 id: uint32(tiers.length + (i + 1)),
@@ -800,6 +807,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: tierConfigsToAdd[i].transfersPausable,
                 cannotBeRemoved: tierConfigsToAdd[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigsToAdd[i].cannotIncreaseDiscountPercent,
+                splitPercent: 0,
                 resolvedUri: ""
             });
             vm.expectEmit(true, true, true, true, address(hook));
@@ -854,7 +862,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: false,
                 useVotingUnits: true,
                 cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false
+                cannotIncreaseDiscountPercent: false,
+                splitPercent: 0
             });
             tiers[i] = JB721Tier({
                 id: uint32(i + 1),
@@ -871,6 +880,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: tierConfigs[i].transfersPausable,
                 cannotBeRemoved: tierConfigs[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigs[i].cannotIncreaseDiscountPercent,
+                splitPercent: 0,
                 resolvedUri: ""
             });
         }
@@ -911,7 +921,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: false,
                 useVotingUnits: true,
                 cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false
+                cannotIncreaseDiscountPercent: false,
+                splitPercent: 0
             });
             tiersAdded[i] = JB721Tier({
                 id: uint32(tiers.length + (i + 1)),
@@ -928,6 +939,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: tierConfigsToAdd[i].transfersPausable,
                 cannotBeRemoved: tierConfigsToAdd[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigsToAdd[i].cannotIncreaseDiscountPercent,
+                splitPercent: 0,
                 resolvedUri: ""
             });
         }
@@ -963,7 +975,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: false,
                 useVotingUnits: true,
                 cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false
+                cannotIncreaseDiscountPercent: false,
+                splitPercent: 0
             });
             tiers[i] = JB721Tier({
                 id: uint32(i + 1),
@@ -980,6 +993,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: tierConfigs[i].transfersPausable,
                 cannotBeRemoved: tierConfigs[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigs[i].cannotIncreaseDiscountPercent,
+                splitPercent: 0,
                 resolvedUri: ""
             });
         }
@@ -1020,7 +1034,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: false,
                 useVotingUnits: true,
                 cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false
+                cannotIncreaseDiscountPercent: false,
+                splitPercent: 0
             });
             tiersAdded[i] = JB721Tier({
                 id: uint32(tiers.length + (i + 1)),
@@ -1037,6 +1052,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: tierConfigsToAdd[i].transfersPausable,
                 cannotBeRemoved: tierConfigsToAdd[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigsToAdd[i].cannotIncreaseDiscountPercent,
+                splitPercent: 0,
                 resolvedUri: ""
             });
         }
@@ -1070,7 +1086,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             transfersPausable: false,
             useVotingUnits: true,
             cannotBeRemoved: true,
-            cannotIncreaseDiscountPercent: false
+            cannotIncreaseDiscountPercent: false,
+                splitPercent: 0
         });
         tierConfigs[1] = JB721TierConfig({
             price: 10,
@@ -1086,7 +1103,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             transfersPausable: false,
             useVotingUnits: true,
             cannotBeRemoved: false,
-            cannotIncreaseDiscountPercent: false
+            cannotIncreaseDiscountPercent: false,
+                splitPercent: 0
         });
         //  Deploy the hook and its store with the initial tiers.
         vm.etch(hook_i, address(hook).code);
@@ -1141,7 +1159,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: false,
                 useVotingUnits: true,
                 cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false
+                cannotIncreaseDiscountPercent: false,
+                splitPercent: 0
             });
             tiers[i] = JB721Tier({
                 id: uint32(i + 1),
@@ -1158,6 +1177,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: tierConfigs[i].transfersPausable,
                 cannotBeRemoved: tierConfigs[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigs[i].cannotIncreaseDiscountPercent,
+                splitPercent: 0,
                 resolvedUri: ""
             });
         }
@@ -1198,7 +1218,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: false,
                 useVotingUnits: false,
                 cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false
+                cannotIncreaseDiscountPercent: false,
+                splitPercent: 0
             });
             tiersAdded[i] = JB721Tier({
                 id: uint32(tiers.length + (i + 1)),
@@ -1215,6 +1236,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: tierConfigsToAdd[i].transfersPausable,
                 cannotBeRemoved: tierConfigsToAdd[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigsToAdd[i].cannotIncreaseDiscountPercent,
+                splitPercent: 0,
                 resolvedUri: ""
             });
         }
@@ -1252,7 +1274,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: false,
                 cannotBeRemoved: false,
                 useVotingUnits: true,
-                cannotIncreaseDiscountPercent: false
+                cannotIncreaseDiscountPercent: false,
+                splitPercent: 0
             });
         }
         // Set the second to last tier to have a category of `99`, which is less than the last tier's category of `100`.
@@ -1292,7 +1315,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: false,
                 useVotingUnits: false,
                 cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false
+                cannotIncreaseDiscountPercent: false,
+                splitPercent: 0
             });
         }
 
@@ -1333,7 +1357,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: false,
                 useVotingUnits: false, // <-- If false, voting power is based on tier price
                 cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false
+                cannotIncreaseDiscountPercent: false,
+                splitPercent: 0
             });
         }
 
@@ -1369,7 +1394,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: false,
                 useVotingUnits: true,
                 cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false
+                cannotIncreaseDiscountPercent: false,
+                splitPercent: 0
             });
         }
 
@@ -1410,7 +1436,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: false,
                 useVotingUnits: true, // <-- If false, voting power is based on tier price
                 cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false
+                cannotIncreaseDiscountPercent: false,
+                splitPercent: 0
             });
         }
 
@@ -1477,7 +1504,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: false,
                 useVotingUnits: false,
                 cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false
+                cannotIncreaseDiscountPercent: false,
+                splitPercent: 0
             });
             tiers[i] = JB721Tier({
                 id: uint32(i + 1),
@@ -1494,6 +1522,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: tierConfigs[i].transfersPausable,
                 cannotBeRemoved: tierConfigs[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigs[i].cannotIncreaseDiscountPercent,
+                splitPercent: 0,
                 resolvedUri: ""
             });
         }
@@ -1597,7 +1626,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             transfersPausable: false,
             useVotingUnits: true,
             cannotBeRemoved: true,
-            cannotIncreaseDiscountPercent: true
+            cannotIncreaseDiscountPercent: true,
+                splitPercent: 0
         });
         //  Deploy the hook and its store with the initial tiers.
         vm.etch(hook_i, address(hook).code);
@@ -1652,7 +1682,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             transfersPausable: false,
             useVotingUnits: true,
             cannotBeRemoved: true,
-            cannotIncreaseDiscountPercent: true
+            cannotIncreaseDiscountPercent: true,
+                splitPercent: 0
         });
         initialConfig[1] = JB721TierConfig({
             price: 10,
@@ -1668,7 +1699,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             transfersPausable: false,
             useVotingUnits: true,
             cannotBeRemoved: true,
-            cannotIncreaseDiscountPercent: false
+            cannotIncreaseDiscountPercent: false,
+                splitPercent: 0
         });
 
         //  Deploy the hook and its store with the initial tiers.
