@@ -1530,7 +1530,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 price: tierConfigs[i].price,
                 remainingSupply: tierConfigs[i].initialSupply,
                 initialSupply: tierConfigs[i].initialSupply,
-                votingUnits: tierConfigs[i].votingUnits,
+                votingUnits: tierConfigs[i].price,
                 reserveFrequency: tierConfigs[i].reserveFrequency,
                 reserveBeneficiary: i == 0 ? address(0) : tierConfigs[i].reserveBeneficiary,
                 encodedIPFSUri: tierConfigs[i].encodedIPFSUri,

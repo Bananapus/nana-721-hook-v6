@@ -28,7 +28,7 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                     price: uint104((i + 1) * 10),
                     remainingSupply: uint32(initialSupply - totalMinted),
                     initialSupply: uint32(initialSupply),
-                    votingUnits: uint16(0),
+
                     reserveFrequency: uint16(reserveFrequency),
                     category: uint24(100),
                     discountPercent: uint8(0),
@@ -75,7 +75,6 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                 price: uint104(10),
                 remainingSupply: uint32(initialSupply),
                 initialSupply: uint32(initialSupply),
-                votingUnits: uint16(0),
                 reserveFrequency: uint16(reserveFrequency),
                 category: uint24(100),
                 discountPercent: uint8(0),
@@ -178,7 +177,7 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                     price: uint104((i + 1) * 10),
                     remainingSupply: uint32(initialSupply - totalMinted),
                     initialSupply: uint32(initialSupply),
-                    votingUnits: uint16(0),
+
                     reserveFrequency: uint16(reserveFrequency),
                     category: uint24(100),
                     discountPercent: uint8(0),
@@ -276,7 +275,7 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                     price: uint104((i + 1) * 10),
                     remainingSupply: uint32(initialSupply - totalMinted),
                     initialSupply: uint32(initialSupply),
-                    votingUnits: uint16(0),
+
                     reserveFrequency: uint16(reserveFrequency),
                     category: uint24(100),
                     discountPercent: uint8(0),
@@ -314,7 +313,7 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                     price: uint104((i + 1) * 10),
                     remainingSupply: uint32(initialSupply - totalMinted),
                     initialSupply: uint32(initialSupply),
-                    votingUnits: uint16(0),
+
                     reserveFrequency: uint16(reserveFrequency),
                     category: uint24(100),
                     discountPercent: uint8(0),
@@ -362,7 +361,7 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                     price: uint104((i + 1) * 10),
                     remainingSupply: uint32(initialSupply - totalMinted),
                     initialSupply: uint32(initialSupply),
-                    votingUnits: uint16(0),
+
                     reserveFrequency: uint16(reserveFrequency),
                     category: uint24(100),
                     discountPercent: uint8(0),

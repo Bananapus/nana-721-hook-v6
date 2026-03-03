@@ -20,7 +20,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
                     price: uint104(i * 10),
                     remainingSupply: uint32(10 * i - 5 * i),
                     initialSupply: uint32(10 * i),
-                    votingUnits: uint16(0),
+
                     reserveFrequency: uint16(0),
                     category: uint24(100),
                     discountPercent: uint8(0),
@@ -94,7 +94,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
                     price: uint104(i * 10),
                     remainingSupply: uint32(10 * i - 5 * i),
                     initialSupply: uint32(10 * i),
-                    votingUnits: uint16(0),
+
                     reserveFrequency: uint16(0),
                     category: uint24(100),
                     discountPercent: uint8(0),
@@ -154,7 +154,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
                     price: uint104(i * 10),
                     remainingSupply: uint32(10 * i - 5 * i),
                     initialSupply: uint32(10 * i),
-                    votingUnits: uint16(0),
+
                     reserveFrequency: uint16(0),
                     category: uint24(100),
                     discountPercent: uint8(0),

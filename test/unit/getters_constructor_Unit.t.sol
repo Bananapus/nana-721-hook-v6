@@ -181,7 +181,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                     price: uint104((i + 1) * 10),
                     remainingSupply: uint32(100 - (i + 1)),
                     initialSupply: uint32(100),
-                    votingUnits: uint16(0),
+
                     reserveFrequency: uint16(0),
                     category: uint24(100),
                     discountPercent: uint8(0),
@@ -234,7 +234,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                     price: uint104((i + 1) * 10),
                     remainingSupply: uint32(initialSupply - totalMinted),
                     initialSupply: uint32(initialSupply),
-                    votingUnits: uint16(0),
+
                     reserveFrequency: uint16(reserveFrequency),
                     category: uint24(100),
                     discountPercent: uint8(0),
@@ -275,7 +275,6 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                 price: uint104(10),
                 remainingSupply: uint32(10),
                 initialSupply: uint32(20),
-                votingUnits: uint16(0),
                 reserveFrequency: uint16(100),
                 category: uint24(100),
                 discountPercent: uint8(0),
@@ -283,6 +282,8 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                     splitPercent: 0
             })
         );
+        // Clear the voting units mapping for tier 1 (ForTest_setTier only overwrites the packed struct).
+        hook.test_store().ForTest_setTierVotingUnits(address(hook), 1, 0);
 
         // Give the beneficiary `balances` NFTs from each tier up to `numberOfTiers`.
         for (uint256 i; i < numberOfTiers; i++) {
@@ -399,7 +400,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                     price: uint104(i * 10),
                     remainingSupply: uint32(10 * i - 5 * i),
                     initialSupply: uint32(10 * i),
-                    votingUnits: uint16(0),
+
                     reserveFrequency: uint16(0),
                     category: uint24(100),
                     discountPercent: uint8(0),
