@@ -2,6 +2,12 @@
 pragma solidity 0.8.23;
 
 import {IJBController} from "@bananapus/core-v5/src/interfaces/IJBController.sol";
+import {IJBRulesetDataHook} from "@bananapus/core-v5/src/interfaces/IJBRulesetDataHook.sol";
+import {IJBSplits} from "@bananapus/core-v5/src/interfaces/IJBSplits.sol";
+import {IJBTerminal} from "@bananapus/core-v5/src/interfaces/IJBTerminal.sol";
+import {JBSplit} from "@bananapus/core-v5/src/structs/JBSplit.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IJBDirectory} from "@bananapus/core-v5/src/interfaces/IJBDirectory.sol";
 import {IJBPermissions} from "@bananapus/core-v5/src/interfaces/IJBPermissions.sol";
 import {IJBPrices} from "@bananapus/core-v5/src/interfaces/IJBPrices.sol";
@@ -9,6 +15,9 @@ import {IJBRulesets} from "@bananapus/core-v5/src/interfaces/IJBRulesets.sol";
 import {JBMetadataResolver} from "@bananapus/core-v5/src/libraries/JBMetadataResolver.sol";
 import {JBRulesetMetadataResolver} from "@bananapus/core-v5/src/libraries/JBRulesetMetadataResolver.sol";
 import {JBAfterPayRecordedContext} from "@bananapus/core-v5/src/structs/JBAfterPayRecordedContext.sol";
+import {JBBeforePayRecordedContext} from "@bananapus/core-v5/src/structs/JBBeforePayRecordedContext.sol";
+import {JBConstants} from "@bananapus/core-v5/src/libraries/JBConstants.sol";
+import {JBPayHookSpecification} from "@bananapus/core-v5/src/structs/JBPayHookSpecification.sol";
 import {JBBeforeCashOutRecordedContext} from "@bananapus/core-v5/src/structs/JBBeforeCashOutRecordedContext.sol";
 import {JBRuleset} from "@bananapus/core-v5/src/structs/JBRuleset.sol";
 import {JBSplitGroup} from "@bananapus/core-v5/src/structs/JBSplitGroup.sol";
@@ -165,6 +174,70 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         return STORE.balanceOf(address(this), owner);
     }
 
+    /// @notice The data calculated before a payment is recorded in the terminal store.
+    /// @dev Overrides the base to calculate the split amount to forward based on tier split percentages.
+    /// @param context The payment context.
+    /// @return weight The weight to use for token minting (unchanged from ruleset weight).
+    /// @return hookSpecifications The hook specifications, with the split amount to forward.
+    function beforePayRecordedWith(JBBeforePayRecordedContext calldata context)
+        public
+        view
+        virtual
+        override(JB721Hook, IJBRulesetDataHook)
+        returns (uint256 weight, JBPayHookSpecification[] memory hookSpecifications)
+    {
+        weight = context.weight;
+        hookSpecifications = new JBPayHookSpecification[](1);
+
+        // Try to parse tier IDs from the payer metadata.
+        (bool found, bytes memory metadata) =
+            JBMetadataResolver.getDataFor(JBMetadataResolver.getId("pay", METADATA_ID_TARGET), context.metadata);
+
+        if (found) {
+            (, uint16[] memory tierIdsToMint) = abi.decode(metadata, (bool, uint16[]));
+
+            uint256 numberOfTiers = tierIdsToMint.length;
+
+            if (numberOfTiers != 0) {
+                // Track per-tier split info for the hook metadata.
+                uint16[] memory splitTierIds = new uint16[](numberOfTiers);
+                uint256[] memory splitAmounts = new uint256[](numberOfTiers);
+                uint256 splitTierCount;
+                uint256 totalSplitAmount;
+
+                for (uint256 i; i < numberOfTiers; i++) {
+                    JB721Tier memory tier = STORE.tierOf(address(this), tierIdsToMint[i], false);
+                    if (tier.splitPercent != 0) {
+                        uint256 tierSplitAmount =
+                            mulDiv(tier.price, tier.splitPercent, JBConstants.SPLITS_TOTAL_PERCENT);
+                        splitTierIds[splitTierCount] = tierIdsToMint[i];
+                        splitAmounts[splitTierCount] = tierSplitAmount;
+                        totalSplitAmount += tierSplitAmount;
+                        splitTierCount++;
+                    }
+                }
+
+                // If there are splits, encode the per-tier breakdown into hook metadata.
+                if (splitTierCount != 0) {
+                    // Trim arrays to actual count.
+                    assembly {
+                        mstore(splitTierIds, splitTierCount)
+                        mstore(splitAmounts, splitTierCount)
+                    }
+                    hookSpecifications[0] = JBPayHookSpecification({
+                        hook: this,
+                        amount: totalSplitAmount,
+                        metadata: abi.encode(splitTierIds, splitAmounts)
+                    });
+                    return (weight, hookSpecifications);
+                }
+            }
+        }
+
+        // Default: no split amount.
+        hookSpecifications[0] = JBPayHookSpecification({hook: this, amount: 0, metadata: bytes("")});
+    }
+
     /// @notice Initializes a cloned copy of the original `JB721Hook` contract.
     /// @param projectId The ID of the project this this hook is associated with.
     /// @param name The name of the NFT collection.
@@ -319,10 +392,12 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     }
 
     /// @notice The split group ID for a given tier.
+    /// @dev The lower 160 bits are this hook's address, allowing the hook to set splits in JBSplits directly
+    /// (without going through the controller). The upper 96 bits hold the tier ID.
     /// @param tierId The tier's ID.
-    /// @return groupId The split group ID derived from this hook's address and the tier ID.
+    /// @return groupId The split group ID.
     function _splitGroupIdOf(uint256 tierId) internal view returns (uint256) {
-        return uint256(keccak256(abi.encode(address(this), tierId)));
+        return uint256(uint160(address(this))) | (tierId << 160);
     }
 
     //*********************************************************************//
@@ -363,7 +438,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                 if (tiersToAdd[i].splits.length != 0) splitGroupCount++;
             }
 
-            // Write splits to JBSplits via the controller.
+            // Write splits to JBSplits directly (the hook's address is in the lower 160 bits of the groupId,
+            // which allows it to set splits in its own namespace without controller permission).
             if (splitGroupCount != 0) {
                 JBSplitGroup[] memory splitGroups = new JBSplitGroup[](splitGroupCount);
                 uint256 groupIndex;
@@ -376,7 +452,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                         groupIndex++;
                     }
                 }
-                IJBController(address(DIRECTORY.controllerOf(PROJECT_ID))).setSplitGroupsOf(
+                IJBController(address(DIRECTORY.controllerOf(PROJECT_ID))).SPLITS().setSplitGroupsOf(
                     PROJECT_ID, 0, splitGroups
                 );
             }
@@ -736,6 +812,125 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
             // Store the new NFT credits.
             payCreditsOf[context.beneficiary] = unusedPayCredits;
+        }
+
+        // Distribute any forwarded funds to tier split groups.
+        if (context.hookMetadata.length != 0 && context.forwardedAmount.value != 0) {
+            _distributeTierSplits(context);
+        }
+    }
+
+    /// @notice Distributes forwarded funds to tier split beneficiaries.
+    /// @param context The after-pay context containing hook metadata and forwarded amount.
+    function _distributeTierSplits(JBAfterPayRecordedContext calldata context) internal {
+        // Decode the per-tier split breakdown from hook metadata.
+        (uint16[] memory tierIds, uint256[] memory amounts) =
+            abi.decode(context.hookMetadata, (uint16[], uint256[]));
+
+        // Get the splits contract via the controller.
+        IJBSplits splitsContract =
+            IJBController(address(DIRECTORY.controllerOf(PROJECT_ID))).SPLITS();
+
+        address token = context.forwardedAmount.token;
+
+        for (uint256 i; i < tierIds.length; i++) {
+            if (amounts[i] == 0) continue;
+            _distributeSingleTierSplit(splitsContract, token, tierIds[i], amounts[i]);
+        }
+    }
+
+    /// @notice Distributes funds for a single tier's split group.
+    /// @param splitsContract The splits contract to read splits from.
+    /// @param token The token being distributed.
+    /// @param tierId The tier ID.
+    /// @param amount The total amount to distribute for this tier.
+    function _distributeSingleTierSplit(
+        IJBSplits splitsContract,
+        address token,
+        uint256 tierId,
+        uint256 amount
+    ) internal {
+        JBSplit[] memory tierSplits =
+            splitsContract.splitsOf(PROJECT_ID, 0, _splitGroupIdOf(tierId));
+
+        bool isNativeToken = token == JBConstants.NATIVE_TOKEN;
+        uint256 leftoverPercentage = JBConstants.SPLITS_TOTAL_PERCENT;
+        uint256 leftoverAmount = amount;
+
+        for (uint256 j; j < tierSplits.length; j++) {
+            uint256 payoutAmount = mulDiv(amount, tierSplits[j].percent, leftoverPercentage);
+            if (payoutAmount != 0) {
+                _sendPayoutToSplit(tierSplits[j], token, payoutAmount, isNativeToken);
+                unchecked { leftoverAmount -= payoutAmount; }
+            }
+            unchecked { leftoverPercentage -= tierSplits[j].percent; }
+        }
+
+        // If splits don't total 100%, return leftover to the project.
+        if (leftoverAmount != 0) {
+            _sendToProject(PROJECT_ID, token, leftoverAmount, isNativeToken);
+        }
+    }
+
+    /// @notice Sends a payout to a single split beneficiary.
+    /// @param split The split to pay.
+    /// @param token The token to pay in.
+    /// @param amount The amount to pay.
+    /// @param isNativeToken Whether the token is the native token (ETH).
+    function _sendPayoutToSplit(
+        JBSplit memory split,
+        address token,
+        uint256 amount,
+        bool isNativeToken
+    ) internal {
+        if (split.projectId != 0) {
+            // Route to a project via its primary terminal.
+            IJBTerminal terminal = DIRECTORY.primaryTerminalOf(split.projectId, token);
+            if (address(terminal) == address(0)) return;
+
+            if (split.preferAddToBalance) {
+                _sendToProject(split.projectId, token, amount, isNativeToken);
+            } else {
+                _payProject(terminal, split.projectId, token, amount, split.beneficiary, isNativeToken);
+            }
+        } else if (split.beneficiary != address(0)) {
+            // Direct transfer to beneficiary.
+            if (isNativeToken) {
+                (bool success,) = split.beneficiary.call{value: amount}("");
+                if (!success) revert();
+            } else {
+                SafeERC20.safeTransfer(IERC20(token), split.beneficiary, amount);
+            }
+        }
+    }
+
+    /// @notice Sends funds to a project via addToBalanceOf.
+    function _sendToProject(uint256 projectId, address token, uint256 amount, bool isNativeToken) internal {
+        IJBTerminal terminal = DIRECTORY.primaryTerminalOf(projectId, token);
+        if (address(terminal) == address(0)) return;
+
+        if (isNativeToken) {
+            terminal.addToBalanceOf{value: amount}(projectId, token, amount, false, "", bytes(""));
+        } else {
+            SafeERC20.forceApprove(IERC20(token), address(terminal), amount);
+            terminal.addToBalanceOf(projectId, token, amount, false, "", bytes(""));
+        }
+    }
+
+    /// @notice Pays a project via terminal.pay.
+    function _payProject(
+        IJBTerminal terminal,
+        uint256 projectId,
+        address token,
+        uint256 amount,
+        address beneficiary,
+        bool isNativeToken
+    ) internal {
+        if (isNativeToken) {
+            terminal.pay{value: amount}(projectId, token, amount, beneficiary, 0, "", bytes(""));
+        } else {
+            SafeERC20.forceApprove(IERC20(token), address(terminal), amount);
+            terminal.pay(projectId, token, amount, beneficiary, 0, "", bytes(""));
         }
     }
 
