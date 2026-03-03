@@ -412,7 +412,10 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @param tokenIds The token IDs of the NFTs to get the cash out weight of.
     /// @return weight The cash out weight.
     function cashOutWeightOf(address hook, uint256[] calldata tokenIds) public view override returns (uint256 weight) {
-        // Add each 721's price (from its tier) to the weight.
+        // Add each 721's original price (from its tier) to the weight.
+        // Uses the full tier price, not the discounted price — by design. Discounts are transient incentives
+        // that affect the purchase price, but the NFT's weight in the cash out curve is always based on its
+        // tier's original price. This prevents discount changes from altering the cash out value of already-minted NFTs.
         for (uint256 i; i < tokenIds.length; i++) {
             weight += _storedTierOf[hook][tierIdOfToken(tokenIds[i])].price;
         }
@@ -450,12 +453,13 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         // Keep a reference to the greatest tier ID.
         uint256 maxTierId = maxTierIdOf[hook];
 
-        // Add each 721's price (from its tier) to the weight.
+        // Add each 721's original price (from its tier) to the weight.
+        // Uses the full tier price, not the discounted price — by design. See `cashOutWeightOf` for rationale.
         for (uint256 i = 1; i <= maxTierId; i++) {
             // Keep a reference to the stored tier.
             JBStored721Tier memory storedTier = _storedTierOf[hook][i];
 
-            // Add the tier's price multiplied by the number of NFTs minted from the tier.
+            // Add the tier's original price multiplied by the number of NFTs minted from the tier.
             weight += storedTier.price
                 * (
                     (storedTier.initialSupply - (storedTier.remainingSupply + numberOfBurnedFor[hook][i]))
