@@ -23,7 +23,7 @@ import {JB721Hook} from "./abstract/JB721Hook.sol";
 import {IJB721TiersHook} from "./interfaces/IJB721TiersHook.sol";
 import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "./interfaces/IJB721TokenUriResolver.sol";
-import {JBTierSplitDistributor} from "./libraries/JBTierSplitDistributor.sol";
+import {JB721TiersHookLib} from "./libraries/JB721TiersHookLib.sol";
 import {JB721TiersRulesetMetadataResolver} from "./libraries/JB721TiersRulesetMetadataResolver.sol";
 import {JBIpfsDecoder} from "./libraries/JBIpfsDecoder.sol";
 import {JB721Tier} from "./structs/JB721Tier.sol";
@@ -176,7 +176,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
         // Calculate per-tier split amounts via the library.
         (uint256 totalSplitAmount, bytes memory splitMetadata) =
-            JBTierSplitDistributor.calculateSplitAmounts(STORE, address(this), METADATA_ID_TARGET, context.metadata);
+            JB721TiersHookLib.calculateSplitAmounts(STORE, address(this), METADATA_ID_TARGET, context.metadata);
 
         hookSpecifications[0] = JBPayHookSpecification({hook: this, amount: totalSplitAmount, metadata: splitMetadata});
     }
@@ -349,7 +349,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         _requirePermissionFrom({account: owner(), projectId: PROJECT_ID, permissionId: JBPermissionIds.ADJUST_721_TIERS});
 
         // Delegate to the library (via DELEGATECALL) for tier removal, addition, event emission, and split setting.
-        JBTierSplitDistributor.adjustTiersFor(
+        JB721TiersHookLib.adjustTiersFor(
             STORE, DIRECTORY, PROJECT_ID, address(this), _msgSender(), tiersToAdd, tierIdsToRemove
         );
     }
@@ -590,7 +590,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         uint256 value;
         {
             bool valid;
-            (value, valid) = JBTierSplitDistributor.normalizePaymentValue(
+            (value, valid) = JB721TiersHookLib.normalizePaymentValue(
                 _packedPricingContext,
                 PROJECT_ID,
                 context.amount.value,
@@ -694,7 +694,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
         // Distribute any forwarded funds to tier split groups.
         if (context.hookMetadata.length != 0 && context.forwardedAmount.value != 0) {
-            JBTierSplitDistributor.distributeAll(
+            JB721TiersHookLib.distributeAll(
                 DIRECTORY, PROJECT_ID, address(this), context.forwardedAmount.token, context.hookMetadata
             );
         }

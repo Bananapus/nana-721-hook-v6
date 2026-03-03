@@ -18,9 +18,9 @@ import {JBSplitGroup} from "@bananapus/core-v5/src/structs/JBSplitGroup.sol";
 import {IJB721TiersHookStore} from "../interfaces/IJB721TiersHookStore.sol";
 import {JB721TierConfig} from "../structs/JB721TierConfig.sol";
 
-/// @notice Handles tier split calculations, price normalization, and split distributions for JB721TiersHook.
-/// @dev Extracted as an external library to keep JB721TiersHook within the EIP-170 contract size limit.
-library JBTierSplitDistributor {
+/// @notice External library for JB721TiersHook operations extracted to stay within the EIP-170 contract size limit.
+/// @dev Handles tier adjustments, split calculations, price normalization, and split fund distribution.
+library JB721TiersHookLib {
     // Events mirrored from IJB721TiersHook (emitted via DELEGATECALL from the hook's context).
     event AddTier(uint256 indexed tierId, JB721TierConfig tier, address caller);
     event RemoveTier(uint256 indexed tierId, address caller);
@@ -82,7 +82,7 @@ library JBTierSplitDistributor {
         if (amountCurrency == pricingCurrency) return (amountValue, true);
 
         IJBPrices prices = IJBPrices(address(uint160(packedPricingContext >> 40)));
-        if (prices == IJBPrices(address(0))) return (0, false);
+        if (address(prices) == address(0)) return (0, false);
 
         uint256 pricingDecimals = uint256(uint8(packedPricingContext >> 32));
         value = mulDiv(
