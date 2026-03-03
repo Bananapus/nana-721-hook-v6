@@ -1033,16 +1033,20 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             // Make sure the `amount` is greater than or equal to the tier's price.
             if (price > leftoverAmount) revert JB721TiersHookStore_PriceExceedsAmount(price, leftoverAmount);
 
-            // Make sure there are enough NFTs available to mint.
-            if (storedTier.remainingSupply <= 1 + _numberOfPendingReservesFor(msg.sender, tierId, storedTier)) {
-                revert JB721TiersHookStore_InsufficientSupplyRemaining();
-            }
+            // Make sure there's at least one NFT remaining to mint.
+            if (storedTier.remainingSupply == 0) revert JB721TiersHookStore_InsufficientSupplyRemaining();
 
-            // Mint the 721.
+            // Mint the 721 — decrement remaining supply first so the reserve check below
+            // sees the post-mint state (this non-reserve mint may increase pending reserves).
             unchecked {
                 // Keep a reference to its token ID.
                 tokenIds[i] = _generateTokenId(tierId, storedTier.initialSupply - --storedTier.remainingSupply);
                 leftoverAmount = leftoverAmount - price;
+            }
+
+            // Make sure there are still enough NFTs remaining to satisfy pending reserves.
+            if (storedTier.remainingSupply < _numberOfPendingReservesFor(msg.sender, tierId, storedTier)) {
+                revert JB721TiersHookStore_InsufficientSupplyRemaining();
             }
         }
     }
