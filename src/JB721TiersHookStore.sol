@@ -412,7 +412,10 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @param tokenIds The token IDs of the NFTs to get the cash out weight of.
     /// @return weight The cash out weight.
     function cashOutWeightOf(address hook, uint256[] calldata tokenIds) public view override returns (uint256 weight) {
-        // Add each 721's price (from its tier) to the weight.
+        // Add each 721's original price (from its tier) to the weight.
+        // Uses the full tier price, not the discounted price — by design. Discounts are transient incentives
+        // that affect the purchase price, but the NFT's weight in the cash out curve is always based on its
+        // tier's original price. This prevents discount changes from altering the cash out value of already-minted NFTs.
         for (uint256 i; i < tokenIds.length; i++) {
             weight += _storedTierOf[hook][tierIdOfToken(tokenIds[i])].price;
         }
@@ -450,7 +453,8 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         // Keep a reference to the greatest tier ID.
         uint256 maxTierId = maxTierIdOf[hook];
 
-        // Add each 721's price (from its tier) to the weight.
+        // Add each 721's original price (from its tier) to the weight.
+        // Uses the full tier price, not the discounted price — by design. See `cashOutWeightOf` for rationale.
         for (uint256 i = 1; i <= maxTierId; i++) {
             // Keep a reference to the stored tier.
             JBStored721Tier memory storedTier = _storedTierOf[hook][i];
@@ -593,6 +597,14 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     }
 
     /// @notice Get the number of pending reserve NFTs for the specified tier ID.
+    /// @dev The reserve frequency is immutable once a tier is created (set in `recordAddTiers`) and cannot be modified
+    /// afterward. The pending reserve count is derived from the ratio of non-reserve mints to the reserve frequency,
+    /// rounded up. This means each batch of `reserveFrequency` non-reserve mints entitles exactly one reserve mint,
+    /// plus one additional reserve mint if there is any remainder. Because the reserve frequency is fixed per tier,
+    /// the accounting remains consistent: the total available reserve mints always equals
+    /// `ceil(numberOfNonReserveMints / reserveFrequency)`. If a project wishes to use a different reserve frequency,
+    /// it must create a new tier — the existing tier's pending reserves will continue to be calculated using its
+    /// original frequency. Removing a tier does not affect already-pending reserves; they can still be minted.
     /// @param hook The 721 contract that the tier belongs to.
     /// @param tierId The ID of the tier to get the number of pending reserve NFTs for.
     /// @param storedTier The stored tier to get the number of pending reserve NFTs for.
@@ -955,6 +967,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     }
 
     /// @notice Records 721 burns.
+    /// @dev This function trusts `msg.sender` (the hook contract) to only call it after actually burning the
+    /// tokens. It does not verify ownership or existence of the token IDs — the hook is responsible for
+    /// performing those checks before calling this function.
     /// @param tokenIds The token IDs of the NFTs to burn.
     function recordBurn(uint256[] calldata tokenIds) external override {
         // Iterate through all token IDs to increment the burn count.
@@ -1037,16 +1052,20 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             // Make sure the `amount` is greater than or equal to the tier's price.
             if (price > leftoverAmount) revert JB721TiersHookStore_PriceExceedsAmount(price, leftoverAmount);
 
-            // Make sure there are enough NFTs available to mint.
-            if (storedTier.remainingSupply <= _numberOfPendingReservesFor(msg.sender, tierId, storedTier)) {
-                revert JB721TiersHookStore_InsufficientSupplyRemaining();
-            }
+            // Make sure there's at least one NFT remaining to mint.
+            if (storedTier.remainingSupply == 0) revert JB721TiersHookStore_InsufficientSupplyRemaining();
 
-            // Mint the 721.
+            // Mint the 721 — decrement remaining supply first so the reserve check below
+            // sees the post-mint state (this non-reserve mint may increase pending reserves).
             unchecked {
                 // Keep a reference to its token ID.
                 tokenIds[i] = _generateTokenId(tierId, storedTier.initialSupply - --storedTier.remainingSupply);
                 leftoverAmount = leftoverAmount - price;
+            }
+
+            // Make sure there are still enough NFTs remaining to satisfy pending reserves.
+            if (storedTier.remainingSupply < _numberOfPendingReservesFor(msg.sender, tierId, storedTier)) {
+                revert JB721TiersHookStore_InsufficientSupplyRemaining();
             }
         }
     }
@@ -1088,6 +1107,8 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     }
 
     /// @notice Record tiers being removed.
+    /// @dev Removing a tier only marks it in a bitmap — it does not update the sorted tier linked list.
+    /// Call `cleanTiers()` after removing tiers to update the sorting sequence and prevent stale tier iteration.
     /// @param tierIds The IDs of the tiers being removed.
     function recordRemoveTierIds(uint256[] calldata tierIds) external override {
         for (uint256 i; i < tierIds.length; i++) {

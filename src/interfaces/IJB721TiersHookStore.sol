@@ -37,7 +37,7 @@ interface IJB721TiersHookStore {
         address hook,
         uint256[] calldata categories,
         bool includeResolvedUri,
-        uint256 startingSortIndex,
+        uint256 startingId,
         uint256 size
     )
         external
@@ -51,9 +51,9 @@ interface IJB721TiersHookStore {
     function votingUnitsOf(address hook, address account) external view returns (uint256 units);
 
     function cleanTiers(address hook) external;
-    function recordAddTiers(JB721TierConfig[] calldata tierData) external returns (uint256[] memory tierIds);
+    function recordAddTiers(JB721TierConfig[] calldata tiersToAdd) external returns (uint256[] memory tierIds);
     function recordBurn(uint256[] calldata tokenIds) external;
-    function recordFlags(JB721TiersHookFlags calldata flag) external;
+    function recordFlags(JB721TiersHookFlags calldata flags) external;
     function recordMint(
         uint256 amount,
         uint16[] calldata tierIds,

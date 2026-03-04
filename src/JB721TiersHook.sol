@@ -45,6 +45,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     error JB721TiersHook_Overspending(uint256 leftoverAmount);
     error JB721TiersHook_MintReserveNftsPaused();
     error JB721TiersHook_TierTransfersPaused();
+    error JB721TiersHook_CurrencyMismatch(uint256 paymentCurrency, uint256 tierCurrency);
 
     //*********************************************************************//
     // --------------- public immutable stored properties ---------------- //
@@ -577,6 +578,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     }
 
     /// @notice Process a payment, minting NFTs and updating credits as necessary.
+    /// @dev Pay credits are tracked per beneficiary, not per payer. When the payer differs from the beneficiary,
+    /// the payer's existing credits are NOT applied to the mint. Only the beneficiary's credits are combined with
+    /// the incoming payment value. Leftover funds after minting are stored as credits for the beneficiary.
     /// @param context Payment context provided by the terminal after it has recorded the payment in the terminal store.
     function _processPayment(JBAfterPayRecordedContext calldata context) internal virtual override {
         // Normalize the payment value based on the pricing context.
@@ -605,7 +609,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                         })
                     );
                 } else {
-                    return;
+                    revert JB721TiersHook_CurrencyMismatch(context.amount.currency, pricingCurrency);
                 }
             }
         }
