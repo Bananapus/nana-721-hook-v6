@@ -45,7 +45,7 @@ interface IJB721TiersHook is IJB721Hook {
     function payCreditsOf(address addr) external view returns (uint256);
     function pricingContext() external view returns (uint256, uint256, IJBPrices);
 
-    function adjustTiers(JB721TierConfig[] calldata tierDataToAdd, uint256[] calldata tierIdsToRemove) external;
+    function adjustTiers(JB721TierConfig[] calldata tiersToAdd, uint256[] calldata tierIdsToRemove) external;
     function initialize(
         uint256 projectId,
         string memory name,
@@ -64,9 +64,9 @@ interface IJB721TiersHook is IJB721Hook {
     function mintPendingReservesFor(uint256 tierId, uint256 count) external;
     function setMetadata(
         string calldata baseUri,
-        string calldata contractMetadataUri,
+        string calldata contractUri,
         IJB721TokenUriResolver tokenUriResolver,
-        uint256 encodedIPFSUriTierId,
+        uint256 encodedIPFSTUriTierId,
         bytes32 encodedIPFSUri
     )
         external;
