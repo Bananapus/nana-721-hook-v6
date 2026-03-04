@@ -23,10 +23,10 @@ contract DeployScript is Script, Sphinx {
     address private TRUSTED_FORWARDER;
 
     /// @notice the salts that are used to deploy the contracts.
-    bytes32 HOOK_SALT = "JB721TiersHook_";
-    bytes32 HOOK_DEPLOYER_SALT = "JB721TiersHookDeployer_";
-    bytes32 HOOK_STORE_SALT = "JB721TiersHookStore_";
-    bytes32 PROJECT_DEPLOYER_SALT = "JB721TiersHookProjectDeployer_";
+    bytes32 HOOK_SALT = "JB721TiersHookV6_";
+    bytes32 HOOK_DEPLOYER_SALT = "JB721TiersHookDeployerV6_";
+    bytes32 HOOK_STORE_SALT = "JB721TiersHookStoreV6_";
+    bytes32 PROJECT_DEPLOYER_SALT = "JB721TiersHookProjectDeployerV6";
 
     function configureSphinx() public override {
         sphinxConfig.projectName = "nana-721-hook-v5";
