@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
-import "@bananapus/core-v5/script/helpers/CoreDeploymentLib.sol";
-import "@bananapus/address-registry-v5/script/helpers/AddressRegistryDeploymentLib.sol";
+import "@bananapus/core-v6/script/helpers/CoreDeploymentLib.sol";
+import "@bananapus/address-registry-v6/script/helpers/AddressRegistryDeploymentLib.sol";
 
 import {Sphinx} from "@sphinx-labs/contracts/SphinxPlugin.sol";
 import {Script} from "forge-std/Script.sol";
@@ -11,7 +11,6 @@ import {JB721TiersHookDeployer} from "../src/JB721TiersHookDeployer.sol";
 import {JB721TiersHookProjectDeployer} from "../src/JB721TiersHookProjectDeployer.sol";
 import {JB721TiersHookStore} from "../src/JB721TiersHookStore.sol";
 import {JB721TiersHook} from "../src/JB721TiersHook.sol";
-
 contract DeployScript is Script, Sphinx {
     /// @notice tracks the deployment of the core contracts for the chain we are deploying to.
     CoreDeployment core;
@@ -28,8 +27,7 @@ contract DeployScript is Script, Sphinx {
     bytes32 PROJECT_DEPLOYER_SALT = "JB721TiersHookProjectDeployerV6";
 
     function configureSphinx() public override {
-        // TODO: Update to contain JB Emergency Developers
-        sphinxConfig.projectName = "nana-721-hook-v5";
+        sphinxConfig.projectName = "nana-721-hook-v6";
         sphinxConfig.mainnets = ["ethereum", "optimism", "base", "arbitrum"];
         sphinxConfig.testnets = ["ethereum_sepolia", "optimism_sepolia", "base_sepolia", "arbitrum_sepolia"];
     }
@@ -38,7 +36,7 @@ contract DeployScript is Script, Sphinx {
         // Get the deployment addresses for the nana CORE for this chain.
         // We want to do this outside of the `sphinx` modifier.
         core = CoreDeploymentLib.getDeployment(
-            vm.envOr("NANA_CORE_DEPLOYMENT_PATH", string("node_modules/@bananapus/core-v5/deployments/"))
+            vm.envOr("NANA_CORE_DEPLOYMENT_PATH", string("node_modules/@bananapus/core-v6/deployments/"))
         );
 
         // We use the same trusted forwarder as the core deployment.
@@ -47,7 +45,7 @@ contract DeployScript is Script, Sphinx {
         registry = AddressRegistryDeploymentLib.getDeployment(
             vm.envOr(
                 "NANA_ADDRESS_REGISTRY_DEPLOYMENT_PATH",
-                string("node_modules/@bananapus/address-registry-v5/deployments/")
+                string("node_modules/@bananapus/address-registry-v6/deployments/")
             )
         );
         // Perform the deployment transactions.
@@ -75,7 +73,9 @@ contract DeployScript is Script, Sphinx {
             (address _hook, bool _hookIsDeployed) = _isDeployed(
                 HOOK_SALT,
                 type(JB721TiersHook).creationCode,
-                abi.encode(core.directory, core.permissions, core.rulesets, store, TRUSTED_FORWARDER)
+                abi.encode(
+                    core.directory, core.permissions, core.rulesets, store, TRUSTED_FORWARDER
+                )
             );
 
             // Deploy it if it has not been deployed yet.
@@ -96,7 +96,9 @@ contract DeployScript is Script, Sphinx {
             );
 
             hookDeployer = !_hookDeployerIsDeployed
-                ? new JB721TiersHookDeployer{salt: HOOK_DEPLOYER_SALT}(hook, store, registry.registry, TRUSTED_FORWARDER)
+                ? new JB721TiersHookDeployer{salt: HOOK_DEPLOYER_SALT}(
+                    hook, store, registry.registry, TRUSTED_FORWARDER
+                )
                 : JB721TiersHookDeployer(_hookDeployer);
         }
 

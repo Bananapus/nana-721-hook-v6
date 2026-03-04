@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
-import {IJBAddressRegistry} from "@bananapus/address-registry-v5/src/interfaces/IJBAddressRegistry.sol";
-import {JBOwnable} from "@bananapus/ownable-v5/src/JBOwnable.sol";
+import {IJBAddressRegistry} from "@bananapus/address-registry-v6/src/interfaces/IJBAddressRegistry.sol";
+import {JBOwnable} from "@bananapus/ownable-v6/src/JBOwnable.sol";
 import {LibClone} from "solady/src/utils/LibClone.sol";
 import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 

@@ -8,11 +8,11 @@ import "../../src/JB721TiersHookStore.sol";
 
 import "../../src/structs/JBBitmapWord.sol";
 
-import "@bananapus/core-v5/src/structs/JBRulesetMetadata.sol";
-import "@bananapus/core-v5/src/interfaces/IJBPermissioned.sol";
-import {MetadataResolverHelper} from "@bananapus/core-v5/test/helpers/MetadataResolverHelper.sol";
+import "@bananapus/core-v6/src/structs/JBRulesetMetadata.sol";
+import "@bananapus/core-v6/src/interfaces/IJBPermissioned.sol";
+import {MetadataResolverHelper} from "@bananapus/core-v6/test/helpers/MetadataResolverHelper.sol";
 
-import "@bananapus/core-v5/src/libraries/JBConstants.sol";
+import "@bananapus/core-v6/src/libraries/JBConstants.sol";
 
 import "./UnitTestSetup.sol"; // Only used to get the `PAY_HOOK_ID` and `CASH_OUT_HOOK_ID` constants.
 

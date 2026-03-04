@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IJBDirectory} from "@bananapus/core-v5/src/interfaces/IJBDirectory.sol";
-import {IJBController} from "@bananapus/core-v5/src/interfaces/IJBController.sol";
+import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
+import {IJBController} from "@bananapus/core-v6/src/interfaces/IJBController.sol";
 
 import {IJB721TiersHook} from "./IJB721TiersHook.sol";
 import {IJB721TiersHookDeployer} from "./IJB721TiersHookDeployer.sol";
