@@ -13,5 +13,5 @@ interface IJB721TiersHookDeployer {
         bytes32 salt
     )
         external
-        returns (IJB721TiersHook hook);
+        returns (IJB721TiersHook newHook);
 }
