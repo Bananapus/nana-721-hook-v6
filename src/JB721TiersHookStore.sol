@@ -589,6 +589,14 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     }
 
     /// @notice Get the number of pending reserve NFTs for the specified tier ID.
+    /// @dev The reserve frequency is immutable once a tier is created (set in `recordAddTiers`) and cannot be modified
+    /// afterward. The pending reserve count is derived from the ratio of non-reserve mints to the reserve frequency,
+    /// rounded up. This means each batch of `reserveFrequency` non-reserve mints entitles exactly one reserve mint,
+    /// plus one additional reserve mint if there is any remainder. Because the reserve frequency is fixed per tier,
+    /// the accounting remains consistent: the total available reserve mints always equals
+    /// `ceil(numberOfNonReserveMints / reserveFrequency)`. If a project wishes to use a different reserve frequency,
+    /// it must create a new tier — the existing tier's pending reserves will continue to be calculated using its
+    /// original frequency. Removing a tier does not affect already-pending reserves; they can still be minted.
     /// @param hook The 721 contract that the tier belongs to.
     /// @param tierId The ID of the tier to get the number of pending reserve NFTs for.
     /// @param storedTier The stored tier to get the number of pending reserve NFTs for.
