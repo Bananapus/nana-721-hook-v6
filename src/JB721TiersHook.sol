@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
-import {IJBDirectory} from "@bananapus/core-v5/src/interfaces/IJBDirectory.sol";
-import {IJBPermissions} from "@bananapus/core-v5/src/interfaces/IJBPermissions.sol";
-import {IJBPrices} from "@bananapus/core-v5/src/interfaces/IJBPrices.sol";
-import {IJBRulesets} from "@bananapus/core-v5/src/interfaces/IJBRulesets.sol";
-import {JBMetadataResolver} from "@bananapus/core-v5/src/libraries/JBMetadataResolver.sol";
-import {JBRulesetMetadataResolver} from "@bananapus/core-v5/src/libraries/JBRulesetMetadataResolver.sol";
-import {JBAfterPayRecordedContext} from "@bananapus/core-v5/src/structs/JBAfterPayRecordedContext.sol";
-import {JBBeforeCashOutRecordedContext} from "@bananapus/core-v5/src/structs/JBBeforeCashOutRecordedContext.sol";
-import {JBRuleset} from "@bananapus/core-v5/src/structs/JBRuleset.sol";
-import {JBOwnable} from "@bananapus/ownable-v5/src/JBOwnable.sol";
-import {JBPermissionIds} from "@bananapus/permission-ids-v5/src/JBPermissionIds.sol";
+import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
+import {IJBPermissions} from "@bananapus/core-v6/src/interfaces/IJBPermissions.sol";
+import {IJBPrices} from "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
+import {IJBRulesets} from "@bananapus/core-v6/src/interfaces/IJBRulesets.sol";
+import {JBMetadataResolver} from "@bananapus/core-v6/src/libraries/JBMetadataResolver.sol";
+import {JBRulesetMetadataResolver} from "@bananapus/core-v6/src/libraries/JBRulesetMetadataResolver.sol";
+import {JBAfterPayRecordedContext} from "@bananapus/core-v6/src/structs/JBAfterPayRecordedContext.sol";
+import {JBBeforeCashOutRecordedContext} from "@bananapus/core-v6/src/structs/JBBeforeCashOutRecordedContext.sol";
+import {JBRuleset} from "@bananapus/core-v6/src/structs/JBRuleset.sol";
+import {JBOwnable} from "@bananapus/ownable-v6/src/JBOwnable.sol";
+import {JBPermissionIds} from "@bananapus/permission-ids-v6/src/JBPermissionIds.sol";
 import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";

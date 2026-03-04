@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IJBRulesetApprovalHook} from "@bananapus/core-v5/src/interfaces/IJBRulesetApprovalHook.sol";
-import {JBFundAccessLimitGroup} from "@bananapus/core-v5/src/structs/JBFundAccessLimitGroup.sol";
-import {JBSplitGroup} from "@bananapus/core-v5/src/structs/JBSplitGroup.sol";
+import {IJBRulesetApprovalHook} from "@bananapus/core-v6/src/interfaces/IJBRulesetApprovalHook.sol";
+import {JBFundAccessLimitGroup} from "@bananapus/core-v6/src/structs/JBFundAccessLimitGroup.sol";
+import {JBSplitGroup} from "@bananapus/core-v6/src/structs/JBSplitGroup.sol";
 
 import {JBPayDataHookRulesetMetadata} from "./JBPayDataHookRulesetMetadata.sol";
 

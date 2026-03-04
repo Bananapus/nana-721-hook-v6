@@ -9,24 +9,24 @@ import "../../src/JB721TiersHook.sol";
 import "../../src/JB721TiersHookStore.sol";
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@bananapus/core-v5/src/libraries/JBRulesetMetadataResolver.sol";
-import "@bananapus/core-v5/src/structs/JBAccountingContext.sol";
-import "@bananapus/core-v5/src/structs/JBTokenAmount.sol";
-import "@bananapus/core-v5/src/structs/JBAfterPayRecordedContext.sol";
-import "@bananapus/core-v5/src/structs/JBAfterCashOutRecordedContext.sol";
-import "@bananapus/core-v5/src/structs/JBAfterCashOutRecordedContext.sol";
-import "@bananapus/core-v5/src/structs/JBCashOutHookSpecification.sol";
-import "@bananapus/core-v5/src/structs/JBFundAccessLimitGroup.sol";
-import "@bananapus/core-v5/src/interfaces/IJBTerminal.sol";
-import "@bananapus/core-v5/src/interfaces/IJBRulesetApprovalHook.sol";
+import "@bananapus/core-v6/src/libraries/JBRulesetMetadataResolver.sol";
+import "@bananapus/core-v6/src/structs/JBAccountingContext.sol";
+import "@bananapus/core-v6/src/structs/JBTokenAmount.sol";
+import "@bananapus/core-v6/src/structs/JBAfterPayRecordedContext.sol";
+import "@bananapus/core-v6/src/structs/JBAfterCashOutRecordedContext.sol";
+import "@bananapus/core-v6/src/structs/JBAfterCashOutRecordedContext.sol";
+import "@bananapus/core-v6/src/structs/JBCashOutHookSpecification.sol";
+import "@bananapus/core-v6/src/structs/JBFundAccessLimitGroup.sol";
+import "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
+import "@bananapus/core-v6/src/interfaces/IJBRulesetApprovalHook.sol";
 
 import "../../src/structs/JBLaunchProjectConfig.sol";
 import "../../src/structs/JBPayDataHookRulesetMetadata.sol";
 
-import "@bananapus/address-registry-v5/src/JBAddressRegistry.sol";
+import "@bananapus/address-registry-v6/src/JBAddressRegistry.sol";
 
-import "@bananapus/core-v5/src/libraries/JBCurrencyIds.sol";
-import "@bananapus/core-v5/src/libraries/JBConstants.sol";
+import "@bananapus/core-v6/src/libraries/JBCurrencyIds.sol";
+import "@bananapus/core-v6/src/libraries/JBConstants.sol";
 
 contract UnitTestSetup is Test {
     address beneficiary;

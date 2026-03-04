@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
-import {JBPermissioned} from "@bananapus/core-v5/src/abstract/JBPermissioned.sol";
-import {IJBController} from "@bananapus/core-v5/src/interfaces/IJBController.sol";
-import {IJBDirectory} from "@bananapus/core-v5/src/interfaces/IJBDirectory.sol";
-import {IJBPermissions} from "@bananapus/core-v5/src/interfaces/IJBPermissions.sol";
-import {IJBProjects} from "@bananapus/core-v5/src/interfaces/IJBProjects.sol";
-import {JBRulesetConfig} from "@bananapus/core-v5/src/structs/JBRulesetConfig.sol";
-import {JBRulesetMetadata} from "@bananapus/core-v5/src/structs/JBRulesetMetadata.sol";
-import {JBOwnable} from "@bananapus/ownable-v5/src/JBOwnable.sol";
-import {JBPermissionIds} from "@bananapus/permission-ids-v5/src/JBPermissionIds.sol";
+import {JBPermissioned} from "@bananapus/core-v6/src/abstract/JBPermissioned.sol";
+import {IJBController} from "@bananapus/core-v6/src/interfaces/IJBController.sol";
+import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
+import {IJBPermissions} from "@bananapus/core-v6/src/interfaces/IJBPermissions.sol";
+import {IJBProjects} from "@bananapus/core-v6/src/interfaces/IJBProjects.sol";
+import {JBRulesetConfig} from "@bananapus/core-v6/src/structs/JBRulesetConfig.sol";
+import {JBRulesetMetadata} from "@bananapus/core-v6/src/structs/JBRulesetMetadata.sol";
+import {JBOwnable} from "@bananapus/ownable-v6/src/JBOwnable.sol";
+import {JBPermissionIds} from "@bananapus/permission-ids-v6/src/JBPermissionIds.sol";
 import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 

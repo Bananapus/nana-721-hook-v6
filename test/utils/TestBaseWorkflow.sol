@@ -1,37 +1,37 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
-import "@bananapus/core-v5/src/JBController.sol";
-import "@bananapus/core-v5/src/JBDirectory.sol";
-import "@bananapus/core-v5/src/JBMultiTerminal.sol";
-import "@bananapus/core-v5/src/JBFundAccessLimits.sol";
-import "@bananapus/core-v5/src/JBFeelessAddresses.sol";
-import "@bananapus/core-v5/src/JBTerminalStore.sol";
-import "@bananapus/core-v5/src/JBRulesets5_1.sol";
-import "@bananapus/core-v5/src/JBPermissions.sol";
-import "@bananapus/core-v5/src/JBPrices.sol";
-import {JBProjects} from "@bananapus/core-v5/src/JBProjects.sol";
-import "@bananapus/core-v5/src/JBSplits.sol";
-import "@bananapus/core-v5/src/JBERC20.sol";
-import "@bananapus/core-v5/src/JBTokens.sol";
+import "@bananapus/core-v6/src/JBController.sol";
+import "@bananapus/core-v6/src/JBDirectory.sol";
+import "@bananapus/core-v6/src/JBMultiTerminal.sol";
+import "@bananapus/core-v6/src/JBFundAccessLimits.sol";
+import "@bananapus/core-v6/src/JBFeelessAddresses.sol";
+import "@bananapus/core-v6/src/JBTerminalStore.sol";
+import "@bananapus/core-v6/src/JBRulesets5_1.sol";
+import "@bananapus/core-v6/src/JBPermissions.sol";
+import "@bananapus/core-v6/src/JBPrices.sol";
+import {JBProjects} from "@bananapus/core-v6/src/JBProjects.sol";
+import "@bananapus/core-v6/src/JBSplits.sol";
+import "@bananapus/core-v6/src/JBERC20.sol";
+import "@bananapus/core-v6/src/JBTokens.sol";
 
-import "@bananapus/core-v5/src/structs/JBAfterPayRecordedContext.sol";
-import "@bananapus/core-v5/src/structs/JBAfterCashOutRecordedContext.sol";
-import "@bananapus/core-v5/src/structs/JBFee.sol";
-import "@bananapus/core-v5/src/structs/JBFundAccessLimitGroup.sol";
-import "@bananapus/core-v5/src/structs/JBRuleset.sol";
-import "@bananapus/core-v5/src/structs/JBRulesetConfig.sol";
-import "@bananapus/core-v5/src/structs/JBRulesetMetadata.sol";
-import "@bananapus/core-v5/src/structs/JBPermissionsData.sol";
-import "@bananapus/core-v5/src/structs/JBBeforePayRecordedContext.sol";
-import "@bananapus/core-v5/src/structs/JBBeforeCashOutRecordedContext.sol";
-import "@bananapus/core-v5/src/structs/JBSplit.sol";
+import "@bananapus/core-v6/src/structs/JBAfterPayRecordedContext.sol";
+import "@bananapus/core-v6/src/structs/JBAfterCashOutRecordedContext.sol";
+import "@bananapus/core-v6/src/structs/JBFee.sol";
+import "@bananapus/core-v6/src/structs/JBFundAccessLimitGroup.sol";
+import "@bananapus/core-v6/src/structs/JBRuleset.sol";
+import "@bananapus/core-v6/src/structs/JBRulesetConfig.sol";
+import "@bananapus/core-v6/src/structs/JBRulesetMetadata.sol";
+import "@bananapus/core-v6/src/structs/JBPermissionsData.sol";
+import "@bananapus/core-v6/src/structs/JBBeforePayRecordedContext.sol";
+import "@bananapus/core-v6/src/structs/JBBeforeCashOutRecordedContext.sol";
+import "@bananapus/core-v6/src/structs/JBSplit.sol";
 
-import "@bananapus/core-v5/src/interfaces/IJBTerminal.sol";
-import "@bananapus/core-v5/src/interfaces/IJBToken.sol";
+import "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
+import "@bananapus/core-v6/src/interfaces/IJBToken.sol";
 
-import "@bananapus/permission-ids-v5/src/JBPermissionIds.sol";
-import "@bananapus/core-v5/src/libraries/JBRulesetMetadataResolver.sol";
+import "@bananapus/permission-ids-v6/src/JBPermissionIds.sol";
+import "@bananapus/core-v6/src/libraries/JBRulesetMetadataResolver.sol";
 
 import {mulDiv} from "@prb/math/src/Common.sol";
 

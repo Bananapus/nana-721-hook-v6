@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
-import "@bananapus/address-registry-v5/src/JBAddressRegistry.sol";
-import "@bananapus/core-v5/src/interfaces/IJBController.sol";
-import "@bananapus/core-v5/src/interfaces/IJBRulesets.sol";
-import "@bananapus/core-v5/src/interfaces/IJBPrices.sol";
+import "@bananapus/address-registry-v6/src/JBAddressRegistry.sol";
+import "@bananapus/core-v6/src/interfaces/IJBController.sol";
+import "@bananapus/core-v6/src/interfaces/IJBRulesets.sol";
+import "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 import "../../src/JB721TiersHookProjectDeployer.sol";
