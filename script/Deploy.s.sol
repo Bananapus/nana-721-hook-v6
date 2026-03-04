@@ -11,8 +11,6 @@ import {JB721TiersHookDeployer} from "../src/JB721TiersHookDeployer.sol";
 import {JB721TiersHookProjectDeployer} from "../src/JB721TiersHookProjectDeployer.sol";
 import {JB721TiersHookStore} from "../src/JB721TiersHookStore.sol";
 import {JB721TiersHook} from "../src/JB721TiersHook.sol";
-import {IJBRulesets} from "@bananapus/core-v6/src/interfaces/IJBRulesets.sol";
-
 contract DeployScript is Script, Sphinx {
     /// @notice tracks the deployment of the core contracts for the chain we are deploying to.
     CoreDeployment core;
@@ -23,10 +21,10 @@ contract DeployScript is Script, Sphinx {
     address private TRUSTED_FORWARDER;
 
     /// @notice the salts that are used to deploy the contracts.
-    bytes32 HOOK_SALT = "JB721TiersHookV6_";
-    bytes32 HOOK_DEPLOYER_SALT = "JB721TiersHookDeployerV6_";
-    bytes32 HOOK_STORE_SALT = "JB721TiersHookStoreV6_";
-    bytes32 PROJECT_DEPLOYER_SALT = "JB721TiersHookProjectDeployerV6";
+    bytes32 HOOK_SALT = "JB721TiersHook_";
+    bytes32 HOOK_DEPLOYER_SALT = "JB721TiersHookDeployer_";
+    bytes32 HOOK_STORE_SALT = "JB721TiersHookStore_";
+    bytes32 PROJECT_DEPLOYER_SALT = "JB721TiersHookProjectDeployer_";
 
     function configureSphinx() public override {
         sphinxConfig.projectName = "nana-721-hook-v6";
@@ -76,14 +74,14 @@ contract DeployScript is Script, Sphinx {
                 HOOK_SALT,
                 type(JB721TiersHook).creationCode,
                 abi.encode(
-                    core.directory, core.permissions, IJBRulesets(address(core.rulesets)), store, TRUSTED_FORWARDER
+                    core.directory, core.permissions, core.rulesets, store, TRUSTED_FORWARDER
                 )
             );
 
             // Deploy it if it has not been deployed yet.
             hook = !_hookIsDeployed
                 ? new JB721TiersHook{salt: HOOK_SALT}(
-                    core.directory, core.permissions, IJBRulesets(address(core.rulesets)), store, TRUSTED_FORWARDER
+                    core.directory, core.permissions, core.rulesets, store, TRUSTED_FORWARDER
                 )
                 : JB721TiersHook(_hook);
         }
