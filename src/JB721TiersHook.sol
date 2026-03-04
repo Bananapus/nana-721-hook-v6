@@ -45,6 +45,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     error JB721TiersHook_Overspending(uint256 leftoverAmount);
     error JB721TiersHook_MintReserveNftsPaused();
     error JB721TiersHook_TierTransfersPaused();
+    error JB721TiersHook_InvalidPricingDecimals(uint256 decimals);
     error JB721TiersHook_CurrencyMismatch(uint256 paymentCurrency, uint256 tierCurrency);
 
     //*********************************************************************//
@@ -188,6 +189,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
         // Initialize the superclass.
         JB721Hook._initialize(projectId, name, symbol);
+
+        // Validate pricing decimals are within a reasonable range.
+        if (tiersConfig.decimals > 18) revert JB721TiersHook_InvalidPricingDecimals(tiersConfig.decimals);
 
         // Pack pricing context from the `tiersConfig`.
         uint256 packed;
