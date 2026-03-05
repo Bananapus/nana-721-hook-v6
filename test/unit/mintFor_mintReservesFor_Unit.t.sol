@@ -107,7 +107,7 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
 
         // Revert when minting the next.
         vm.expectRevert(
-            abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector)
+            abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector, 1)
         );
         vm.prank(owner);
         hook.mintFor(tiersToMint, beneficiary);
@@ -149,7 +149,7 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
 
         // Revert when minting the next.
         vm.expectRevert(
-            abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector)
+            abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector, 1)
         );
         vm.prank(owner);
         hook.mintFor(tiersToMint, beneficiary);
@@ -346,7 +346,7 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
         uint256 totalMinted = 120; // The number of NFTs already minted for each tier (out of `initialSupply`).
         uint256 reservedMinted = 10; // The number of reserve NFTs already minted (out of `totalMinted`).
         uint256 reserveFrequency = 9; // The frequency at which NFTs are reserved.
-            // (For every 9 NFTs minted, 1 is reserved).
+        // (For every 9 NFTs minted, 1 is reserved).
 
         reserveBeneficiary = address(0);
         ForTest_JB721TiersHook hook = _initializeForTestHook(10);
@@ -434,7 +434,7 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
         vm.prank(owner);
 
         // Expect the function call to revert with the specified error message.
-        vm.expectRevert(abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_CantMintManually.selector));
+        vm.expectRevert(abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_CantMintManually.selector, 1));
 
         // Call the `mintFor` function to trigger the revert.
         hook.mintFor(tiersToMint, beneficiary);

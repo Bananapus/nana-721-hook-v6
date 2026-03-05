@@ -8,7 +8,7 @@ import {StdUtils} from "forge-std/StdUtils.sol";
 import {JB721TiersHookStore} from "../../../src/JB721TiersHookStore.sol";
 import {JB721TierConfig} from "../../../src/structs/JB721TierConfig.sol";
 import {JB721TiersHookFlags} from "../../../src/structs/JB721TiersHookFlags.sol";
-import {JBSplit} from "@bananapus/core-v5/src/structs/JBSplit.sol";
+import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 
 /// @notice Handler for JB721TiersHookStore invariant tests.
 /// @dev Acts as the "hook" address itself, so msg.sender (this) == hook in the store.
@@ -36,12 +36,7 @@ contract TierStoreHandler is CommonBase, StdCheats, StdUtils {
     }
 
     /// @notice Add a new tier.
-    function addTier(
-        uint104 price,
-        uint32 initialSupply,
-        uint16 reserveFrequency,
-        uint24 category
-    ) public {
+    function addTier(uint104 price, uint32 initialSupply, uint16 reserveFrequency, uint24 category) public {
         // Bound inputs to valid ranges.
         initialSupply = uint32(bound(initialSupply, 1, 1_000_000));
         price = uint104(bound(price, 1, type(uint104).max));

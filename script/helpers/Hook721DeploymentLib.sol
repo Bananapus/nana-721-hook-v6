@@ -12,9 +12,7 @@ import {IJB721TiersHookStore} from "../../src/interfaces/IJB721TiersHookStore.so
 
 struct Hook721Deployment {
     IJB721TiersHookDeployer hook_deployer;
-    IJB721TiersHookDeployer hook_deployer5_1;
     IJB721TiersHookProjectDeployer project_deployer;
-    IJB721TiersHookProjectDeployer project_deployer5_1;
     IJB721TiersHookStore store;
 }
 
@@ -50,23 +48,15 @@ library Hook721DeploymentLib {
         returns (Hook721Deployment memory deployment)
     {
         deployment.hook_deployer = IJB721TiersHookDeployer(
-            _getDeploymentAddress(path, "nana-721-hook-v5", network_name, "JB721TiersHookDeployer")
-        );
-
-        deployment.hook_deployer5_1 = IJB721TiersHookDeployer(
-            _getDeploymentAddress(path, "nana-721-hook-v5", network_name, "JB721TiersHookDeployer5_1")
+            _getDeploymentAddress(path, "nana-721-hook-v6", network_name, "JB721TiersHookDeployer")
         );
 
         deployment.project_deployer = IJB721TiersHookProjectDeployer(
-            _getDeploymentAddress(path, "nana-721-hook-v5", network_name, "JB721TiersHookProjectDeployer")
-        );
-
-        deployment.project_deployer5_1 = IJB721TiersHookProjectDeployer(
-            _getDeploymentAddress(path, "nana-721-hook-v5", network_name, "JB721TiersHookProjectDeployer5_1")
+            _getDeploymentAddress(path, "nana-721-hook-v6", network_name, "JB721TiersHookProjectDeployer")
         );
 
         deployment.store =
-            IJB721TiersHookStore(_getDeploymentAddress(path, "nana-721-hook-v5", network_name, "JB721TiersHookStore"));
+            IJB721TiersHookStore(_getDeploymentAddress(path, "nana-721-hook-v6", network_name, "JB721TiersHookStore"));
     }
 
     /// @notice Get the address of a contract that was deployed by the Deploy script.

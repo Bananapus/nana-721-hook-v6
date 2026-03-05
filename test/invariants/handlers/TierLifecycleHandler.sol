@@ -7,9 +7,9 @@ import "../../../src/JB721TiersHookStore.sol";
 import "../../../src/structs/JB721TierConfig.sol";
 import "../../../src/structs/JB721Tier.sol";
 import "../../../src/interfaces/IJB721TiersHookStore.sol";
-import "@bananapus/core-v5/src/libraries/JBConstants.sol";
-import "@bananapus/core-v5/src/structs/JBAfterPayRecordedContext.sol";
-import "@bananapus/core-v5/src/structs/JBTokenAmount.sol";
+import "@bananapus/core-v6/src/libraries/JBConstants.sol";
+import "@bananapus/core-v6/src/structs/JBAfterPayRecordedContext.sol";
+import "@bananapus/core-v6/src/structs/JBTokenAmount.sol";
 
 /// @title TierLifecycleHandler
 /// @notice Handler for 721 tier lifecycle invariant testing.
@@ -51,12 +51,7 @@ contract TierLifecycleHandler is Test {
     uint256 public callCount_ownerMint;
     uint256 public callCount_advanceTime;
 
-    constructor(
-        JB721TiersHook _hook,
-        JB721TiersHookStore _store,
-        address _owner,
-        address _mockController
-    ) {
+    constructor(JB721TiersHook _hook, JB721TiersHookStore _store, address _owner, address _mockController) {
         hook = _hook;
         store = _store;
         hookAddress = address(_hook);

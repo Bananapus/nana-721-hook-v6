@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
-import {JBPermissioned} from "@bananapus/core-v5/src/abstract/JBPermissioned.sol";
-import {IJBController} from "@bananapus/core-v5/src/interfaces/IJBController.sol";
-import {IJBDirectory} from "@bananapus/core-v5/src/interfaces/IJBDirectory.sol";
-import {IJBPermissions} from "@bananapus/core-v5/src/interfaces/IJBPermissions.sol";
-import {IJBProjects} from "@bananapus/core-v5/src/interfaces/IJBProjects.sol";
-import {JBRulesetConfig} from "@bananapus/core-v5/src/structs/JBRulesetConfig.sol";
-import {JBRulesetMetadata} from "@bananapus/core-v5/src/structs/JBRulesetMetadata.sol";
-import {JBOwnable} from "@bananapus/ownable-v5/src/JBOwnable.sol";
-import {JBPermissionIds} from "@bananapus/permission-ids-v5/src/JBPermissionIds.sol";
+import {JBPermissioned} from "@bananapus/core-v6/src/abstract/JBPermissioned.sol";
+import {IJBController} from "@bananapus/core-v6/src/interfaces/IJBController.sol";
+import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
+import {IJBPermissions} from "@bananapus/core-v6/src/interfaces/IJBPermissions.sol";
+import {IJBProjects} from "@bananapus/core-v6/src/interfaces/IJBProjects.sol";
+import {JBRulesetConfig} from "@bananapus/core-v6/src/structs/JBRulesetConfig.sol";
+import {JBRulesetMetadata} from "@bananapus/core-v6/src/structs/JBRulesetMetadata.sol";
+import {JBOwnable} from "@bananapus/ownable-v6/src/JBOwnable.sol";
+import {JBPermissionIds} from "@bananapus/permission-ids-v6/src/JBPermissionIds.sol";
 import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 
@@ -94,10 +94,7 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
 
         // Launch the project.
         _launchProjectFor({
-            owner: owner,
-            launchProjectConfig: launchProjectConfig,
-            dataHook: hook,
-            controller: controller
+            owner: owner, launchProjectConfig: launchProjectConfig, dataHook: hook, controller: controller
         });
 
         // Transfer the hook's ownership to the project.
@@ -131,15 +128,11 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
 
         // Enforce permissions.
         _requirePermissionFrom({
-            account: PROJECTS.ownerOf(projectId),
-            projectId: projectId,
-            permissionId: JBPermissionIds.QUEUE_RULESETS
+            account: PROJECTS.ownerOf(projectId), projectId: projectId, permissionId: JBPermissionIds.QUEUE_RULESETS
         });
 
         _requirePermissionFrom({
-            account: PROJECTS.ownerOf(projectId),
-            projectId: projectId,
-            permissionId: JBPermissionIds.SET_TERMINALS
+            account: PROJECTS.ownerOf(projectId), projectId: projectId, permissionId: JBPermissionIds.SET_TERMINALS
         });
 
         // Deploy the hook.
@@ -154,10 +147,7 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
 
         // Launch the rulesets.
         rulesetId = _launchRulesetsFor({
-            projectId: projectId,
-            launchRulesetsConfig: launchRulesetsConfig,
-            dataHook: hook,
-            controller: controller
+            projectId: projectId, launchRulesetsConfig: launchRulesetsConfig, dataHook: hook, controller: controller
         });
     }
 
@@ -201,10 +191,7 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
 
         // Queue the rulesets.
         rulesetId = _queueRulesetsOf({
-            projectId: projectId,
-            queueRulesetsConfig: queueRulesetsConfig,
-            dataHook: hook,
-            controller: controller
+            projectId: projectId, queueRulesetsConfig: queueRulesetsConfig, dataHook: hook, controller: controller
         });
     }
 
@@ -403,9 +390,7 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
 
         // Queue the rulesets.
         return controller.queueRulesetsOf({
-            projectId: projectId,
-            rulesetConfigurations: rulesetConfigurations,
-            memo: queueRulesetsConfig.memo
+            projectId: projectId, rulesetConfigurations: rulesetConfigurations, memo: queueRulesetsConfig.memo
         });
     }
 

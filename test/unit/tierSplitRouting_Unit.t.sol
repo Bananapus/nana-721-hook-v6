@@ -3,10 +3,10 @@ pragma solidity 0.8.23;
 
 import "../utils/UnitTestSetup.sol";
 import {IJB721TiersHookStore} from "../../src/interfaces/IJB721TiersHookStore.sol";
-import {JBSplit} from "@bananapus/core-v5/src/structs/JBSplit.sol";
-import {IJBSplitHook} from "@bananapus/core-v5/src/interfaces/IJBSplitHook.sol";
-import {IJBSplits} from "@bananapus/core-v5/src/interfaces/IJBSplits.sol";
-import {IJBController} from "@bananapus/core-v5/src/interfaces/IJBController.sol";
+import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
+import {IJBSplitHook} from "@bananapus/core-v6/src/interfaces/IJBSplitHook.sol";
+import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
+import {IJBController} from "@bananapus/core-v6/src/interfaces/IJBController.sol";
 
 contract Test_TierSplitRouting is UnitTestSetup {
     using stdStorage for StdStorage;

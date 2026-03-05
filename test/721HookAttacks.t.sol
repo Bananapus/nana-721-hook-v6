@@ -119,11 +119,7 @@ contract NFTHookAttacks is UnitTestSetup {
         JB721TiersHook targetHook = _initHookDefaultTiers(1);
 
         // Owner sets discount to 100%.
-        vm.mockCall(
-            mockJBPermissions,
-            abi.encodeWithSelector(IJBPermissions.hasPermission.selector),
-            abi.encode(true)
-        );
+        vm.mockCall(mockJBPermissions, abi.encodeWithSelector(IJBPermissions.hasPermission.selector), abi.encode(true));
 
         vm.prank(owner);
         targetHook.setDiscountPercentOf(1, 100);
@@ -143,11 +139,7 @@ contract NFTHookAttacks is UnitTestSetup {
 
         JB721TiersHook targetHook = _initHookDefaultTiers(1);
 
-        vm.mockCall(
-            mockJBPermissions,
-            abi.encodeWithSelector(IJBPermissions.hasPermission.selector),
-            abi.encode(true)
-        );
+        vm.mockCall(mockJBPermissions, abi.encodeWithSelector(IJBPermissions.hasPermission.selector), abi.encode(true));
 
         // Try to increase discount from 10 to 50 — should revert.
         vm.prank(owner);
@@ -178,7 +170,9 @@ contract NFTHookAttacks is UnitTestSetup {
 
         // Mint 5 paid NFTs from tier 1 (price=10 each, so value=50).
         uint16[] memory tierIds = new uint16[](5);
-        for (uint256 i; i < 5; i++) tierIds[i] = 1;
+        for (uint256 i; i < 5; i++) {
+            tierIds[i] = 1;
+        }
 
         JBAfterPayRecordedContext memory ctx = _buildPayContext(address(targetHook), 50, tierIds);
 
@@ -241,11 +235,7 @@ contract NFTHookAttacks is UnitTestSetup {
         uint256 weightBefore = hookStore.totalCashOutWeight(address(targetHook));
 
         // Remove tier 1.
-        vm.mockCall(
-            mockJBPermissions,
-            abi.encodeWithSelector(IJBPermissions.hasPermission.selector),
-            abi.encode(true)
-        );
+        vm.mockCall(mockJBPermissions, abi.encodeWithSelector(IJBPermissions.hasPermission.selector), abi.encode(true));
 
         uint256[] memory tierIdsToRemove = new uint256[](1);
         tierIdsToRemove[0] = 1;
@@ -362,11 +352,7 @@ contract NFTHookAttacks is UnitTestSetup {
         JB721TiersHook targetHook = _initHookDefaultTiers(1);
 
         // Mock permissions to return false.
-        vm.mockCall(
-            mockJBPermissions,
-            abi.encodeWithSelector(IJBPermissions.hasPermission.selector),
-            abi.encode(false)
-        );
+        vm.mockCall(mockJBPermissions, abi.encodeWithSelector(IJBPermissions.hasPermission.selector), abi.encode(false));
 
         address attacker = makeAddr("attacker");
 

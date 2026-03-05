@@ -67,9 +67,9 @@ contract TestJBBitmap is Test {
     }
 
     function test_removeTier_acrossWords() public {
-        bitmap.removeTier(0);    // depth 0
-        bitmap.removeTier(256);  // depth 1
-        bitmap.removeTier(512);  // depth 2
+        bitmap.removeTier(0); // depth 0
+        bitmap.removeTier(256); // depth 1
+        bitmap.removeTier(512); // depth 2
 
         assertTrue(bitmap.isTierIdRemoved(0));
         assertTrue(bitmap.isTierIdRemoved(256));

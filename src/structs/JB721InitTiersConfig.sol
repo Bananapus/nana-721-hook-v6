@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IJBPrices} from "@bananapus/core-v5/src/interfaces/IJBPrices.sol";
+import {IJBPrices} from "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
 
 import {JB721TierConfig} from "./JB721TierConfig.sol";
 

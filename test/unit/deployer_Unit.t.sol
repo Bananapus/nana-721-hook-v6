@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
-import "@bananapus/address-registry-v5/src/JBAddressRegistry.sol";
-import "@bananapus/core-v5/src/interfaces/IJBController.sol";
-import "@bananapus/core-v5/src/interfaces/IJBRulesets.sol";
-import "@bananapus/core-v5/src/interfaces/IJBPrices.sol";
+import "@bananapus/address-registry-v6/src/JBAddressRegistry.sol";
+import "@bananapus/core-v6/src/interfaces/IJBController.sol";
+import "@bananapus/core-v6/src/interfaces/IJBRulesets.sol";
+import "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 import "../../src/JB721TiersHookProjectDeployer.sol";
@@ -14,6 +14,49 @@ import "../../src/structs/JBLaunchProjectConfig.sol";
 import "../../src/structs/JB721InitTiersConfig.sol";
 
 import "../utils/UnitTestSetup.sol";
+
+/// @dev A minimal mock for IJBProjects whose `count()` can be bumped by the mock controller.
+contract MockJBProjectsCount {
+    uint256 private _count;
+    address private _owner;
+
+    function setup(uint256 initialCount, address projectOwner) external {
+        _count = initialCount;
+        _owner = projectOwner;
+    }
+
+    function count() external view returns (uint256) {
+        return _count;
+    }
+
+    function setCount(uint256 newCount) external {
+        _count = newCount;
+    }
+
+    function ownerOf(uint256) external view returns (address) {
+        return _owner;
+    }
+}
+
+/// @dev A mock controller whose fallback bumps the projects mock count by 1 (simulating real behaviour)
+/// and returns a truthy value for any function call.
+contract MockLaunchController {
+    MockJBProjectsCount private _projects;
+
+    constructor(MockJBProjectsCount projects) {
+        _projects = projects;
+    }
+
+    fallback() external payable {
+        // Bump projects count by 1 -- simulates a new project being created.
+        _projects.setCount(_projects.count() + 1);
+        // Return `uint256(1)` which is truthy for the deployer's expected return.
+        bytes memory result = abi.encode(uint256(1));
+        assembly {
+            return(add(result, 32), mload(result))
+        }
+    }
+}
 
 contract Test_ProjectDeployer_Unit is UnitTestSetup {
     using stdStorage for StdStorage;
@@ -35,19 +78,23 @@ contract Test_ProjectDeployer_Unit is UnitTestSetup {
         (JBDeploy721TiersHookConfig memory deploy721TiersHookConfig, JBLaunchProjectConfig memory launchProjectConfig) =
             createData();
 
-        // Mock and check.
-        mockAndExpect(
-            mockJBDirectory, abi.encodeWithSelector(IJBDirectory.PROJECTS.selector), abi.encode(mockJBProjects)
-        );
-        mockAndExpect(mockJBProjects, abi.encodeWithSelector(IERC721.ownerOf.selector), abi.encode(owner));
-        mockAndExpect(mockJBProjects, abi.encodeWithSelector(IJBProjects.count.selector), abi.encode(previousProjectId));
-        mockAndExpect(
-            mockJBController, abi.encodeWithSelector(IJBController.launchProjectFor.selector), abi.encode(true)
-        );
+        // Deploy a real MockJBProjectsCount implementation and etch its code onto the existing mockJBProjects address.
+        // This is necessary because the hook's immutable PROJECTS is set to mockJBProjects during the hook
+        // implementation's constructor (in UnitTestSetup.setUp). By etching real contract code there, both the
+        // deployer's DIRECTORY.PROJECTS().count() path and the hook's PROJECTS.count() path hit the same contract.
+        MockJBProjectsCount projectsImpl = new MockJBProjectsCount();
+        vm.etch(mockJBProjects, address(projectsImpl).code);
+        MockJBProjectsCount(mockJBProjects).setup(previousProjectId, owner);
 
-        // Launch the project.
+        // Mock DIRECTORY.PROJECTS() to return mockJBProjects (which now has real code).
+        vm.mockCall(mockJBDirectory, abi.encodeWithSelector(IJBDirectory.PROJECTS.selector), abi.encode(mockJBProjects));
+
+        // Deploy a mock controller that bumps count when launchProjectFor is called.
+        MockLaunchController mockController = new MockLaunchController(MockJBProjectsCount(mockJBProjects));
+
+        // Launch the project using our mock controller that bumps count.
         (uint256 projectId,) = deployer.launchProjectFor(
-            owner, deploy721TiersHookConfig, launchProjectConfig, IJBController(mockJBController), salt
+            owner, deploy721TiersHookConfig, launchProjectConfig, IJBController(address(mockController)), salt
         );
 
         // Check: does the project have the correct project ID (the previous ID incremented by 1)?

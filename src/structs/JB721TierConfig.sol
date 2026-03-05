@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {JBSplit} from "@bananapus/core-v5/src/structs/JBSplit.sol";
+import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 
 /// @notice Config for a single NFT tier within a `JB721TiersHook`.
 /// @custom:member price The price to buy an NFT in this tier, in terms of the currency in its `JBInitTiersConfig`.

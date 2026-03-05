@@ -26,6 +26,8 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
     )
         public
     {
+        // Decimals must be <= 18 per validation in initialize.
+        vm.assume(decimals <= 18);
         JBDeploy721TiersHookConfig memory hookConfig = JBDeploy721TiersHookConfig(
             name,
             symbol,
@@ -376,7 +378,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                     iterator++;
                 }
                 theoreticalWeight += (i + 1) * (i + 1) * 10; // Add the price of the NFTs to the weight.
-                    // (10 is the price multiplier).
+                // (10 is the price multiplier).
             }
         }
 
@@ -521,7 +523,9 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         tiers[errorIndex].initialSupply = 0;
 
         // Expect the error.
-        vm.expectRevert(abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_ZeroInitialSupply.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_ZeroInitialSupply.selector, errorIndex + 1)
+        );
         vm.etch(hook_i, address(hook).code);
         JB721TiersHook hook = JB721TiersHook(hook_i);
         hook.initialize(
