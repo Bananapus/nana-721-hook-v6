@@ -246,13 +246,13 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
         if (totalSupplyAfterPay < type(uint208).max) {
             if (tierStartPrice > type(uint104).max) {
                 uint256 expectedDiscount =
-                    mulDiv(uint104(tierStartPrice), discountPercent, JB721Constants.MAX_DISCOUNT_PERCENT);
+                    mulDiv(uint104(tierStartPrice), discountPercent, JB721Constants.DISCOUNT_DENOMINATOR);
                 uint256 paidForNft = uint104(tierStartPrice) - expectedDiscount;
 
                 // Check: should be credited tierStartPrice minus what you paid for the NFT plus the discount
                 assertEq(IJB721TiersHook(dataHook).payCreditsOf(beneficiary), tierStartPrice - paidForNft);
             } else {
-                uint256 expectedCredits = mulDiv(tierStartPrice, discountPercent, JB721Constants.MAX_DISCOUNT_PERCENT);
+                uint256 expectedCredits = mulDiv(tierStartPrice, discountPercent, JB721Constants.DISCOUNT_DENOMINATOR);
                 assertEq(IJB721TiersHook(dataHook).payCreditsOf(beneficiary), expectedCredits);
             }
 

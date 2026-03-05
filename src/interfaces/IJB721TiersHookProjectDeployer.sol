@@ -12,9 +12,22 @@ import {JBLaunchRulesetsConfig} from "../structs/JBLaunchRulesetsConfig.sol";
 import {JBQueueRulesetsConfig} from "../structs/JBQueueRulesetsConfig.sol";
 
 interface IJB721TiersHookProjectDeployer {
+    /// @notice The directory of terminals and controllers for projects.
+    /// @return The directory contract.
     function DIRECTORY() external view returns (IJBDirectory);
+
+    /// @notice The 721 tiers hook deployer.
+    /// @return The hook deployer contract.
     function HOOK_DEPLOYER() external view returns (IJB721TiersHookDeployer);
 
+    /// @notice Launches a new project with a 721 tiers hook attached.
+    /// @param owner The address to set as the owner of the project.
+    /// @param deployTiersHookConfig Configuration which dictates the behavior of the 721 tiers hook.
+    /// @param launchProjectConfig Configuration which dictates the behavior of the project.
+    /// @param controller The controller that the project's rulesets will be queued with.
+    /// @param salt A salt to use for the deterministic deployment.
+    /// @return projectId The ID of the newly launched project.
+    /// @return hook The 721 tiers hook that was deployed for the project.
     function launchProjectFor(
         address owner,
         JBDeploy721TiersHookConfig memory deployTiersHookConfig,
@@ -25,6 +38,14 @@ interface IJB721TiersHookProjectDeployer {
         external
         returns (uint256 projectId, IJB721TiersHook hook);
 
+    /// @notice Launches rulesets for a project with an attached 721 tiers hook.
+    /// @param projectId The ID of the project that rulesets are being launched for.
+    /// @param deployTiersHookConfig Configuration which dictates the behavior of the 721 tiers hook.
+    /// @param launchRulesetsConfig Configuration which dictates the project's new rulesets.
+    /// @param controller The controller that the project's rulesets will be queued with.
+    /// @param salt A salt to use for the deterministic deployment.
+    /// @return rulesetId The ID of the successfully created ruleset.
+    /// @return hook The 721 tiers hook that was deployed for the project.
     function launchRulesetsFor(
         uint256 projectId,
         JBDeploy721TiersHookConfig memory deployTiersHookConfig,
@@ -35,6 +56,14 @@ interface IJB721TiersHookProjectDeployer {
         external
         returns (uint256 rulesetId, IJB721TiersHook hook);
 
+    /// @notice Queues rulesets for a project with an attached 721 tiers hook.
+    /// @param projectId The ID of the project that rulesets are being queued for.
+    /// @param deployTiersHookConfig Configuration which dictates the behavior of the 721 tiers hook.
+    /// @param queueRulesetsConfig Configuration which dictates the project's newly queued rulesets.
+    /// @param controller The controller that the project's rulesets will be queued with.
+    /// @param salt A salt to use for the deterministic deployment.
+    /// @return rulesetId The ID of the successfully created ruleset.
+    /// @return hook The 721 tiers hook that was deployed for the project.
     function queueRulesetsOf(
         uint256 projectId,
         JBDeploy721TiersHookConfig memory deployTiersHookConfig,

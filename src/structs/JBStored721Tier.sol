@@ -10,11 +10,8 @@ pragma solidity ^0.8.0;
 /// @custom:member reserveFrequency The frequency at which an extra NFT is minted for the `reserveBeneficiary` from this
 /// tier. With a `reserveFrequency` of 5, an extra NFT will be minted for the `reserveBeneficiary` for every 5 NFTs
 /// purchased.
-/// @custom:member allowOwnerMint A boolean indicating whether the contract's owner can mint NFTs from this tier
-/// on-demand.
-/// @custom:member transfersPausable A boolean indicating whether transfers for NFTs in tier can be paused.
-/// @custom:member useVotingUnits A boolean indicating whether the `votingUnits` should be used to calculate voting
-/// power. If `useVotingUnits` is false, voting power is based on the tier's price.
+/// @custom:member packedBools A packed uint8 containing boolean flags: bit 0 = allowOwnerMint, bit 1 =
+/// transfersPausable, bit 2 = useVotingUnits, bit 3 = cannotBeRemoved, bit 4 = cannotIncreaseDiscountPercent.
 struct JBStored721Tier {
     uint104 price;
     uint32 remainingSupply;

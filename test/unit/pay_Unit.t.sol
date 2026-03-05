@@ -773,7 +773,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
         vm.prank(owner);
         hook.adjustTiers(new JB721TierConfig[](0), toRemove);
 
-        vm.expectRevert(abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_UnrecognizedTier.selector));
+        vm.expectRevert(JB721TiersHookStore.JB721TiersHookStore_TierRemoved.selector);
 
         vm.prank(mockTerminalAddress);
         hook.afterPayRecordedWith(
@@ -904,7 +904,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
             // If there is no remaining supply, this should revert.
             if (supplyLeft == 0) {
                 vm.expectRevert(
-                    abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector)
+                    JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector
                 );
             }
 
