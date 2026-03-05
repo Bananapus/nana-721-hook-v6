@@ -4,10 +4,12 @@ on:
       branches:
         - main
         - master
+        - version/6
     push:
       branches:
         - main
         - master
+        - version/6
 jobs:
   analyze:
     runs-on: ubuntu-latest

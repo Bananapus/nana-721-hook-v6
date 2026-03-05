@@ -932,7 +932,11 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 resolvedUri: ""
             });
         }
-        vm.expectRevert(JB721TiersHookStore.JB721TiersHookStore_VotingUnitsNotAllowed.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721TiersHookStore.JB721TiersHookStore_VotingUnitsNotAllowed.selector, initialNumberOfTiers + 1
+            )
+        );
         vm.prank(owner);
         hook.adjustTiers(tierConfigsToAdd, new uint256[](0));
     }
@@ -1043,7 +1047,11 @@ contract Test_adjustTier_Unit is UnitTestSetup {
         }
 
         // Expect the `adjustTiers` call to revert because of the `noNewTiersWithReserves` flag.
-        vm.expectRevert(JB721TiersHookStore.JB721TiersHookStore_ReserveFrequencyNotAllowed.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721TiersHookStore.JB721TiersHookStore_ReserveFrequencyNotAllowed.selector, initialNumberOfTiers + 1
+            )
+        );
         vm.prank(owner);
         hook.adjustTiers(tierConfigsToAdd, new uint256[](0));
     }
@@ -1113,7 +1121,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
         hook.transferOwnership(owner);
 
         // Expect the `adjustTiers` call to revert because cannot remove tier.
-        vm.expectRevert(JB721TiersHookStore.JB721TiersHookStore_CantRemoveTier.selector);
+        vm.expectRevert(abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_CantRemoveTier.selector, 1));
         vm.prank(owner);
         hook.adjustTiers(new JB721TierConfig[](0), tierIdsToRemove);
     }
@@ -1219,7 +1227,11 @@ contract Test_adjustTier_Unit is UnitTestSetup {
         }
 
         // Expect the `adjustTiers` call to revert because of the `initialSupply` of 0.
-        vm.expectRevert(JB721TiersHookStore.JB721TiersHookStore_ZeroInitialSupply.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721TiersHookStore.JB721TiersHookStore_ZeroInitialSupply.selector, initialNumberOfTiers + 1
+            )
+        );
         vm.prank(owner);
         hook.adjustTiers(tierConfigsToAdd, new uint256[](0));
     }
@@ -1337,7 +1349,11 @@ contract Test_adjustTier_Unit is UnitTestSetup {
         }
 
         // Expect the `adjustTiers` call to revert because of the `noNewTiersWithVotes` flag.
-        vm.expectRevert(JB721TiersHookStore.JB721TiersHookStore_VotingUnitsNotAllowed.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721TiersHookStore.JB721TiersHookStore_VotingUnitsNotAllowed.selector, initialNumberOfTiers + 1
+            )
+        );
         vm.prank(owner);
         hook.adjustTiers(tierConfigsToAdd, new uint256[](0));
     }
@@ -1417,7 +1433,12 @@ contract Test_adjustTier_Unit is UnitTestSetup {
         tierConfigsToAdd[numberTiersToAdd - 1].votingUnits = uint16(1);
 
         // Expect the `adjustTiers` call to revert because of the `noNewTiersWithVotes` flag.
-        vm.expectRevert(JB721TiersHookStore.JB721TiersHookStore_VotingUnitsNotAllowed.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721TiersHookStore.JB721TiersHookStore_VotingUnitsNotAllowed.selector,
+                initialNumberOfTiers + numberTiersToAdd
+            )
+        );
         vm.prank(owner);
         hook.adjustTiers(tierConfigsToAdd, new uint256[](0));
     }

@@ -7,7 +7,7 @@ import "@bananapus/core-v6/src/JBMultiTerminal.sol";
 import "@bananapus/core-v6/src/JBFundAccessLimits.sol";
 import "@bananapus/core-v6/src/JBFeelessAddresses.sol";
 import "@bananapus/core-v6/src/JBTerminalStore.sol";
-import "@bananapus/core-v6/src/JBRulesets5_1.sol";
+import "@bananapus/core-v6/src/JBRulesets.sol";
 import "@bananapus/core-v6/src/JBPermissions.sol";
 import "@bananapus/core-v6/src/JBPrices.sol";
 import {JBProjects} from "@bananapus/core-v6/src/JBProjects.sol";
@@ -57,7 +57,7 @@ contract TestBaseWorkflow is Test {
     JBProjects internal jbProjects;
     JBPrices internal jbPrices;
     JBDirectory internal jbDirectory;
-    JBRulesets5_1 internal jbRulesets;
+    JBRulesets internal jbRulesets;
     JBTokens internal jbTokens;
     JBFundAccessLimits internal jbFundAccessLimits;
     JBFeelessAddresses internal jbFeelessAddresses;
@@ -89,8 +89,8 @@ contract TestBaseWorkflow is Test {
         jbPrices = new JBPrices(jbDirectory, jbPermissions, jbProjects, projectOwner, address(0));
         vm.label(address(jbPrices), "JBPrices");
 
-        jbRulesets = new JBRulesets5_1(jbDirectory);
-        vm.label(address(jbRulesets), "JBRulesets5_1");
+        jbRulesets = new JBRulesets(jbDirectory);
+        vm.label(address(jbRulesets), "JBRulesets");
 
         jbFundAccessLimits = new JBFundAccessLimits(jbDirectory);
         vm.label(address(jbFundAccessLimits), "JBFundAccessLimits");
