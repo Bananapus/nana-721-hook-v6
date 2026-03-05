@@ -175,7 +175,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @param tierId The ID of the tier to get the number of pending reserves for.
     /// @return The number of pending reserved NFTs.
     function numberOfPendingReservesFor(address hook, uint256 tierId) external view override returns (uint256) {
-        return _numberOfPendingReservesFor(hook, tierId, _storedTierOf[hook][tierId]);
+        return _numberOfPendingReservesFor({hook: hook, tierId: tierId, storedTier: _storedTierOf[hook][tierId]});
     }
 
     /// @notice Get the tier of the 721 with the provided token ID in the provided 721 contract.
@@ -196,7 +196,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     {
         // Get a reference to the tier's ID.
         uint256 tierId = tierIdOfToken(tokenId);
-        return _getTierFrom(hook, tierId, _storedTierOf[hook][tierId], includeResolvedUri);
+        return _getTierFrom({hook: hook, tierId: tierId, storedTier: _storedTierOf[hook][tierId], includeResolvedUri: includeResolvedUri});
     }
 
     /// @notice Returns the number of voting units an addresses has within the specified tier of the specified 721
@@ -282,11 +282,11 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             // Get a reference to the ID of the tier being iterated upon, starting with the first tier ID if no starting
             // ID was specified.
             uint256 currentSortedTierId =
-                startingId != 0 ? startingId : _firstSortedTierIdOf(hook, categories.length == 0 ? 0 : categories[i]);
+                startingId != 0 ? startingId : _firstSortedTierIdOf({hook: hook, category: categories.length == 0 ? 0 : categories[i]});
 
             // Add the tiers from the category being iterated upon.
             while (currentSortedTierId != 0 && numberOfIncludedTiers < size) {
-                if (!_isTierRemovedWithRefresh(hook, currentSortedTierId, bitmapWord)) {
+                if (!_isTierRemovedWithRefresh({hook: hook, tierId: currentSortedTierId, bitmapWord: bitmapWord})) {
                     storedTier = _storedTierOf[hook][currentSortedTierId];
 
                     // If categories were provided and the current tier's category is greater than category being added,
@@ -298,11 +298,11 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                     else if (categories.length == 0 || storedTier.category == categories[i]) {
                         // Add the tier to the array being returned.
                         tiers[numberOfIncludedTiers++] =
-                            _getTierFrom(hook, currentSortedTierId, storedTier, includeResolvedUri);
+                            _getTierFrom({hook: hook, tierId: currentSortedTierId, storedTier: storedTier, includeResolvedUri: includeResolvedUri});
                     }
                 }
                 // Set the next sorted tier ID.
-                currentSortedTierId = _nextSortedTierIdOf(hook, currentSortedTierId, lastTierId);
+                currentSortedTierId = _nextSortedTierIdOf({hook: hook, id: currentSortedTierId, max: lastTierId});
             }
 
             unchecked {
@@ -385,7 +385,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         override
         returns (JB721Tier memory)
     {
-        return _getTierFrom(hook, id, _storedTierOf[hook][id], includeResolvedUri);
+        return _getTierFrom({hook: hook, tierId: id, storedTier: _storedTierOf[hook][id], includeResolvedUri: includeResolvedUri});
     }
 
     /// @notice Get the number of NFTs that the specified address has from the specified 721 contract (across all
@@ -467,7 +467,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             weight += storedTier.price
                 * (
                     (storedTier.initialSupply - (storedTier.remainingSupply + numberOfBurnedFor[hook][i]))
-                        + _numberOfPendingReservesFor(hook, i, storedTier)
+                        + _numberOfPendingReservesFor({hook: hook, tierId: i, storedTier: storedTier})
                 );
         }
     }
@@ -514,7 +514,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         returns (JB721Tier memory)
     {
         // Get a reference to the reserve beneficiary.
-        address reserveBeneficiary = reserveBeneficiaryOf(hook, tierId);
+        address reserveBeneficiary = reserveBeneficiaryOf({hook: hook, tierId: tierId});
 
         (
             bool allowOwnerMint,
@@ -543,7 +543,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             cannotIncreaseDiscountPercent: cannotIncreaseDiscountPercent,
             resolvedUri: !includeResolvedUri || tokenUriResolverOf[hook] == IJB721TokenUriResolver(address(0))
                 ? ""
-                : tokenUriResolverOf[hook].tokenUriOf(hook, _generateTokenId(tierId, 0))
+                : tokenUriResolverOf[hook].tokenUriOf({nft: hook, tokenId: _generateTokenId({tierId: tierId, tokenNumber: 0})})
         });
     }
 
@@ -624,7 +624,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         // No pending reserves if no mints, no reserve frequency, or no reserve beneficiary.
         if (
             storedTier.reserveFrequency == 0 || initialSupply == storedTier.remainingSupply
-                || reserveBeneficiaryOf(hook, tierId) == address(0)
+                || reserveBeneficiaryOf({hook: hook, tierId: tierId}) == address(0)
         ) return 0;
 
         // The number of reserve NFTs which have already been minted from the tier.
@@ -719,7 +719,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         uint256 lastSortedTierId = _lastSortedTierIdOf(hook);
 
         // Get a reference to the tier ID being iterated on, starting with the starting tier ID.
-        uint256 currentSortedTierId = _firstSortedTierIdOf(hook, 0);
+        uint256 currentSortedTierId = _firstSortedTierIdOf({hook: hook, category: 0});
 
         // Keep track of the previous non-removed tier ID.
         uint256 previousSortedTierId;
@@ -730,7 +730,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         // Make the sorted array.
         while (currentSortedTierId != 0) {
             // If the current tier ID being iterated on isn't an increment of the previous one,
-            if (!_isTierRemovedWithRefresh(hook, currentSortedTierId, bitmapWord)) {
+            if (!_isTierRemovedWithRefresh({hook: hook, tierId: currentSortedTierId, bitmapWord: bitmapWord})) {
                 // Update its `_tierIdAfter` if needed.
                 if (currentSortedTierId != previousSortedTierId + 1) {
                     if (_tierIdAfter[hook][previousSortedTierId] != currentSortedTierId) {
@@ -747,7 +747,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                 previousSortedTierId = currentSortedTierId;
             }
             // Iterate by updating the current sorted tier ID to the next sorted tier ID.
-            currentSortedTierId = _nextSortedTierIdOf(hook, currentSortedTierId, lastSortedTierId);
+            currentSortedTierId = _nextSortedTierIdOf({hook: hook, id: currentSortedTierId, max: lastSortedTierId});
         }
 
         emit CleanTiers({hook: hook, caller: msg.sender});
@@ -777,7 +777,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
         // Keep a reference to the first sorted tier ID, to use when sorting new tiers if needed.
         // There's no need for sorting if there are no current tiers.
-        uint256 startSortedTierId = currentMaxTierIdOf == 0 ? 0 : _firstSortedTierIdOf(msg.sender, 0);
+        uint256 startSortedTierId = currentMaxTierIdOf == 0 ? 0 : _firstSortedTierIdOf({hook: msg.sender, category: 0});
 
         // Keep track of the previous tier's ID while iterating.
         uint256 previousTierId;
@@ -853,13 +853,13 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                 reserveFrequency: uint16(tierToAdd.reserveFrequency),
                 category: uint24(tierToAdd.category),
                 discountPercent: uint8(tierToAdd.discountPercent),
-                packedBools: _packBools(
-                    tierToAdd.allowOwnerMint,
-                    tierToAdd.transfersPausable,
-                    tierToAdd.useVotingUnits,
-                    tierToAdd.cannotBeRemoved,
-                    tierToAdd.cannotIncreaseDiscountPercent
-                )
+                packedBools: _packBools({
+                    allowOwnerMint: tierToAdd.allowOwnerMint,
+                    transfersPausable: tierToAdd.transfersPausable,
+                    useVotingUnits: tierToAdd.useVotingUnits,
+                    cannotBeRemoved: tierToAdd.cannotBeRemoved,
+                    cannotIncreaseDiscountPercent: tierToAdd.cannotIncreaseDiscountPercent
+                })
             });
 
             // If this is the first tier in a new category, store it as the first tier in that category.
@@ -895,7 +895,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                 // Make sure the tier is sorted correctly.
                 while (currentSortedTierId != 0) {
                     // Set the next tier ID.
-                    nextTierId = _nextSortedTierIdOf(msg.sender, currentSortedTierId, currentLastSortedTierId);
+                    nextTierId = _nextSortedTierIdOf({hook: msg.sender, id: currentSortedTierId, max: currentLastSortedTierId});
 
                     // If the category is less than or equal to the sorted tier being iterated on,
                     // AND the tier being iterated on isn't among those being added, store the order.
@@ -1025,7 +1025,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             uint256 tierId = tierIds[i];
 
             // Make sure the tier hasn't been removed.
-            if (_isTierRemovedWithRefresh(msg.sender, tierId, bitmapWord)) {
+            if (_isTierRemovedWithRefresh({hook: msg.sender, tierId: tierId, bitmapWord: bitmapWord})) {
                 revert JB721TiersHookStore_TierRemoved(tierId);
             }
 
@@ -1059,12 +1059,12 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             // sees the post-mint state (this non-reserve mint may increase pending reserves).
             unchecked {
                 // Keep a reference to its token ID.
-                tokenIds[i] = _generateTokenId(tierId, storedTier.initialSupply - --storedTier.remainingSupply);
+                tokenIds[i] = _generateTokenId({tierId: tierId, tokenNumber: storedTier.initialSupply - --storedTier.remainingSupply});
                 leftoverAmount = leftoverAmount - price;
             }
 
             // Make sure there are still enough NFTs remaining to satisfy pending reserves.
-            if (storedTier.remainingSupply < _numberOfPendingReservesFor(msg.sender, tierId, storedTier)) {
+            if (storedTier.remainingSupply < _numberOfPendingReservesFor({hook: msg.sender, tierId: tierId, storedTier: storedTier})) {
                 revert JB721TiersHookStore_InsufficientSupplyRemaining(tierId);
             }
         }
@@ -1087,7 +1087,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
         // Get a reference to the number of pending reserve NFTs for the tier.
         // "Pending" means that the NFTs have been reserved, but have not been minted yet.
-        uint256 numberOfPendingReserves = _numberOfPendingReservesFor(msg.sender, tierId, storedTier);
+        uint256 numberOfPendingReserves = _numberOfPendingReservesFor({hook: msg.sender, tierId: tierId, storedTier: storedTier});
 
         // Can't mint more than the number of pending reserves.
         if (count > numberOfPendingReserves) {
@@ -1102,7 +1102,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
         for (uint256 i; i < count; i++) {
             // Generate the NFTs.
-            tokenIds[i] = _generateTokenId(tierId, storedTier.initialSupply - --storedTier.remainingSupply);
+            tokenIds[i] = _generateTokenId({tierId: tierId, tokenNumber: storedTier.initialSupply - --storedTier.remainingSupply});
         }
     }
 
