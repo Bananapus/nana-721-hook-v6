@@ -65,8 +65,8 @@ contract M6_TierSupplyCheck is UnitTestSetup {
         for (uint256 i; i < count; i++) {
             tierIds[i] = 1;
         }
-        JBAfterPayRecordedContext memory ctx =
-            _buildPayContext(address(targetHook), count * 10, tierIds); // price=10 per NFT
+        JBAfterPayRecordedContext memory ctx = _buildPayContext(address(targetHook), count * 10, tierIds); // price=10
+        // per NFT
         vm.prank(mockTerminalAddress);
         targetHook.afterPayRecordedWith(ctx);
     }

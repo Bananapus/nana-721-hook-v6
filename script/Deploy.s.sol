@@ -11,6 +11,7 @@ import {JB721TiersHookDeployer} from "../src/JB721TiersHookDeployer.sol";
 import {JB721TiersHookProjectDeployer} from "../src/JB721TiersHookProjectDeployer.sol";
 import {JB721TiersHookStore} from "../src/JB721TiersHookStore.sol";
 import {JB721TiersHook} from "../src/JB721TiersHook.sol";
+
 contract DeployScript is Script, Sphinx {
     /// @notice tracks the deployment of the core contracts for the chain we are deploying to.
     CoreDeployment core;
@@ -73,9 +74,7 @@ contract DeployScript is Script, Sphinx {
             (address _hook, bool _hookIsDeployed) = _isDeployed(
                 HOOK_SALT,
                 type(JB721TiersHook).creationCode,
-                abi.encode(
-                    core.directory, core.permissions, core.rulesets, store, TRUSTED_FORWARDER
-                )
+                abi.encode(core.directory, core.permissions, core.rulesets, store, TRUSTED_FORWARDER)
             );
 
             // Deploy it if it has not been deployed yet.

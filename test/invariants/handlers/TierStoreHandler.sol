@@ -35,12 +35,7 @@ contract TierStoreHandler is CommonBase, StdCheats, StdUtils {
     }
 
     /// @notice Add a new tier.
-    function addTier(
-        uint104 price,
-        uint32 initialSupply,
-        uint16 reserveFrequency,
-        uint24 category
-    ) public {
+    function addTier(uint104 price, uint32 initialSupply, uint16 reserveFrequency, uint24 category) public {
         // Bound inputs to valid ranges.
         initialSupply = uint32(bound(initialSupply, 1, 1_000_000));
         price = uint104(bound(price, 1, type(uint104).max));

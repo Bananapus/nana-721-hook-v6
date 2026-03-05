@@ -51,8 +51,7 @@ contract TestTieredHookStoreInvariant is Test {
             uint256 burned = store.numberOfBurnedFor(hook, i);
             // remaining + burned <= initial (remaining = initial - minted, but minted >= burned)
             assertTrue(
-                tier.remainingSupply + burned <= tier.initialSupply,
-                "remaining + burned must not exceed initial supply"
+                tier.remainingSupply + burned <= tier.initialSupply, "remaining + burned must not exceed initial supply"
             );
         }
     }
@@ -77,9 +76,6 @@ contract TestTieredHookStoreInvariant is Test {
     function invariant_maxTierIdMonotonic() public {
         address hook = handler.HOOK();
         uint256 currentMax = store.maxTierIdOf(hook);
-        assertTrue(
-            currentMax >= handler.lowestMaxTierIdSeen(),
-            "maxTierIdOf should never decrease"
-        );
+        assertTrue(currentMax >= handler.lowestMaxTierIdSeen(), "maxTierIdOf should never decrease");
     }
 }

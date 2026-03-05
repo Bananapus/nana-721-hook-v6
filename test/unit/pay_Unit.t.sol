@@ -61,7 +61,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                 decimals: 18,
                 currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
             }), // 0,
-                // forwarded to the hook.
+            // forwarded to the hook.
             weight: 10 ** 18,
             newlyIssuedTokenCount: 0,
             beneficiary: beneficiary,
@@ -128,7 +128,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -167,7 +167,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -225,7 +225,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -277,7 +277,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -340,7 +340,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: beneficiary,
@@ -408,7 +408,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: beneficiary,
@@ -461,7 +461,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: beneficiary,
@@ -536,7 +536,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: beneficiary,
@@ -567,7 +567,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: beneficiary,
@@ -655,7 +655,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -727,7 +727,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -793,7 +793,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -859,7 +859,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -903,9 +903,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
 
             // If there is no remaining supply, this should revert.
             if (supplyLeft == 0) {
-                vm.expectRevert(
-                    JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector
-                );
+                vm.expectRevert(JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector);
             }
 
             // Execute the payment.
@@ -969,10 +967,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                 projectId: projectId,
                 rulesetId: 0,
                 amount: JBTokenAmount({
-                    token: address(0),
-                    value: 0,
-                    decimals: 18,
-                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                    token: address(0), value: 0, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }),
                 forwardedAmount: JBTokenAmount({
                     token: JBConstants.NATIVE_TOKEN,
@@ -980,7 +975,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -1016,8 +1011,10 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                 projectId: projectId,
                 rulesetId: 0,
                 amount: JBTokenAmount(token, 0, 18, uint32(uint160(JBConstants.NATIVE_TOKEN))),
-                forwardedAmount: JBTokenAmount(JBConstants.NATIVE_TOKEN, 0, 18, uint32(uint160(JBConstants.NATIVE_TOKEN))), // 0,
-                    // forwarded to the hook.
+                forwardedAmount: JBTokenAmount(
+                    JBConstants.NATIVE_TOKEN, 0, 18, uint32(uint160(JBConstants.NATIVE_TOKEN))
+                ), // 0,
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -1080,7 +1077,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: beneficiary,
@@ -1129,7 +1126,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: beneficiary,
@@ -1184,7 +1181,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: beneficiary,
@@ -1253,7 +1250,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: beneficiary,
@@ -1352,7 +1349,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -1418,7 +1415,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -1487,7 +1484,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: holder,
@@ -1516,16 +1513,10 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                 rulesetId: 1,
                 cashOutCount: 0,
                 reclaimedAmount: JBTokenAmount({
-                    token: address(0),
-                    value: 0,
-                    decimals: 18,
-                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                    token: address(0), value: 0, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }),
                 forwardedAmount: JBTokenAmount({
-                    token: address(0),
-                    value: 0,
-                    decimals: 18,
-                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                    token: address(0), value: 0, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0, forwarded to the hook.
                 cashOutTaxRate: 5000,
                 beneficiary: payable(holder),

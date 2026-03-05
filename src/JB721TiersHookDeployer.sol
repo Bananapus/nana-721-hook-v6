@@ -79,9 +79,7 @@ contract JB721TiersHookDeployer is ERC2771Context, IJB721TiersHookDeployer {
             salt == bytes32(0)
                 ? LibClone.clone(address(HOOK))
                 : LibClone.cloneDeterministic({
-                    value: 0,
-                    implementation: address(HOOK),
-                    salt: keccak256(abi.encode(_msgSender(), salt))
+                    value: 0, implementation: address(HOOK), salt: keccak256(abi.encode(_msgSender(), salt))
                 })
         );
 
