@@ -107,7 +107,9 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
         assertEq(mintable, 3, "Tier 1 should have 3 reserve NFTs mintable.");
 
         // Revert when minting the next.
-        vm.expectRevert(JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector, 1)
+        );
         vm.prank(owner);
         hook.mintFor(tiersToMint, beneficiary);
 
@@ -147,7 +149,9 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
         assertEq(tier.remainingSupply, 0, "Tier 1 should have 0 remaining supply.");
 
         // Revert when minting the next.
-        vm.expectRevert(JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector, 1)
+        );
         vm.prank(owner);
         hook.mintFor(tiersToMint, beneficiary);
     }
@@ -431,7 +435,7 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
         vm.prank(owner);
 
         // Expect the function call to revert with the specified error message.
-        vm.expectRevert(JB721TiersHookStore.JB721TiersHookStore_CantMintManually.selector);
+        vm.expectRevert(abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_CantMintManually.selector, 1));
 
         // Call the `mintFor` function to trigger the revert.
         hook.mintFor(tiersToMint, beneficiary);

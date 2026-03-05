@@ -104,7 +104,9 @@ contract M6_TierSupplyCheck is UnitTestSetup {
         JBAfterPayRecordedContext memory ctx = _buildPayContext(address(targetHook), 10, oneMore);
 
         vm.prank(mockTerminalAddress);
-        vm.expectRevert(JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector, 1)
+        );
         targetHook.afterPayRecordedWith(ctx);
     }
 
@@ -171,7 +173,9 @@ contract M6_TierSupplyCheck is UnitTestSetup {
         JBAfterPayRecordedContext memory ctx = _buildPayContext(address(targetHook), 10, oneMore);
 
         vm.prank(mockTerminalAddress);
-        vm.expectRevert(JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector, 1)
+        );
         targetHook.afterPayRecordedWith(ctx);
 
         // But reserves should still be fully mintable — remaining(4) covers all pending(4).

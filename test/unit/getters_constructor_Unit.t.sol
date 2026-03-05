@@ -519,7 +519,9 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         tiers[errorIndex].initialSupply = 0;
 
         // Expect the error.
-        vm.expectRevert(JB721TiersHookStore.JB721TiersHookStore_ZeroInitialSupply.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_ZeroInitialSupply.selector, errorIndex + 1)
+        );
         vm.etch(hook_i, address(hook).code);
         JB721TiersHook hook = JB721TiersHook(hook_i);
         hook.initialize(
