@@ -7,11 +7,16 @@ import {JBDeploy721TiersHookConfig} from "../structs/JBDeploy721TiersHookConfig.
 interface IJB721TiersHookDeployer {
     event HookDeployed(uint256 indexed projectId, IJB721TiersHook hook, address caller);
 
+    /// @notice Deploys a 721 tiers hook for the specified project.
+    /// @param projectId The ID of the project to deploy the hook for.
+    /// @param deployTiersHookConfig The config to deploy the hook with.
+    /// @param salt A salt to use for the deterministic deployment.
+    /// @return newHook The address of the newly deployed hook.
     function deployHookFor(
         uint256 projectId,
         JBDeploy721TiersHookConfig memory deployTiersHookConfig,
         bytes32 salt
     )
         external
-        returns (IJB721TiersHook hook);
+        returns (IJB721TiersHook newHook);
 }

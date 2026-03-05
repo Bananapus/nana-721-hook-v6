@@ -61,7 +61,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                 decimals: 18,
                 currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
             }), // 0,
-                // forwarded to the hook.
+            // forwarded to the hook.
             weight: 10 ** 18,
             newlyIssuedTokenCount: 0,
             beneficiary: beneficiary,
@@ -128,7 +128,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -167,7 +167,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -225,7 +225,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -277,7 +277,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -340,7 +340,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: beneficiary,
@@ -408,7 +408,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: beneficiary,
@@ -461,7 +461,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: beneficiary,
@@ -536,7 +536,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: beneficiary,
@@ -567,7 +567,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: beneficiary,
@@ -655,7 +655,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -727,7 +727,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -773,7 +773,9 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
         vm.prank(owner);
         hook.adjustTiers(new JB721TierConfig[](0), toRemove);
 
-        vm.expectRevert(abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_UnrecognizedTier.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_UnrecognizedTier.selector, invalidTier)
+        );
 
         vm.prank(mockTerminalAddress);
         hook.afterPayRecordedWith(
@@ -793,7 +795,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -859,7 +861,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -904,7 +906,9 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
             // If there is no remaining supply, this should revert.
             if (supplyLeft == 0) {
                 vm.expectRevert(
-                    abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector)
+                    abi.encodeWithSelector(
+                        JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector, 1
+                    )
                 );
             }
 
@@ -969,10 +973,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                 projectId: projectId,
                 rulesetId: 0,
                 amount: JBTokenAmount({
-                    token: address(0),
-                    value: 0,
-                    decimals: 18,
-                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                    token: address(0), value: 0, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }),
                 forwardedAmount: JBTokenAmount({
                     token: JBConstants.NATIVE_TOKEN,
@@ -980,7 +981,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -990,7 +991,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
         );
     }
 
-    function test_afterPayRecorded_doNotMintIfNotUsingCorrectToken(address token) public {
+    function test_afterPayRecorded_revertsOnCurrencyMismatchWithoutPriceFeed(address token) public {
         vm.assume(token != JBConstants.NATIVE_TOKEN);
 
         // Mock the directory call.
@@ -1000,7 +1001,15 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
             abi.encode(true)
         );
 
-        // The caller is the `_expectedCaller`. However, the terminal in the calldata is not correct.
+        // The payment's currency (18, from positional arg order) doesn't match the hook's pricing currency.
+        // With no price feed configured, this should revert instead of silently doing nothing.
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721TiersHook.JB721TiersHook_CurrencyMismatch.selector,
+                uint256(18),
+                uint256(uint32(uint160(JBConstants.NATIVE_TOKEN)))
+            )
+        );
         vm.prank(mockTerminalAddress);
         hook.afterPayRecordedWith(
             JBAfterPayRecordedContext({
@@ -1008,8 +1017,10 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                 projectId: projectId,
                 rulesetId: 0,
                 amount: JBTokenAmount(token, 0, 18, uint32(uint160(JBConstants.NATIVE_TOKEN))),
-                forwardedAmount: JBTokenAmount(JBConstants.NATIVE_TOKEN, 0, 18, uint32(uint160(JBConstants.NATIVE_TOKEN))), // 0,
-                    // forwarded to the hook.
+                forwardedAmount: JBTokenAmount(
+                    JBConstants.NATIVE_TOKEN, 0, 18, uint32(uint160(JBConstants.NATIVE_TOKEN))
+                ), // 0,
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -1017,9 +1028,6 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                 payerMetadata: new bytes(0)
             })
         );
-
-        // Check: has the total supply stayed at 0?
-        assertEq(hook.STORE().totalSupplyOf(address(hook)), 0);
     }
 
     function test_afterPayRecorded_mintWithExistingCreditsWhenMoreExistingCreditsThanNewCredits() public {
@@ -1075,7 +1083,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: beneficiary,
@@ -1124,7 +1132,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: beneficiary,
@@ -1179,7 +1187,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: beneficiary,
@@ -1248,7 +1256,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: beneficiary,
@@ -1347,7 +1355,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -1413,7 +1421,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
@@ -1482,7 +1490,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                     decimals: 18,
                     currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0,
-                    // forwarded to the hook.
+                // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: holder,
@@ -1511,16 +1519,10 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                 rulesetId: 1,
                 cashOutCount: 0,
                 reclaimedAmount: JBTokenAmount({
-                    token: address(0),
-                    value: 0,
-                    decimals: 18,
-                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                    token: address(0), value: 0, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }),
                 forwardedAmount: JBTokenAmount({
-                    token: address(0),
-                    value: 0,
-                    decimals: 18,
-                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                    token: address(0), value: 0, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0, forwarded to the hook.
                 cashOutTaxRate: 5000,
                 beneficiary: payable(holder),

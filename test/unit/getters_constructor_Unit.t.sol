@@ -26,6 +26,8 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
     )
         public
     {
+        // Decimals must be <= 18 per validation in initialize.
+        vm.assume(decimals <= 18);
         JBDeploy721TiersHookConfig memory hookConfig = JBDeploy721TiersHookConfig(
             name,
             symbol,
@@ -173,20 +175,21 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         // This should yield a total supply of (`numberOfTiers` * (`numberOfTiers` + 1)) / 2,
         // which is the sum of natural numbers from 1 to `numberOfTiers`.
         for (uint256 i; i < numberOfTiers; i++) {
-            hook.test_store().ForTest_setTier(
-                address(hook),
-                i + 1,
-                JBStored721Tier({
-                    price: uint104((i + 1) * 10),
-                    remainingSupply: uint32(100 - (i + 1)),
-                    initialSupply: uint32(100),
-                    votingUnits: uint16(0),
-                    reserveFrequency: uint16(0),
-                    category: uint24(100),
-                    discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false)
-                })
-            );
+            hook.test_store()
+                .ForTest_setTier(
+                    address(hook),
+                    i + 1,
+                    JBStored721Tier({
+                        price: uint104((i + 1) * 10),
+                        remainingSupply: uint32(100 - (i + 1)),
+                        initialSupply: uint32(100),
+                        votingUnits: uint16(0),
+                        reserveFrequency: uint16(0),
+                        category: uint24(100),
+                        discountPercent: uint8(0),
+                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false)
+                    })
+                );
         }
 
         // Check: does the total supply match the expected value?
@@ -225,20 +228,21 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
 
         // Set up 10 tiers, each with the parameters above.
         for (uint256 i; i < 10; i++) {
-            hook.test_store().ForTest_setTier(
-                address(hook),
-                i + 1,
-                JBStored721Tier({
-                    price: uint104((i + 1) * 10),
-                    remainingSupply: uint32(initialSupply - totalMinted),
-                    initialSupply: uint32(initialSupply),
-                    votingUnits: uint16(0),
-                    reserveFrequency: uint16(reserveFrequency),
-                    category: uint24(100),
-                    discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false)
-                })
-            );
+            hook.test_store()
+                .ForTest_setTier(
+                    address(hook),
+                    i + 1,
+                    JBStored721Tier({
+                        price: uint104((i + 1) * 10),
+                        remainingSupply: uint32(initialSupply - totalMinted),
+                        initialSupply: uint32(initialSupply),
+                        votingUnits: uint16(0),
+                        reserveFrequency: uint16(reserveFrequency),
+                        category: uint24(100),
+                        discountPercent: uint8(0),
+                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false)
+                    })
+                );
             // Manually set the number of reserve mints for each tier.
             hook.test_store().ForTest_setReservesMintedFor(address(hook), i + 1, reservedMinted);
         }
@@ -265,20 +269,21 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         ForTest_JB721TiersHook hook = _initializeForTestHook(numberOfTiers);
 
         // Set up tier 1 with 0 voting units.
-        hook.test_store().ForTest_setTier(
-            address(hook),
-            1,
-            JBStored721Tier({
-                price: uint104(10),
-                remainingSupply: uint32(10),
-                initialSupply: uint32(20),
-                votingUnits: uint16(0),
-                reserveFrequency: uint16(100),
-                category: uint24(100),
-                discountPercent: uint8(0),
-                packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false)
-            })
-        );
+        hook.test_store()
+            .ForTest_setTier(
+                address(hook),
+                1,
+                JBStored721Tier({
+                    price: uint104(10),
+                    remainingSupply: uint32(10),
+                    initialSupply: uint32(20),
+                    votingUnits: uint16(0),
+                    reserveFrequency: uint16(100),
+                    category: uint24(100),
+                    discountPercent: uint8(0),
+                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false)
+                })
+            );
 
         // Give the beneficiary `balances` NFTs from each tier up to `numberOfTiers`.
         for (uint256 i; i < numberOfTiers; i++) {
@@ -371,7 +376,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                     iterator++;
                 }
                 theoreticalWeight += (i + 1) * (i + 1) * 10; // Add the price of the NFTs to the weight.
-                    // (10 is the price multiplier).
+                // (10 is the price multiplier).
             }
         }
 
@@ -388,20 +393,21 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
 
         // Set up `numberOfTiers` tiers and calculate the theoretical weight for each.
         for (uint256 i = 1; i <= numberOfTiers; i++) {
-            hook.test_store().ForTest_setTier(
-                address(hook),
-                i,
-                JBStored721Tier({
-                    price: uint104(i * 10),
-                    remainingSupply: uint32(10 * i - 5 * i),
-                    initialSupply: uint32(10 * i),
-                    votingUnits: uint16(0),
-                    reserveFrequency: uint16(0),
-                    category: uint24(100),
-                    discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false)
-                })
-            );
+            hook.test_store()
+                .ForTest_setTier(
+                    address(hook),
+                    i,
+                    JBStored721Tier({
+                        price: uint104(i * 10),
+                        remainingSupply: uint32(10 * i - 5 * i),
+                        initialSupply: uint32(10 * i),
+                        votingUnits: uint16(0),
+                        reserveFrequency: uint16(0),
+                        category: uint24(100),
+                        discountPercent: uint8(0),
+                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false)
+                    })
+                );
             // Calculate the theoretical weight for the current tier. 10 the price multiplier.
             theoreticalWeight += (10 * i - 5 * i) * i * 10;
         }
@@ -513,7 +519,9 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         tiers[errorIndex].initialSupply = 0;
 
         // Expect the error.
-        vm.expectRevert(abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_ZeroInitialSupply.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_ZeroInitialSupply.selector, errorIndex + 1)
+        );
         vm.etch(hook_i, address(hook).code);
         JB721TiersHook hook = JB721TiersHook(hook_i);
         hook.initialize(

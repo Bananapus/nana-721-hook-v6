@@ -13,20 +13,21 @@ contract Test_cashOut_Unit is UnitTestSetup {
 
         // Set up 10 tiers, with half of the supply minted for each one.
         for (uint256 i = 1; i <= 10; i++) {
-            hook.test_store().ForTest_setTier(
-                address(hook),
-                i,
-                JBStored721Tier({
-                    price: uint104(i * 10),
-                    remainingSupply: uint32(10 * i - 5 * i),
-                    initialSupply: uint32(10 * i),
-                    votingUnits: uint16(0),
-                    reserveFrequency: uint16(0),
-                    category: uint24(100),
-                    discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false)
-                })
-            );
+            hook.test_store()
+                .ForTest_setTier(
+                    address(hook),
+                    i,
+                    JBStored721Tier({
+                        price: uint104(i * 10),
+                        remainingSupply: uint32(10 * i - 5 * i),
+                        initialSupply: uint32(10 * i),
+                        votingUnits: uint16(0),
+                        reserveFrequency: uint16(0),
+                        category: uint24(100),
+                        discountPercent: uint8(0),
+                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false)
+                    })
+                );
             totalWeight += (10 * i - 5 * i) * i * 10;
         }
 
@@ -58,10 +59,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
                 cashOutCount: 0,
                 totalSupply: 0,
                 surplus: JBTokenAmount({
-                    token: address(0),
-                    value: SURPLUS,
-                    decimals: 18,
-                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                    token: address(0), value: SURPLUS, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }),
                 useTotalSurplus: true,
                 cashOutTaxRate: CASH_OUT_TAX_RATE,
@@ -86,20 +84,21 @@ contract Test_cashOut_Unit is UnitTestSetup {
 
         // Set up 10 tiers, with half of the supply minted for each one.
         for (uint256 i = 1; i <= 10; i++) {
-            hook.test_store().ForTest_setTier(
-                address(hook),
-                i,
-                JBStored721Tier({
-                    price: uint104(i * 10),
-                    remainingSupply: uint32(10 * i - 5 * i),
-                    initialSupply: uint32(10 * i),
-                    votingUnits: uint16(0),
-                    reserveFrequency: uint16(0),
-                    category: uint24(100),
-                    discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false)
-                })
-            );
+            hook.test_store()
+                .ForTest_setTier(
+                    address(hook),
+                    i,
+                    JBStored721Tier({
+                        price: uint104(i * 10),
+                        remainingSupply: uint32(10 * i - 5 * i),
+                        initialSupply: uint32(10 * i),
+                        votingUnits: uint16(0),
+                        reserveFrequency: uint16(0),
+                        category: uint24(100),
+                        discountPercent: uint8(0),
+                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false)
+                    })
+                );
             totalWeight += (10 * i - 5 * i) * i * 10;
         }
 
@@ -120,10 +119,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
                 cashOutCount: 0,
                 totalSupply: 0,
                 surplus: JBTokenAmount({
-                    token: address(0),
-                    value: surplus,
-                    decimals: 18,
-                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                    token: address(0), value: surplus, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }),
                 useTotalSurplus: true,
                 cashOutTaxRate: cashOutTaxRate,
@@ -145,20 +141,21 @@ contract Test_cashOut_Unit is UnitTestSetup {
 
         // Set up 10 tiers, with half of the supply minted for each one.
         for (uint256 i = 1; i <= 10; i++) {
-            hook.test_store().ForTest_setTier(
-                address(hook),
-                i,
-                JBStored721Tier({
-                    price: uint104(i * 10),
-                    remainingSupply: uint32(10 * i - 5 * i),
-                    initialSupply: uint32(10 * i),
-                    votingUnits: uint16(0),
-                    reserveFrequency: uint16(0),
-                    category: uint24(100),
-                    discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false)
-                })
-            );
+            hook.test_store()
+                .ForTest_setTier(
+                    address(hook),
+                    i,
+                    JBStored721Tier({
+                        price: uint104(i * 10),
+                        remainingSupply: uint32(10 * i - 5 * i),
+                        initialSupply: uint32(10 * i),
+                        votingUnits: uint16(0),
+                        reserveFrequency: uint16(0),
+                        category: uint24(100),
+                        discountPercent: uint8(0),
+                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false)
+                    })
+                );
             totalWeight += (10 * i - 5 * i) * i * 10;
         }
 
@@ -189,10 +186,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
             cashOutCount: 0,
             totalSupply: 0,
             surplus: JBTokenAmount({
-                token: address(0),
-                value: SURPLUS,
-                decimals: 18,
-                currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                token: address(0), value: SURPLUS, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
             }),
             useTotalSurplus: true,
             cashOutTaxRate: JBConstants.MAX_CASH_OUT_TAX_RATE,
@@ -223,10 +217,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
                 cashOutCount: tokenCount,
                 totalSupply: 0,
                 surplus: JBTokenAmount({
-                    token: address(0),
-                    value: 100,
-                    decimals: 18,
-                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                    token: address(0), value: 100, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }),
                 useTotalSurplus: true,
                 cashOutTaxRate: 100,
@@ -323,16 +314,10 @@ contract Test_cashOut_Unit is UnitTestSetup {
                 rulesetId: 1,
                 cashOutCount: 0,
                 reclaimedAmount: JBTokenAmount({
-                    token: address(0),
-                    value: 0,
-                    decimals: 18,
-                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                    token: address(0), value: 0, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }),
                 forwardedAmount: JBTokenAmount({
-                    token: address(0),
-                    value: 0,
-                    decimals: 18,
-                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                    token: address(0), value: 0, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0, forwarded to the hook.
                 cashOutTaxRate: 5000,
                 beneficiary: payable(beneficiary),
@@ -372,16 +357,10 @@ contract Test_cashOut_Unit is UnitTestSetup {
                 rulesetId: 1,
                 cashOutCount: 0,
                 reclaimedAmount: JBTokenAmount({
-                    token: address(0),
-                    value: 0,
-                    decimals: 18,
-                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                    token: address(0), value: 0, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }),
                 forwardedAmount: JBTokenAmount({
-                    token: address(0),
-                    value: 0,
-                    decimals: 18,
-                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                    token: address(0), value: 0, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0, forwarded to the hook.
                 cashOutTaxRate: 5000,
                 beneficiary: payable(beneficiary),
@@ -413,16 +392,10 @@ contract Test_cashOut_Unit is UnitTestSetup {
                 rulesetId: 1,
                 cashOutCount: 0,
                 reclaimedAmount: JBTokenAmount({
-                    token: address(0),
-                    value: 0,
-                    decimals: 18,
-                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                    token: address(0), value: 0, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }),
                 forwardedAmount: JBTokenAmount({
-                    token: address(0),
-                    value: 0,
-                    decimals: 18,
-                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                    token: address(0), value: 0, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0, forwarded to the hook.
                 cashOutTaxRate: 5000,
                 beneficiary: payable(beneficiary),
@@ -471,16 +444,10 @@ contract Test_cashOut_Unit is UnitTestSetup {
                 rulesetId: 1,
                 cashOutCount: 0,
                 reclaimedAmount: JBTokenAmount({
-                    token: address(0),
-                    value: 0,
-                    decimals: 18,
-                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                    token: address(0), value: 0, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }),
                 forwardedAmount: JBTokenAmount({
-                    token: address(0),
-                    value: 0,
-                    decimals: 18,
-                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                    token: address(0), value: 0, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }), // 0, forwarded to the hook.
                 cashOutTaxRate: 5000,
                 beneficiary: payable(wrongHolder),
