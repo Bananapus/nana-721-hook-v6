@@ -42,7 +42,7 @@ library JBBitmap {
         self[depth] |= uint256(1 << (index % 256));
     }
 
-    /// @notice Check if the specified index is at a different depth than than the current depth of the `JBBitmapWord`
+    /// @notice Check if the specified index is at a different depth than the current depth of the `JBBitmapWord`
     /// struct.
     /// @dev If the depth is different, the bitmap's current depth needs to be updated.
     /// @return Whether the bitmap needs to be refreshed.

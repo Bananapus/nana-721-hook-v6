@@ -85,7 +85,7 @@ contract JB721TiersHookDeployer is ERC2771Context, IJB721TiersHookDeployer {
                 })
         );
 
-        emit HookDeployed({projectId: projectId, hook: newHook, caller: msg.sender});
+        emit HookDeployed({projectId: projectId, hook: newHook, caller: _msgSender()});
 
         newHook.initialize({
             projectId: projectId,

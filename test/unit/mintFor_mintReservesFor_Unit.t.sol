@@ -106,7 +106,7 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
 
         // Revert when minting the next.
         vm.expectRevert(
-            abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector)
+            JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector
         );
         vm.prank(owner);
         hook.mintFor(tiersToMint, beneficiary);
@@ -148,7 +148,7 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
 
         // Revert when minting the next.
         vm.expectRevert(
-            abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector)
+            JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector
         );
         vm.prank(owner);
         hook.mintFor(tiersToMint, beneficiary);
@@ -429,7 +429,7 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
         vm.prank(owner);
 
         // Expect the function call to revert with the specified error message.
-        vm.expectRevert(abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_CantMintManually.selector));
+        vm.expectRevert(JB721TiersHookStore.JB721TiersHookStore_CantMintManually.selector);
 
         // Call the `mintFor` function to trigger the revert.
         hook.mintFor(tiersToMint, beneficiary);

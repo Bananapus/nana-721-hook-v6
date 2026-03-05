@@ -32,8 +32,8 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
 
-    error JB721Hook_InvalidPay();
     error JB721Hook_InvalidCashOut();
+    error JB721Hook_InvalidPay();
     error JB721Hook_UnauthorizedToken(uint256 tokenId, address holder);
     error JB721Hook_UnexpectedTokenCashedOut();
 
@@ -169,11 +169,11 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
 
     /// @notice Indicates if this contract adheres to the specified interface.
     /// @dev See {IERC165-supportsInterface}.
-    /// @param _interfaceId The ID of the interface to check for adherence to.
-    function supportsInterface(bytes4 _interfaceId) public view virtual override(ERC721, IERC165) returns (bool) {
-        return _interfaceId == type(IJB721Hook).interfaceId || _interfaceId == type(IJBRulesetDataHook).interfaceId
-            || _interfaceId == type(IJBPayHook).interfaceId || _interfaceId == type(IJBCashOutHook).interfaceId
-            || _interfaceId == type(IERC2981).interfaceId || super.supportsInterface(_interfaceId);
+    /// @param interfaceId The ID of the interface to check for adherence to.
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721, IERC165) returns (bool) {
+        return interfaceId == type(IJB721Hook).interfaceId || interfaceId == type(IJBRulesetDataHook).interfaceId
+            || interfaceId == type(IJBPayHook).interfaceId || interfaceId == type(IJBCashOutHook).interfaceId
+            || interfaceId == type(IERC2981).interfaceId || super.supportsInterface(interfaceId);
     }
 
     /// @notice Calculates the cumulative cash out weight of all NFT token IDs.
@@ -190,23 +190,10 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     }
 
     //*********************************************************************//
-    // ------------------------ internal views --------------------------- //
-    //*********************************************************************//
-
-    /// @notice Initializes the contract by associating it with a project and adding ERC721 details.
-    /// @param projectId The ID of the project that this contract is associated with.
-    /// @param name The name of the NFT collection.
-    /// @param symbol The symbol representing the NFT collection.
-    function _initialize(uint256 projectId, string memory name, string memory symbol) internal {
-        ERC721._initialize(name, symbol);
-        PROJECT_ID = projectId;
-    }
-
-    //*********************************************************************//
     // ---------------------- external transactions ---------------------- //
     //*********************************************************************//
 
-    /// @notice Mints one or more NFTs to the `context.benficiary` upon payment if conditions are met. Part of
+    /// @notice Mints one or more NFTs to the `context.beneficiary` upon payment if conditions are met. Part of
     /// `IJBPayHook`.
     /// @dev Reverts if the calling contract is not one of the project's terminals.
     /// @param context The payment context passed in by the terminal.
@@ -275,6 +262,15 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     //*********************************************************************//
     // ---------------------- internal transactions ---------------------- //
     //*********************************************************************//
+
+    /// @notice Initializes the contract by associating it with a project and adding ERC721 details.
+    /// @param projectId The ID of the project that this contract is associated with.
+    /// @param name The name of the NFT collection.
+    /// @param symbol The symbol representing the NFT collection.
+    function _initialize(uint256 projectId, string memory name, string memory symbol) internal {
+        ERC721._initialize(name, symbol);
+        PROJECT_ID = projectId;
+    }
 
     /// @notice Executes after NFTs have been burned via cash out.
     /// @param tokenIds The token IDs of the NFTs that were burned.

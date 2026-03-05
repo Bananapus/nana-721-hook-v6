@@ -14,6 +14,10 @@ library JBIpfsDecoder {
     /// @dev Used in `base58ToString`
     bytes internal constant ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
+    /// @notice Decode an IPFS hash from a bytes32 and concatenate it with a base URI.
+    /// @param baseUri The base URI to prepend to the decoded IPFS hash.
+    /// @param hexString The encoded IPFS hash to decode.
+    /// @return The full URI with the base URI and decoded IPFS hash.
     function decode(string memory baseUri, bytes32 hexString) internal pure returns (string memory) {
         // All IPFS hashes start with a fixed sequence (0x12 and 0x20)
         bytes memory completeHexString = abi.encodePacked(bytes2(0x1220), hexString);

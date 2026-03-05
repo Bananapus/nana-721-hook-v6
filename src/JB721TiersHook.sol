@@ -41,12 +41,12 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     //*********************************************************************//
 
     error JB721TiersHook_AlreadyInitialized(uint256 projectId);
+    error JB721TiersHook_CurrencyMismatch(uint256 paymentCurrency, uint256 tierCurrency);
+    error JB721TiersHook_InvalidPricingDecimals(uint256 decimals);
+    error JB721TiersHook_MintReserveNftsPaused();
     error JB721TiersHook_NoProjectId();
     error JB721TiersHook_Overspending(uint256 leftoverAmount);
-    error JB721TiersHook_MintReserveNftsPaused();
     error JB721TiersHook_TierTransfersPaused();
-    error JB721TiersHook_InvalidPricingDecimals(uint256 decimals);
-    error JB721TiersHook_CurrencyMismatch(uint256 paymentCurrency, uint256 tierCurrency);
 
     //*********************************************************************//
     // --------------- public immutable stored properties ---------------- //
@@ -302,13 +302,13 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         return RULESETS.currentOf(projectId);
     }
 
-    /// @notice Returns the calldata, prefered to use over `msg.data`
+    /// @notice Returns the calldata, preferred to use over `msg.data`
     /// @return calldata the `msg.data` of this call
     function _msgData() internal view override(ERC2771Context, Context) returns (bytes calldata) {
         return ERC2771Context._msgData();
     }
 
-    /// @notice Returns the sender, prefered to use over `msg.sender`
+    /// @notice Returns the sender, preferred to use over `msg.sender`
     /// @return sender the sender address of this call.
     function _msgSender() internal view override(ERC2771Context, Context) returns (address sender) {
         return ERC2771Context._msgSender();
@@ -444,13 +444,13 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @param baseUri The new base URI.
     /// @param contractUri The new contract URI.
     /// @param tokenUriResolver The new URI resolver.
-    /// @param encodedIPFSTUriTierId The ID of the tier to set the encoded IPFS URI of.
+    /// @param encodedIPFSUriTierId The ID of the tier to set the encoded IPFS URI of.
     /// @param encodedIPFSUri The encoded IPFS URI to set.
     function setMetadata(
         string calldata baseUri,
         string calldata contractUri,
         IJB721TokenUriResolver tokenUriResolver,
-        uint256 encodedIPFSTUriTierId,
+        uint256 encodedIPFSUriTierId,
         bytes32 encodedIPFSUri
     )
         external
@@ -475,11 +475,11 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             // slither-disable-next-line reentrancy-events
             _recordSetTokenUriResolver(tokenUriResolver);
         }
-        if (encodedIPFSTUriTierId != 0 && encodedIPFSUri != bytes32(0)) {
-            emit SetEncodedIPFSUri({tierId: encodedIPFSTUriTierId, encodedUri: encodedIPFSUri, caller: _msgSender()});
+        if (encodedIPFSUriTierId != 0 && encodedIPFSUri != bytes32(0)) {
+            emit SetEncodedIPFSUri({tierId: encodedIPFSUriTierId, encodedUri: encodedIPFSUri, caller: _msgSender()});
 
             // Store the new encoded IPFS URI.
-            STORE.recordSetEncodedIPFSUriOf(encodedIPFSTUriTierId, encodedIPFSUri);
+            STORE.recordSetEncodedIPFSUriOf(encodedIPFSUriTierId, encodedIPFSUri);
         }
     }
 
@@ -671,7 +671,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             // If overspending isn't allowed, revert.
             if (!allowOverspending) revert JB721TiersHook_Overspending(leftoverAmount);
 
-            // Increment the leftover amount.
+            // Store the leftover amount as NFT credits.
             unchecked {
                 // Keep a reference to the amount of new NFT credits.
                 uint256 newPayCredits = leftoverAmount + unusedPayCredits;
