@@ -118,11 +118,14 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
 
         // Fetch the cash out hook metadata using the corresponding metadata ID.
         (bool metadataExists, bytes memory metadata) =
-            JBMetadataResolver.getDataFor(JBMetadataResolver.getId("cashOut", METADATA_ID_TARGET), context.metadata);
+            JBMetadataResolver.getDataFor({
+                id: JBMetadataResolver.getId({purpose: "cashOut", target: METADATA_ID_TARGET}),
+                metadata: context.metadata
+            });
 
         // Use this contract as the only cash out hook.
         hookSpecifications = new JBCashOutHookSpecification[](1);
-        hookSpecifications[0] = JBCashOutHookSpecification(this, 0, bytes(""));
+        hookSpecifications[0] = JBCashOutHookSpecification({hook: this, amount: 0, metadata: bytes("")});
 
         uint256[] memory decodedTokenIds;
 
@@ -130,7 +133,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
         if (metadataExists) decodedTokenIds = abi.decode(metadata, (uint256[]));
 
         // Use the cash out weight of the provided 721s.
-        cashOutCount = cashOutWeightOf(decodedTokenIds, context);
+        cashOutCount = cashOutWeightOf({tokenIds: decodedTokenIds, context: context});
 
         // Use the total cash out weight of the 721s.
         totalSupply = totalCashOutWeight(context);
@@ -204,7 +207,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
         // Make sure the caller is a terminal of the project, and that the call is being made on behalf of an
         // interaction with the correct project.
         if (
-            msg.value != 0 || !DIRECTORY.isTerminalOf(projectId, IJBTerminal(msg.sender))
+            msg.value != 0 || !DIRECTORY.isTerminalOf({projectId: projectId, terminal: IJBTerminal(msg.sender)})
                 || context.projectId != projectId
         ) revert JB721Hook_InvalidPay();
 
@@ -229,14 +232,15 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
         // Make sure the caller is a terminal of the project, and that the call is being made on behalf of an
         // interaction with the correct project.
         if (
-            msg.value != 0 || !DIRECTORY.isTerminalOf(projectId, IJBTerminal(msg.sender))
+            msg.value != 0 || !DIRECTORY.isTerminalOf({projectId: projectId, terminal: IJBTerminal(msg.sender)})
                 || context.projectId != projectId
         ) revert JB721Hook_InvalidCashOut();
 
         // Fetch the cash out hook metadata using the corresponding metadata ID.
-        (bool metadataExists, bytes memory metadata) = JBMetadataResolver.getDataFor(
-            JBMetadataResolver.getId("cashOut", METADATA_ID_TARGET), context.cashOutMetadata
-        );
+        (bool metadataExists, bytes memory metadata) = JBMetadataResolver.getDataFor({
+            id: JBMetadataResolver.getId({purpose: "cashOut", target: METADATA_ID_TARGET}),
+            metadata: context.cashOutMetadata
+        });
 
         uint256[] memory decodedTokenIds;
 
@@ -268,7 +272,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     /// @param name The name of the NFT collection.
     /// @param symbol The symbol representing the NFT collection.
     function _initialize(uint256 projectId, string memory name, string memory symbol) internal {
-        ERC721._initialize(name, symbol);
+        ERC721._initialize({name_: name, symbol_: symbol});
         PROJECT_ID = projectId;
     }
 
