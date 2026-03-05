@@ -354,13 +354,12 @@ contract UnitTestSetup is Test {
     }
 
     function _compareTiers(JB721Tier memory first, JB721Tier memory second) internal pure returns (bool) {
-        return (
-            first.id == second.id && first.price == second.price && first.remainingSupply == second.remainingSupply
+        return (first.id == second.id && first.price == second.price && first.remainingSupply == second.remainingSupply
                 && first.initialSupply == second.initialSupply && first.votingUnits == second.votingUnits
                 && first.reserveFrequency == second.reserveFrequency
-                && first.reserveBeneficiary == second.reserveBeneficiary && first.encodedIPFSUri == second.encodedIPFSUri
-                && keccak256(abi.encodePacked(first.resolvedUri)) == keccak256(abi.encodePacked(second.resolvedUri))
-        );
+                && first.reserveBeneficiary == second.reserveBeneficiary
+                && first.encodedIPFSUri == second.encodedIPFSUri
+                && keccak256(abi.encodePacked(first.resolvedUri)) == keccak256(abi.encodePacked(second.resolvedUri)));
     }
 
     // Simple selection sort for an array of `uint256` values.
@@ -556,9 +555,10 @@ contract UnitTestSetup is Test {
     // Use default pricing context (native token, 18 decimals, and 0 address as oracle).
     // Don't prevent overspending.
     function _initHookDefaultTiers(uint256 initialNumberOfTiers) internal returns (JB721TiersHook) {
-        return _initHookDefaultTiers(
-            initialNumberOfTiers, false, uint32(uint160(JBConstants.NATIVE_TOKEN)), 18, address(0)
-        );
+        return
+            _initHookDefaultTiers(
+                initialNumberOfTiers, false, uint32(uint160(JBConstants.NATIVE_TOKEN)), 18, address(0)
+            );
     }
 
     // Initialize a hook with tiers that use the default tier config.
@@ -602,10 +602,7 @@ contract UnitTestSetup is Test {
         });
 
         JB721InitTiersConfig memory initConfig = JB721InitTiersConfig({
-            tiers: tierConfigs,
-            currency: currency,
-            decimals: decimals,
-            prices: IJBPrices(oracle)
+            tiers: tierConfigs, currency: currency, decimals: decimals, prices: IJBPrices(oracle)
         });
 
         tiersHook.initialize(
@@ -740,13 +737,10 @@ contract UnitTestSetup is Test {
         terminalConfigurations = new JBTerminalConfig[](1);
         JBAccountingContext[] memory accountingContextsToAccept = new JBAccountingContext[](1);
         accountingContextsToAccept[0] = JBAccountingContext({
-            currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-            decimals: 18,
-            token: JBConstants.NATIVE_TOKEN
+            currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18, token: JBConstants.NATIVE_TOKEN
         });
         terminalConfigurations[0] = JBTerminalConfig({
-            terminal: IJBTerminal(mockTerminalAddress),
-            accountingContextsToAccept: accountingContextsToAccept
+            terminal: IJBTerminal(mockTerminalAddress), accountingContextsToAccept: accountingContextsToAccept
         });
 
         launchProjectConfig = JBLaunchProjectConfig({

@@ -51,12 +51,7 @@ contract TierLifecycleHandler is Test {
     uint256 public callCount_ownerMint;
     uint256 public callCount_advanceTime;
 
-    constructor(
-        JB721TiersHook _hook,
-        JB721TiersHookStore _store,
-        address _owner,
-        address _mockController
-    ) {
+    constructor(JB721TiersHook _hook, JB721TiersHookStore _store, address _owner, address _mockController) {
         hook = _hook;
         store = _store;
         hookAddress = address(_hook);

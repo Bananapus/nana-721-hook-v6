@@ -21,20 +21,21 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
 
         // Initialize `numberOfTiers` tiers.
         for (uint256 i; i < numberOfTiers; i++) {
-            hook.test_store().ForTest_setTier(
-                address(hook),
-                i + 1,
-                JBStored721Tier({
-                    price: uint104((i + 1) * 10),
-                    remainingSupply: uint32(initialSupply - totalMinted),
-                    initialSupply: uint32(initialSupply),
-                    votingUnits: uint16(0),
-                    reserveFrequency: uint16(reserveFrequency),
-                    category: uint24(100),
-                    discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false)
-                })
-            );
+            hook.test_store()
+                .ForTest_setTier(
+                    address(hook),
+                    i + 1,
+                    JBStored721Tier({
+                        price: uint104((i + 1) * 10),
+                        remainingSupply: uint32(initialSupply - totalMinted),
+                        initialSupply: uint32(initialSupply),
+                        votingUnits: uint16(0),
+                        reserveFrequency: uint16(reserveFrequency),
+                        category: uint24(100),
+                        discountPercent: uint8(0),
+                        packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false)
+                    })
+                );
             hook.test_store().ForTest_setReservesMintedFor(address(hook), i + 1, reservedMinted);
         }
 
@@ -67,20 +68,21 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
         ForTest_JB721TiersHook hook = _initializeForTestHook(1);
 
         // Initialize `numberOfTiers` tiers.
-        hook.test_store().ForTest_setTier(
-            address(hook),
-            1,
-            JBStored721Tier({
-                price: uint104(10),
-                remainingSupply: uint32(initialSupply),
-                initialSupply: uint32(initialSupply),
-                votingUnits: uint16(0),
-                reserveFrequency: uint16(reserveFrequency),
-                category: uint24(100),
-                discountPercent: uint8(0),
-                packedBools: hook.test_store().ForTest_packBools(true, false, true, false, false)
-            })
-        );
+        hook.test_store()
+            .ForTest_setTier(
+                address(hook),
+                1,
+                JBStored721Tier({
+                    price: uint104(10),
+                    remainingSupply: uint32(initialSupply),
+                    initialSupply: uint32(initialSupply),
+                    votingUnits: uint16(0),
+                    reserveFrequency: uint16(reserveFrequency),
+                    category: uint24(100),
+                    discountPercent: uint8(0),
+                    packedBools: hook.test_store().ForTest_packBools(true, false, true, false, false)
+                })
+            );
 
         // Mint the initial tiers.
         uint16[] memory tiersToMint = new uint16[](totalMinted);
@@ -105,9 +107,7 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
         assertEq(mintable, 3, "Tier 1 should have 3 reserve NFTs mintable.");
 
         // Revert when minting the next.
-        vm.expectRevert(
-            JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector
-        );
+        vm.expectRevert(JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector);
         vm.prank(owner);
         hook.mintFor(tiersToMint, beneficiary);
 
@@ -147,9 +147,7 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
         assertEq(tier.remainingSupply, 0, "Tier 1 should have 0 remaining supply.");
 
         // Revert when minting the next.
-        vm.expectRevert(
-            JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector
-        );
+        vm.expectRevert(JB721TiersHookStore.JB721TiersHookStore_InsufficientSupplyRemaining.selector);
         vm.prank(owner);
         hook.mintFor(tiersToMint, beneficiary);
     }
@@ -169,20 +167,21 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
 
         // Initialize `numberOfTiers` tiers.
         for (uint256 i; i < numberOfTiers; i++) {
-            hook.test_store().ForTest_setTier(
-                address(hook),
-                i + 1,
-                JBStored721Tier({
-                    price: uint104((i + 1) * 10),
-                    remainingSupply: uint32(initialSupply - totalMinted),
-                    initialSupply: uint32(initialSupply),
-                    votingUnits: uint16(0),
-                    reserveFrequency: uint16(reserveFrequency),
-                    category: uint24(100),
-                    discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false)
-                })
-            );
+            hook.test_store()
+                .ForTest_setTier(
+                    address(hook),
+                    i + 1,
+                    JBStored721Tier({
+                        price: uint104((i + 1) * 10),
+                        remainingSupply: uint32(initialSupply - totalMinted),
+                        initialSupply: uint32(initialSupply),
+                        votingUnits: uint16(0),
+                        reserveFrequency: uint16(reserveFrequency),
+                        category: uint24(100),
+                        discountPercent: uint8(0),
+                        packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false)
+                    })
+                );
 
             // Set the number of reserve NFTs already minted for the tier.
             hook.test_store().ForTest_setReservesMintedFor(address(hook), i + 1, reservedMinted);
@@ -266,20 +265,21 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
         ForTest_JB721TiersHook hook = _initializeForTestHook(numberOfTiers);
 
         for (uint256 i; i < numberOfTiers; i++) {
-            hook.test_store().ForTest_setTier(
-                address(hook),
-                i + 1,
-                JBStored721Tier({
-                    price: uint104((i + 1) * 10),
-                    remainingSupply: uint32(initialSupply - totalMinted),
-                    initialSupply: uint32(initialSupply),
-                    votingUnits: uint16(0),
-                    reserveFrequency: uint16(reserveFrequency),
-                    category: uint24(100),
-                    discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false)
-                })
-            );
+            hook.test_store()
+                .ForTest_setTier(
+                    address(hook),
+                    i + 1,
+                    JBStored721Tier({
+                        price: uint104((i + 1) * 10),
+                        remainingSupply: uint32(initialSupply - totalMinted),
+                        initialSupply: uint32(initialSupply),
+                        votingUnits: uint16(0),
+                        reserveFrequency: uint16(reserveFrequency),
+                        category: uint24(100),
+                        discountPercent: uint8(0),
+                        packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false)
+                    })
+                );
             hook.test_store().ForTest_setReservesMintedFor(address(hook), i + 1, reservedMinted);
         }
 
@@ -303,20 +303,21 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
 
         // Initialize `numberOfTiers` tiers.
         for (uint256 i; i < 10; i++) {
-            hook.test_store().ForTest_setTier(
-                address(hook),
-                i + 1,
-                JBStored721Tier({
-                    price: uint104((i + 1) * 10),
-                    remainingSupply: uint32(initialSupply - totalMinted),
-                    initialSupply: uint32(initialSupply),
-                    votingUnits: uint16(0),
-                    reserveFrequency: uint16(reserveFrequency),
-                    category: uint24(100),
-                    discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false)
-                })
-            );
+            hook.test_store()
+                .ForTest_setTier(
+                    address(hook),
+                    i + 1,
+                    JBStored721Tier({
+                        price: uint104((i + 1) * 10),
+                        remainingSupply: uint32(initialSupply - totalMinted),
+                        initialSupply: uint32(initialSupply),
+                        votingUnits: uint16(0),
+                        reserveFrequency: uint16(reserveFrequency),
+                        category: uint24(100),
+                        discountPercent: uint8(0),
+                        packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false)
+                    })
+                );
             hook.test_store().ForTest_setReservesMintedFor(address(hook), i + 1, reservedMinted);
         }
 
@@ -342,7 +343,7 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
         uint256 totalMinted = 120; // The number of NFTs already minted for each tier (out of `initialSupply`).
         uint256 reservedMinted = 10; // The number of reserve NFTs already minted (out of `totalMinted`).
         uint256 reserveFrequency = 9; // The frequency at which NFTs are reserved.
-            // (For every 9 NFTs minted, 1 is reserved).
+        // (For every 9 NFTs minted, 1 is reserved).
 
         reserveBeneficiary = address(0);
         ForTest_JB721TiersHook hook = _initializeForTestHook(10);
@@ -350,20 +351,21 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
         // Initialize `numberOfTiers` tiers, and set the number of reserve NFTs already minted for each tier.
         // Although the `reserveFrequency` is set, it should be ignored since there is no reserve beneficiary.
         for (uint256 i; i < 10; i++) {
-            hook.test_store().ForTest_setTier(
-                address(hook),
-                i + 1,
-                JBStored721Tier({
-                    price: uint104((i + 1) * 10),
-                    remainingSupply: uint32(initialSupply - totalMinted),
-                    initialSupply: uint32(initialSupply),
-                    votingUnits: uint16(0),
-                    reserveFrequency: uint16(reserveFrequency),
-                    category: uint24(100),
-                    discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false)
-                })
-            );
+            hook.test_store()
+                .ForTest_setTier(
+                    address(hook),
+                    i + 1,
+                    JBStored721Tier({
+                        price: uint104((i + 1) * 10),
+                        remainingSupply: uint32(initialSupply - totalMinted),
+                        initialSupply: uint32(initialSupply),
+                        votingUnits: uint16(0),
+                        reserveFrequency: uint16(reserveFrequency),
+                        category: uint24(100),
+                        discountPercent: uint8(0),
+                        packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false)
+                    })
+                );
             hook.test_store().ForTest_setReservesMintedFor(address(hook), i + 1, reservedMinted);
         }
 

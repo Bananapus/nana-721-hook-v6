@@ -117,11 +117,9 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
         if (context.cashOutCount > 0) revert JB721Hook_UnexpectedTokenCashedOut();
 
         // Fetch the cash out hook metadata using the corresponding metadata ID.
-        (bool metadataExists, bytes memory metadata) =
-            JBMetadataResolver.getDataFor({
-                id: JBMetadataResolver.getId({purpose: "cashOut", target: METADATA_ID_TARGET}),
-                metadata: context.metadata
-            });
+        (bool metadataExists, bytes memory metadata) = JBMetadataResolver.getDataFor({
+            id: JBMetadataResolver.getId({purpose: "cashOut", target: METADATA_ID_TARGET}), metadata: context.metadata
+        });
 
         // Use this contract as the only cash out hook.
         hookSpecifications = new JBCashOutHookSpecification[](1);
@@ -182,12 +180,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     /// @notice Calculates the cumulative cash out weight of all NFT token IDs.
     /// @param context The cash out context passed to this contract by the `cashOutTokensOf(...)` function.
     /// @return The total cumulative cash out weight of all NFT token IDs.
-    function totalCashOutWeight(JBBeforeCashOutRecordedContext calldata context)
-        public
-        view
-        virtual
-        returns (uint256)
-    {
+    function totalCashOutWeight(JBBeforeCashOutRecordedContext calldata context) public view virtual returns (uint256) {
         context; // Prevents unused var compiler and natspec complaints.
         return 0;
     }
