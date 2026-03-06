@@ -181,10 +181,10 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
         if (metadataExists) decodedTokenIds = abi.decode(metadata, (uint256[]));
 
         // Use the cash out weight of the provided 721s.
-        cashOutCount = cashOutWeightOf(decodedTokenIds, context);
+        cashOutCount = STORE.cashOutWeightOf({hook: address(this), tokenIds: decodedTokenIds});
 
         // Use the total cash out weight of the 721s.
-        totalSupply = totalCashOutWeight(context);
+        totalSupply = STORE.totalCashOutWeight(address(this));
 
         // Use the cash out tax rate from the context.
         cashOutTaxRate = context.cashOutTaxRate;
@@ -272,7 +272,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
     )
         public
         view
-        virtual
         returns (uint256)
     {
         return STORE.cashOutWeightOf({hook: address(this), tokenIds: tokenIds});
@@ -386,7 +385,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
     function totalCashOutWeight(JBBeforeCashOutRecordedContext calldata)
         public
         view
-        virtual
         returns (uint256)
     {
         return STORE.totalCashOutWeight(address(this));
@@ -459,8 +457,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
             _burn(tokenId);
         }
 
-        // Call the hook.
-        _didBurn(decodedTokenIds);
+        // Add to burned counter.
+        STORE.recordBurn(decodedTokenIds);
     }
 
     /// @notice Add or delete tiers.
@@ -678,13 +676,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
     //*********************************************************************//
     // ------------------------ internal functions ----------------------- //
     //*********************************************************************//
-
-    /// @notice A function which gets called after NFTs have been cashed out and recorded by the terminal.
-    /// @param tokenIds The token IDs of the NFTs that were burned.
-    function _didBurn(uint256[] memory tokenIds) internal virtual {
-        // Add to burned counter.
-        STORE.recordBurn(tokenIds);
-    }
 
     /// @notice Mints one NFT from each of the specified tiers for the beneficiary.
     /// @dev The same tier can be specified more than once.
