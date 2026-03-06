@@ -763,17 +763,14 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
             }
         }
 
-        // If overspending is allowed and there are leftover funds, add those funds to the beneficiary's NFT credits.
-        if (leftoverAmount != 0) {
-            // If overspending isn't allowed, revert.
-            if (!allowOverspending) revert JB721TiersHook_Overspending(leftoverAmount);
+        // If overspending isn't allowed, revert.
+        if (leftoverAmount != 0 && !allowOverspending) revert JB721TiersHook_Overspending(leftoverAmount);
 
-            // Store the leftover amount as NFT credits.
-            unchecked {
-                // Keep a reference to the amount of new NFT credits.
-                uint256 newPayCredits = leftoverAmount + unusedPayCredits;
+        // Update NFT credits if they changed.
+        unchecked {
+            uint256 newPayCredits = leftoverAmount + unusedPayCredits;
 
-                // Emit the change in NFT credits.
+            if (newPayCredits != payCredits) {
                 if (newPayCredits > payCredits) {
                     emit AddPayCredits({
                         amount: newPayCredits - payCredits,
@@ -781,7 +778,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
                         account: context.beneficiary,
                         caller: _msgSender()
                     });
-                } else if (payCredits > newPayCredits) {
+                } else {
                     emit UsePayCredits({
                         amount: payCredits - newPayCredits,
                         newTotalCredits: newPayCredits,
@@ -790,21 +787,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
                     });
                 }
 
-                // Store the new NFT credits for the beneficiary.
                 payCreditsOf[context.beneficiary] = newPayCredits;
             }
-            // Otherwise, reset their NFT credits.
-        } else if (payCredits != unusedPayCredits) {
-            // Emit the change in NFT credits.
-            emit UsePayCredits({
-                amount: payCredits - unusedPayCredits,
-                newTotalCredits: unusedPayCredits,
-                account: context.beneficiary,
-                caller: _msgSender()
-            });
-
-            // Store the new NFT credits.
-            payCreditsOf[context.beneficiary] = unusedPayCredits;
         }
 
         // Distribute any forwarded funds to tier split groups.
