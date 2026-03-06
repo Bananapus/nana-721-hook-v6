@@ -265,10 +265,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
     /// @dev See {IERC165-supportsInterface}.
     /// @param interfaceId The ID of the interface to check for adherence to.
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721, IERC165) returns (bool) {
-        return interfaceId == type(IJB721TiersHook).interfaceId
-            || interfaceId == type(IJBRulesetDataHook).interfaceId || interfaceId == type(IJBPayHook).interfaceId
-            || interfaceId == type(IJBCashOutHook).interfaceId || interfaceId == type(IERC2981).interfaceId
-            || super.supportsInterface(interfaceId);
+        return interfaceId == type(IJB721TiersHook).interfaceId || interfaceId == type(IJBRulesetDataHook).interfaceId
+            || interfaceId == type(IJBPayHook).interfaceId || interfaceId == type(IJBCashOutHook).interfaceId
+            || interfaceId == type(IERC2981).interfaceId || super.supportsInterface(interfaceId);
     }
 
     /// @notice Initializes a cloned copy of the original hook contract.
@@ -377,10 +376,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
 
         // Make sure the caller is a terminal of the project, and that the call is being made on behalf of an
         // interaction with the correct project.
-        if (
-            !DIRECTORY.isTerminalOf(projectId, IJBTerminal(msg.sender))
-                || context.projectId != projectId
-        ) revert JB721TiersHook_InvalidPay();
+        if (!DIRECTORY.isTerminalOf(projectId, IJBTerminal(msg.sender)) || context.projectId != projectId) {
+            revert JB721TiersHook_InvalidPay();
+        }
 
         // Process the payment.
         _processPayment(context);
