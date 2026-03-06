@@ -18,6 +18,8 @@ pragma solidity ^0.8.0;
 /// @custom:member cannotBeRemoved A boolean indicating whether attempts to remove this tier will revert.
 /// @custom:member cannotIncreaseDiscountPercent If the tier cannot have its discount increased.
 /// @custom:member transfersPausable A boolean indicating whether transfers for NFTs in tier can be paused.
+/// @custom:member splitPercent The percentage of the tier's price that gets routed to the project's split group when
+/// an NFT from this tier is minted. Out of `JBConstants.SPLITS_TOTAL_PERCENT`.
 /// @custom:member resolvedUri A resolved token URI for NFTs in this tier. Only available if the NFT this tier belongs
 /// to has a resolver.
 struct JB721Tier {
@@ -35,5 +37,6 @@ struct JB721Tier {
     bool transfersPausable;
     bool cannotBeRemoved;
     bool cannotIncreaseDiscountPercent;
+    uint32 splitPercent;
     string resolvedUri;
 }

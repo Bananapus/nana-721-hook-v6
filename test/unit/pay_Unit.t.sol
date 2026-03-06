@@ -991,7 +991,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
         );
     }
 
-    function test_afterPayRecorded_revertsOnCurrencyMismatchWithoutPriceFeed(address token) public {
+    function test_afterPayRecorded_silentlyReturnsOnCurrencyMismatchWithoutPriceFeed(address token) public {
         vm.assume(token != JBConstants.NATIVE_TOKEN);
 
         // Mock the directory call.
@@ -1002,14 +1002,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
         );
 
         // The payment's currency (18, from positional arg order) doesn't match the hook's pricing currency.
-        // With no price feed configured, this should revert instead of silently doing nothing.
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                JB721TiersHook.JB721TiersHook_CurrencyMismatch.selector,
-                uint256(18),
-                uint256(uint32(uint160(JBConstants.NATIVE_TOKEN)))
-            )
-        );
+        // With no price feed configured, this silently returns without minting (no revert).
         vm.prank(mockTerminalAddress);
         hook.afterPayRecordedWith(
             JBAfterPayRecordedContext({
@@ -1028,6 +1021,9 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                 payerMetadata: new bytes(0)
             })
         );
+
+        // Verify no credits were added (the function returned early).
+        assertEq(hook.payCreditsOf(msg.sender), 0);
     }
 
     function test_afterPayRecorded_mintWithExistingCreditsWhenMoreExistingCreditsThanNewCredits() public {

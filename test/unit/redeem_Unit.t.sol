@@ -13,21 +13,21 @@ contract Test_cashOut_Unit is UnitTestSetup {
 
         // Set up 10 tiers, with half of the supply minted for each one.
         for (uint256 i = 1; i <= 10; i++) {
-            hook.test_store()
-                .ForTest_setTier(
-                    address(hook),
-                    i,
-                    JBStored721Tier({
-                        price: uint104(i * 10),
-                        remainingSupply: uint32(10 * i - 5 * i),
-                        initialSupply: uint32(10 * i),
-                        votingUnits: uint16(0),
-                        reserveFrequency: uint16(0),
-                        category: uint24(100),
-                        discountPercent: uint8(0),
-                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false)
-                    })
-                );
+            hook.test_store().ForTest_setTier(
+                address(hook),
+                i,
+                JBStored721Tier({
+                    price: uint104(i * 10),
+                    remainingSupply: uint32(10 * i - 5 * i),
+                    initialSupply: uint32(10 * i),
+
+                    reserveFrequency: uint16(0),
+                    category: uint24(100),
+                    discountPercent: uint8(0),
+                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false),
+                    splitPercent: 0
+                })
+            );
             totalWeight += (10 * i - 5 * i) * i * 10;
         }
 
@@ -84,21 +84,21 @@ contract Test_cashOut_Unit is UnitTestSetup {
 
         // Set up 10 tiers, with half of the supply minted for each one.
         for (uint256 i = 1; i <= 10; i++) {
-            hook.test_store()
-                .ForTest_setTier(
-                    address(hook),
-                    i,
-                    JBStored721Tier({
-                        price: uint104(i * 10),
-                        remainingSupply: uint32(10 * i - 5 * i),
-                        initialSupply: uint32(10 * i),
-                        votingUnits: uint16(0),
-                        reserveFrequency: uint16(0),
-                        category: uint24(100),
-                        discountPercent: uint8(0),
-                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false)
-                    })
-                );
+            hook.test_store().ForTest_setTier(
+                address(hook),
+                i,
+                JBStored721Tier({
+                    price: uint104(i * 10),
+                    remainingSupply: uint32(10 * i - 5 * i),
+                    initialSupply: uint32(10 * i),
+
+                    reserveFrequency: uint16(0),
+                    category: uint24(100),
+                    discountPercent: uint8(0),
+                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false),
+                    splitPercent: 0
+                })
+            );
             totalWeight += (10 * i - 5 * i) * i * 10;
         }
 
@@ -141,21 +141,21 @@ contract Test_cashOut_Unit is UnitTestSetup {
 
         // Set up 10 tiers, with half of the supply minted for each one.
         for (uint256 i = 1; i <= 10; i++) {
-            hook.test_store()
-                .ForTest_setTier(
-                    address(hook),
-                    i,
-                    JBStored721Tier({
-                        price: uint104(i * 10),
-                        remainingSupply: uint32(10 * i - 5 * i),
-                        initialSupply: uint32(10 * i),
-                        votingUnits: uint16(0),
-                        reserveFrequency: uint16(0),
-                        category: uint24(100),
-                        discountPercent: uint8(0),
-                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false)
-                    })
-                );
+            hook.test_store().ForTest_setTier(
+                address(hook),
+                i,
+                JBStored721Tier({
+                    price: uint104(i * 10),
+                    remainingSupply: uint32(10 * i - 5 * i),
+                    initialSupply: uint32(10 * i),
+
+                    reserveFrequency: uint16(0),
+                    category: uint24(100),
+                    discountPercent: uint8(0),
+                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false),
+                    splitPercent: 0
+                })
+            );
             totalWeight += (10 * i - 5 * i) * i * 10;
         }
 

@@ -17,6 +17,7 @@ import "@bananapus/core-v6/src/structs/JBAfterCashOutRecordedContext.sol";
 import "@bananapus/core-v6/src/structs/JBAfterCashOutRecordedContext.sol";
 import "@bananapus/core-v6/src/structs/JBCashOutHookSpecification.sol";
 import "@bananapus/core-v6/src/structs/JBFundAccessLimitGroup.sol";
+import "@bananapus/core-v6/src/structs/JBSplit.sol";
 import "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
 import "@bananapus/core-v6/src/interfaces/IJBRulesetApprovalHook.sol";
 
@@ -132,43 +133,21 @@ contract UnitTestSetup is Test {
         vm.etch(mockJBProjects, new bytes(0x69));
         vm.etch(mockJBController, new bytes(0x69));
 
-        defaultTierConfig = JB721TierConfig({
-            price: 0, // Use default price.
-            initialSupply: 0, // Use default supply.
-            votingUnits: 0, // Use default voting units.
-            reserveFrequency: uint16(10), // Use default reserve frequency.
-            reserveBeneficiary: reserveBeneficiary, // Use default beneficiary.
-            encodedIPFSUri: bytes32(0), // Use default hashes array.
-            category: type(uint24).max,
-            discountPercent: uint8(0),
-            allowOwnerMint: false,
-            useReserveBeneficiaryAsDefault: false,
-            transfersPausable: false,
-            cannotBeRemoved: false,
-            cannotIncreaseDiscountPercent: false,
-            useVotingUnits: true
-        });
+        // Set default tier config field-by-field (avoids nested dynamic array storage copy).
+        defaultTierConfig.reserveFrequency = uint16(10);
+        defaultTierConfig.reserveBeneficiary = reserveBeneficiary;
+        defaultTierConfig.category = type(uint24).max;
+        defaultTierConfig.useVotingUnits = true;
 
         // Create 10 tiers, each with 100 NFTs available to mint.
         for (uint256 i; i < 10; i++) {
-            tiers.push(
-                JB721TierConfig({
-                    price: uint104((i + 1) * 10), // The price is `tierId` * 10.
-                    initialSupply: uint32(100),
-                    votingUnits: uint16(0),
-                    reserveFrequency: uint16(0),
-                    reserveBeneficiary: reserveBeneficiary,
-                    encodedIPFSUri: tokenUris[i],
-                    category: uint24(100),
-                    discountPercent: uint8(0),
-                    allowOwnerMint: false,
-                    useReserveBeneficiaryAsDefault: false,
-                    transfersPausable: false,
-                    useVotingUnits: true,
-                    cannotBeRemoved: false,
-                    cannotIncreaseDiscountPercent: false
-                })
-            );
+            tiers.push(); // Push default-initialized struct (avoids nested dynamic array storage copy).
+            tiers[i].price = uint104((i + 1) * 10); // The price is `tierId` * 10.
+            tiers[i].initialSupply = uint32(100);
+            tiers[i].reserveBeneficiary = reserveBeneficiary;
+            tiers[i].encodedIPFSUri = tokenUris[i];
+            tiers[i].category = uint24(100);
+            tiers[i].useVotingUnits = true;
         }
         vm.mockCall(
             mockJBRulesets,
@@ -494,7 +473,9 @@ contract UnitTestSetup is Test {
                 transfersPausable: tierConfig.transfersPausable,
                 useVotingUnits: tierConfig.useVotingUnits,
                 cannotBeRemoved: tierConfig.cannotBeRemoved,
-                cannotIncreaseDiscountPercent: tierConfig.cannotIncreaseDiscountPercent
+                cannotIncreaseDiscountPercent: tierConfig.cannotIncreaseDiscountPercent,
+                splitPercent: tierConfig.splitPercent,
+                splits: new JBSplit[](0)
             });
 
             newTiers[i] = JB721Tier({
@@ -512,6 +493,7 @@ contract UnitTestSetup is Test {
                 transfersPausable: tierConfigs[i].transfersPausable,
                 cannotBeRemoved: tierConfigs[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigs[i].cannotIncreaseDiscountPercent,
+                splitPercent: tierConfigs[i].splitPercent,
                 resolvedUri: defaultTierConfig.encodedIPFSUri == bytes32(0)
                     ? ""
                     : string(abi.encodePacked("resolverURI", _generateTokenId(initialId + i + 1, 0)))
@@ -680,7 +662,9 @@ contract UnitTestSetup is Test {
                 transfersPausable: false,
                 useVotingUnits: true,
                 cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false
+                cannotIncreaseDiscountPercent: false,
+                splitPercent: 0,
+                splits: new JBSplit[](0)
             });
         }
         tiersHookConfig = JBDeploy721TiersHookConfig({

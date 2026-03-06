@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
+
 /// @notice Config for a single NFT tier within a `JB721TiersHook`.
 /// @custom:member price The price to buy an NFT in this tier, in terms of the currency in its `JBInitTiersConfig`.
 /// @custom:member initialSupply The total number of NFTs which can be minted from this tier.
@@ -22,6 +24,10 @@ pragma solidity ^0.8.0;
 /// power. If `useVotingUnits` is false, voting power is based on the tier's price.
 /// @custom:member cannotBeRemoved If the tier cannot be removed once added.
 /// @custom:member cannotIncreaseDiscount If the tier cannot have its discount increased.
+/// @custom:member splitPercent The percentage of the tier's price that gets routed to the tier's split group when
+/// an NFT from this tier is minted. Out of `JBConstants.SPLITS_TOTAL_PERCENT`.
+/// @custom:member splits The splits to use for this tier's split group. These define where the split portion of the
+/// tier's price gets routed when an NFT from this tier is minted.
 struct JB721TierConfig {
     uint104 price;
     uint32 initialSupply;
@@ -37,4 +43,6 @@ struct JB721TierConfig {
     bool useVotingUnits;
     bool cannotBeRemoved;
     bool cannotIncreaseDiscountPercent;
+    uint32 splitPercent;
+    JBSplit[] splits;
 }

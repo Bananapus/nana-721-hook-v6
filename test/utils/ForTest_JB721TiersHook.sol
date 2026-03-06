@@ -19,6 +19,7 @@ import "./UnitTestSetup.sol"; // Only used to get the `PAY_HOOK_ID` and `CASH_OU
 interface IJB721TiersHookStore_ForTest is IJB721TiersHookStore {
     function ForTest_dumpTiersList(address nft) external view returns (JB721Tier[] memory tiers);
     function ForTest_setTier(address hook, uint256 index, JBStored721Tier calldata newTier) external;
+    function ForTest_setTierVotingUnits(address hook, uint256 tierId, uint32 votingUnits) external;
     function ForTest_setBalanceOf(address hook, address holder, uint256 tier, uint256 balance) external;
     function ForTest_setReservesMintedFor(address hook, uint256 tier, uint256 amount) external;
     function ForTest_setIsTierRemoved(address hook, uint256 tokenId) external;
@@ -120,7 +121,7 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
                 price: storedTier.price,
                 remainingSupply: storedTier.remainingSupply,
                 initialSupply: storedTier.initialSupply,
-                votingUnits: storedTier.votingUnits,
+                votingUnits: storedTier.price,
                 reserveFrequency: storedTier.reserveFrequency,
                 reserveBeneficiary: reserveBeneficiaryOf(nft, currentSortIndex),
                 encodedIPFSUri: encodedIPFSUriOf[nft][currentSortIndex],
@@ -130,6 +131,7 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
                 transfersPausable: transfersPausable,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
+                splitPercent: storedTier.splitPercent,
                 resolvedUri: ""
             });
             // Set the next sort index.
@@ -150,6 +152,10 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
 
     function ForTest_setTier(address hook, uint256 index, JBStored721Tier calldata newTier) public override {
         _storedTierOf[address(hook)][index] = newTier;
+    }
+
+    function ForTest_setTierVotingUnits(address hook, uint256 tierId, uint32 votingUnits) public override {
+        _tierVotingUnitsOf[address(hook)][tierId] = votingUnits;
     }
 
     function ForTest_setBalanceOf(address hook, address holder, uint256 tier, uint256 balance) public override {

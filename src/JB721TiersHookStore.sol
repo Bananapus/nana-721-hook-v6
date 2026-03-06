@@ -139,6 +139,13 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @custom:returns The following tier's ID.
     mapping(address hook => mapping(uint256 tierId => uint256)) internal _tierIdAfter;
 
+    /// @notice Returns the custom voting units for the provided tier ID on the provided hook.
+    /// @dev Only populated when `useVotingUnits` is true. When not set, voting power defaults to the tier's price.
+    /// @custom:param hook The address of the 721 contract.
+    /// @custom:param tierId The ID of the tier.
+    /// @custom:returns The voting units for the tier.
+    mapping(address hook => mapping(uint256 tierId => uint32)) internal _tierVotingUnitsOf;
+
     //*********************************************************************//
     // ------------------------- external views -------------------------- //
     //*********************************************************************//
@@ -232,7 +239,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         (,, bool useVotingUnits,,) = _unpackBools(storedTier.packedBools);
 
         // Return the address' voting units within the tier.
-        return balance * (useVotingUnits ? storedTier.votingUnits : storedTier.price);
+        return balance * (useVotingUnits ? _tierVotingUnitsOf[hook][tierId] : storedTier.price);
     }
 
     /// @notice Gets an array of currently active 721 tiers for the provided 721 contract.
@@ -368,7 +375,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
             // Add the voting units for the address' balance in this tier.
             // Use custom voting units if set. Otherwise, use the tier's price.
-            units += balance * (useVotingUnits ? storedTier.votingUnits : storedTier.price);
+            units += balance * (useVotingUnits ? _tierVotingUnitsOf[hook][i] : storedTier.price);
         }
     }
 
@@ -529,7 +536,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             price: storedTier.price,
             remainingSupply: storedTier.remainingSupply,
             initialSupply: storedTier.initialSupply,
-            votingUnits: useVotingUnits ? storedTier.votingUnits : storedTier.price,
+            votingUnits: useVotingUnits ? _tierVotingUnitsOf[hook][tierId] : storedTier.price,
             // No reserve frequency if there is no reserve beneficiary.
             reserveFrequency: reserveBeneficiary == address(0) ? 0 : storedTier.reserveFrequency,
             reserveBeneficiary: reserveBeneficiary,
@@ -540,6 +547,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             transfersPausable: transfersPausable,
             cannotBeRemoved: cannotBeRemoved,
             cannotIncreaseDiscountPercent: cannotIncreaseDiscountPercent,
+            splitPercent: storedTier.splitPercent,
             resolvedUri: !includeResolvedUri || tokenUriResolverOf[hook] == IJB721TokenUriResolver(address(0))
                 ? ""
                 : tokenUriResolverOf[hook].tokenUriOf({
@@ -848,7 +856,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                 price: uint104(tierToAdd.price),
                 remainingSupply: uint32(tierToAdd.initialSupply),
                 initialSupply: uint32(tierToAdd.initialSupply),
-                votingUnits: uint32(tierToAdd.votingUnits),
+                splitPercent: uint32(tierToAdd.splitPercent),
                 reserveFrequency: uint16(tierToAdd.reserveFrequency),
                 category: uint24(tierToAdd.category),
                 discountPercent: uint8(tierToAdd.discountPercent),
@@ -860,6 +868,11 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                     cannotIncreaseDiscountPercent: tierToAdd.cannotIncreaseDiscountPercent
                 })
             });
+
+            // Store voting units in a separate mapping if custom voting units are used.
+            if (tierToAdd.useVotingUnits && tierToAdd.votingUnits != 0) {
+                _tierVotingUnitsOf[msg.sender][tierId] = uint32(tierToAdd.votingUnits);
+            }
 
             // If this is the first tier in a new category, store it as the first tier in that category.
             // The `_startingTierIdOfCategory` of the category "0" will always be the same as the `_tierIdAfter` the 0th
