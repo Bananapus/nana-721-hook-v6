@@ -57,6 +57,7 @@ library JB721TiersHookLib {
         if (tiersToAdd.length != 0) {
             uint256[] memory tierIdsAdded = store.recordAddTiers(tiersToAdd);
 
+            // slither-disable-next-line reentrancy-events
             for (uint256 i; i < tiersToAdd.length; i++) {
                 emit AddTier({tierId: tierIdsAdded[i], tier: tiersToAdd[i], caller: caller});
             }
@@ -137,8 +138,10 @@ library JB721TiersHookLib {
         uint256 splitTierCount;
 
         for (uint256 i; i < tierIdsToMint.length; i++) {
+            // slither-disable-next-line calls-loop
             uint256 splitPercent = store.tierOf(hook, tierIdsToMint[i], false).splitPercent;
             if (splitPercent != 0) {
+                // slither-disable-next-line calls-loop
                 uint256 price = store.tierOf(hook, tierIdsToMint[i], false).price;
                 splitTierIds[splitTierCount] = tierIdsToMint[i];
                 splitAmounts[splitTierCount] = mulDiv(price, splitPercent, JBConstants.SPLITS_TOTAL_PERCENT);
@@ -222,6 +225,7 @@ library JB721TiersHookLib {
     )
         private
     {
+        // slither-disable-next-line calls-loop
         JBSplit[] memory tierSplits = splitsContract.splitsOf(projectId, 0, groupId);
 
         bool isNativeToken = token == JBConstants.NATIVE_TOKEN;
@@ -256,6 +260,7 @@ library JB721TiersHookLib {
         private
     {
         if (split.projectId != 0) {
+            // slither-disable-next-line calls-loop
             IJBTerminal terminal = directory.primaryTerminalOf(split.projectId, token);
             if (address(terminal) == address(0)) return;
 
@@ -266,6 +271,7 @@ library JB721TiersHookLib {
             }
         } else if (split.beneficiary != address(0)) {
             if (isNativeToken) {
+                // slither-disable-next-line arbitrary-send-eth,calls-loop
                 (bool success,) = split.beneficiary.call{value: amount}("");
                 if (!success) revert();
             } else {
@@ -283,6 +289,7 @@ library JB721TiersHookLib {
     )
         private
     {
+        // slither-disable-next-line calls-loop
         IJBTerminal terminal = directory.primaryTerminalOf(projectId, token);
         if (address(terminal) == address(0)) return;
         _terminalAddToBalance(terminal, projectId, token, amount, isNativeToken);
@@ -298,9 +305,11 @@ library JB721TiersHookLib {
         private
     {
         if (isNativeToken) {
+            // slither-disable-next-line arbitrary-send-eth,calls-loop
             terminal.addToBalanceOf{value: amount}(projectId, token, amount, false, "", bytes(""));
         } else {
             SafeERC20.forceApprove(IERC20(token), address(terminal), amount);
+            // slither-disable-next-line calls-loop
             terminal.addToBalanceOf(projectId, token, amount, false, "", bytes(""));
         }
     }
@@ -316,9 +325,11 @@ library JB721TiersHookLib {
         private
     {
         if (isNativeToken) {
+            // slither-disable-next-line arbitrary-send-eth,unused-return,calls-loop
             terminal.pay{value: amount}(projectId, token, amount, beneficiary, 0, "", bytes(""));
         } else {
             SafeERC20.forceApprove(IERC20(token), address(terminal), amount);
+            // slither-disable-next-line unused-return,calls-loop
             terminal.pay(projectId, token, amount, beneficiary, 0, "", bytes(""));
         }
     }
