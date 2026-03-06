@@ -13,21 +13,21 @@ contract Test_cashOut_Unit is UnitTestSetup {
 
         // Set up 10 tiers, with half of the supply minted for each one.
         for (uint256 i = 1; i <= 10; i++) {
-            hook.test_store().ForTest_setTier(
-                address(hook),
-                i,
-                JBStored721Tier({
-                    price: uint104(i * 10),
-                    remainingSupply: uint32(10 * i - 5 * i),
-                    initialSupply: uint32(10 * i),
-
-                    reserveFrequency: uint16(0),
-                    category: uint24(100),
-                    discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false),
-                    splitPercent: 0
-                })
-            );
+            hook.test_store()
+                .ForTest_setTier(
+                    address(hook),
+                    i,
+                    JBStored721Tier({
+                        price: uint104(i * 10),
+                        remainingSupply: uint32(10 * i - 5 * i),
+                        initialSupply: uint32(10 * i),
+                        reserveFrequency: uint16(0),
+                        category: uint24(100),
+                        discountPercent: uint8(0),
+                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false),
+                        splitPercent: 0
+                    })
+                );
             totalWeight += (10 * i - 5 * i) * i * 10;
         }
 
@@ -84,21 +84,21 @@ contract Test_cashOut_Unit is UnitTestSetup {
 
         // Set up 10 tiers, with half of the supply minted for each one.
         for (uint256 i = 1; i <= 10; i++) {
-            hook.test_store().ForTest_setTier(
-                address(hook),
-                i,
-                JBStored721Tier({
-                    price: uint104(i * 10),
-                    remainingSupply: uint32(10 * i - 5 * i),
-                    initialSupply: uint32(10 * i),
-
-                    reserveFrequency: uint16(0),
-                    category: uint24(100),
-                    discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false),
-                    splitPercent: 0
-                })
-            );
+            hook.test_store()
+                .ForTest_setTier(
+                    address(hook),
+                    i,
+                    JBStored721Tier({
+                        price: uint104(i * 10),
+                        remainingSupply: uint32(10 * i - 5 * i),
+                        initialSupply: uint32(10 * i),
+                        reserveFrequency: uint16(0),
+                        category: uint24(100),
+                        discountPercent: uint8(0),
+                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false),
+                        splitPercent: 0
+                    })
+                );
             totalWeight += (10 * i - 5 * i) * i * 10;
         }
 
@@ -123,7 +123,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
                 }),
                 useTotalSurplus: true,
                 cashOutTaxRate: cashOutTaxRate,
-                metadata: abi.encode(bytes32(0), type(IJB721Hook).interfaceId, tokenList)
+                metadata: abi.encode(bytes32(0), type(IJB721TiersHook).interfaceId, tokenList)
             })
         );
 
@@ -141,21 +141,21 @@ contract Test_cashOut_Unit is UnitTestSetup {
 
         // Set up 10 tiers, with half of the supply minted for each one.
         for (uint256 i = 1; i <= 10; i++) {
-            hook.test_store().ForTest_setTier(
-                address(hook),
-                i,
-                JBStored721Tier({
-                    price: uint104(i * 10),
-                    remainingSupply: uint32(10 * i - 5 * i),
-                    initialSupply: uint32(10 * i),
-
-                    reserveFrequency: uint16(0),
-                    category: uint24(100),
-                    discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false),
-                    splitPercent: 0
-                })
-            );
+            hook.test_store()
+                .ForTest_setTier(
+                    address(hook),
+                    i,
+                    JBStored721Tier({
+                        price: uint104(i * 10),
+                        remainingSupply: uint32(10 * i - 5 * i),
+                        initialSupply: uint32(10 * i),
+                        reserveFrequency: uint16(0),
+                        category: uint24(100),
+                        discountPercent: uint8(0),
+                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false),
+                        splitPercent: 0
+                    })
+                );
             totalWeight += (10 * i - 5 * i) * i * 10;
         }
 
@@ -206,7 +206,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
         vm.assume(tokenCount > 0);
 
         // Expect a revert on account of the token count being non-zero while the total supply is zero.
-        vm.expectRevert(abi.encodeWithSelector(JB721Hook.JB721Hook_UnexpectedTokenCashedOut.selector));
+        vm.expectRevert(abi.encodeWithSelector(JB721TiersHook.JB721TiersHook_UnexpectedTokenCashedOut.selector));
 
         hook.beforeCashOutRecordedWith(
             JBBeforeCashOutRecordedContext({
@@ -347,7 +347,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
         );
 
         // Expect to revert on account of the project ID being incorrect.
-        vm.expectRevert(abi.encodeWithSelector(JB721Hook.JB721Hook_InvalidCashOut.selector));
+        vm.expectRevert(abi.encodeWithSelector(JB721TiersHook.JB721TiersHook_InvalidCashOut.selector));
 
         vm.prank(mockTerminalAddress);
         hook.afterCashOutRecordedWith(
@@ -382,7 +382,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
         );
 
         // Expect to revert on account of the caller not being a terminal of the project.
-        vm.expectRevert(abi.encodeWithSelector(JB721Hook.JB721Hook_InvalidCashOut.selector));
+        vm.expectRevert(abi.encodeWithSelector(JB721TiersHook.JB721TiersHook_InvalidCashOut.selector));
 
         vm.prank(mockTerminalAddress);
         hook.afterCashOutRecordedWith(
@@ -434,7 +434,9 @@ contract Test_cashOut_Unit is UnitTestSetup {
             abi.encode(true)
         );
 
-        vm.expectRevert(abi.encodeWithSelector(JB721Hook.JB721Hook_UnauthorizedToken.selector, tokenId, wrongHolder));
+        vm.expectRevert(
+            abi.encodeWithSelector(JB721TiersHook.JB721TiersHook_UnauthorizedToken.selector, tokenId, wrongHolder)
+        );
 
         vm.prank(mockTerminalAddress);
         hook.afterCashOutRecordedWith(

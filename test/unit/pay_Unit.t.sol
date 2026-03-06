@@ -965,7 +965,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
         vm.prank(terminal);
 
         // Expect a revert for the caller not being a terminal of the project.
-        vm.expectRevert(abi.encodeWithSelector(JB721Hook.JB721Hook_InvalidPay.selector));
+        vm.expectRevert(abi.encodeWithSelector(JB721TiersHook.JB721TiersHook_InvalidPay.selector));
 
         hook.afterPayRecordedWith(
             JBAfterPayRecordedContext({

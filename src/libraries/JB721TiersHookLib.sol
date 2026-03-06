@@ -42,7 +42,9 @@ library JB721TiersHookLib {
         address caller,
         JB721TierConfig[] calldata tiersToAdd,
         uint256[] calldata tierIdsToRemove
-    ) external {
+    )
+        external
+    {
         // Remove tiers.
         if (tierIdsToRemove.length != 0) {
             for (uint256 i; i < tierIdsToRemove.length; i++) {
@@ -63,6 +65,7 @@ library JB721TiersHookLib {
             _setSplitGroupsFor(directory, projectId, hookAddress, tiersToAdd, tierIdsAdded);
         }
     }
+
     /// @notice Normalizes a payment value based on the packed pricing context.
     /// @param packedPricingContext The packed pricing context (currency, decimals, prices address).
     /// @param projectId The project ID.
@@ -77,7 +80,11 @@ library JB721TiersHookLib {
         uint256 amountValue,
         uint256 amountCurrency,
         uint256 amountDecimals
-    ) external view returns (uint256 value, bool valid) {
+    )
+        external
+        view
+        returns (uint256 value, bool valid)
+    {
         uint256 pricingCurrency = uint256(uint32(packedPricingContext));
         if (amountCurrency == pricingCurrency) return (amountValue, true);
 
@@ -110,12 +117,15 @@ library JB721TiersHookLib {
         address hook,
         address metadataIdTarget,
         bytes calldata metadata
-    ) external view returns (uint256 totalSplitAmount, bytes memory hookMetadata) {
+    )
+        external
+        view
+        returns (uint256 totalSplitAmount, bytes memory hookMetadata)
+    {
         bytes memory data;
         {
             bool found;
-            (found, data) =
-                JBMetadataResolver.getDataFor(JBMetadataResolver.getId("pay", metadataIdTarget), metadata);
+            (found, data) = JBMetadataResolver.getDataFor(JBMetadataResolver.getId("pay", metadataIdTarget), metadata);
             if (!found) return (0, bytes(""));
         }
 
@@ -153,7 +163,9 @@ library JB721TiersHookLib {
         address hookAddress,
         JB721TierConfig[] calldata tiersToAdd,
         uint256[] memory tierIdsAdded
-    ) private {
+    )
+        private
+    {
         uint256 splitGroupCount;
         for (uint256 i; i < tiersToAdd.length; i++) {
             if (tiersToAdd[i].splits.length != 0) splitGroupCount++;
@@ -165,15 +177,12 @@ library JB721TiersHookLib {
         for (uint256 i; i < tiersToAdd.length; i++) {
             if (tiersToAdd[i].splits.length != 0) {
                 splitGroups[groupIndex] = JBSplitGroup({
-                    groupId: uint256(uint160(hookAddress)) | (tierIdsAdded[i] << 160),
-                    splits: tiersToAdd[i].splits
+                    groupId: uint256(uint160(hookAddress)) | (tierIdsAdded[i] << 160), splits: tiersToAdd[i].splits
                 });
                 groupIndex++;
             }
         }
-        IJBController(address(directory.controllerOf(projectId))).SPLITS().setSplitGroupsOf(
-            projectId, 0, splitGroups
-        );
+        IJBController(address(directory.controllerOf(projectId))).SPLITS().setSplitGroupsOf(projectId, 0, splitGroups);
     }
 
     /// @notice Distributes forwarded funds for all tiers in the hook metadata.
@@ -188,7 +197,9 @@ library JB721TiersHookLib {
         address hookAddress,
         address token,
         bytes calldata encodedSplitData
-    ) external {
+    )
+        external
+    {
         (uint16[] memory tierIds, uint256[] memory amounts) = abi.decode(encodedSplitData, (uint16[], uint256[]));
 
         IJBSplits splitsContract = IJBController(address(directory.controllerOf(projectId))).SPLITS();
@@ -208,7 +219,9 @@ library JB721TiersHookLib {
         address token,
         uint256 groupId,
         uint256 amount
-    ) private {
+    )
+        private
+    {
         JBSplit[] memory tierSplits = splitsContract.splitsOf(projectId, 0, groupId);
 
         bool isNativeToken = token == JBConstants.NATIVE_TOKEN;
@@ -239,7 +252,9 @@ library JB721TiersHookLib {
         address token,
         uint256 amount,
         bool isNativeToken
-    ) private {
+    )
+        private
+    {
         if (split.projectId != 0) {
             IJBTerminal terminal = directory.primaryTerminalOf(split.projectId, token);
             if (address(terminal) == address(0)) return;
@@ -265,7 +280,9 @@ library JB721TiersHookLib {
         address token,
         uint256 amount,
         bool isNativeToken
-    ) private {
+    )
+        private
+    {
         IJBTerminal terminal = directory.primaryTerminalOf(projectId, token);
         if (address(terminal) == address(0)) return;
         _terminalAddToBalance(terminal, projectId, token, amount, isNativeToken);
@@ -277,7 +294,9 @@ library JB721TiersHookLib {
         address token,
         uint256 amount,
         bool isNativeToken
-    ) private {
+    )
+        private
+    {
         if (isNativeToken) {
             terminal.addToBalanceOf{value: amount}(projectId, token, amount, false, "", bytes(""));
         } else {
@@ -293,7 +312,9 @@ library JB721TiersHookLib {
         uint256 amount,
         address beneficiary,
         bool isNativeToken
-    ) private {
+    )
+        private
+    {
         if (isNativeToken) {
             terminal.pay{value: amount}(projectId, token, amount, beneficiary, 0, "", bytes(""));
         } else {

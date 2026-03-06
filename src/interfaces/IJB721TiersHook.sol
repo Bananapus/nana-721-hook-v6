@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {IJBCashOutHook} from "@bananapus/core-v6/src/interfaces/IJBCashOutHook.sol";
+import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
+import {IJBPayHook} from "@bananapus/core-v6/src/interfaces/IJBPayHook.sol";
 import {IJBPrices} from "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
+import {IJBRulesetDataHook} from "@bananapus/core-v6/src/interfaces/IJBRulesetDataHook.sol";
 import {IJBRulesets} from "@bananapus/core-v6/src/interfaces/IJBRulesets.sol";
 
-import {IJB721Hook} from "./IJB721Hook.sol";
 import {IJB721TiersHookStore} from "./IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "./IJB721TokenUriResolver.sol";
 import {JB721InitTiersConfig} from "../structs/JB721InitTiersConfig.sol";
@@ -13,7 +16,7 @@ import {JB721TiersHookFlags} from "../structs/JB721TiersHookFlags.sol";
 import {JB721TiersMintReservesConfig} from "../structs/JB721TiersMintReservesConfig.sol";
 import {JB721TiersSetDiscountPercentConfig} from "../structs/JB721TiersSetDiscountPercentConfig.sol";
 
-interface IJB721TiersHook is IJB721Hook {
+interface IJB721TiersHook is IJBRulesetDataHook, IJBPayHook, IJBCashOutHook {
     event AddPayCredits(
         uint256 indexed amount, uint256 indexed newTotalCredits, address indexed account, address caller
     );
@@ -35,6 +38,18 @@ interface IJB721TiersHook is IJB721Hook {
     event UsePayCredits(
         uint256 indexed amount, uint256 indexed newTotalCredits, address indexed account, address caller
     );
+
+    /// @notice The directory of terminals and controllers for projects.
+    /// @return The directory contract.
+    function DIRECTORY() external view returns (IJBDirectory);
+
+    /// @notice The ID used when parsing metadata.
+    /// @return The address of the metadata ID target.
+    function METADATA_ID_TARGET() external view returns (address);
+
+    /// @notice The ID of the project that this contract is associated with.
+    /// @return The project ID.
+    function PROJECT_ID() external view returns (uint256);
 
     /// @notice The contract storing and managing project rulesets.
     /// @return The rulesets contract.

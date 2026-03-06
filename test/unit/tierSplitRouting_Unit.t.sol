@@ -24,7 +24,11 @@ contract Test_TierSplitRouting is UnitTestSetup {
     function _tierConfigWithSplit(
         uint104 price,
         uint32 splitPercent
-    ) internal pure returns (JB721TierConfig memory config) {
+    )
+        internal
+        pure
+        returns (JB721TierConfig memory config)
+    {
         config.price = price;
         config.initialSupply = uint32(100);
         config.category = uint24(1);
@@ -36,7 +40,11 @@ contract Test_TierSplitRouting is UnitTestSetup {
     function _buildPayerMetadata(
         address hookAddress,
         uint16[] memory tierIdsToMint
-    ) internal view returns (bytes memory) {
+    )
+        internal
+        view
+        returns (bytes memory)
+    {
         bytes[] memory data = new bytes[](1);
         data[0] = abi.encode(false, tierIdsToMint);
         bytes4[] memory ids = new bytes4[](1);
@@ -201,11 +209,7 @@ contract Test_TierSplitRouting is UnitTestSetup {
             abi.encodeWithSelector(IJBDirectory.controllerOf.selector, projectId),
             abi.encode(mockJBController)
         );
-        mockAndExpect(
-            mockJBController,
-            abi.encodeWithSelector(IJBController.SPLITS.selector),
-            abi.encode(mockSplits)
-        );
+        mockAndExpect(mockJBController, abi.encodeWithSelector(IJBController.SPLITS.selector), abi.encode(mockSplits));
 
         // Mock splits: alice gets 100%.
         JBSplit[] memory splits = new JBSplit[](1);
@@ -220,9 +224,7 @@ contract Test_TierSplitRouting is UnitTestSetup {
 
         uint256 groupId = uint256(uint160(address(testHook))) | (uint256(tierIds[0]) << 160);
         mockAndExpect(
-            mockSplits,
-            abi.encodeWithSelector(IJBSplits.splitsOf.selector, projectId, 0, groupId),
-            abi.encode(splits)
+            mockSplits, abi.encodeWithSelector(IJBSplits.splitsOf.selector, projectId, 0, groupId), abi.encode(splits)
         );
 
         // Build payer metadata.
@@ -270,5 +272,4 @@ contract Test_TierSplitRouting is UnitTestSetup {
         // NFT should have been minted.
         assertEq(testHook.balanceOf(beneficiary), 1);
     }
-
 }
