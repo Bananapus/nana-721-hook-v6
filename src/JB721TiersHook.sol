@@ -261,22 +261,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
         hookSpecifications[0] = JBPayHookSpecification({hook: this, amount: totalSplitAmount, metadata: splitMetadata});
     }
 
-    /// @notice The combined cash out weight of the NFTs with the specified token IDs.
-    /// @dev An NFT's cash out weight is its price.
-    /// @dev To get their relative cash out weight, divide the result by the `totalCashOutWeight(...)`.
-    /// @param tokenIds The token IDs of the NFTs to get the cumulative cash out weight of.
-    /// @return weight The cash out weight of the tokenIds.
-    function cashOutWeightOf(
-        uint256[] memory tokenIds,
-        JBBeforeCashOutRecordedContext calldata
-    )
-        public
-        view
-        returns (uint256)
-    {
-        return STORE.cashOutWeightOf({hook: address(this), tokenIds: tokenIds});
-    }
-
     /// @notice Indicates if this contract adheres to the specified interface.
     /// @dev See {IERC165-supportsInterface}.
     /// @param interfaceId The ID of the interface to check for adherence to.
@@ -377,17 +361,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
         return JBIpfsDecoder.decode({
             baseUri: baseURI, hexString: STORE.encodedTierIPFSUriOf({hook: address(this), tokenId: tokenId})
         });
-    }
-
-    /// @notice The combined cash out weight of all outstanding NFTs.
-    /// @dev An NFT's cash out weight is its price.
-    /// @return weight The total cash out weight.
-    function totalCashOutWeight(JBBeforeCashOutRecordedContext calldata)
-        public
-        view
-        returns (uint256)
-    {
-        return STORE.totalCashOutWeight(address(this));
     }
 
     //*********************************************************************//
