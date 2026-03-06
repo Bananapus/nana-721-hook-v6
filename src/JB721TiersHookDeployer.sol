@@ -100,6 +100,7 @@ contract JB721TiersHookDeployer is ERC2771Context, IJB721TiersHookDeployer {
         JBOwnable(address(newHook)).transferOwnership(_msgSender());
 
         // Increment the nonce.
+        // slither-disable-next-line reentrancy-benign
         ++_nonce;
 
         // Add the hook to the address registry. This contract's nonce starts at 1.
