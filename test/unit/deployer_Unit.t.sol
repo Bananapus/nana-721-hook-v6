@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.23;
+pragma solidity 0.8.26;
 
 import "@bananapus/address-registry-v6/src/JBAddressRegistry.sol";
 import "@bananapus/core-v6/src/interfaces/IJBController.sol";
