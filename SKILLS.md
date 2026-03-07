@@ -8,11 +8,13 @@ Tiered ERC-721 NFT hook for Juicebox V6 that mints NFTs when a project is paid a
 
 | Contract | Role |
 |----------|------|
-| `JB721TiersHook` | Core hook: processes payments (mints NFTs), processes cash outs (burns NFTs), manages tiers, reserves, credits, metadata, and discount percents. Deployed as minimal clones. Inherits `JBOwnable`, `ERC2771Context`, `ERC721`, `IJB721TiersHook`. |
+| `JB721Hook` (abstract) | Abstract base hook: owns `DIRECTORY`, `METADATA_ID_TARGET`, `PROJECT_ID`. Implements `afterPayRecordedWith` (terminal validation + delegates to virtual `_processPayment`), `afterCashOutRecordedWith` (terminal validation, burn loop, delegates to virtual `_didBurn`), `beforeCashOutRecordedWith` (metadata decoding, delegates to virtual `cashOutWeightOf`/`totalCashOutWeight`), `beforePayRecordedWith` (default: forward weight), `hasMintPermissionFor` (returns false), `supportsInterface`, and `_initialize`. |
+| `JB721TiersHook` | Core hook: extends `JB721Hook`. Manages tiers, reserves, credits, metadata, and discount percents. Deployed as minimal clones. Inherits `JBOwnable`, `ERC2771Context`, `JB721Hook`, `IJB721TiersHook`. Overrides `cashOutWeightOf`, `totalCashOutWeight`, `_didBurn`, `_processPayment`, and `beforePayRecordedWith` (adds tier split calculation). |
 | `JB721TiersHookStore` | Shared singleton storage for all hook instances. Stores tiers (`JBStored721Tier`), balances, reserves, bitmaps for removed tiers, flags, and token URI resolvers. |
 | `JB721TiersHookDeployer` | Factory: clones `JB721TiersHook` via `LibClone.clone` / `cloneDeterministic`, initializes, registers in address registry. |
 | `JB721TiersHookProjectDeployer` | Convenience deployer: creates a Juicebox project + hook in one transaction. Also supports `launchRulesetsFor` and `queueRulesetsOf`. Wires the hook as the data hook with `useDataHookForPay: true`. |
 | `JB721TiersHookLib` (library) | External library called via DELEGATECALL from the hook. Handles tier adjustments (`adjustTiersFor`), split amount calculation (`calculateSplitAmounts`), split fund distribution (`distributeAll`), price normalization (`normalizePaymentValue`), and token URI resolution (`resolveTokenURI`). Extracted to stay within EIP-170 contract size limit. |
+| `IJB721Hook` (interface) | Interface for `JB721Hook`: extends `IJBRulesetDataHook`, `IJBPayHook`, `IJBCashOutHook`. Declares `DIRECTORY()`, `METADATA_ID_TARGET()`, `PROJECT_ID()`. |
 | `ERC721` (abstract) | Clone-compatible ERC-721 with `_initialize(name, symbol)` instead of constructor args. |
 
 ## Key Functions
@@ -20,11 +22,11 @@ Tiered ERC-721 NFT hook for Juicebox V6 that mints NFTs when a project is paid a
 | Function | Contract | What it does |
 |----------|----------|--------------|
 | `initialize(projectId, name, symbol, baseUri, tokenUriResolver, contractUri, tiersConfig, flags)` | `JB721TiersHook` | One-time setup for a cloned hook instance. Stores pricing context (currency, decimals, prices contract packed into uint256), records tiers and flags in the store. Validates `decimals <= 18`. |
-| `afterPayRecordedWith(context)` | `JB721TiersHook` | Called by terminal after payment. Validates caller is a project terminal, delegates to `_processPayment`. |
+| `afterPayRecordedWith(context)` | `JB721Hook` | Called by terminal after payment. Validates caller is a project terminal, delegates to virtual `_processPayment`. |
 | `_processPayment(context)` | `JB721TiersHook` | Normalizes payment value via pricing context, decodes payer metadata for tier IDs to mint, calls `_mintAll`, manages pay credits for overspending. Distributes tier split funds via `JB721TiersHookLib.distributeAll` if split amounts were forwarded. |
-| `afterCashOutRecordedWith(context)` | `JB721TiersHook` | Called by terminal during cash out. Decodes token IDs from metadata, validates ownership, burns NFTs, records burns in store. Reverts if `msg.value != 0`. |
+| `afterCashOutRecordedWith(context)` | `JB721Hook` | Called by terminal during cash out. Decodes token IDs from metadata, validates ownership, burns NFTs, delegates to virtual `_didBurn`. Reverts if `msg.value != 0`. |
 | `beforePayRecordedWith(context)` | `JB721TiersHook` | Data hook: returns original weight, calculates per-tier split amounts via `JB721TiersHookLib.calculateSplitAmounts`, and sets this contract as the pay hook with the total split amount forwarded. |
-| `beforeCashOutRecordedWith(context)` | `JB721TiersHook` | Data hook: calculates `cashOutCount` (weight of NFTs being cashed out) and `totalSupply` (total weight of all NFTs including pending reserves). Rejects if fungible tokens are also being cashed out. |
+| `beforeCashOutRecordedWith(context)` | `JB721Hook` | Data hook: calculates `cashOutCount` (via virtual `cashOutWeightOf`) and `totalSupply` (via virtual `totalCashOutWeight`). Rejects if fungible tokens are also being cashed out. |
 | `adjustTiers(tiersToAdd, tierIdsToRemove)` | `JB721TiersHook` | Owner-only. Adds/removes tiers via `JB721TiersHookLib.adjustTiersFor` (DELEGATECALL). Requires `ADJUST_721_TIERS` permission. Registers tier splits in `JBSplits` if configured. |
 | `mintFor(tierIds, beneficiary)` | `JB721TiersHook` | Owner-only manual mint. Requires `MINT_721` permission. Passes `amount: type(uint256).max` and `isOwnerMint: true` to force the mint. |
 | `mintPendingReservesFor(tierId, count)` | `JB721TiersHook` | Public. Mints pending reserve NFTs for a tier to the tier's `reserveBeneficiary`. Checks ruleset metadata for `mintPendingReservesPaused`. |
@@ -36,7 +38,7 @@ Tiered ERC-721 NFT hook for Juicebox V6 that mints NFTs when a project is paid a
 | `firstOwnerOf(tokenId)` | `JB721TiersHook` | Returns the first owner of an NFT (the address that originally received it). Stored on first transfer out; returns current owner if never transferred. |
 | `pricingContext()` | `JB721TiersHook` | Unpacks and returns the currency, decimals, and prices contract from the packed `_packedPricingContext`. |
 | `balanceOf(owner)` | `JB721TiersHook` | Overrides ERC-721 `balanceOf` to delegate to `STORE.balanceOf`, which sums across all tiers. |
-| `hasMintPermissionFor(...)` | `JB721TiersHook` | Always returns `false`. Required by `IJBRulesetDataHook`; prevents the hook from granting mint permissions to anyone. |
+| `hasMintPermissionFor(...)` | `JB721Hook` | Always returns `false`. Required by `IJBRulesetDataHook`; prevents the hook from granting mint permissions to anyone. |
 | `supportsInterface(interfaceId)` | `JB721TiersHook` | Returns `true` for `IJB721TiersHook`, `IJBRulesetDataHook`, `IJBPayHook`, `IJBCashOutHook`, `IERC2981`, `IERC721`, `IERC721Metadata`, `IERC165`. |
 | `deployHookFor(projectId, config, salt)` | `JB721TiersHookDeployer` | Clones the hook implementation, initializes it, transfers ownership to caller, registers in address registry. |
 | `launchProjectFor(owner, deployConfig, launchConfig, controller, salt)` | `JB721TiersHookProjectDeployer` | Creates project via controller, deploys hook, wires hook as data hook with `useDataHookForPay: true`, transfers hook ownership to project. |
@@ -143,7 +145,7 @@ Each tier has configurable voting power:
 ## Gotchas
 
 - `JB721TiersHook` is deployed as a **minimal clone** (not a full deployment). The constructor sets immutables (`RULESETS`, `STORE`, `DIRECTORY`, `METADATA_ID_TARGET`), and `initialize()` sets per-instance state. Calling `initialize()` twice reverts with `JB721TiersHook_AlreadyInitialized`.
-- **No separate `JB721Hook` abstract**: The V6 codebase flattened the hook hierarchy. `JB721TiersHook` directly inherits `JBOwnable`, `ERC2771Context`, `ERC721`, and `IJB721TiersHook`. All `beforePay`/`afterPay`/`beforeCashOut`/`afterCashOut` functions are on `JB721TiersHook` itself.
+- **`JB721Hook` abstract base**: `JB721TiersHook` extends `JB721Hook`, which handles generic 721 hook lifecycle (terminal validation, burn loop, metadata decoding). `JB721TiersHook` overrides `cashOutWeightOf`, `totalCashOutWeight`, `_didBurn`, `_processPayment`, and `beforePayRecordedWith`. Errors like `JB721Hook_InvalidPay` and `JB721Hook_InvalidCashOut` are defined on the abstract class, not `JB721TiersHook`.
 - **Pricing context is bit-packed** into a single `uint256`: currency (bits 0-31), decimals (bits 32-39), prices contract address (bits 40-199). Read it via `pricingContext()`.
 - **Pricing decimals must be <= 18**: `initialize` reverts with `JB721TiersHook_InvalidPricingDecimals` otherwise.
 - **Token IDs encode tier ID**: `tokenId = tierId * 1_000_000_000 + mintNumber`. Use `STORE.tierIdOfToken(tokenId)` to extract the tier ID.
