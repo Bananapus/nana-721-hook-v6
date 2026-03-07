@@ -711,9 +711,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
         // If the payer is the beneficiary, combine their NFT credits with the amount paid.
         uint256 unusedPayCredits;
         if (context.payer == context.beneficiary) {
-            unchecked {
-                leftoverAmount += payCredits;
-            }
+            leftoverAmount += payCredits;
         } else {
             // Otherwise, the payer's NFT credits won't be used, and we keep track of the unused credits.
             unusedPayCredits = payCredits;
@@ -755,28 +753,26 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
         if (leftoverAmount != 0 && !allowOverspending) revert JB721TiersHook_Overspending(leftoverAmount);
 
         // Update NFT credits if they changed.
-        unchecked {
-            uint256 newPayCredits = leftoverAmount + unusedPayCredits;
+        uint256 newPayCredits = leftoverAmount + unusedPayCredits;
 
-            if (newPayCredits != payCredits) {
-                if (newPayCredits > payCredits) {
-                    emit AddPayCredits({
-                        amount: newPayCredits - payCredits,
-                        newTotalCredits: newPayCredits,
-                        account: context.beneficiary,
-                        caller: _msgSender()
-                    });
-                } else {
-                    emit UsePayCredits({
-                        amount: payCredits - newPayCredits,
-                        newTotalCredits: newPayCredits,
-                        account: context.beneficiary,
-                        caller: _msgSender()
-                    });
-                }
-
-                payCreditsOf[context.beneficiary] = newPayCredits;
+        if (newPayCredits != payCredits) {
+            if (newPayCredits > payCredits) {
+                emit AddPayCredits({
+                    amount: newPayCredits - payCredits,
+                    newTotalCredits: newPayCredits,
+                    account: context.beneficiary,
+                    caller: _msgSender()
+                });
+            } else {
+                emit UsePayCredits({
+                    amount: payCredits - newPayCredits,
+                    newTotalCredits: newPayCredits,
+                    account: context.beneficiary,
+                    caller: _msgSender()
+                });
             }
+
+            payCreditsOf[context.beneficiary] = newPayCredits;
         }
 
         // Distribute any forwarded funds to tier split groups.

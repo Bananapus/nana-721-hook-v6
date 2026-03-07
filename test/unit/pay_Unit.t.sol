@@ -1530,4 +1530,90 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
         // Check: has the holder's balance returned to 0?
         assertEq(hook.balanceOf(holder), 0);
     }
+
+    function test_afterPayRecorded_revertOnCreditOverflow_samePayerBeneficiary() public {
+        // Mock the directory call.
+        mockAndExpect(
+            address(mockJBDirectory),
+            abi.encodeWithSelector(IJBDirectory.isTerminalOf.selector, projectId, mockTerminalAddress),
+            abi.encode(true)
+        );
+
+        // Set the beneficiary's pay credits to max uint256.
+        stdstore.target(address(hook)).sig("payCreditsOf(address)").with_key(beneficiary).checked_write(
+            type(uint256).max
+        );
+
+        // Pay 1 wei where payer == beneficiary. No metadata → no NFT mints.
+        // `leftoverAmount += payCredits` overflows: 1 + type(uint256).max.
+        vm.expectRevert(stdError.arithmeticError);
+        vm.prank(mockTerminalAddress);
+        hook.afterPayRecordedWith(
+            JBAfterPayRecordedContext({
+                payer: beneficiary,
+                projectId: projectId,
+                rulesetId: 0,
+                amount: JBTokenAmount({
+                    token: JBConstants.NATIVE_TOKEN,
+                    value: 1,
+                    decimals: 18,
+                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                }),
+                forwardedAmount: JBTokenAmount({
+                    token: JBConstants.NATIVE_TOKEN,
+                    value: 0,
+                    decimals: 18,
+                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                }),
+                weight: 10 ** 18,
+                newlyIssuedTokenCount: 0,
+                beneficiary: beneficiary,
+                hookMetadata: new bytes(0),
+                payerMetadata: new bytes(0)
+            })
+        );
+    }
+
+    function test_afterPayRecorded_revertOnCreditOverflow_differentPayerBeneficiary() public {
+        // Mock the directory call.
+        mockAndExpect(
+            address(mockJBDirectory),
+            abi.encodeWithSelector(IJBDirectory.isTerminalOf.selector, projectId, mockTerminalAddress),
+            abi.encode(true)
+        );
+
+        // Set the beneficiary's pay credits to max uint256.
+        stdstore.target(address(hook)).sig("payCreditsOf(address)").with_key(beneficiary).checked_write(
+            type(uint256).max
+        );
+
+        // Pay 1 wei where payer != beneficiary. No metadata → no NFT mints, overspending allowed.
+        // leftoverAmount=1, unusedPayCredits=type(uint256).max → overflow in `leftoverAmount + unusedPayCredits`.
+        vm.expectRevert(stdError.arithmeticError);
+        vm.prank(mockTerminalAddress);
+        hook.afterPayRecordedWith(
+            JBAfterPayRecordedContext({
+                payer: address(0xdead),
+                projectId: projectId,
+                rulesetId: 0,
+                amount: JBTokenAmount({
+                    token: JBConstants.NATIVE_TOKEN,
+                    value: 1,
+                    decimals: 18,
+                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                }),
+                forwardedAmount: JBTokenAmount({
+                    token: JBConstants.NATIVE_TOKEN,
+                    value: 0,
+                    decimals: 18,
+                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                }),
+                weight: 10 ** 18,
+                newlyIssuedTokenCount: 0,
+                beneficiary: beneficiary,
+                hookMetadata: new bytes(0),
+                payerMetadata: new bytes(0)
+            })
+        );
+    }
 }
