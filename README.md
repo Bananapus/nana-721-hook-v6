@@ -164,7 +164,7 @@ nana-721-hook/
 │   │   ├── ERC721.sol - Abstract ERC-721 implementation.
 │   │   └── JB721Hook.sol - Abstract NFT hook implementation.
 │   ├── interfaces/ - Contract interfaces.
-│   ├── libraries/ - Libraries.
+│   ├── libraries/ - Libraries (includes JB721TiersHookLib for tier adjustments, split distribution, and price normalization).
 │   └── structs/ - Structs.
 └── test/ - Forge tests and testing utilities.
     ├── E2E/
@@ -233,6 +233,7 @@ Each tier has the following optional properties:
 - A number of votes each NFT should represent on-chain (optional).
 - A flag to specify whether the NFTs in the tier can always be transferred, or if transfers can be paused depending on the project's ruleset.
 - A flag to specify whether the contract's owner can mint NFTs from the tier on-demand.
+- A split percent and a set of splits (optional). Each tier can route a percentage of its mint price to configured split recipients (other projects, addresses, etc.) every time an NFT from the tier is purchased. The remaining funds stay in the project's balance. This lets project owners create tiers where, for example, a portion of each sale goes to artists, collaborators, or other projects — all enforced on-chain.
 - A set of flags which restrict tiers added in the future (the votes/reserved frequency/on-demand minting/can be removed flags noted above).
 
 Additional notes:

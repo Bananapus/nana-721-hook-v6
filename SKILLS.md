@@ -13,6 +13,7 @@ Tiered ERC-721 NFT hook for Juicebox V6 that mints NFTs when a project is paid a
 | `JB721TiersHookDeployer` | Factory: clones `JB721TiersHook` via `LibClone.clone` / `cloneDeterministic`, initializes, registers in address registry. |
 | `JB721TiersHookProjectDeployer` | Convenience deployer: creates a Juicebox project + hook in one transaction. Wires the hook as the data hook with `useDataHookForPay: true`. |
 | `JB721Hook` (abstract) | Base: implements `IJBRulesetDataHook` + `IJBPayHook` + `IJBCashOutHook`. Validates caller is a project terminal. |
+| `JB721TiersHookLib` (library) | External library called via DELEGATECALL from the hook. Handles tier adjustments (`adjustTiersFor`), split amount calculation (`calculateSplitAmounts`), split fund distribution (`distributeAll`), price normalization (`normalizePaymentValue`), and token URI resolution (`resolveTokenURI`). Extracted to stay within EIP-170 contract size limit. |
 | `ERC721` (abstract) | Clone-compatible ERC-721 with `_initialize(name, symbol)` instead of constructor args. |
 
 ## Key Functions
@@ -23,7 +24,7 @@ Tiered ERC-721 NFT hook for Juicebox V6 that mints NFTs when a project is paid a
 | `afterPayRecordedWith(context)` | `JB721Hook` | Called by terminal after payment. Validates caller is a project terminal, delegates to `_processPayment`. |
 | `_processPayment(context)` | `JB721TiersHook` | Normalizes payment value via pricing context, decodes payer metadata for tier IDs to mint, calls `_mintAll`, manages pay credits for overspending. |
 | `afterCashOutRecordedWith(context)` | `JB721Hook` | Called by terminal during cash out. Decodes token IDs from metadata, validates ownership, burns NFTs, calls `_didBurn`. |
-| `beforePayRecordedWith(context)` | `JB721Hook` | Data hook: returns original weight and sets this contract as the pay hook (amount=0). |
+| `beforePayRecordedWith(context)` | `JB721Hook` | Data hook: returns original weight, calculates per-tier split amounts via `JB721TiersHookLib.calculateSplitAmounts`, and sets this contract as the pay hook with the total split amount forwarded. |
 | `beforeCashOutRecordedWith(context)` | `JB721Hook` | Data hook: calculates `cashOutCount` (weight of NFTs being cashed out) and `totalSupply` (total weight of all NFTs). Rejects if fungible tokens are also being cashed out. |
 | `adjustTiers(tiersToAdd, tierIdsToRemove)` | `JB721TiersHook` | Owner-only. Adds/removes tiers via the store. Requires `ADJUST_721_TIERS` permission. |
 | `mintFor(tierIds, beneficiary)` | `JB721TiersHook` | Owner-only manual mint. Requires `MINT_721` permission. Passes `amount: type(uint256).max` and `isOwnerMint: true` to force the mint. |
@@ -35,6 +36,9 @@ Tiered ERC-721 NFT hook for Juicebox V6 that mints NFTs when a project is paid a
 | `recordMint(amount, tierIds, isOwnerMint)` | `JB721TiersHookStore` | Records minting: validates supply, checks tier prices against amount (unless owner mint), generates token IDs (tierId * 1_000_000_000 + mintCount), tracks reserves. |
 | `recordAddTiers(tiers)` | `JB721TiersHookStore` | Adds new tiers sorted by category. Validates against hook flags (no new reserves/votes/owner-minting if flagged). |
 | `recordRemoveTierIds(tierIds)` | `JB721TiersHookStore` | Marks tiers as removed in the bitmap. Validates tier is not locked (`cannotBeRemoved`). |
+| `calculateSplitAmounts(store, hook, metadataIdTarget, metadata)` | `JB721TiersHookLib` | Called in `beforePayRecordedWith`. Decodes tier IDs from payer metadata, looks up each tier's `splitPercent`, calculates `mulDiv(price, splitPercent, SPLITS_TOTAL_PERCENT)` per tier, returns `totalSplitAmount` (forwarded to hook as `amount`) and encoded `hookMetadata` (tier IDs + amounts). |
+| `distributeAll(directory, projectId, hookAddress, token, encodedSplitData)` | `JB721TiersHookLib` | Called in `afterPayRecordedWith`. Decodes per-tier amounts, looks up each tier's splits from `JBSplits` by group ID (`hookAddress \| (tierId << 160)`), distributes to split recipients. Leftover goes to project balance via `addToBalance`. |
+| `adjustTiersFor(store, directory, projectId, hookAddress, caller, tiersToAdd, tierIdsToRemove)` | `JB721TiersHookLib` | Called via DELEGATECALL from `adjustTiers`. Removes tiers, adds tiers, emits events, and registers any configured splits in `JBSplits` via the project's controller. |
 
 ## Integration Points
 
@@ -52,9 +56,9 @@ Tiered ERC-721 NFT hook for Juicebox V6 that mints NFTs when a project is paid a
 
 | Struct/Enum | Key Fields | Used In |
 |-------------|------------|---------|
-| `JB721TierConfig` | `uint104 price`, `uint32 initialSupply`, `uint32 votingUnits`, `uint16 reserveFrequency`, `address reserveBeneficiary`, `bytes32 encodedIPFSUri`, `uint24 category`, `uint8 discountPercent`, `bool allowOwnerMint`, `bool transfersPausable`, `bool cannotBeRemoved`, `bool cannotIncreaseDiscountPercent` | `adjustTiers`, `initialize`, `recordAddTiers` |
-| `JB721Tier` | Same as config plus `uint32 id`, `uint32 remainingSupply`, `string resolvedUri` | Return type from `tierOf`, `tiersOf`, `tierOfTokenId` |
-| `JBStored721Tier` | `uint104 price`, `uint32 remainingSupply`, `uint32 initialSupply`, `uint32 votingUnits`, `uint24 category`, `uint8 discountPercent`, `uint16 reserveFrequency`, `uint8 packedBools` | Internal storage in `JB721TiersHookStore` |
+| `JB721TierConfig` | `uint104 price`, `uint32 initialSupply`, `uint32 votingUnits`, `uint16 reserveFrequency`, `address reserveBeneficiary`, `bytes32 encodedIPFSUri`, `uint24 category`, `uint8 discountPercent`, `bool allowOwnerMint`, `bool transfersPausable`, `bool cannotBeRemoved`, `bool cannotIncreaseDiscountPercent`, `uint32 splitPercent`, `JBSplit[] splits` | `adjustTiers`, `initialize`, `recordAddTiers` |
+| `JB721Tier` | Same as config plus `uint32 id`, `uint32 remainingSupply`, `uint32 splitPercent`, `string resolvedUri` | Return type from `tierOf`, `tiersOf`, `tierOfTokenId` |
+| `JBStored721Tier` | `uint104 price`, `uint32 remainingSupply`, `uint32 initialSupply`, `uint32 splitPercent`, `uint24 category`, `uint8 discountPercent`, `uint16 reserveFrequency`, `uint8 packedBools` | Internal storage in `JB721TiersHookStore` |
 | `JB721InitTiersConfig` | `JB721TierConfig[] tiers`, `uint32 currency`, `uint8 decimals`, `IJBPrices prices` | `initialize` — defines tiers and pricing context |
 | `JBDeploy721TiersHookConfig` | `string name`, `string symbol`, `string baseUri`, `IJB721TokenUriResolver tokenUriResolver`, `string contractUri`, `JB721InitTiersConfig tiersConfig`, `address reserveBeneficiary`, `JB721TiersHookFlags flags` | `deployHookFor`, `launchProjectFor` |
 | `JB721TiersHookFlags` | `bool noNewTiersWithReserves`, `bool noNewTiersWithVotes`, `bool noNewTiersWithOwnerMinting`, `bool preventOverspending` | `initialize`, `recordFlags` |
@@ -76,6 +80,8 @@ Tiered ERC-721 NFT hook for Juicebox V6 that mints NFTs when a project is paid a
 - `setMetadata` uses `address(this)` as the sentinel for "no change" on `tokenUriResolver` (not `address(0)`). Passing `address(0)` will clear the resolver.
 - `JBPayDataHookRulesetConfig` hardcodes `allowSetCustomToken: false` and `useDataHookForPay: true` when wiring rulesets through the project deployer.
 - The `_update` override in `JB721TiersHook` checks `tier.transfersPausable` and consults the current ruleset's metadata for `transfersPaused`. Transfers to `address(0)` (burns) are never blocked.
+- **Tier splits** allow each tier to route a percentage of its mint price to configured recipients. `splitPercent` is out of `JBConstants.SPLITS_TOTAL_PERCENT` (1,000,000,000). When a payer mints an NFT from a tier with splits, the terminal forwards `mulDiv(price, splitPercent, SPLITS_TOTAL_PERCENT)` to the hook, which distributes it to the tier's split group. Leftover after all splits goes back to the project's balance.
+- **Split group IDs** are computed as `uint256(uint160(hookAddress)) | (uint256(tierId) << 160)`. Splits are stored in the project's `JBSplits` contract (accessed via the controller) and registered automatically when tiers with `splits` are added.
 - `JB721TiersHookStore` is a **shared singleton** -- all hook instances on the same chain use the same store, keyed by `address(hook)`.
 - The `ERC721` abstract uses `_initialize(name, symbol)` instead of a constructor, making it clone-compatible. The standard `_owners` mapping is `internal` (not `private`).
 
@@ -107,7 +113,9 @@ tiers[0] = JB721TierConfig({
     transfersPausable: false,
     useVotingUnits: false,
     cannotBeRemoved: false,
-    cannotIncreaseDiscountPercent: false
+    cannotIncreaseDiscountPercent: false,
+    splitPercent: 0,
+    splits: new JBSplit[](0)
 });
 
 // Deploy a project with the 721 hook attached.
