@@ -1,31 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import {IJBCashOutHook} from "@bananapus/core-v6/src/interfaces/IJBCashOutHook.sol";
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
-import {IJBPayHook} from "@bananapus/core-v6/src/interfaces/IJBPayHook.sol";
 import {IJBPermissions} from "@bananapus/core-v6/src/interfaces/IJBPermissions.sol";
 import {IJBPrices} from "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
 import {IJBRulesetDataHook} from "@bananapus/core-v6/src/interfaces/IJBRulesetDataHook.sol";
 import {IJBRulesets} from "@bananapus/core-v6/src/interfaces/IJBRulesets.sol";
-import {IJBTerminal} from "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
-import {JBConstants} from "@bananapus/core-v6/src/libraries/JBConstants.sol";
 import {JBMetadataResolver} from "@bananapus/core-v6/src/libraries/JBMetadataResolver.sol";
 import {JBRulesetMetadataResolver} from "@bananapus/core-v6/src/libraries/JBRulesetMetadataResolver.sol";
-import {JBAfterCashOutRecordedContext} from "@bananapus/core-v6/src/structs/JBAfterCashOutRecordedContext.sol";
 import {JBAfterPayRecordedContext} from "@bananapus/core-v6/src/structs/JBAfterPayRecordedContext.sol";
-import {JBBeforeCashOutRecordedContext} from "@bananapus/core-v6/src/structs/JBBeforeCashOutRecordedContext.sol";
 import {JBBeforePayRecordedContext} from "@bananapus/core-v6/src/structs/JBBeforePayRecordedContext.sol";
-import {JBCashOutHookSpecification} from "@bananapus/core-v6/src/structs/JBCashOutHookSpecification.sol";
 import {JBPayHookSpecification} from "@bananapus/core-v6/src/structs/JBPayHookSpecification.sol";
 import {JBRuleset} from "@bananapus/core-v6/src/structs/JBRuleset.sol";
 import {JBOwnable} from "@bananapus/ownable-v6/src/JBOwnable.sol";
 import {JBPermissionIds} from "@bananapus/permission-ids-v6/src/JBPermissionIds.sol";
-import {IERC2981} from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import {ERC721} from "./abstract/ERC721.sol";
+import {JB721Hook} from "./abstract/JB721Hook.sol";
 import {IJB721TiersHook} from "./interfaces/IJB721TiersHook.sol";
 import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "./interfaces/IJB721TokenUriResolver.sol";
@@ -43,32 +35,22 @@ import {JB721TiersMintReservesConfig} from "./structs/JB721TiersMintReservesConf
 /// the project is paid, the hook may mint NFTs to the payer, depending on the hook's setup, the amount paid, and
 /// information specified by the payer. The project's owner can enable NFT cash outs through this hook, allowing
 /// holders to burn their NFTs to reclaim funds from the project (in proportion to the NFT's price).
-contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
+contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook {
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
 
     error JB721TiersHook_AlreadyInitialized(uint256 projectId);
     error JB721TiersHook_CurrencyMismatch(uint256 paymentCurrency, uint256 tierCurrency);
-    error JB721TiersHook_InvalidCashOut();
-    error JB721TiersHook_InvalidPay();
     error JB721TiersHook_InvalidPricingDecimals(uint256 decimals);
     error JB721TiersHook_MintReserveNftsPaused();
     error JB721TiersHook_NoProjectId();
     error JB721TiersHook_Overspending(uint256 leftoverAmount);
     error JB721TiersHook_TierTransfersPaused();
-    error JB721TiersHook_UnauthorizedToken(uint256 tokenId, address holder);
-    error JB721TiersHook_UnexpectedTokenCashedOut();
 
     //*********************************************************************//
     // --------------- public immutable stored properties ---------------- //
     //*********************************************************************//
-
-    /// @notice The directory of terminals and controllers for projects.
-    IJBDirectory public immutable override DIRECTORY;
-
-    /// @notice The ID used when parsing metadata.
-    address public immutable override METADATA_ID_TARGET;
 
     /// @notice The contract storing and managing project rulesets.
     IJBRulesets public immutable override RULESETS;
@@ -79,9 +61,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
     //*********************************************************************//
     // ---------------------- public stored properties ------------------- //
     //*********************************************************************//
-
-    /// @notice The ID of the project that this contract is associated with.
-    uint256 public override PROJECT_ID;
 
     /// @notice The base URI for the NFT `tokenUris`.
     string public override baseURI;
@@ -127,10 +106,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
         address trustedForwarder
     )
         JBOwnable(permissions, directory.PROJECTS(), msg.sender, uint88(0))
+        JB721Hook(directory)
         ERC2771Context(trustedForwarder)
     {
-        DIRECTORY = directory;
-        METADATA_ID_TARGET = address(this);
         RULESETS = rulesets;
         STORE = store;
     }
@@ -138,61 +116,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
     //*********************************************************************//
     // ------------------------- external views -------------------------- //
     //*********************************************************************//
-
-    /// @notice The data calculated before a cash out is recorded in the terminal store. This data is provided to the
-    /// terminal's `cashOutTokensOf(...)` transaction.
-    /// @dev Sets this contract as the cash out hook. Part of `IJBRulesetDataHook`.
-    /// @dev This function is used for NFT cash outs, and will only be called if the project's ruleset has
-    /// `useDataHookForCashOut` set to `true`.
-    /// @param context The cash out context passed to this contract by the `cashOutTokensOf(...)` function.
-    /// @return cashOutTaxRate The cash out tax rate influencing the reclaim amount.
-    /// @return cashOutCount The amount of tokens that should be considered cashed out.
-    /// @return totalSupply The total amount of tokens that are considered to be existing.
-    /// @return hookSpecifications The amount and data to send to cash out hooks (this contract) instead of returning to
-    /// the beneficiary.
-    function beforeCashOutRecordedWith(JBBeforeCashOutRecordedContext calldata context)
-        public
-        view
-        virtual
-        override
-        returns (
-            uint256 cashOutTaxRate,
-            uint256 cashOutCount,
-            uint256 totalSupply,
-            JBCashOutHookSpecification[] memory hookSpecifications
-        )
-    {
-        // Make sure (fungible) project tokens aren't also being cashed out.
-        if (context.cashOutCount > 0) revert JB721TiersHook_UnexpectedTokenCashedOut();
-
-        // Fetch the cash out hook metadata using the corresponding metadata ID.
-        (bool metadataExists, bytes memory metadata) = JBMetadataResolver.getDataFor({
-            id: JBMetadataResolver.getId({purpose: "cashOut", target: METADATA_ID_TARGET}), metadata: context.metadata
-        });
-
-        // Use this contract as the only cash out hook.
-        hookSpecifications = new JBCashOutHookSpecification[](1);
-        hookSpecifications[0] = JBCashOutHookSpecification({hook: this, amount: 0, metadata: bytes("")});
-
-        uint256[] memory decodedTokenIds;
-
-        // Decode the metadata.
-        if (metadataExists) decodedTokenIds = abi.decode(metadata, (uint256[]));
-
-        // Use the cash out weight of the provided 721s.
-        cashOutCount = STORE.cashOutWeightOf({hook: address(this), tokenIds: decodedTokenIds});
-
-        // Use the total cash out weight of the 721s.
-        totalSupply = STORE.totalCashOutWeight(address(this));
-
-        // Use the cash out tax rate from the context.
-        cashOutTaxRate = context.cashOutTaxRate;
-    }
-
-    /// @notice Required by the IJBRulesetDataHook interfaces. Return false to not leak any permissions.
-    function hasMintPermissionFor(uint256, JBRuleset memory, address) external pure returns (bool) {
-        return false;
-    }
 
     /// @notice The first owner of an NFT.
     /// @dev This is generally the address which paid for the NFT.
@@ -236,18 +159,16 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
         return STORE.balanceOf({hook: address(this), owner: owner});
     }
 
-    /// @notice The data calculated before a payment is recorded in the terminal store. This data is provided to the
-    /// terminal's `pay(...)` transaction.
-    /// @dev Sets this contract as the pay hook. Part of `IJBRulesetDataHook`.
-    /// @param context The payment context passed to this contract by the `pay(...)` function.
-    /// @return weight The new `weight` to use, overriding the ruleset's `weight`.
-    /// @return hookSpecifications The amount and data to send to pay hooks (this contract) instead of adding to the
-    /// terminal's balance.
+    /// @notice The data calculated before a payment is recorded in the terminal store.
+    /// @dev Overrides the base to calculate the split amount to forward based on tier split percentages.
+    /// @param context The payment context.
+    /// @return weight The weight to use for token minting (unchanged from ruleset weight).
+    /// @return hookSpecifications The hook specifications, with the split amount to forward.
     function beforePayRecordedWith(JBBeforePayRecordedContext calldata context)
         public
         view
         virtual
-        override
+        override(JB721Hook, IJBRulesetDataHook)
         returns (uint256 weight, JBPayHookSpecification[] memory hookSpecifications)
     {
         weight = context.weight;
@@ -260,13 +181,20 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
         hookSpecifications[0] = JBPayHookSpecification({hook: this, amount: totalSplitAmount, metadata: splitMetadata});
     }
 
+    /// @notice The combined cash out weight of the NFTs with the specified token IDs.
+    /// @dev An NFT's cash out weight is its price.
+    /// @dev To get their relative cash out weight, divide the result by the `totalCashOutWeight(...)`.
+    /// @param tokenIds The token IDs of the NFTs to get the cumulative cash out weight of.
+    /// @return weight The cash out weight of the tokenIds.
+    function cashOutWeightOf(uint256[] memory tokenIds) public view virtual override returns (uint256) {
+        return STORE.cashOutWeightOf({hook: address(this), tokenIds: tokenIds});
+    }
+
     /// @notice Indicates if this contract adheres to the specified interface.
     /// @dev See {IERC165-supportsInterface}.
     /// @param interfaceId The ID of the interface to check for adherence to.
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721, IERC165) returns (bool) {
-        return interfaceId == type(IJB721TiersHook).interfaceId || interfaceId == type(IJBRulesetDataHook).interfaceId
-            || interfaceId == type(IJBPayHook).interfaceId || interfaceId == type(IJBCashOutHook).interfaceId
-            || interfaceId == type(IERC2981).interfaceId || super.supportsInterface(interfaceId);
+    function supportsInterface(bytes4 interfaceId) public view override(IERC165, JB721Hook) returns (bool) {
+        return interfaceId == type(IJB721TiersHook).interfaceId || JB721Hook.supportsInterface(interfaceId);
     }
 
     /// @notice Initializes a cloned copy of the original hook contract.
@@ -298,9 +226,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
         // Make sure a projectId is provided.
         if (projectId == 0) revert JB721TiersHook_NoProjectId();
 
-        // Initialize ERC721 and set the project ID.
-        ERC721._initialize({name_: name, symbol_: symbol});
-        PROJECT_ID = projectId;
+        // Initialize the superclass.
+        JB721Hook._initialize({projectId: projectId, name: name, symbol: symbol});
 
         // Validate pricing decimals are within a reasonable range.
         if (tiersConfig.decimals > 18) revert JB721TiersHook_InvalidPricingDecimals(tiersConfig.decimals);
@@ -352,75 +279,16 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
         return JB721TiersHookLib.resolveTokenURI(STORE, address(this), baseURI, tokenId);
     }
 
+    /// @notice The combined cash out weight of all outstanding NFTs.
+    /// @dev An NFT's cash out weight is its price.
+    /// @return weight The total cash out weight.
+    function totalCashOutWeight() public view virtual override returns (uint256) {
+        return STORE.totalCashOutWeight(address(this));
+    }
+
     //*********************************************************************//
     // ---------------------- external transactions ---------------------- //
     //*********************************************************************//
-
-    /// @notice Mints one or more NFTs to the `context.beneficiary` upon payment if conditions are met. Part of
-    /// `IJBPayHook`.
-    /// @dev Reverts if the calling contract is not one of the project's terminals.
-    /// @param context The payment context passed in by the terminal.
-    // slither-disable-next-line locked-ether
-    function afterPayRecordedWith(JBAfterPayRecordedContext calldata context) external payable virtual override {
-        uint256 projectId = PROJECT_ID;
-
-        // Make sure the caller is a terminal of the project, and that the call is being made on behalf of an
-        // interaction with the correct project.
-        if (!DIRECTORY.isTerminalOf(projectId, IJBTerminal(msg.sender)) || context.projectId != projectId) {
-            revert JB721TiersHook_InvalidPay();
-        }
-
-        // Process the payment.
-        _processPayment(context);
-    }
-
-    /// @notice Burns the specified NFTs upon token holder cash out, reclaiming funds from the project's balance for
-    /// `context.beneficiary`. Part of `IJBCashOutHook`.
-    /// @dev Reverts if the calling contract is not one of the project's terminals.
-    /// @param context The cash out context passed in by the terminal.
-    // slither-disable-next-line locked-ether
-    function afterCashOutRecordedWith(JBAfterCashOutRecordedContext calldata context)
-        external
-        payable
-        virtual
-        override
-    {
-        // Keep a reference to the project ID.
-        uint256 projectId = PROJECT_ID;
-
-        // Make sure the caller is a terminal of the project, and that the call is being made on behalf of an
-        // interaction with the correct project.
-        if (
-            msg.value != 0 || !DIRECTORY.isTerminalOf({projectId: projectId, terminal: IJBTerminal(msg.sender)})
-                || context.projectId != projectId
-        ) revert JB721TiersHook_InvalidCashOut();
-
-        // Fetch the cash out hook metadata using the corresponding metadata ID.
-        (bool metadataExists, bytes memory metadata) = JBMetadataResolver.getDataFor({
-            id: JBMetadataResolver.getId({purpose: "cashOut", target: METADATA_ID_TARGET}),
-            metadata: context.cashOutMetadata
-        });
-
-        uint256[] memory decodedTokenIds;
-
-        // Decode the metadata.
-        if (metadataExists) decodedTokenIds = abi.decode(metadata, (uint256[]));
-
-        // Iterate through the NFTs, burning them if the owner is correct.
-        for (uint256 i; i < decodedTokenIds.length; i++) {
-            // Set the current NFT's token ID.
-            uint256 tokenId = decodedTokenIds[i];
-
-            // Make sure the token's owner is correct.
-            if (_ownerOf(tokenId) != context.holder) revert JB721TiersHook_UnauthorizedToken(tokenId, context.holder);
-
-            // Burn the token.
-            _burn(tokenId);
-        }
-
-        // Add to burned counter.
-        STORE.recordBurn(decodedTokenIds);
-    }
 
     /// @notice Add or delete tiers.
     /// @dev Only the contract's owner or an operator with the `ADJUST_TIERS` permission from the owner can adjust the
@@ -638,6 +506,13 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
     // ------------------------ internal functions ----------------------- //
     //*********************************************************************//
 
+    /// @notice A function which gets called after NFTs have been cashed out and recorded by the terminal.
+    /// @param tokenIds The token IDs of the NFTs that were burned.
+    function _didBurn(uint256[] memory tokenIds) internal virtual override {
+        // Add to burned counter.
+        STORE.recordBurn(tokenIds);
+    }
+
     /// @notice Mints one NFT from each of the specified tiers for the beneficiary.
     /// @dev The same tier can be specified more than once.
     /// @param amount The amount to base the mints on. The total price of the NFTs being minted cannot be larger than
@@ -687,7 +562,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
     /// the payer's existing credits are NOT applied to the mint. Only the beneficiary's credits are combined with
     /// the incoming payment value. Leftover funds after minting are stored as credits for the beneficiary.
     /// @param context Payment context provided by the terminal after it has recorded the payment in the terminal store.
-    function _processPayment(JBAfterPayRecordedContext calldata context) internal virtual {
+    function _processPayment(JBAfterPayRecordedContext calldata context) internal virtual override {
         // Normalize the payment value based on the pricing context.
         uint256 value;
         {
