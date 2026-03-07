@@ -1540,9 +1540,8 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
         );
 
         // Set the beneficiary's pay credits to max uint256.
-        stdstore.target(address(hook)).sig("payCreditsOf(address)").with_key(beneficiary).checked_write(
-            type(uint256).max
-        );
+        stdstore.target(address(hook)).sig("payCreditsOf(address)").with_key(beneficiary)
+            .checked_write(type(uint256).max);
 
         // Pay 1 wei where payer == beneficiary. No metadata → no NFT mints.
         // `leftoverAmount += payCredits` overflows: 1 + type(uint256).max.
@@ -1583,9 +1582,8 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
         );
 
         // Set the beneficiary's pay credits to max uint256.
-        stdstore.target(address(hook)).sig("payCreditsOf(address)").with_key(beneficiary).checked_write(
-            type(uint256).max
-        );
+        stdstore.target(address(hook)).sig("payCreditsOf(address)").with_key(beneficiary)
+            .checked_write(type(uint256).max);
 
         // Pay 1 wei where payer != beneficiary. No metadata → no NFT mints, overspending allowed.
         // leftoverAmount=1, unusedPayCredits=type(uint256).max → overflow in `leftoverAmount + unusedPayCredits`.
