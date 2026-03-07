@@ -16,7 +16,9 @@ import {mulDiv} from "@prb/math/src/Common.sol";
 import {JBSplitGroup} from "@bananapus/core-v6/src/structs/JBSplitGroup.sol";
 
 import {IJB721TiersHookStore} from "../interfaces/IJB721TiersHookStore.sol";
+import {IJB721TokenUriResolver} from "../interfaces/IJB721TokenUriResolver.sol";
 import {JB721TierConfig} from "../structs/JB721TierConfig.sol";
+import {JBIpfsDecoder} from "./JBIpfsDecoder.sol";
 
 /// @notice External library for JB721TiersHook operations extracted to stay within the EIP-170 contract size limit.
 /// @dev Handles tier adjustments, split calculations, price normalization, and split fund distribution.
@@ -332,5 +334,34 @@ library JB721TiersHookLib {
             // slither-disable-next-line unused-return,calls-loop
             terminal.pay(projectId, token, amount, beneficiary, 0, "", bytes(""));
         }
+    }
+
+    /// @notice Resolves the token URI for a given NFT token ID.
+    /// @dev Extracted to the library to keep JBIpfsDecoder bytecode out of the hook contract (EIP-170 compliance).
+    /// @param store The 721 tiers hook store.
+    /// @param hook The hook address.
+    /// @param baseUri The base URI for IPFS-based token URIs.
+    /// @param tokenId The token ID to resolve the URI for.
+    /// @return The resolved token URI string.
+    function resolveTokenURI(
+        IJB721TiersHookStore store,
+        address hook,
+        string memory baseUri,
+        uint256 tokenId
+    )
+        external
+        view
+        returns (string memory)
+    {
+        // Get a reference to the `tokenUriResolver`.
+        IJB721TokenUriResolver resolver = store.tokenUriResolverOf(hook);
+
+        // If a `tokenUriResolver` is set, use it to resolve the token URI.
+        if (address(resolver) != address(0)) return resolver.tokenUriOf({nft: hook, tokenId: tokenId});
+
+        // Otherwise, return the token URI corresponding with the NFT's tier.
+        return JBIpfsDecoder.decode({
+            baseUri: baseUri, hexString: store.encodedTierIPFSUriOf({hook: hook, tokenId: tokenId})
+        });
     }
 }

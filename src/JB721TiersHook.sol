@@ -31,7 +31,6 @@ import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "./interfaces/IJB721TokenUriResolver.sol";
 import {JB721TiersHookLib} from "./libraries/JB721TiersHookLib.sol";
 import {JB721TiersRulesetMetadataResolver} from "./libraries/JB721TiersRulesetMetadataResolver.sol";
-import {JBIpfsDecoder} from "./libraries/JBIpfsDecoder.sol";
 import {JB721Tier} from "./structs/JB721Tier.sol";
 import {JB721TierConfig} from "./structs/JB721TierConfig.sol";
 import {JB721TiersSetDiscountPercentConfig} from "./structs/JB721TiersSetDiscountPercentConfig.sol";
@@ -350,16 +349,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, ERC721, IJB721TiersHook {
     /// @return The token URI from the `tokenUriResolver` if it is set. If it isn't set, the token URI for the NFT's
     /// tier.
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-        // Get a reference to the `tokenUriResolver`.
-        IJB721TokenUriResolver resolver = STORE.tokenUriResolverOf(address(this));
-
-        // If a `tokenUriResolver` is set, use it to resolve the token URI.
-        if (address(resolver) != address(0)) return resolver.tokenUriOf({nft: address(this), tokenId: tokenId});
-
-        // Otherwise, return the token URI corresponding with the NFT's tier.
-        return JBIpfsDecoder.decode({
-            baseUri: baseURI, hexString: STORE.encodedTierIPFSUriOf({hook: address(this), tokenId: tokenId})
-        });
+        return JB721TiersHookLib.resolveTokenURI(STORE, address(this), baseURI, tokenId);
     }
 
     //*********************************************************************//
