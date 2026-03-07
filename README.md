@@ -1,4 +1,4 @@
-# Bananapus NFT Hook
+# Juicebox 721 Hook
 
 `nana-721-hook` is:
 
