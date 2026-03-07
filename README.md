@@ -161,10 +161,9 @@ nana-721-hook/
 │   ├── JB721TiersHookProjectDeployer.sol - Deploys a project with a tiered NFT hook.
 │   ├── JB721TiersHookStore.sol - Stores and manages data for tiered NFT hooks.
 │   ├── abstract/
-│   │   ├── ERC721.sol - Abstract ERC-721 implementation.
-│   │   └── JB721Hook.sol - Abstract NFT hook implementation.
+│   │   └── ERC721.sol - Clone-compatible abstract ERC-721 implementation.
 │   ├── interfaces/ - Contract interfaces.
-│   ├── libraries/ - Libraries.
+│   ├── libraries/ - Libraries (includes JB721TiersHookLib for tier adjustments, split distribution, price normalization, and token URI resolution).
 │   └── structs/ - Structs.
 └── test/ - Forge tests and testing utilities.
     ├── E2E/
@@ -218,31 +217,34 @@ Each pay/cash out hook can then execute custom behavior based on the custom data
 
 ### Mechanism
 
-A project using a 721 tiers hook can specify any number of NFT tiers.
+A project using a 721 tiers hook can specify any number of NFT tiers (up to 65,535 total).
 
-- NFT tiers can be removed by the project owner as long as they are not locked.
-- NFT tiers can be added by the project owner as long as they respect the hook's `flags`. The flags specify if newly added tiers can have votes (voting units), if new tiers can have non-zero reserve frequencies, if new tiers can allow on-demand minting by the project's owner, and if the tier can be removed.
+- NFT tiers can be removed by the project owner as long as they are not locked (`cannotBeRemoved`). After removing tiers, call `cleanTiers()` on the store to optimize tier iteration.
+- NFT tiers can be added by the project owner as long as they respect the hook's `flags`. The flags specify if newly added tiers can have votes (voting units), if new tiers can have non-zero reserve frequencies, if new tiers can allow on-demand minting by the project's owner, and if overspending is allowed.
 
-Each tier has the following optional properties:
+Each tier has the following properties:
 
-- A price.
-- A supply (the maximum number of NFTs which can be minted from the tier).
+- A price (up to `uint104`).
+- A supply (the maximum number of NFTs which can be minted from the tier, up to 999,999,999).
 - A token URI (artwork and metadata), which can be overridden by a URI resolver. The URI resolver can return unique values for each NFT in the tier.
 - A category, so tiers can be organized and accessed for different purposes.
-- A reserve frequency (optional). With a reserve frequency of 5, an extra NFT will be minted to a pre-specified beneficiary address for every 5 NFTs purchased and minted from the tier.
-- A number of votes each NFT should represent on-chain (optional).
+- A discount percent (optional). Reduces the effective purchase price. The discount is out of 200, so a `discountPercent` of 100 means 50% off, and 200 means free. The discount can be changed later via `setDiscountPercentOf`, and tiers can be configured with `cannotIncreaseDiscountPercent` to only allow discounts to decrease. Cash out weight is always based on the original tier price, not the discounted price.
+- A reserve frequency (optional). With a reserve frequency of 5, an extra NFT will be minted to a pre-specified beneficiary address for every 5 NFTs purchased and minted from the tier. Tiers with owner minting enabled cannot have reserves.
+- Voting units (optional). By default, each NFT's voting power equals its tier price. If `useVotingUnits` is true, a custom `votingUnits` value is used instead.
 - A flag to specify whether the NFTs in the tier can always be transferred, or if transfers can be paused depending on the project's ruleset.
 - A flag to specify whether the contract's owner can mint NFTs from the tier on-demand.
-- A set of flags which restrict tiers added in the future (the votes/reserved frequency/on-demand minting/can be removed flags noted above).
+- A split percent and a set of splits (optional). Each tier can route a percentage of its mint price to configured split recipients (other projects, addresses, etc.) every time an NFT from the tier is purchased. The remaining funds stay in the project's balance. The `splitPercent` is out of `JBConstants.SPLITS_TOTAL_PERCENT` (1,000,000,000).
+- A set of flags which restrict tiers added in the future (the votes/reserved frequency/on-demand minting/overspending flags noted above).
 
 Additional notes:
 
-- A payer can specify any number of tiers to mint as long as the total price does not exceed the amount being paid. If tiers aren't specified, their payment mints the most expensive tier possible, unless they specify that the hook should not mint any NFTs.
-- If the payment and a tier's price are specified in different currencies, the `JBPrices` contract is used to normalize the values.
-- If some of a payment does not go towards purchasing an NFT, those extra funds will be stored as "NFT credits" which can be used for future purchases. Optionally, the hook can disallow credits and reject payments with leftover funds.
-- If enabled by the project owner, holders can burn their NFTs to reclaim funds from the project. These cash outs are proportional to the NFTs price, relative to the combined price of all the NFTs.
-- NFT cash outs can be enabled by setting `useDataHookForCashOut` to `true` in the project's `JBRulesetMetadata`. If NFT cash outs are enabled, project token cash outs are disabled.
-- The hook's deployer can choose if the NFTs should support on-chain voting (as `ERC721Votes`). This increases the gas fees to interact with the NFTs, and should be disabled if not needed.
+- A payer can specify any number of tiers to mint as long as the total price does not exceed the amount being paid. If tiers aren't specified, the leftover amount is stored as pay credits (if allowed).
+- If the payment and a tier's price are specified in different currencies, the `JBPrices` contract is used to normalize the values. If no `JBPrices` contract is set and the currencies differ, the payment is silently ignored (no mint, no revert).
+- If some of a payment does not go towards purchasing an NFT, those extra funds will be stored as "NFT credits" which can be used for future purchases. Credits are only combined with the payment when `payer == beneficiary`. Optionally, the hook can disallow credits and reject payments with leftover funds (via `preventOverspending`).
+- If enabled by the project owner, holders can burn their NFTs to reclaim funds from the project. These cash outs are proportional to the NFTs price, relative to the combined price of all the NFTs (including pending reserves in the denominator).
+- NFT cash outs can be enabled by setting `useDataHookForCashOut` to `true` in the project's `JBRulesetMetadata`. If NFT cash outs are enabled, project token cash outs are disabled -- attempting to cash out fungible tokens when the data hook is active will revert.
+- Per-tier voting units can be configured: either custom voting units or the tier's price as the default. Voting power is computed per-address across all tiers.
+- The hook declares support for ERC-2981 (royalties) via `supportsInterface`, but does not implement the `royaltyInfo` function. This is intended for future extension.
 
 ### Setup
 
