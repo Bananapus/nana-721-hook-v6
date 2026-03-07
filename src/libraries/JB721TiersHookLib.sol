@@ -360,8 +360,9 @@ library JB721TiersHookLib {
         if (address(resolver) != address(0)) return resolver.tokenUriOf({nft: hook, tokenId: tokenId});
 
         // Otherwise, return the token URI corresponding with the NFT's tier.
-        return JBIpfsDecoder.decode({
-            baseUri: baseUri, hexString: store.encodedTierIPFSUriOf({hook: hook, tokenId: tokenId})
-        });
+        return
+            JBIpfsDecoder.decode({
+                baseUri: baseUri, hexString: store.encodedTierIPFSUriOf({hook: hook, tokenId: tokenId})
+            });
     }
 }
