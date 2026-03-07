@@ -434,9 +434,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
             abi.encode(true)
         );
 
-        vm.expectRevert(
-            abi.encodeWithSelector(JB721Hook.JB721Hook_UnauthorizedToken.selector, tokenId, wrongHolder)
-        );
+        vm.expectRevert(abi.encodeWithSelector(JB721Hook.JB721Hook_UnauthorizedToken.selector, tokenId, wrongHolder));
 
         vm.prank(mockTerminalAddress);
         hook.afterCashOutRecordedWith(
