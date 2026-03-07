@@ -8,76 +8,164 @@ Tiered ERC-721 NFT hook for Juicebox V6 that mints NFTs when a project is paid a
 
 | Contract | Role |
 |----------|------|
-| `JB721TiersHook` | Core hook: processes payments (mints NFTs), processes cash outs (burns NFTs), manages tiers, reserves, credits, metadata, and discount percents. Deployed as minimal clones. |
+| `JB721TiersHook` | Core hook: processes payments (mints NFTs), processes cash outs (burns NFTs), manages tiers, reserves, credits, metadata, and discount percents. Deployed as minimal clones. Inherits `JBOwnable`, `ERC2771Context`, `ERC721`, `IJB721TiersHook`. |
 | `JB721TiersHookStore` | Shared singleton storage for all hook instances. Stores tiers (`JBStored721Tier`), balances, reserves, bitmaps for removed tiers, flags, and token URI resolvers. |
 | `JB721TiersHookDeployer` | Factory: clones `JB721TiersHook` via `LibClone.clone` / `cloneDeterministic`, initializes, registers in address registry. |
-| `JB721TiersHookProjectDeployer` | Convenience deployer: creates a Juicebox project + hook in one transaction. Wires the hook as the data hook with `useDataHookForPay: true`. |
-| `JB721Hook` (abstract) | Base: implements `IJBRulesetDataHook` + `IJBPayHook` + `IJBCashOutHook`. Validates caller is a project terminal. |
+| `JB721TiersHookProjectDeployer` | Convenience deployer: creates a Juicebox project + hook in one transaction. Also supports `launchRulesetsFor` and `queueRulesetsOf`. Wires the hook as the data hook with `useDataHookForPay: true`. |
+| `JB721TiersHookLib` (library) | External library called via DELEGATECALL from the hook. Handles tier adjustments (`adjustTiersFor`), split amount calculation (`calculateSplitAmounts`), split fund distribution (`distributeAll`), price normalization (`normalizePaymentValue`), and token URI resolution (`resolveTokenURI`). Extracted to stay within EIP-170 contract size limit. |
 | `ERC721` (abstract) | Clone-compatible ERC-721 with `_initialize(name, symbol)` instead of constructor args. |
 
 ## Key Functions
 
 | Function | Contract | What it does |
 |----------|----------|--------------|
-| `initialize(projectId, name, symbol, baseUri, tokenUriResolver, contractUri, tiersConfig, flags)` | `JB721TiersHook` | One-time setup for a cloned hook instance. Stores pricing context (currency, decimals, prices contract packed into uint256), records tiers and flags in the store. |
-| `afterPayRecordedWith(context)` | `JB721Hook` | Called by terminal after payment. Validates caller is a project terminal, delegates to `_processPayment`. |
-| `_processPayment(context)` | `JB721TiersHook` | Normalizes payment value via pricing context, decodes payer metadata for tier IDs to mint, calls `_mintAll`, manages pay credits for overspending. |
-| `afterCashOutRecordedWith(context)` | `JB721Hook` | Called by terminal during cash out. Decodes token IDs from metadata, validates ownership, burns NFTs, calls `_didBurn`. |
-| `beforePayRecordedWith(context)` | `JB721Hook` | Data hook: returns original weight and sets this contract as the pay hook (amount=0). |
-| `beforeCashOutRecordedWith(context)` | `JB721Hook` | Data hook: calculates `cashOutCount` (weight of NFTs being cashed out) and `totalSupply` (total weight of all NFTs). Rejects if fungible tokens are also being cashed out. |
-| `adjustTiers(tiersToAdd, tierIdsToRemove)` | `JB721TiersHook` | Owner-only. Adds/removes tiers via the store. Requires `ADJUST_721_TIERS` permission. |
+| `initialize(projectId, name, symbol, baseUri, tokenUriResolver, contractUri, tiersConfig, flags)` | `JB721TiersHook` | One-time setup for a cloned hook instance. Stores pricing context (currency, decimals, prices contract packed into uint256), records tiers and flags in the store. Validates `decimals <= 18`. |
+| `afterPayRecordedWith(context)` | `JB721TiersHook` | Called by terminal after payment. Validates caller is a project terminal, delegates to `_processPayment`. |
+| `_processPayment(context)` | `JB721TiersHook` | Normalizes payment value via pricing context, decodes payer metadata for tier IDs to mint, calls `_mintAll`, manages pay credits for overspending. Distributes tier split funds via `JB721TiersHookLib.distributeAll` if split amounts were forwarded. |
+| `afterCashOutRecordedWith(context)` | `JB721TiersHook` | Called by terminal during cash out. Decodes token IDs from metadata, validates ownership, burns NFTs, records burns in store. Reverts if `msg.value != 0`. |
+| `beforePayRecordedWith(context)` | `JB721TiersHook` | Data hook: returns original weight, calculates per-tier split amounts via `JB721TiersHookLib.calculateSplitAmounts`, and sets this contract as the pay hook with the total split amount forwarded. |
+| `beforeCashOutRecordedWith(context)` | `JB721TiersHook` | Data hook: calculates `cashOutCount` (weight of NFTs being cashed out) and `totalSupply` (total weight of all NFTs including pending reserves). Rejects if fungible tokens are also being cashed out. |
+| `adjustTiers(tiersToAdd, tierIdsToRemove)` | `JB721TiersHook` | Owner-only. Adds/removes tiers via `JB721TiersHookLib.adjustTiersFor` (DELEGATECALL). Requires `ADJUST_721_TIERS` permission. Registers tier splits in `JBSplits` if configured. |
 | `mintFor(tierIds, beneficiary)` | `JB721TiersHook` | Owner-only manual mint. Requires `MINT_721` permission. Passes `amount: type(uint256).max` and `isOwnerMint: true` to force the mint. |
 | `mintPendingReservesFor(tierId, count)` | `JB721TiersHook` | Public. Mints pending reserve NFTs for a tier to the tier's `reserveBeneficiary`. Checks ruleset metadata for `mintPendingReservesPaused`. |
-| `setMetadata(baseUri, contractUri, tokenUriResolver, encodedIPFSTUriTierId, encodedIPFSUri)` | `JB721TiersHook` | Owner-only. Updates base URI, contract URI, token URI resolver, or per-tier encoded IPFS URI. Requires `SET_721_METADATA` permission. |
+| `mintPendingReservesFor(configs[])` | `JB721TiersHook` | Batch variant. Calls `mintPendingReservesFor(tierId, count)` for each config. |
+| `setMetadata(baseUri, contractUri, tokenUriResolver, encodedIPFSUriTierId, encodedIPFSUri)` | `JB721TiersHook` | Owner-only. Updates base URI, contract URI, token URI resolver, or per-tier encoded IPFS URI. Requires `SET_721_METADATA` permission. |
 | `setDiscountPercentOf(tierId, discountPercent)` | `JB721TiersHook` | Owner-only. Sets discount percent for a tier. Requires `SET_721_DISCOUNT_PERCENT` permission. |
+| `setDiscountPercentsOf(configs[])` | `JB721TiersHook` | Batch variant. Sets discount percent for multiple tiers. Requires `SET_721_DISCOUNT_PERCENT` permission. |
+| `tokenURI(tokenId)` | `JB721TiersHook` | Resolves token metadata URI. Delegates to `JB721TiersHookLib.resolveTokenURI`, which checks for a custom `tokenUriResolver` first, then falls back to IPFS decoding via `JBIpfsDecoder`. |
+| `firstOwnerOf(tokenId)` | `JB721TiersHook` | Returns the first owner of an NFT (the address that originally received it). Stored on first transfer out; returns current owner if never transferred. |
+| `pricingContext()` | `JB721TiersHook` | Unpacks and returns the currency, decimals, and prices contract from the packed `_packedPricingContext`. |
+| `balanceOf(owner)` | `JB721TiersHook` | Overrides ERC-721 `balanceOf` to delegate to `STORE.balanceOf`, which sums across all tiers. |
+| `hasMintPermissionFor(...)` | `JB721TiersHook` | Always returns `false`. Required by `IJBRulesetDataHook`; prevents the hook from granting mint permissions to anyone. |
+| `supportsInterface(interfaceId)` | `JB721TiersHook` | Returns `true` for `IJB721TiersHook`, `IJBRulesetDataHook`, `IJBPayHook`, `IJBCashOutHook`, `IERC2981`, `IERC721`, `IERC721Metadata`, `IERC165`. |
 | `deployHookFor(projectId, config, salt)` | `JB721TiersHookDeployer` | Clones the hook implementation, initializes it, transfers ownership to caller, registers in address registry. |
 | `launchProjectFor(owner, deployConfig, launchConfig, controller, salt)` | `JB721TiersHookProjectDeployer` | Creates project via controller, deploys hook, wires hook as data hook with `useDataHookForPay: true`, transfers hook ownership to project. |
-| `recordMint(amount, tierIds, isOwnerMint)` | `JB721TiersHookStore` | Records minting: validates supply, checks tier prices against amount (unless owner mint), generates token IDs (tierId * 1_000_000_000 + mintCount), tracks reserves. |
-| `recordAddTiers(tiers)` | `JB721TiersHookStore` | Adds new tiers sorted by category. Validates against hook flags (no new reserves/votes/owner-minting if flagged). |
-| `recordRemoveTierIds(tierIds)` | `JB721TiersHookStore` | Marks tiers as removed in the bitmap. Validates tier is not locked (`cannotBeRemoved`). |
+| `launchRulesetsFor(projectId, deployConfig, launchRulesetsConfig, controller, salt)` | `JB721TiersHookProjectDeployer` | Deploys a hook for an existing project and launches rulesets. Requires `QUEUE_RULESETS` and `SET_TERMINALS` permissions. Transfers hook ownership to project. |
+| `queueRulesetsOf(projectId, deployConfig, queueRulesetsConfig, controller, salt)` | `JB721TiersHookProjectDeployer` | Deploys a hook and queues rulesets for an existing project. Requires `QUEUE_RULESETS` permission. Transfers hook ownership to project. |
+| `recordMint(amount, tierIds, isOwnerMint)` | `JB721TiersHookStore` | Records minting: validates supply, checks tier prices against amount (unless owner mint), applies discount if set, generates token IDs (`tierId * 1_000_000_000 + mintCount`), ensures remaining supply covers pending reserves. |
+| `recordAddTiers(tiers)` | `JB721TiersHookStore` | Adds new tiers sorted by category. Validates against hook flags (no new reserves/votes/owner-minting if flagged). Enforces max tier count (`type(uint16).max`), max supply per tier (`999_999_999`), discount percent bounds, non-zero supply, category sort order, and reserve+owner-mint mutual exclusion. |
+| `recordRemoveTierIds(tierIds)` | `JB721TiersHookStore` | Marks tiers as removed in the bitmap. Validates tier is not locked (`cannotBeRemoved`). Does NOT update the sorted linked list -- call `cleanTiers()` afterward. |
+| `recordMintReservesFor(tierId, count)` | `JB721TiersHookStore` | Mints reserve NFTs from remaining supply. Validates count does not exceed pending reserves. |
+| `recordSetDiscountPercentOf(tierId, discountPercent)` | `JB721TiersHookStore` | Sets discount percent for a tier. Validates bounds (`<= DISCOUNT_DENOMINATOR`). If `cannotIncreaseDiscountPercent` is set, rejects increases. |
+| `recordBurn(tokenIds)` | `JB721TiersHookStore` | Increments burn counter per tier. Trusts `msg.sender` (the hook) to have already verified ownership and burned the tokens. |
+| `cleanTiers(hook)` | `JB721TiersHookStore` | Public. Removes stale entries from the sorted tier linked list after tiers have been removed via `recordRemoveTierIds`. Optimizes tier iteration. |
+| `tiersOf(hook, categories, includeResolvedUri, startingId, size)` | `JB721TiersHookStore` | Returns an array of active tiers, optionally filtered by categories. Skips removed tiers. |
+| `tierOf(hook, id, includeResolvedUri)` | `JB721TiersHookStore` | Returns a single tier by ID. |
+| `tierOfTokenId(hook, tokenId, includeResolvedUri)` | `JB721TiersHookStore` | Returns the tier for a given token ID. |
+| `totalSupplyOf(hook)` | `JB721TiersHookStore` | Returns total NFTs minted across all tiers (excluding burns). |
+| `totalCashOutWeight(hook)` | `JB721TiersHookStore` | Returns total cash out weight (sum of `price * (minted + pendingReserves)` for all tiers). Uses original price, not discounted price. |
+| `cashOutWeightOf(hook, tokenIds)` | `JB721TiersHookStore` | Returns combined cash out weight for specific token IDs. Uses original tier price, not discounted. |
+| `votingUnitsOf(hook, account)` | `JB721TiersHookStore` | Returns total voting units for an address across all tiers. Uses custom `votingUnits` if `useVotingUnits` is set, otherwise uses tier price. |
+| `tierVotingUnitsOf(hook, account, tierId)` | `JB721TiersHookStore` | Returns voting units for an address within a specific tier. |
+| `calculateSplitAmounts(store, hook, metadataIdTarget, metadata)` | `JB721TiersHookLib` | Called in `beforePayRecordedWith`. Decodes tier IDs from payer metadata, looks up each tier's `splitPercent`, calculates `mulDiv(price, splitPercent, SPLITS_TOTAL_PERCENT)` per tier, returns `totalSplitAmount` (forwarded to hook as `amount`) and encoded `hookMetadata` (tier IDs + amounts). |
+| `distributeAll(directory, projectId, hookAddress, token, encodedSplitData)` | `JB721TiersHookLib` | Called in `afterPayRecordedWith`. Decodes per-tier amounts, looks up each tier's splits from `JBSplits` by group ID (`hookAddress | (tierId << 160)`), distributes to split recipients. Leftover goes to project balance via `addToBalance`. |
+| `adjustTiersFor(store, directory, projectId, hookAddress, caller, tiersToAdd, tierIdsToRemove)` | `JB721TiersHookLib` | Called via DELEGATECALL from `adjustTiers`. Removes tiers, adds tiers, emits events, and registers any configured splits in `JBSplits` via the project's controller. |
+| `normalizePaymentValue(packedPricingContext, projectId, amountValue, amountCurrency, amountDecimals)` | `JB721TiersHookLib` | Converts a payment value to the hook's pricing currency using `JBPrices`. Returns `(0, false)` if currencies differ and no prices contract is set. |
+| `resolveTokenURI(store, hook, baseUri, tokenId)` | `JB721TiersHookLib` | Resolves token URI: checks for custom `tokenUriResolver` first, otherwise decodes IPFS URI via `JBIpfsDecoder`. |
 
 ## Integration Points
 
 | Dependency | Import | Used For |
 |------------|--------|----------|
-| `@bananapus/core-v6` | `IJBDirectory`, `IJBRulesets`, `IJBPrices`, `IJBController`, `IJBTerminal`, `JBRuleset`, `JBRulesetMetadata`, `JBAfterPayRecordedContext`, `JBBeforeCashOutRecordedContext`, etc. | Terminal validation, ruleset metadata, pricing, payment/cash-out contexts |
+| `@bananapus/core-v6` | `IJBDirectory`, `IJBRulesets`, `IJBPrices`, `IJBController`, `IJBTerminal`, `IJBSplits`, `JBRuleset`, `JBRulesetMetadata`, `JBAfterPayRecordedContext`, `JBBeforeCashOutRecordedContext`, `JBSplit`, `JBSplitGroup`, `JBConstants`, etc. | Terminal validation, ruleset metadata, pricing, payment/cash-out contexts, splits |
 | `@bananapus/ownable-v6` | `JBOwnable` | Project-based ownership for the hook (ownership can be transferred to a project NFT) |
 | `@bananapus/permission-ids-v6` | `JBPermissionIds` | Permission IDs: `ADJUST_721_TIERS`, `MINT_721`, `SET_721_METADATA`, `SET_721_DISCOUNT_PERCENT`, `QUEUE_RULESETS`, `SET_TERMINALS` |
 | `@bananapus/address-registry-v6` | `IJBAddressRegistry` | Registering deployed hook clones |
-| `@openzeppelin/contracts` | `ERC2771Context`, `IERC165`, `IERC2981`, `IERC721` | Meta-transactions (trusted forwarder), interface detection, royalty standard |
-| `@prb/math` | `mulDiv` | Safe fixed-point multiplication/division for price normalization |
+| `@openzeppelin/contracts` | `ERC2771Context`, `IERC165`, `IERC2981`, `IERC721`, `SafeERC20` | Meta-transactions (trusted forwarder), interface detection, royalty standard declaration, safe ERC-20 transfers for split distribution |
+| `@prb/math` | `mulDiv` | Safe fixed-point multiplication/division for price normalization and discount/split calculation |
 | `solady` | `LibClone` | Minimal proxy (clone) deployment for hooks |
 
 ## Key Types
 
 | Struct/Enum | Key Fields | Used In |
 |-------------|------------|---------|
-| `JB721TierConfig` | `uint104 price`, `uint32 initialSupply`, `uint32 votingUnits`, `uint16 reserveFrequency`, `address reserveBeneficiary`, `bytes32 encodedIPFSUri`, `uint24 category`, `uint8 discountPercent`, `bool allowOwnerMint`, `bool transfersPausable`, `bool cannotBeRemoved`, `bool cannotIncreaseDiscountPercent` | `adjustTiers`, `initialize`, `recordAddTiers` |
-| `JB721Tier` | Same as config plus `uint32 id`, `uint32 remainingSupply`, `string resolvedUri` | Return type from `tierOf`, `tiersOf`, `tierOfTokenId` |
-| `JBStored721Tier` | `uint104 price`, `uint32 remainingSupply`, `uint32 initialSupply`, `uint32 votingUnits`, `uint24 category`, `uint8 discountPercent`, `uint16 reserveFrequency`, `uint8 packedBools` | Internal storage in `JB721TiersHookStore` |
-| `JB721InitTiersConfig` | `JB721TierConfig[] tiers`, `uint32 currency`, `uint8 decimals`, `IJBPrices prices` | `initialize` — defines tiers and pricing context |
+| `JB721TierConfig` | `uint104 price`, `uint32 initialSupply`, `uint32 votingUnits`, `uint16 reserveFrequency`, `address reserveBeneficiary`, `bytes32 encodedIPFSUri`, `uint24 category`, `uint8 discountPercent`, `bool allowOwnerMint`, `bool useReserveBeneficiaryAsDefault`, `bool transfersPausable`, `bool useVotingUnits`, `bool cannotBeRemoved`, `bool cannotIncreaseDiscountPercent`, `uint32 splitPercent`, `JBSplit[] splits` | `adjustTiers`, `initialize`, `recordAddTiers` |
+| `JB721Tier` | `uint32 id`, `uint104 price`, `uint32 remainingSupply`, `uint32 initialSupply`, `uint104 votingUnits`, `uint16 reserveFrequency`, `address reserveBeneficiary`, `bytes32 encodedIPFSUri`, `uint24 category`, `uint8 discountPercent`, `bool allowOwnerMint`, `bool transfersPausable`, `bool cannotBeRemoved`, `bool cannotIncreaseDiscountPercent`, `uint32 splitPercent`, `string resolvedUri` | Return type from `tierOf`, `tiersOf`, `tierOfTokenId` |
+| `JBStored721Tier` | `uint104 price`, `uint32 remainingSupply`, `uint32 initialSupply`, `uint32 splitPercent`, `uint24 category`, `uint8 discountPercent`, `uint16 reserveFrequency`, `uint8 packedBools` (allowOwnerMint, transfersPausable, useVotingUnits, cannotBeRemoved, cannotIncreaseDiscountPercent) | Internal storage in `JB721TiersHookStore`. Voting units stored separately in `_tierVotingUnitsOf` when `useVotingUnits` is true. |
+| `JB721InitTiersConfig` | `JB721TierConfig[] tiers`, `uint32 currency`, `uint8 decimals`, `IJBPrices prices` | `initialize` -- defines tiers and pricing context |
 | `JBDeploy721TiersHookConfig` | `string name`, `string symbol`, `string baseUri`, `IJB721TokenUriResolver tokenUriResolver`, `string contractUri`, `JB721InitTiersConfig tiersConfig`, `address reserveBeneficiary`, `JB721TiersHookFlags flags` | `deployHookFor`, `launchProjectFor` |
 | `JB721TiersHookFlags` | `bool noNewTiersWithReserves`, `bool noNewTiersWithVotes`, `bool noNewTiersWithOwnerMinting`, `bool preventOverspending` | `initialize`, `recordFlags` |
-| `JB721TiersRulesetMetadata` | `bool pauseTransfers`, `bool pauseMintPendingReserves` | Packed into `JBRulesetMetadata.metadata` per-ruleset |
-| `JBPayDataHookRulesetConfig` | `uint48 mustStartAtOrAfter`, `uint32 duration`, `uint112 weight`, `uint32 weightCutPercent`, `IJBRulesetApprovalHook approvalHook`, `JBPayDataHookRulesetMetadata metadata`, `JBSplitGroup[] splitGroups`, `JBFundAccessLimitGroup[] fundAccessLimitGroups` | `JB721TiersHookProjectDeployer` — wraps core ruleset config with `useDataHookForPay: true` hardcoded |
-| `JBPayDataHookRulesetMetadata` | Same as `JBRulesetMetadata` minus `allowSetCustomToken` (hardcoded false) and `useDataHookForPay` (hardcoded true) and `dataHook` (set to deployed hook) | `launchProjectFor`, `launchRulesetsFor`, `queueRulesetsOf` |
+| `JB721TiersRulesetMetadata` | `bool pauseTransfers`, `bool pauseMintPendingReserves` | Packed into `JBRulesetMetadata.metadata` per-ruleset (bit 0 = pauseTransfers, bit 1 = pauseMintPendingReserves) |
+| `JBPayDataHookRulesetConfig` | `uint48 mustStartAtOrAfter`, `uint32 duration`, `uint112 weight`, `uint32 weightCutPercent`, `IJBRulesetApprovalHook approvalHook`, `JBPayDataHookRulesetMetadata metadata`, `JBSplitGroup[] splitGroups`, `JBFundAccessLimitGroup[] fundAccessLimitGroups` | `JB721TiersHookProjectDeployer` -- wraps core ruleset config with `useDataHookForPay: true` hardcoded |
+| `JBPayDataHookRulesetMetadata` | Same as `JBRulesetMetadata` minus `allowSetCustomToken` (hardcoded false) and `useDataHookForPay` (hardcoded true) and `dataHook` (set to deployed hook). Includes `ownerMustSendPayouts`. | `launchProjectFor`, `launchRulesetsFor`, `queueRulesetsOf` |
+| `JBLaunchProjectConfig` | `string projectUri`, `JBPayDataHookRulesetConfig[] rulesetConfigurations`, `JBTerminalConfig[] terminalConfigurations`, `string memo` | `launchProjectFor` |
+| `JBLaunchRulesetsConfig` | `uint56 projectId`, `JBPayDataHookRulesetConfig[] rulesetConfigurations`, `JBTerminalConfig[] terminalConfigurations`, `string memo` | `launchRulesetsFor` |
+| `JBQueueRulesetsConfig` | `uint56 projectId`, `JBPayDataHookRulesetConfig[] rulesetConfigurations`, `string memo` | `queueRulesetsOf` |
 | `JB721TiersMintReservesConfig` | `uint32 tierId`, `uint16 count` | `mintPendingReservesFor` batch variant |
 | `JB721TiersSetDiscountPercentConfig` | `uint32 tierId`, `uint16 discountPercent` | `setDiscountPercentsOf` batch variant |
 | `JBBitmapWord` | `uint256 currentWord`, `uint256 currentDepth` | Internal tier removal tracking in store |
 
+## Constants
+
+| Constant | Value | Location | Meaning |
+|----------|-------|----------|---------|
+| `DISCOUNT_DENOMINATOR` | `200` | `JB721Constants` | Max `discountPercent` value. A `discountPercent` of 200 = 100% discount (free). A `discountPercent` of 100 = 50% off. Formula: `price -= mulDiv(price, discountPercent, 200)`. |
+| `_ONE_BILLION` | `1_000_000_000` | `JB721TiersHookStore` | Used for token ID generation: `tokenId = tierId * 1_000_000_000 + tokenNumber`. Also caps max initial supply per tier at 999,999,999. |
+| Max tier count | `type(uint16).max` (65,535) | `JB721TiersHookStore` | Maximum total number of tiers across all `recordAddTiers` calls for a single hook. |
+
+## Discount Percent
+
+Each tier has a `discountPercent` (uint8) that reduces its effective purchase price:
+
+- The discount is applied during `recordMint`: `price -= mulDiv(price, discountPercent, DISCOUNT_DENOMINATOR)`.
+- `DISCOUNT_DENOMINATOR` is 200, so `discountPercent = 100` means 50% off, `discountPercent = 200` means free.
+- Discount can be changed via `setDiscountPercentOf` / `setDiscountPercentsOf` (requires `SET_721_DISCOUNT_PERCENT` permission).
+- If `cannotIncreaseDiscountPercent` is set on the tier, the discount can only be decreased or kept the same -- increases are rejected by the store.
+- Cash out weight always uses the **original tier price**, not the discounted price. This prevents discount changes from retroactively altering the cash-out value of already-minted NFTs.
+
+## Voting Units
+
+Each tier has configurable voting power:
+
+- If `useVotingUnits` is `true` on the tier config, voting power per NFT is the custom `votingUnits` value (stored in `_tierVotingUnitsOf`).
+- If `useVotingUnits` is `false`, voting power per NFT defaults to the tier's `price`.
+- The `noNewTiersWithVotes` flag blocks adding new tiers with any voting power -- this means blocking tiers where `(useVotingUnits && votingUnits != 0)` OR `(!useVotingUnits && price != 0)`.
+- Total voting units for an address are computed by `votingUnitsOf(hook, account)`, which sums `balance * votingPower` across all tiers.
+
+## Reserve Minting
+
+- Reserves accumulate as NFTs are purchased: for every `reserveFrequency` non-reserve mints, one reserve NFT becomes available.
+- Pending count: `ceil(numberOfNonReserveMints / reserveFrequency) - numberOfReservesMintedFor`.
+- Reserves are minted to the tier's `reserveBeneficiary` (or the hook's `defaultReserveBeneficiaryOf` as fallback).
+- Reserve minting is permissionless (`mintPendingReservesFor`), but can be paused per-ruleset via `pauseMintPendingReserves` in `JB721TiersRulesetMetadata`.
+- Supply is protected: `recordMint` ensures remaining supply covers pending reserves after each purchase.
+- Tiers with `allowOwnerMint: true` cannot have a `reserveFrequency` -- the store rejects this combination.
+
+## Tier Splits
+
+- Each tier can route a percentage of its mint price to configured split recipients. The `splitPercent` field (out of `JBConstants.SPLITS_TOTAL_PERCENT` = 1,000,000,000) determines how much of the price is forwarded.
+- Split recipients are stored in `JBSplits` using group IDs computed as `uint256(uint160(hookAddress)) | (uint256(tierId) << 160)`.
+- Splits are registered via `JB721TiersHookLib._setSplitGroupsFor` when tiers with `splits` are added.
+- In `beforePayRecordedWith`, `calculateSplitAmounts` decodes tier IDs from payer metadata, computes `mulDiv(price, splitPercent, SPLITS_TOTAL_PERCENT)` per tier, and returns the total to be forwarded to the hook.
+- In `afterPayRecordedWith`, `distributeAll` distributes forwarded funds to each tier's split group recipients. Leftover after all splits goes back to the project's balance via `addToBalance`.
+- Split recipients can be projects (via `terminal.pay` or `terminal.addToBalance`) or plain addresses (direct ETH transfer or `SafeERC20.safeTransfer`).
+
 ## Gotchas
 
 - `JB721TiersHook` is deployed as a **minimal clone** (not a full deployment). The constructor sets immutables (`RULESETS`, `STORE`, `DIRECTORY`, `METADATA_ID_TARGET`), and `initialize()` sets per-instance state. Calling `initialize()` twice reverts with `JB721TiersHook_AlreadyInitialized`.
+- **No separate `JB721Hook` abstract**: The V6 codebase flattened the hook hierarchy. `JB721TiersHook` directly inherits `JBOwnable`, `ERC2771Context`, `ERC721`, and `IJB721TiersHook`. All `beforePay`/`afterPay`/`beforeCashOut`/`afterCashOut` functions are on `JB721TiersHook` itself.
 - **Pricing context is bit-packed** into a single `uint256`: currency (bits 0-31), decimals (bits 32-39), prices contract address (bits 40-199). Read it via `pricingContext()`.
+- **Pricing decimals must be <= 18**: `initialize` reverts with `JB721TiersHook_InvalidPricingDecimals` otherwise.
 - **Token IDs encode tier ID**: `tokenId = tierId * 1_000_000_000 + mintNumber`. Use `STORE.tierIdOfToken(tokenId)` to extract the tier ID.
 - **Pay credits**: If a payer overpays (amount > total tier prices), the excess is stored as `payCreditsOf[beneficiary]` and can be applied to future mints. This only works when `preventOverspending` flag is `false`. Credits are only combined with payment when `payer == beneficiary`.
-- **Cash outs reject fungible tokens**: `beforeCashOutRecordedWith` reverts with `JB721Hook_UnexpectedTokenCashedOut` if `context.cashOutCount > 0`. NFT cash outs and fungible token cash outs are mutually exclusive.
+- **Cash outs reject fungible tokens**: `beforeCashOutRecordedWith` reverts with `JB721TiersHook_UnexpectedTokenCashedOut` if `context.cashOutCount > 0`. NFT cash outs and fungible token cash outs are mutually exclusive.
+- **Cash out weight uses original price**: `cashOutWeightOf` and `totalCashOutWeight` use the full tier `price`, not the discounted price. This prevents discount changes from altering the cash-out value of already-minted NFTs.
+- **Pending reserves inflate totalCashOutWeight**: `totalCashOutWeight` includes pending reserves in the denominator (`price * (minted + pendingReserves)`). This dilutes cash-out value before reserves are minted, preventing early cashers from extracting more than their fair share.
 - **Reserve minting is permissionless** but governed by ruleset metadata. Anyone can call `mintPendingReservesFor` as long as `mintPendingReservesPaused` is not set in the current ruleset's metadata.
+- **Reserve + owner-mint mutual exclusion**: Tiers with `allowOwnerMint: true` cannot have a `reserveFrequency`. The store rejects this combination during `recordAddTiers`.
 - `setMetadata` uses `address(this)` as the sentinel for "no change" on `tokenUriResolver` (not `address(0)`). Passing `address(0)` will clear the resolver.
 - `JBPayDataHookRulesetConfig` hardcodes `allowSetCustomToken: false` and `useDataHookForPay: true` when wiring rulesets through the project deployer.
 - The `_update` override in `JB721TiersHook` checks `tier.transfersPausable` and consults the current ruleset's metadata for `transfersPaused`. Transfers to `address(0)` (burns) are never blocked.
+- **IERC2981 declared but not implemented**: `supportsInterface` returns `true` for `IERC2981`, but no `royaltyInfo` function is implemented. Callers querying `royaltyInfo` will get a revert. This appears intentional -- the interface is declared for future extension or to signal capability to marketplaces that may override behavior.
+- **Tier splits**: Each tier can route a percentage of its mint price to configured split recipients. `splitPercent` is out of `JBConstants.SPLITS_TOTAL_PERCENT` (1,000,000,000). Split group IDs are `uint256(uint160(hookAddress)) | (uint256(tierId) << 160)`.
+- **Removing tiers does not update the sorted list**: `recordRemoveTierIds` only marks tiers in the bitmap. Call `cleanTiers()` afterward to remove them from the iteration sequence.
 - `JB721TiersHookStore` is a **shared singleton** -- all hook instances on the same chain use the same store, keyed by `address(hook)`.
 - The `ERC721` abstract uses `_initialize(name, symbol)` instead of a constructor, making it clone-compatible. The standard `_owners` mapping is `internal` (not `private`).
+- **`hasMintPermissionFor` always returns `false`**: The hook never grants mint permission to any address. This is part of the `IJBRulesetDataHook` interface.
+- **Max tier count is 65,535** (`type(uint16).max`). Adding tiers beyond this limit reverts.
+- **Max initial supply per tier is 999,999,999** (`_ONE_BILLION - 1`). Exceeding this would cause token ID overflow into the next tier's ID space.
+- **`noNewTiersWithVotes` blocks all voting power**: It rejects tiers where voting units would be non-zero, whether from custom `votingUnits` or from a non-zero `price` (when `useVotingUnits` is false).
+- **`firstOwnerOf` is lazy**: The first owner is only stored when the token is first transferred away from its original holder. Before any transfer, `firstOwnerOf` returns the current owner.
 
 ## Example Integration
 
@@ -107,7 +195,9 @@ tiers[0] = JB721TierConfig({
     transfersPausable: false,
     useVotingUnits: false,
     cannotBeRemoved: false,
-    cannotIncreaseDiscountPercent: false
+    cannotIncreaseDiscountPercent: false,
+    splitPercent: 0,
+    splits: new JBSplit[](0)
 });
 
 // Deploy a project with the 721 hook attached.
