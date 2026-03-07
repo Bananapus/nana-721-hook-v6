@@ -3,7 +3,7 @@
 `nana-721-hook` is:
 
 1. A pay hook for Juicebox projects to sell tiered NFTs (ERC-721s) with different prices and artwork.
-2. (Optionally) a redeem hook which allows holders to burn their NFTs to reclaim funds from the project, in proportion to the NFT's price.
+2. (Optionally) a cash out hook which allows holders to burn their NFTs to reclaim funds from the project, in proportion to the NFT's price.
 
 <details>
   <summary>Table of Contents</summary>
@@ -156,7 +156,7 @@ nana-721-hook/
 │   └── helpers/
 │       └── Hook721DeploymentLib.sol - Internal helpers for deployment scripts.
 ├── src/ - Contract source code. Top level contains implementation contracts.
-│   ├── JB721TiersHook.sol - The core tiered NFT pay/redeem hook.
+│   ├── JB721TiersHook.sol - The core tiered NFT pay/cash out hook.
 │   ├── JB721TiersHookDeployer.sol - Deploys an NFT hook for a project.
 │   ├── JB721TiersHookProjectDeployer.sol - Deploys a project with a tiered NFT hook.
 │   ├── JB721TiersHookStore.sol - Stores and manages data for tiered NFT hooks.
@@ -190,9 +190,9 @@ graph TD;
     D[JB721TiersHookDeployer] -->|Adds NFT hooks to| B
     A -->|Deploys| C[JB721TiersHook]
     D -->|Deploys| C
-    B -->|Calls upon pay/redeem| C
+    B -->|Calls upon pay/cash out| C
     C -->|Stores data in| E[JB721TiersHookStore]
-    B -->|Uses| F[Pay/redeem terminal]
+    B -->|Uses| F[Pay/cash out terminal]
     C -->|Mints NFTs upon payment through| F
     C -->|Burns NFTs to reclaim funds through| F
 ```
@@ -201,7 +201,7 @@ graph TD;
 
 | Contract                                                                                                                          | Description                                                                                             |
 | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| [`JB721TiersHook.sol`](https://github.com/Bananapus/nana-721-hook/blob/main/src/JB721TiersHook.sol)                               | The core tiered NFT pay/redeem hook implementation.                                                     |
+| [`JB721TiersHook.sol`](https://github.com/Bananapus/nana-721-hook/blob/main/src/JB721TiersHook.sol)                               | The core tiered NFT pay/cash out hook implementation.                                                     |
 | [`JB721TiersHookDeployer.sol`](https://github.com/Bananapus/nana-721-hook/blob/main/src/JB721TiersHookDeployer.sol)               | Exposes a `deployHookFor(…)` function which allows deploys an NFT hook for a project.                   |
 | [`JB721TiersHookProjectDeployer.sol`](https://github.com/Bananapus/nana-721-hook/blob/main/src/JB721TiersHookProjectDeployer.sol) | Exposes a `launchProjectFor(…)` function which deploys a project with a tiered NFT hook already set up. |
 | [`JB721TiersHookStore.sol`](https://github.com/Bananapus/nana-721-hook/blob/main/src/JB721TiersHookStore.sol)                     | Stores and manages data for tiered NFT hooks.                                                           |
@@ -210,11 +210,11 @@ graph TD;
 
 ### Hooks
 
-This contract is a _data hook_, a _pay hook_, and a _redeem hook_. Data hooks receive information about a payment or a redemption, and put together a payload for the pay/redeem hook to execute.
+This contract is a _data hook_, a _pay hook_, and a _cash out hook_. Data hooks receive information about a payment or a cash out, and put together a payload for the pay/cash out hook to execute.
 
-Juicebox projects can specify a data hook in their `JBRulesetMetadata`. When someone attempts to pay or redeem from the project, the project's terminal records the payment in the terminal store, passing information about the payment/redemption to the data hook in the process. The data hook responds with a list of payloads – each payload specifies the address of a pay/redeem hook, as well as some custom data and an amount of funds to send to that pay/redeem hook.
+Juicebox projects can specify a data hook in their `JBRulesetMetadata`. When someone attempts to pay or cash out from the project, the project's terminal records the payment in the terminal store, passing information about the payment/cash out to the data hook in the process. The data hook responds with a list of payloads – each payload specifies the address of a pay/cash out hook, as well as some custom data and an amount of funds to send to that pay/cash out hook.
 
-Each pay/redeem hook can then execute custom behavior based on the custom data (and funds) they receive.
+Each pay/cash out hook can then execute custom behavior based on the custom data (and funds) they receive.
 
 ### Mechanism
 
@@ -240,14 +240,14 @@ Additional notes:
 - A payer can specify any number of tiers to mint as long as the total price does not exceed the amount being paid. If tiers aren't specified, their payment mints the most expensive tier possible, unless they specify that the hook should not mint any NFTs.
 - If the payment and a tier's price are specified in different currencies, the `JBPrices` contract is used to normalize the values.
 - If some of a payment does not go towards purchasing an NFT, those extra funds will be stored as "NFT credits" which can be used for future purchases. Optionally, the hook can disallow credits and reject payments with leftover funds.
-- If enabled by the project owner, holders can burn their NFTs to reclaim funds from the project. These redemptions are proportional to the NFTs price, relative to the combined price of all the NFTs.
-- NFT redemptions can be enabled by setting `useDataHookForRedeem` to `true` in the project's `JBRulesetMetadata`. If NFT redemptions are enabled, project token redemptions are disabled.
+- If enabled by the project owner, holders can burn their NFTs to reclaim funds from the project. These cash outs are proportional to the NFTs price, relative to the combined price of all the NFTs.
+- NFT cash outs can be enabled by setting `useDataHookForCashOut` to `true` in the project's `JBRulesetMetadata`. If NFT cash outs are enabled, project token cash outs are disabled.
 - The hook's deployer can choose if the NFTs should support on-chain voting (as `ERC721Votes`). This increases the gas fees to interact with the NFTs, and should be disabled if not needed.
 
 ### Setup
 
 To use a 721 tiers hook, a Juicebox project should be created by a `JB721TiersHookProjectDeployer` instead of a `JBController`. The deployer will create a `JB721TiersHook` (through an associated `JB721TiersHookDeployer`) and add it to the project's first ruleset. New rulesets can be queued with `JB721TiersHookProjectDeployer.queueRulesetsOf(…)` if the project's owner gives the project deployer the permission [`JBPermissions.QUEUE_RULESETS`](https://github.com/Bananapus/nana-permission-ids/blob/master/src/JBPermissionIds.sol) (ID `2`) in [`JBPermissions`](https://github.com/Bananapus/nana-core/blob/main/src/JBPermissions.sol).
 
-It's also possible to add a 721 tiers hook to an existing project by calling `JB721TiersHookDeployer.deployHookFor(…)` and adding the hook to the project's ruleset – specifically, the project must set their [`JBRulesetMetadata.dataHook`](https://github.com/Bananapus/nana-core/blob/main/src/structs/JBRulesetMetadata.sol) to the newly deployed hook, and enable `JBRulesetMetadata.useDataHookForPay` and/or `JBRulesetMetadata.useDataHookForRedeem` depending on the functionality they'd like to enable.
+It's also possible to add a 721 tiers hook to an existing project by calling `JB721TiersHookDeployer.deployHookFor(…)` and adding the hook to the project's ruleset – specifically, the project must set their [`JBRulesetMetadata.dataHook`](https://github.com/Bananapus/nana-core/blob/main/src/structs/JBRulesetMetadata.sol) to the newly deployed hook, and enable `JBRulesetMetadata.useDataHookForPay` and/or `JBRulesetMetadata.useDataHookForCashOut` depending on the functionality they'd like to enable.
 
 All `JB721TiersHook`s store their data in the `JB721TiersHookStore` contract.
