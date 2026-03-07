@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 import "../utils/UnitTestSetup.sol";
 
 /// @title M6_TierSupplyCheck
-/// @notice Tests proving the M-6 fix: the supply check must account for pending reserves when minting paid NFTs.
+/// @notice Tests that the supply check accounts for pending reserves when minting paid NFTs.
 /// Without the `1 +` in the supply check, the last available slot can be consumed by a paid mint, making
 /// pending reserves unmintable (recordMintReservesFor reverts decrementing remainingSupply past zero).
 contract M6_TierSupplyCheck is UnitTestSetup {
