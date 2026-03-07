@@ -161,6 +161,7 @@ nana-721-hook/
 │   ├── JB721TiersHookProjectDeployer.sol - Deploys a project with a tiered NFT hook.
 │   ├── JB721TiersHookStore.sol - Stores and manages data for tiered NFT hooks.
 │   ├── abstract/
+│   │   ├── JB721Hook.sol - Abstract base hook: handles pay/cash out lifecycle, metadata, and terminal validation.
 │   │   └── ERC721.sol - Clone-compatible abstract ERC-721 implementation.
 │   ├── interfaces/ - Contract interfaces.
 │   ├── libraries/ - Libraries (includes JB721TiersHookLib for tier adjustments, split distribution, price normalization, and token URI resolution).
@@ -200,7 +201,8 @@ graph TD;
 
 | Contract                                                                                                                          | Description                                                                                             |
 | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| [`JB721TiersHook.sol`](https://github.com/Bananapus/nana-721-hook/blob/main/src/JB721TiersHook.sol)                               | The core tiered NFT pay/cash out hook implementation.                                                     |
+| [`JB721Hook.sol`](https://github.com/Bananapus/nana-721-hook/blob/main/src/abstract/JB721Hook.sol)                                 | Abstract base for 721 hooks: handles pay/cash out lifecycle, terminal validation, and metadata resolution. |
+| [`JB721TiersHook.sol`](https://github.com/Bananapus/nana-721-hook/blob/main/src/JB721TiersHook.sol)                               | The core tiered NFT pay/cash out hook implementation, extending `JB721Hook`.                              |
 | [`JB721TiersHookDeployer.sol`](https://github.com/Bananapus/nana-721-hook/blob/main/src/JB721TiersHookDeployer.sol)               | Exposes a `deployHookFor(…)` function which allows deploys an NFT hook for a project.                   |
 | [`JB721TiersHookProjectDeployer.sol`](https://github.com/Bananapus/nana-721-hook/blob/main/src/JB721TiersHookProjectDeployer.sol) | Exposes a `launchProjectFor(…)` function which deploys a project with a tiered NFT hook already set up. |
 | [`JB721TiersHookStore.sol`](https://github.com/Bananapus/nana-721-hook/blob/main/src/JB721TiersHookStore.sol)                     | Stores and manages data for tiered NFT hooks.                                                           |

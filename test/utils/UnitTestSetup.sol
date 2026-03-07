@@ -6,6 +6,7 @@ import "../utils/ForTest_JB721TiersHook.sol";
 
 import "../../src/JB721TiersHookDeployer.sol";
 import "../../src/JB721TiersHook.sol";
+import "../../src/abstract/JB721Hook.sol";
 import "../../src/JB721TiersHookStore.sol";
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
@@ -28,6 +29,8 @@ import "@bananapus/address-registry-v6/src/JBAddressRegistry.sol";
 
 import "@bananapus/core-v6/src/libraries/JBCurrencyIds.sol";
 import "@bananapus/core-v6/src/libraries/JBConstants.sol";
+import "@bananapus/core-v6/src/structs/JBBeforeCashOutRecordedContext.sol";
+import {MetadataResolverHelper} from "@bananapus/core-v6/test/helpers/MetadataResolverHelper.sol";
 
 contract UnitTestSetup is Test {
     address beneficiary;
