@@ -903,9 +903,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                     if (defaultReserveBeneficiaryOf[msg.sender] != tierToAdd.reserveBeneficiary) {
                         defaultReserveBeneficiaryOf[msg.sender] = tierToAdd.reserveBeneficiary;
                         emit SetDefaultReserveBeneficiary({
-                            hook: msg.sender,
-                            newBeneficiary: tierToAdd.reserveBeneficiary,
-                            caller: msg.sender
+                            hook: msg.sender, newBeneficiary: tierToAdd.reserveBeneficiary, caller: msg.sender
                         });
                     }
                 } else {
