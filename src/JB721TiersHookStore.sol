@@ -763,6 +763,10 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     }
 
     /// @notice Record newly added tiers.
+    /// @dev WARNING: If any tier in `tiersToAdd` has `useReserveBeneficiaryAsDefault` set to `true`, its
+    /// `reserveBeneficiary` will overwrite the hook's global `defaultReserveBeneficiaryOf`. This affects ALL existing
+    /// tiers that do not have a tier-specific reserve beneficiary set via `_reserveBeneficiaryOf`. Callers should be
+    /// aware of this side effect when using `adjustTiers` to add new tiers.
     /// @param tiersToAdd The tiers to add.
     /// @return tierIds The IDs of the tiers being added.
     function recordAddTiers(JB721TierConfig[] calldata tiersToAdd)
@@ -884,8 +888,12 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             // Set the reserve beneficiary if needed.
             if (tierToAdd.reserveBeneficiary != address(0) && tierToAdd.reserveFrequency != 0) {
                 if (tierToAdd.useReserveBeneficiaryAsDefault) {
+                    // WARNING: This overwrites the global default for ALL tiers without a tier-specific beneficiary.
                     if (defaultReserveBeneficiaryOf[msg.sender] != tierToAdd.reserveBeneficiary) {
                         defaultReserveBeneficiaryOf[msg.sender] = tierToAdd.reserveBeneficiary;
+                        emit SetDefaultReserveBeneficiary({
+                            hook: msg.sender, newBeneficiary: tierToAdd.reserveBeneficiary, caller: msg.sender
+                        });
                     }
                 } else {
                     _reserveBeneficiaryOf[msg.sender][tierId] = tierToAdd.reserveBeneficiary;

@@ -9,6 +9,13 @@ import {JB721TiersHookFlags} from "../structs/JB721TiersHookFlags.sol";
 interface IJB721TiersHookStore {
     event CleanTiers(address indexed hook, address caller);
 
+    /// @notice Emitted when the default reserve beneficiary is changed.
+    /// @dev This affects ALL tiers that do not have a tier-specific reserve beneficiary set.
+    /// @param hook The 721 contract whose default reserve beneficiary was changed.
+    /// @param newBeneficiary The new default reserve beneficiary address.
+    /// @param caller The address that triggered the change.
+    event SetDefaultReserveBeneficiary(address indexed hook, address indexed newBeneficiary, address caller);
+
     /// @notice Get the number of NFTs that the specified address owns from the specified 721 contract.
     /// @param hook The 721 contract to get the balance within.
     /// @param owner The address to check the balance of.
