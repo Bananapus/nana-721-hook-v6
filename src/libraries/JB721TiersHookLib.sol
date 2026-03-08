@@ -23,10 +23,6 @@ import {JBIpfsDecoder} from "./JBIpfsDecoder.sol";
 /// @notice External library for JB721TiersHook operations extracted to stay within the EIP-170 contract size limit.
 /// @dev Handles tier adjustments, split calculations, price normalization, and split fund distribution.
 library JB721TiersHookLib {
-    /// @notice Thrown when a split has no project ID and no beneficiary, which would cause funds to be silently
-    /// dropped.
-    error JB721TiersHookLib_SplitHasNoRecipient();
-
     // Events mirrored from IJB721TiersHook (emitted via DELEGATECALL from the hook's context).
     event AddTier(uint256 indexed tierId, JB721TierConfig tier, address caller);
     event RemoveTier(uint256 indexed tierId, address caller);
@@ -241,9 +237,13 @@ library JB721TiersHookLib {
         for (uint256 j; j < tierSplits.length; j++) {
             uint256 payoutAmount = mulDiv(amount, tierSplits[j].percent, leftoverPercentage);
             if (payoutAmount != 0) {
-                _sendPayoutToSplit(directory, tierSplits[j], token, payoutAmount, isNativeToken);
-                unchecked {
-                    leftoverAmount -= payoutAmount;
+                // Only subtract from leftover if the split has a valid recipient.
+                // Splits with no projectId and no beneficiary are skipped — their share
+                // stays in leftoverAmount and is added to the project's balance below.
+                if (_sendPayoutToSplit(directory, tierSplits[j], token, payoutAmount, isNativeToken)) {
+                    unchecked {
+                        leftoverAmount -= payoutAmount;
+                    }
                 }
             }
             unchecked {
@@ -256,6 +256,9 @@ library JB721TiersHookLib {
         }
     }
 
+    /// @notice Sends a payout to a split recipient.
+    /// @return sent Whether the funds were actually sent. Returns false if the split has no valid recipient
+    /// (no projectId and no beneficiary), so the caller can route the funds elsewhere.
     function _sendPayoutToSplit(
         IJBDirectory directory,
         JBSplit memory split,
@@ -264,17 +267,19 @@ library JB721TiersHookLib {
         bool isNativeToken
     )
         private
+        returns (bool sent)
     {
         if (split.projectId != 0) {
             // slither-disable-next-line calls-loop
             IJBTerminal terminal = directory.primaryTerminalOf(split.projectId, token);
-            if (address(terminal) == address(0)) return;
+            if (address(terminal) == address(0)) return false;
 
             if (split.preferAddToBalance) {
                 _terminalAddToBalance(terminal, split.projectId, token, amount, isNativeToken);
             } else {
                 _terminalPay(terminal, split.projectId, token, amount, split.beneficiary, isNativeToken);
             }
+            return true;
         } else if (split.beneficiary != address(0)) {
             if (isNativeToken) {
                 // slither-disable-next-line arbitrary-send-eth,calls-loop
@@ -283,10 +288,10 @@ library JB721TiersHookLib {
             } else {
                 SafeERC20.safeTransfer(IERC20(token), split.beneficiary, amount);
             }
-        } else {
-            // Revert if the split has no project ID and no beneficiary — funds would be permanently stuck.
-            revert JB721TiersHookLib_SplitHasNoRecipient();
+            return true;
         }
+        // No projectId and no beneficiary — return false so the funds go to the project's balance.
+        return false;
     }
 
     function _addToBalance(

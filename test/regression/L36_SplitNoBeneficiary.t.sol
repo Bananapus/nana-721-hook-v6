@@ -8,20 +8,25 @@ import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 import {IJBSplitHook} from "@bananapus/core-v6/src/interfaces/IJBSplitHook.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 import {IJBController} from "@bananapus/core-v6/src/interfaces/IJBController.sol";
+import {IJBTerminal} from "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
 
-/// @notice Regression test for L-36: Silent fund drop when split has no beneficiary and no projectId.
+/// @notice Regression test for L-36: Split with no beneficiary and no projectId should route funds to the project's
+/// balance instead of silently dropping them.
 contract Test_L36_SplitNoBeneficiary is UnitTestSetup {
     using stdStorage for StdStorage;
 
     address mockSplits = makeAddr("mockSplits");
+    address mockProjectTerminal = makeAddr("mockProjectTerminal");
 
     function setUp() public override {
         super.setUp();
         vm.etch(mockSplits, new bytes(0x69));
+        vm.etch(mockProjectTerminal, new bytes(0x69));
     }
 
-    /// @notice Verify that afterPayRecordedWith reverts when a split has projectId==0 and beneficiary==address(0).
-    function test_revert_splitWithNoBeneficiaryAndNoProject() public {
+    /// @notice Verify that a split with projectId==0 and beneficiary==address(0) routes funds to the project's
+    /// balance.
+    function test_splitWithNoBeneficiary_routesToProjectBalance() public {
         ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
         IJB721TiersHookStore hookStore = testHook.STORE();
 
@@ -65,6 +70,24 @@ contract Test_L36_SplitNoBeneficiary is UnitTestSetup {
             mockSplits, abi.encodeWithSelector(IJBSplits.splitsOf.selector, projectId, 0, groupId), abi.encode(splits)
         );
 
+        // Mock the project's primary terminal for addToBalanceOf (this is the fallback for no-recipient splits).
+        mockAndExpect(
+            address(mockJBDirectory),
+            abi.encodeWithSelector(IJBDirectory.primaryTerminalOf.selector, projectId, JBConstants.NATIVE_TOKEN),
+            abi.encode(mockProjectTerminal)
+        );
+
+        // Expect addToBalanceOf to be called on the project's terminal with the split amount (0.5 ether).
+        vm.expectCall(
+            mockProjectTerminal,
+            0.5 ether,
+            abi.encodeWithSelector(
+                IJBTerminal.addToBalanceOf.selector, projectId, JBConstants.NATIVE_TOKEN, 0.5 ether, false, "", ""
+            )
+        );
+        // Mock the addToBalanceOf call to succeed.
+        vm.mockCall(mockProjectTerminal, abi.encodeWithSelector(IJBTerminal.addToBalanceOf.selector), abi.encode());
+
         // Build payer metadata.
         uint16[] memory mintIds = new uint16[](1);
         mintIds[0] = uint16(tierIds[0]);
@@ -101,7 +124,7 @@ contract Test_L36_SplitNoBeneficiary is UnitTestSetup {
 
         vm.deal(mockTerminalAddress, 1 ether);
         vm.prank(mockTerminalAddress);
-        vm.expectRevert(JB721TiersHookLib.JB721TiersHookLib_SplitHasNoRecipient.selector);
+        // Should NOT revert — funds should be routed to the project's balance.
         testHook.afterPayRecordedWith{value: 0.5 ether}(payContext);
     }
 
