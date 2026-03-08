@@ -23,7 +23,8 @@ import {JBIpfsDecoder} from "./JBIpfsDecoder.sol";
 /// @notice External library for JB721TiersHook operations extracted to stay within the EIP-170 contract size limit.
 /// @dev Handles tier adjustments, split calculations, price normalization, and split fund distribution.
 library JB721TiersHookLib {
-    /// @notice Thrown when a split has no project ID and no beneficiary, which would cause funds to be silently dropped.
+    /// @notice Thrown when a split has no project ID and no beneficiary, which would cause funds to be silently
+    /// dropped.
     error JB721TiersHookLib_SplitHasNoRecipient();
 
     // Events mirrored from IJB721TiersHook (emitted via DELEGATECALL from the hook's context).
