@@ -175,9 +175,10 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
         pure
         returns (uint8)
     {
-        return _packBools(
-            allowOwnerMint, transfersPausable, useVotingUnits, cannotBeRemoved, cannotIncreaseDiscountPercent
-        );
+        return
+            _packBools(
+                allowOwnerMint, transfersPausable, useVotingUnits, cannotBeRemoved, cannotIncreaseDiscountPercent
+            );
     }
 
     function ForTest_unpackBools(uint8 packed) public pure returns (bool, bool, bool, bool, bool) {

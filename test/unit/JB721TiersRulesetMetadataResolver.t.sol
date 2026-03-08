@@ -99,8 +99,7 @@ contract TestJB721TiersRulesetMetadataResolver is Test {
                 JB721TiersRulesetMetadata({pauseTransfers: transfers, pauseMintPendingReserves: reserves});
 
             uint256 packed = JB721TiersRulesetMetadataResolver.pack721TiersRulesetMetadata(meta);
-            JB721TiersRulesetMetadata memory expanded =
-                JB721TiersRulesetMetadataResolver.expandMetadata(uint16(packed));
+            JB721TiersRulesetMetadata memory expanded = JB721TiersRulesetMetadataResolver.expandMetadata(uint16(packed));
 
             assertEq(expanded.pauseTransfers, transfers, "transfers round-trip");
             assertEq(expanded.pauseMintPendingReserves, reserves, "reserves round-trip");
@@ -113,8 +112,7 @@ contract TestJB721TiersRulesetMetadataResolver is Test {
 
     function testFuzz_packExpandRoundTrip(bool pauseTransfers, bool pauseMintPendingReserves) public {
         JB721TiersRulesetMetadata memory meta = JB721TiersRulesetMetadata({
-            pauseTransfers: pauseTransfers,
-            pauseMintPendingReserves: pauseMintPendingReserves
+            pauseTransfers: pauseTransfers, pauseMintPendingReserves: pauseMintPendingReserves
         });
 
         uint256 packed = JB721TiersRulesetMetadataResolver.pack721TiersRulesetMetadata(meta);

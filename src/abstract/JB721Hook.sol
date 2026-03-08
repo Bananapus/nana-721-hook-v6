@@ -179,12 +179,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     /// @notice Calculates the cumulative cash out weight of all NFT token IDs.
     /// @param context The cash out context passed to this contract by the `cashOutTokensOf(...)` function.
     /// @return The total cumulative cash out weight of all NFT token IDs.
-    function totalCashOutWeight(JBBeforeCashOutRecordedContext calldata context)
-        public
-        view
-        virtual
-        returns (uint256)
-    {
+    function totalCashOutWeight(JBBeforeCashOutRecordedContext calldata context) public view virtual returns (uint256) {
         context; // Prevents unused var compiler and natspec complaints.
         return 0;
     }

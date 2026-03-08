@@ -321,7 +321,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @param tierIdsToRemove The tiers to remove, as an array of tier IDs.
     function adjustTiers(JB721TierConfig[] calldata tiersToAdd, uint256[] calldata tierIdsToRemove) external override {
         // Enforce permissions.
-        _requirePermissionFrom({account: owner(), projectId: PROJECT_ID, permissionId: JBPermissionIds.ADJUST_721_TIERS});
+        _requirePermissionFrom({
+            account: owner(), projectId: PROJECT_ID, permissionId: JBPermissionIds.ADJUST_721_TIERS
+        });
 
         // Remove the tiers.
         if (tierIdsToRemove.length != 0) {
@@ -378,11 +380,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             _mint(beneficiary, tokenId);
 
             emit Mint({
-                tokenId: tokenId,
-                tierId: tierIds[i],
-                beneficiary: beneficiary,
-                totalAmountPaid: 0,
-                caller: _msgSender()
+                tokenId: tokenId, tierId: tierIds[i], beneficiary: beneficiary, totalAmountPaid: 0, caller: _msgSender()
             });
         }
     }
@@ -409,9 +407,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     function setDiscountPercentOf(uint256 tierId, uint256 discountPercent) external override {
         // Enforce permissions.
         _requirePermissionFrom({
-            account: owner(),
-            projectId: PROJECT_ID,
-            permissionId: JBPermissionIds.SET_721_DISCOUNT_PERCENT
+            account: owner(), projectId: PROJECT_ID, permissionId: JBPermissionIds.SET_721_DISCOUNT_PERCENT
         });
         _setDiscountPercentOf(tierId, discountPercent);
     }
@@ -421,9 +417,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     function setDiscountPercentsOf(JB721TiersSetDiscountPercentConfig[] calldata configs) external override {
         // Enforce permissions.
         _requirePermissionFrom({
-            account: owner(),
-            projectId: PROJECT_ID,
-            permissionId: JBPermissionIds.SET_721_DISCOUNT_PERCENT
+            account: owner(), projectId: PROJECT_ID, permissionId: JBPermissionIds.SET_721_DISCOUNT_PERCENT
         });
 
         for (uint256 i; i < configs.length; i++) {
@@ -452,7 +446,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         override
     {
         // Enforce permissions.
-        _requirePermissionFrom({account: owner(), projectId: PROJECT_ID, permissionId: JBPermissionIds.SET_721_METADATA});
+        _requirePermissionFrom({
+            account: owner(), projectId: PROJECT_ID, permissionId: JBPermissionIds.SET_721_METADATA
+        });
 
         if (bytes(baseUri).length != 0) {
             // Store the new base URI.
@@ -509,10 +505,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             uint256 tokenId = tokenIds[i];
 
             emit MintReservedNft({
-                tokenId: tokenId,
-                tierId: tierId,
-                beneficiary: reserveBeneficiary,
-                caller: _msgSender()
+                tokenId: tokenId, tierId: tierId, beneficiary: reserveBeneficiary, caller: _msgSender()
             });
 
             // Mint the NFT.
@@ -743,7 +736,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                 // If transfers are paused and the NFT isn't being transferred to the zero address, revert.
                 if (
                     to != address(0)
-                        && JB721TiersRulesetMetadataResolver.transfersPaused((JBRulesetMetadataResolver.metadata(ruleset)))
+                        && JB721TiersRulesetMetadataResolver.transfersPaused(
+                            (JBRulesetMetadataResolver.metadata(ruleset))
+                        )
                 ) revert JB721TiersHook_TierTransfersPaused();
             }
 

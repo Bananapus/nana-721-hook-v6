@@ -480,8 +480,8 @@ contract Test_adjustTier_Unit is UnitTestSetup {
         // Get the tiers from category 101.
         uint256[] memory categories = new uint256[](1);
         categories[0] = 101;
-        JB721Tier[] memory storedTiers =
-            hook.STORE().tiersOf(address(hook), categories, false, 0, initialNumberOfTiers + pricesForTiersToAdd.length);
+        JB721Tier[] memory storedTiers = hook.STORE()
+            .tiersOf(address(hook), categories, false, 0, initialNumberOfTiers + pricesForTiersToAdd.length);
 
         // Check: does the number of stored tiers match the number of tiers that were added?
         assertEq(storedTiers.length, pricesForTiersToAdd.length);
@@ -807,13 +807,14 @@ contract Test_adjustTier_Unit is UnitTestSetup {
         }
         vm.prank(owner);
         hook.adjustTiers(tierConfigsToAdd, tierIdsToRemove);
-        JB721Tier[] memory storedTiers = hook.STORE().tiersOf(
-            address(hook),
-            new uint256[](0),
-            false,
-            0,
-            7 // 7 tiers remaining - hard-coded to avoid stack too deep.
-        );
+        JB721Tier[] memory storedTiers = hook.STORE()
+            .tiersOf(
+                address(hook),
+                new uint256[](0),
+                false,
+                0,
+                7 // 7 tiers remaining - hard-coded to avoid stack too deep.
+            );
         // Check: are the expected number of tiers stored?
         assertEq(storedTiers.length, 7);
         // Check: are all non-deleted and added tiers in the new tiers (unsorted)?

@@ -61,10 +61,7 @@ contract TestJBIpfsDecoder is Test {
         bytes32 hashB = bytes32(uint256(2));
         string memory a = JBIpfsDecoder.decode("", hashA);
         string memory b = JBIpfsDecoder.decode("", hashB);
-        assertTrue(
-            keccak256(bytes(a)) != keccak256(bytes(b)),
-            "different hashes should produce different output"
-        );
+        assertTrue(keccak256(bytes(a)) != keccak256(bytes(b)), "different hashes should produce different output");
     }
 
     //*********************************************************************//

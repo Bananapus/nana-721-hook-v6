@@ -56,21 +56,13 @@ contract TierLifecycleInvariant_Local is StdInvariant, UnitTestSetup {
                     // minted = initial - remaining (total ever minted)
                     uint256 totalMinted = initial - remaining;
                     // totalMinted >= burned (can't burn more than minted)
-                    assertGe(
-                        totalMinted,
-                        burned,
-                        "INV-721-1: Cannot burn more NFTs than were minted from tier"
-                    );
+                    assertGe(totalMinted, burned, "INV-721-1: Cannot burn more NFTs than were minted from tier");
 
                     // Outstanding = totalMinted - burned
                     uint256 outstanding = totalMinted - burned;
 
                     // Verify: remaining + outstanding + burned == initial
-                    assertEq(
-                        remaining + outstanding + burned,
-                        initial,
-                        "INV-721-1: Supply accounting mismatch"
-                    );
+                    assertEq(remaining + outstanding + burned, initial, "INV-721-1: Supply accounting mismatch");
                     break;
                 }
             }
@@ -107,11 +99,7 @@ contract TierLifecycleInvariant_Local is StdInvariant, UnitTestSetup {
         }
 
         // totalWeight >= computedWeight (it also includes pending reserves)
-        assertGe(
-            totalWeight,
-            computedWeight,
-            "INV-721-2: totalCashOutWeight must >= sum(price * outstanding)"
-        );
+        assertGe(totalWeight, computedWeight, "INV-721-2: totalCashOutWeight must >= sum(price * outstanding)");
     }
 
     // =========================================================================
@@ -157,11 +145,7 @@ contract TierLifecycleInvariant_Local is StdInvariant, UnitTestSetup {
                 maxReserves = (nonReserveMints + reserveFreq - 1) / reserveFreq;
             }
 
-            assertLe(
-                reservesMinted,
-                maxReserves,
-                "INV-721-4: Reserve mints exceed allowed maximum"
-            );
+            assertLe(reservesMinted, maxReserves, "INV-721-4: Reserve mints exceed allowed maximum");
         }
     }
 

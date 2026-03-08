@@ -94,10 +94,7 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
 
         // Launch the project.
         _launchProjectFor({
-            owner: owner,
-            launchProjectConfig: launchProjectConfig,
-            dataHook: hook,
-            controller: controller
+            owner: owner, launchProjectConfig: launchProjectConfig, dataHook: hook, controller: controller
         });
 
         // Transfer the hook's ownership to the project.
@@ -131,15 +128,11 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
 
         // Enforce permissions.
         _requirePermissionFrom({
-            account: PROJECTS.ownerOf(projectId),
-            projectId: projectId,
-            permissionId: JBPermissionIds.QUEUE_RULESETS
+            account: PROJECTS.ownerOf(projectId), projectId: projectId, permissionId: JBPermissionIds.QUEUE_RULESETS
         });
 
         _requirePermissionFrom({
-            account: PROJECTS.ownerOf(projectId),
-            projectId: projectId,
-            permissionId: JBPermissionIds.SET_TERMINALS
+            account: PROJECTS.ownerOf(projectId), projectId: projectId, permissionId: JBPermissionIds.SET_TERMINALS
         });
 
         // Deploy the hook.
@@ -154,10 +147,7 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
 
         // Launch the rulesets.
         rulesetId = _launchRulesetsFor({
-            projectId: projectId,
-            launchRulesetsConfig: launchRulesetsConfig,
-            dataHook: hook,
-            controller: controller
+            projectId: projectId, launchRulesetsConfig: launchRulesetsConfig, dataHook: hook, controller: controller
         });
     }
 
@@ -201,10 +191,7 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
 
         // Queue the rulesets.
         rulesetId = _queueRulesetsOf({
-            projectId: projectId,
-            queueRulesetsConfig: queueRulesetsConfig,
-            dataHook: hook,
-            controller: controller
+            projectId: projectId, queueRulesetsConfig: queueRulesetsConfig, dataHook: hook, controller: controller
         });
     }
 
@@ -403,9 +390,7 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
 
         // Queue the rulesets.
         return controller.queueRulesetsOf({
-            projectId: projectId,
-            rulesetConfigurations: rulesetConfigurations,
-            memo: queueRulesetsConfig.memo
+            projectId: projectId, rulesetConfigurations: rulesetConfigurations, memo: queueRulesetsConfig.memo
         });
     }
 

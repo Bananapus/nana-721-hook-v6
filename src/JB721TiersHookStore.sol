@@ -184,16 +184,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @param includeResolvedUri If set to `true`, if the contract has a token URI resolver, its content will be
     /// resolved and included.
     /// @return The tier.
-    function tierOf(
-        address hook,
-        uint256 id,
-        bool includeResolvedUri
-    )
-        public
-        view
-        override
-        returns (JB721Tier memory)
-    {
+    function tierOf(address hook, uint256 id, bool includeResolvedUri) public view override returns (JB721Tier memory) {
         return _getTierFrom(hook, id, _storedTierOf[hook][id], includeResolvedUri);
     }
 
@@ -457,10 +448,8 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
             // Add the tier's price multiplied by the number of NFTs minted from the tier.
             weight += storedTier.price
-                * (
-                    (storedTier.initialSupply - (storedTier.remainingSupply + numberOfBurnedFor[hook][i]))
-                        + _numberOfPendingReservesFor(hook, i, storedTier)
-                );
+            * ((storedTier.initialSupply - (storedTier.remainingSupply + numberOfBurnedFor[hook][i]))
+                + _numberOfPendingReservesFor(hook, i, storedTier));
         }
     }
 
@@ -796,10 +785,8 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             // Make sure the new tier doesn't have voting units if the 721 contract's flags don't allow it to.
             if (
                 flags.noNewTiersWithVotes
-                    && (
-                        (tierToAdd.useVotingUnits && tierToAdd.votingUnits != 0)
-                            || (!tierToAdd.useVotingUnits && tierToAdd.price != 0)
-                    )
+                    && ((tierToAdd.useVotingUnits && tierToAdd.votingUnits != 0)
+                        || (!tierToAdd.useVotingUnits && tierToAdd.price != 0))
             ) {
                 revert JB721TiersHookStore_VotingUnitsNotAllowed();
             }
@@ -1051,10 +1038,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @param tierId The ID of the tier to mint reserves from.
     /// @param count The number of reserve NFTs to mint.
     /// @return tokenIds The token IDs of the reserve NFTs which were minted.
-    function recordMintReservesFor(
-        uint256 tierId,
-        uint256 count
-    )
+    function recordMintReservesFor(uint256 tierId, uint256 count)
         external
         override
         returns (uint256[] memory tokenIds)
