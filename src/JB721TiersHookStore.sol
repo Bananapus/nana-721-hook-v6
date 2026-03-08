@@ -41,17 +41,6 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     error JB721TiersHookStore_ZeroInitialSupply(uint256 tierId);
 
     //*********************************************************************//
-    // ------------------------------ events ----------------------------- //
-    //*********************************************************************//
-
-    /// @notice Emitted when the default reserve beneficiary is changed.
-    /// @dev This affects ALL tiers that do not have a tier-specific reserve beneficiary set.
-    /// @param hook The 721 contract whose default reserve beneficiary was changed.
-    /// @param newBeneficiary The new default reserve beneficiary address.
-    /// @param caller The address that triggered the change.
-    event SetDefaultReserveBeneficiary(address indexed hook, address indexed newBeneficiary, address caller);
-
-    //*********************************************************************//
     // -------------------- private constant properties ------------------ //
     //*********************************************************************//
 

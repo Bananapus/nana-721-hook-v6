@@ -100,7 +100,7 @@ contract Test_L34_ReserveBeneficiaryOverwrite is UnitTestSetup {
 
         // Expect the SetDefaultReserveBeneficiary event.
         vm.expectEmit(true, true, false, true, address(hookStore));
-        emit JB721TiersHookStore.SetDefaultReserveBeneficiary({
+        emit IJB721TiersHookStore.SetDefaultReserveBeneficiary({
             hook: address(testHook), newBeneficiary: alice, caller: address(testHook)
         });
 
