@@ -140,7 +140,7 @@ Each tier has configurable voting power:
 - Splits are registered via `JB721TiersHookLib._setSplitGroupsFor` when tiers with `splits` are added.
 - In `beforePayRecordedWith`, `calculateSplitAmounts` decodes tier IDs from payer metadata, computes `mulDiv(price, splitPercent, SPLITS_TOTAL_PERCENT)` per tier, and returns the total to be forwarded to the hook.
 - In `afterPayRecordedWith`, `distributeAll` distributes forwarded funds to each tier's split group recipients. Leftover after all splits goes back to the project's balance via `addToBalance`.
-- Split recipients can be projects (via `terminal.pay` or `terminal.addToBalance`) or plain addresses (direct ETH transfer or `SafeERC20.safeTransfer`).
+- Split recipients can be projects (via `terminal.pay` or `terminal.addToBalance`) or plain addresses (direct ETH transfer or `SafeERC20.safeTransfer`). Splits with no `projectId` and no `beneficiary` are skipped -- their share stays in the leftover and is routed to the project's own balance via `addToBalanceOf`, preventing a misconfigured split from bricking the payout distribution.
 
 ## Gotchas
 
@@ -160,6 +160,7 @@ Each tier has configurable voting power:
 - The `_update` override in `JB721TiersHook` checks `tier.transfersPausable` and consults the current ruleset's metadata for `transfersPaused`. Transfers to `address(0)` (burns) are never blocked.
 - **IERC2981 declared but not implemented**: `supportsInterface` returns `true` for `IERC2981`, but no `royaltyInfo` function is implemented. Callers querying `royaltyInfo` will get a revert. This appears intentional -- the interface is declared for future extension or to signal capability to marketplaces that may override behavior.
 - **Tier splits**: Each tier can route a percentage of its mint price to configured split recipients. `splitPercent` is out of `JBConstants.SPLITS_TOTAL_PERCENT` (1,000,000,000). Split group IDs are `uint256(uint160(hookAddress)) | (uint256(tierId) << 160)`.
+- **`useReserveBeneficiaryAsDefault` overwrites globally**: Adding a tier with `useReserveBeneficiaryAsDefault: true` silently overwrites `defaultReserveBeneficiaryOf` for ALL existing tiers that lack a tier-specific beneficiary. A `SetDefaultReserveBeneficiary` event is emitted when the default changes.
 - **Removing tiers does not update the sorted list**: `recordRemoveTierIds` only marks tiers in the bitmap. Call `cleanTiers()` afterward to remove them from the iteration sequence.
 - `JB721TiersHookStore` is a **shared singleton** -- all hook instances on the same chain use the same store, keyed by `address(hook)`.
 - The `ERC721` abstract uses `_initialize(name, symbol)` instead of a constructor, making it clone-compatible. The standard `_owners` mapping is `internal` (not `private`).

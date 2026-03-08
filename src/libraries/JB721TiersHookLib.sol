@@ -53,6 +53,7 @@ library JB721TiersHookLib {
             for (uint256 i; i < tierIdsToRemove.length; i++) {
                 emit RemoveTier({tierId: tierIdsToRemove[i], caller: caller});
             }
+            // slither-disable-next-line reentrancy-events
             store.recordRemoveTierIds(tierIdsToRemove);
         }
 
