@@ -17,6 +17,7 @@ import {JBSplitGroup} from "@bananapus/core-v6/src/structs/JBSplitGroup.sol";
 
 import {IJB721TiersHookStore} from "../interfaces/IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "../interfaces/IJB721TokenUriResolver.sol";
+import {JB721Tier} from "../structs/JB721Tier.sol";
 import {JB721TierConfig} from "../structs/JB721TierConfig.sol";
 import {JBIpfsDecoder} from "./JBIpfsDecoder.sol";
 
@@ -141,12 +142,10 @@ library JB721TiersHookLib {
 
         for (uint256 i; i < tierIdsToMint.length; i++) {
             // slither-disable-next-line calls-loop
-            uint256 splitPercent = store.tierOf(hook, tierIdsToMint[i], false).splitPercent;
-            if (splitPercent != 0) {
-                // slither-disable-next-line calls-loop
-                uint256 price = store.tierOf(hook, tierIdsToMint[i], false).price;
+            JB721Tier memory tier = store.tierOf(hook, tierIdsToMint[i], false);
+            if (tier.splitPercent != 0) {
                 splitTierIds[splitTierCount] = tierIdsToMint[i];
-                splitAmounts[splitTierCount] = mulDiv(price, splitPercent, JBConstants.SPLITS_TOTAL_PERCENT);
+                splitAmounts[splitTierCount] = mulDiv(tier.price, tier.splitPercent, JBConstants.SPLITS_TOTAL_PERCENT);
                 totalSplitAmount += splitAmounts[splitTierCount];
                 splitTierCount++;
             }
