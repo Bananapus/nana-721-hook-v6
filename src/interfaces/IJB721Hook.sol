@@ -6,6 +6,7 @@ import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 import {IJBPayHook} from "@bananapus/core-v6/src/interfaces/IJBPayHook.sol";
 import {IJBRulesetDataHook} from "@bananapus/core-v6/src/interfaces/IJBRulesetDataHook.sol";
 
+/// @notice A 721 hook that integrates with Juicebox as a data hook, pay hook, and cash out hook.
 interface IJB721Hook is IJBRulesetDataHook, IJBPayHook, IJBCashOutHook {
     /// @notice The directory of terminals and controllers for projects.
     /// @return The directory contract.

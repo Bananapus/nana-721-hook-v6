@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 import {IJBController} from "@bananapus/core-v6/src/interfaces/IJBController.sol";
+import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 
 import {IJB721TiersHook} from "./IJB721TiersHook.sol";
 import {IJB721TiersHookDeployer} from "./IJB721TiersHookDeployer.sol";
@@ -11,6 +11,7 @@ import {JBLaunchProjectConfig} from "../structs/JBLaunchProjectConfig.sol";
 import {JBLaunchRulesetsConfig} from "../structs/JBLaunchRulesetsConfig.sol";
 import {JBQueueRulesetsConfig} from "../structs/JBQueueRulesetsConfig.sol";
 
+/// @notice Deploys projects with 721 tiers hooks attached.
 interface IJB721TiersHookProjectDeployer {
     /// @notice The directory of terminals and controllers for projects.
     /// @return The directory contract.

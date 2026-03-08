@@ -4,7 +4,12 @@ pragma solidity ^0.8.0;
 import {IJB721TiersHook} from "./IJB721TiersHook.sol";
 import {JBDeploy721TiersHookConfig} from "../structs/JBDeploy721TiersHookConfig.sol";
 
+/// @notice Deploys 721 tiers hooks for projects.
 interface IJB721TiersHookDeployer {
+    /// @notice Emitted when a 721 tiers hook is deployed for a project.
+    /// @param projectId The ID of the project the hook was deployed for.
+    /// @param hook The deployed hook contract.
+    /// @param caller The address that called the function.
     event HookDeployed(uint256 indexed projectId, IJB721TiersHook hook, address caller);
 
     /// @notice Deploys a 721 tiers hook for the specified project.
