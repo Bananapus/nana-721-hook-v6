@@ -5,13 +5,13 @@ import "../utils/UnitTestSetup.sol";
 import {IJB721TiersHookStore} from "../../src/interfaces/IJB721TiersHookStore.sol";
 import {JB721TiersHookLib} from "../../src/libraries/JB721TiersHookLib.sol";
 
-/// @notice Regression test for L-35: calculateSplitAmounts cached the tierOf result to avoid a duplicate external call.
+/// @notice calculateSplitAmounts caches the tierOf result to avoid a duplicate external call.
 /// Verifies that the cached tier lookup returns the same split amounts as reading price and splitPercent individually.
 contract Test_L35_CacheTierLookup is UnitTestSetup {
     using stdStorage for StdStorage;
 
     /// @notice Verify that calculateSplitAmounts returns correct per-tier amounts when multiple tiers have different
-    /// prices and split percentages. This exercises the cached `tier` variable introduced by L-35.
+    /// prices and split percentages. This exercises the cached `tier` variable.
     function test_calculateSplitAmounts_multiTier_correctAmounts() public {
         ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
         IJB721TiersHookStore hookStore = testHook.STORE();
