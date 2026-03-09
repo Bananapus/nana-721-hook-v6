@@ -208,12 +208,10 @@ library JB721TiersHookLib {
     {
         (uint16[] memory tierIds, uint256[] memory amounts) = abi.decode(encodedSplitData, (uint16[], uint256[]));
 
-        IJBSplits splitsContract = splits;
-
         for (uint256 i; i < tierIds.length; i++) {
             if (amounts[i] == 0) continue;
             uint256 groupId = uint256(uint160(hookAddress)) | (uint256(tierIds[i]) << 160);
-            _distributeSingleSplit(directory, splitsContract, projectId, token, groupId, amounts[i]);
+            _distributeSingleSplit(directory, splits, projectId, token, groupId, amounts[i]);
         }
     }
 
