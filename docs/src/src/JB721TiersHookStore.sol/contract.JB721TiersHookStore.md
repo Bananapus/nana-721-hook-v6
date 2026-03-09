@@ -167,7 +167,7 @@ mapping(address hook => mapping(uint256 tierId => JBStored721Tier)) internal _st
 
 
 ### _tierIdAfter
-Returns the ID of the tier which comes after the provided tier ID (sorted by price).
+Returns the ID of the tier which comes after the provided tier ID (sorted by category).
 
 *If empty, assume the next tier ID should come after.*
 
@@ -386,7 +386,7 @@ function tiersOf(
 |`hook`|`address`|The 721 contract to get the tiers of.|
 |`categories`|`uint256[]`|An array tier categories to get tiers from. Send an empty array to get all categories.|
 |`includeResolvedUri`|`bool`|If set to `true`, if the contract has a token URI resolver, its content will be resolved and included.|
-|`startingId`|`uint256`|The ID of the first tier to get (sorted by price). Send 0 to get all active tiers.|
+|`startingId`|`uint256`|The ID of the first tier to get (sorted by category). Send 0 to get all active tiers.|
 |`size`|`uint256`|The number of tiers to include.|
 
 **Returns**
@@ -561,7 +561,7 @@ function totalCashOutWeight(address hook) public view override returns (uint256 
 
 ### _firstSortedTierIdOf
 
-Get the first tier ID from an 721 contract (when sorted by price) within a provided category.
+Get the first tier ID from an 721 contract (when sorted by category) within a provided category.
 
 
 ```solidity
@@ -669,7 +669,7 @@ function _isTierRemovedWithRefresh(
 
 ### _lastSortedTierIdOf
 
-The last sorted tier ID from an 721 contract (when sorted by price).
+The last sorted tier ID from an 721 contract (when sorted by category).
 
 
 ```solidity
@@ -690,7 +690,7 @@ function _lastSortedTierIdOf(address hook) internal view returns (uint256 id);
 
 ### _nextSortedTierIdOf
 
-Get the tier ID which comes after the provided one when sorted by price.
+Get the tier ID which comes after the provided one when sorted by category.
 
 
 ```solidity
