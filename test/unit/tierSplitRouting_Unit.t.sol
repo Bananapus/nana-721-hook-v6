@@ -13,6 +13,7 @@ contract Test_TierSplitRouting is UnitTestSetup {
 
     address alice = makeAddr("alice");
     address bob = makeAddr("bob");
+
     function setUp() public override {
         super.setUp();
         vm.etch(mockJBSplits, new bytes(0x69));

@@ -63,7 +63,9 @@ contract ForTest_JB721TiersHook is JB721TiersHook {
         IJBSplits splits
     )
         // The directory is also `IJBPermissioned`.
-        JB721TiersHook(directory, IJBPermissioned(address(directory)).PERMISSIONS(), rulesets, store, splits, _trustedForwarder)
+        JB721TiersHook(
+            directory, IJBPermissioned(address(directory)).PERMISSIONS(), rulesets, store, splits, _trustedForwarder
+        )
     {
         // Disable the safety check to not allow initializing the original contract
         JB721TiersHook.initialize(

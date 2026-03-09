@@ -157,7 +157,14 @@ contract Fork_721Hook_Test is Test {
         jbFeelessAddresses = new JBFeelessAddresses(multisig);
 
         jbController = new JBController(
-            jbDirectory, jbFundAccessLimits, jbPermissions, jbPrices, jbProjects, jbRulesets, jbSplits, jbTokens,
+            jbDirectory,
+            jbFundAccessLimits,
+            jbPermissions,
+            jbPrices,
+            jbProjects,
+            jbRulesets,
+            jbSplits,
+            jbTokens,
             address(0), // omnichainRulesetOperator
             address(0) // trustedForwarder
         );
@@ -168,7 +175,12 @@ contract Fork_721Hook_Test is Test {
         jbTerminalStore = new JBTerminalStore(jbDirectory, jbPrices, jbRulesets);
 
         jbMultiTerminal = new JBMultiTerminal(
-            jbFeelessAddresses, jbPermissions, jbProjects, jbSplits, jbTerminalStore, jbTokens,
+            jbFeelessAddresses,
+            jbPermissions,
+            jbProjects,
+            jbSplits,
+            jbTerminalStore,
+            jbTokens,
             IPermit2(address(0)), // Permit2 disabled for simplicity
             address(0) // trustedForwarder
         );
@@ -183,11 +195,13 @@ contract Fork_721Hook_Test is Test {
 
     function _deploy721Hook() internal {
         store = new JB721TiersHookStore();
-        hookImpl = new JB721TiersHook(jbDirectory, jbPermissions, jbRulesets, store, IJBSplits(address(jbSplits)), address(0));
+        hookImpl =
+            new JB721TiersHook(jbDirectory, jbPermissions, jbRulesets, store, IJBSplits(address(jbSplits)), address(0));
         addressRegistry = new JBAddressRegistry();
         hookDeployer = new JB721TiersHookDeployer(hookImpl, store, addressRegistry, address(0));
-        projectDeployer =
-            new JB721TiersHookProjectDeployer(IJBDirectory(jbDirectory), IJBPermissions(jbPermissions), hookDeployer, address(0));
+        projectDeployer = new JB721TiersHookProjectDeployer(
+            IJBDirectory(jbDirectory), IJBPermissions(jbPermissions), hookDeployer, address(0)
+        );
         metadataHelper = new MetadataResolverHelper();
 
         vm.label(address(store), "JB721TiersHookStore");
@@ -217,10 +231,7 @@ contract Fork_721Hook_Test is Test {
             tokenUriResolver: IJB721TokenUriResolver(address(0)),
             contractUri: "ipfs://contract",
             tiersConfig: JB721InitTiersConfig({
-                tiers: tierConfigs,
-                currency: uint32(uint160(NATIVE_TOKEN)),
-                decimals: 18,
-                prices: IJBPrices(address(0))
+                tiers: tierConfigs, currency: uint32(uint160(NATIVE_TOKEN)), decimals: 18, prices: IJBPrices(address(0))
             }),
             reserveBeneficiary: reserveBeneficiary,
             flags: flags
@@ -946,8 +957,9 @@ contract Fork_721Hook_Test is Test {
         JB721TiersHookFlags memory flags = _defaultFlags();
 
         // Pack 721 metadata: bit 0 = pauseTransfers = true.
-        uint16 packed721Meta =
-            uint16(JB721TiersRulesetMetadataResolver.pack721TiersRulesetMetadata(JB721TiersRulesetMetadata(true, false)));
+        uint16 packed721Meta = uint16(
+            JB721TiersRulesetMetadataResolver.pack721TiersRulesetMetadata(JB721TiersRulesetMetadata(true, false))
+        );
 
         (uint256 projectId, address hook) = _launchProject(tierConfigs, flags, 5000, true, packed721Meta);
 
@@ -998,8 +1010,9 @@ contract Fork_721Hook_Test is Test {
         JB721TiersHookFlags memory flags = _defaultFlags();
 
         // 721 metadata: bit 1 = pauseMintPendingReserves = true.
-        uint16 packed721Meta =
-            uint16(JB721TiersRulesetMetadataResolver.pack721TiersRulesetMetadata(JB721TiersRulesetMetadata(false, true)));
+        uint16 packed721Meta = uint16(
+            JB721TiersRulesetMetadataResolver.pack721TiersRulesetMetadata(JB721TiersRulesetMetadata(false, true))
+        );
 
         (uint256 projectId, address hook) = _launchProject(tierConfigs, flags, 5000, true, packed721Meta);
 
@@ -1400,21 +1413,22 @@ contract Fork_721Hook_Test is Test {
         JB721TierConfig[] memory emptyTiers = new JB721TierConfig[](0);
 
         vm.expectRevert();
-        IJB721TiersHook(hook).initialize(
-            99, // different projectId
-            "Evil",
-            "EVIL",
-            "ipfs://evil/",
-            IJB721TokenUriResolver(address(0)),
-            "ipfs://evil-contract",
-            JB721InitTiersConfig({
-                tiers: emptyTiers,
-                currency: uint32(uint160(NATIVE_TOKEN)),
-                decimals: 18,
-                prices: IJBPrices(address(0))
-            }),
-            _defaultFlags()
-        );
+        IJB721TiersHook(hook)
+            .initialize(
+                99, // different projectId
+                "Evil",
+                "EVIL",
+                "ipfs://evil/",
+                IJB721TokenUriResolver(address(0)),
+                "ipfs://evil-contract",
+                JB721InitTiersConfig({
+                    tiers: emptyTiers,
+                    currency: uint32(uint160(NATIVE_TOKEN)),
+                    decimals: 18,
+                    prices: IJBPrices(address(0))
+                }),
+                _defaultFlags()
+            );
     }
 
     // =====================================================================
@@ -2137,8 +2151,7 @@ contract Fork_721Hook_Test is Test {
 
         // All 1 ETH should be in the project's terminal balance (split had no valid recipient,
         // so leftover is added back to balance).
-        uint256 projectBalance =
-            jbTerminalStore.balanceOf(address(jbMultiTerminal), projectId, NATIVE_TOKEN);
+        uint256 projectBalance = jbTerminalStore.balanceOf(address(jbMultiTerminal), projectId, NATIVE_TOKEN);
         assertEq(projectBalance, 1 ether, "full amount in project balance");
     }
 
@@ -2253,8 +2266,7 @@ contract Fork_721Hook_Test is Test {
         _payAndMint(projectId, 1 ether, tierIds, true, hook);
 
         // Receiver project should have 0.5 ETH in its balance.
-        uint256 receiverBalance =
-            jbTerminalStore.balanceOf(address(jbMultiTerminal), receiverProjectId, NATIVE_TOKEN);
+        uint256 receiverBalance = jbTerminalStore.balanceOf(address(jbMultiTerminal), receiverProjectId, NATIVE_TOKEN);
         assertEq(receiverBalance, 0.5 ether, "receiver project got split funds");
     }
 }
