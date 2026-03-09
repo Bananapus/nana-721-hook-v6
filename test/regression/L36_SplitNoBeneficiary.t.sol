@@ -10,7 +10,7 @@ import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 import {IJBController} from "@bananapus/core-v6/src/interfaces/IJBController.sol";
 import {IJBTerminal} from "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
 
-/// @notice Regression test for L-36: Split with no beneficiary and no projectId should route funds to the project's
+/// @notice Split with no beneficiary and no projectId should route funds to the project's
 /// balance instead of silently dropping them.
 contract Test_L36_SplitNoBeneficiary is UnitTestSetup {
     using stdStorage for StdStorage;

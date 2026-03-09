@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 import "../utils/UnitTestSetup.sol";
 import {IJB721TiersHookStore} from "../../src/interfaces/IJB721TiersHookStore.sol";
 
-/// @notice Regression test for L-34: defaultReserveBeneficiaryOf is globally overwritten when adding a tier with
+/// @notice defaultReserveBeneficiaryOf is globally overwritten when adding a tier with
 /// useReserveBeneficiaryAsDefault=true.
 contract Test_L34_ReserveBeneficiaryOverwrite is UnitTestSetup {
     using stdStorage for StdStorage;
