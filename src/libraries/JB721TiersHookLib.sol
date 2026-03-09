@@ -70,6 +70,35 @@ library JB721TiersHookLib {
         }
     }
 
+    /// @notice Records new tiers, emits events, and sets their split groups.
+    /// @dev Used during initialization when tier configs are in memory.
+    /// @param store The 721 tiers hook store.
+    /// @param splits The splits contract to register tier split groups in.
+    /// @param projectId The project ID.
+    /// @param hookAddress The hook address.
+    /// @param caller The msg.sender of the original call (for event emission).
+    /// @param tiersToAdd The tier configs to add.
+    function recordAddTiersFor(
+        IJB721TiersHookStore store,
+        IJBSplits splits,
+        uint256 projectId,
+        address hookAddress,
+        address caller,
+        JB721TierConfig[] memory tiersToAdd
+    )
+        external
+    {
+        uint256[] memory tierIdsAdded = store.recordAddTiers(tiersToAdd);
+
+        // slither-disable-next-line reentrancy-events
+        for (uint256 i; i < tiersToAdd.length; i++) {
+            emit AddTier({tierId: tierIdsAdded[i], tier: tiersToAdd[i], caller: caller});
+        }
+
+        // Set split groups for tiers that have splits configured.
+        _setSplitGroupsFor(splits, projectId, hookAddress, tiersToAdd, tierIdsAdded);
+    }
+
     /// @notice Normalizes a payment value based on the packed pricing context.
     /// @param packedPricingContext The packed pricing context (currency, decimals, prices address).
     /// @param projectId The project ID.
@@ -165,7 +194,7 @@ library JB721TiersHookLib {
         IJBSplits splits,
         uint256 projectId,
         address hookAddress,
-        JB721TierConfig[] calldata tiersToAdd,
+        JB721TierConfig[] memory tiersToAdd,
         uint256[] memory tierIdsAdded
     )
         private

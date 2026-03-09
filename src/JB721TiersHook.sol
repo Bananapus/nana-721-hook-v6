@@ -7,7 +7,6 @@ import {IJBPrices} from "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
 import {IJBRulesetDataHook} from "@bananapus/core-v6/src/interfaces/IJBRulesetDataHook.sol";
 import {IJBRulesets} from "@bananapus/core-v6/src/interfaces/IJBRulesets.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
-import {JBSplitGroup} from "@bananapus/core-v6/src/structs/JBSplitGroup.sol";
 import {JBMetadataResolver} from "@bananapus/core-v6/src/libraries/JBMetadataResolver.sol";
 import {JBRulesetMetadataResolver} from "@bananapus/core-v6/src/libraries/JBRulesetMetadataResolver.sol";
 import {JBAfterPayRecordedContext} from "@bananapus/core-v6/src/structs/JBAfterPayRecordedContext.sol";
@@ -271,7 +270,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
         // Record the tiers in this hook's store and set any tier split groups.
         if (tiersConfig.tiers.length != 0) {
-            _recordTiersAndSplits(projectId, tiersConfig.tiers);
+            JB721TiersHookLib.recordAddTiersFor(
+                STORE, SPLITS, projectId, address(this), _msgSender(), tiersConfig.tiers
+            );
         }
 
         // Set the flags if needed.
@@ -697,34 +698,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // Record the discount percent for the tier.
         // slither-disable-next-line calls-loop
         STORE.recordSetDiscountPercentOf({tierId: tierId, discountPercent: discountPercent});
-    }
-
-    /// @notice Records tiers in the store and sets any tier split groups in JBSplits.
-    /// @param projectId The ID of the project.
-    /// @param tiers The tier configs to record.
-    function _recordTiersAndSplits(uint256 projectId, JB721TierConfig[] memory tiers) internal {
-        uint256[] memory tierIds = STORE.recordAddTiers(tiers);
-
-        // Set split groups for tiers that have splits configured.
-        uint256 splitGroupCount;
-        for (uint256 i; i < tiers.length; i++) {
-            if (tiers[i].splits.length != 0) splitGroupCount++;
-        }
-
-        if (splitGroupCount != 0) {
-            JBSplitGroup[] memory splitGroups = new JBSplitGroup[](splitGroupCount);
-            uint256 groupIndex;
-            for (uint256 i; i < tiers.length; i++) {
-                if (tiers[i].splits.length != 0) {
-                    splitGroups[groupIndex] = JBSplitGroup({
-                        groupId: uint256(uint160(address(this))) | (tierIds[i] << 160),
-                        splits: tiers[i].splits
-                    });
-                    groupIndex++;
-                }
-            }
-            SPLITS.setSplitGroupsOf(projectId, 0, splitGroups);
-        }
     }
 
     /// @notice Before transferring an NFT, register its first owner (if necessary).
