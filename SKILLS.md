@@ -169,6 +169,8 @@ Each tier has configurable voting power:
 - **Max initial supply per tier is 999,999,999** (`_ONE_BILLION - 1`). Exceeding this would cause token ID overflow into the next tier's ID space.
 - **`noNewTiersWithVotes` blocks all voting power**: It rejects tiers where voting units would be non-zero, whether from custom `votingUnits` or from a non-zero `price` (when `useVotingUnits` is false).
 - **`firstOwnerOf` is lazy**: The first owner is only stored when the token is first transferred away from its original holder. Before any transfer, `firstOwnerOf` returns the current owner.
+- **Tiers must be sorted by category, NOT price.** `recordAddTiers` reverts with `JB721TiersHookStore_InvalidCategorySortOrder` if tiers aren't in ascending category order. The `JB721InitTiersConfig` struct comment previously said "sorted by price" but the code enforces category ordering. Within the same category, tiers can be in any order.
+- **Always use `JB721TiersHookProjectDeployer.launchProjectFor` even without NFTs.** Pass an empty tiers array to enable future NFT additions without migration. If a project is launched via `JBController.launchProjectFor` instead, adding NFT tiers later requires wiring a new data hook into a new ruleset — using the 721 deployer from the start avoids this.
 
 ## Example Integration
 
