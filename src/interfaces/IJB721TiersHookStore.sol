@@ -6,7 +6,11 @@ import {JB721Tier} from "../structs/JB721Tier.sol";
 import {JB721TierConfig} from "../structs/JB721TierConfig.sol";
 import {JB721TiersHookFlags} from "../structs/JB721TiersHookFlags.sol";
 
+/// @notice Stores and manages data for 721 tiers hooks.
 interface IJB721TiersHookStore {
+    /// @notice Emitted when removed tiers are cleaned from the sorting sequence.
+    /// @param hook The 721 contract whose tiers were cleaned.
+    /// @param caller The address that called the function.
     event CleanTiers(address indexed hook, address caller);
 
     /// @notice Emitted when the default reserve beneficiary is changed.

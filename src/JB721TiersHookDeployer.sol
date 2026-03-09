@@ -3,12 +3,12 @@ pragma solidity 0.8.26;
 
 import {IJBAddressRegistry} from "@bananapus/address-registry-v6/src/interfaces/IJBAddressRegistry.sol";
 import {JBOwnable} from "@bananapus/ownable-v6/src/JBOwnable.sol";
-import {LibClone} from "solady/src/utils/LibClone.sol";
 import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
+import {LibClone} from "solady/src/utils/LibClone.sol";
 
 import {JB721TiersHook} from "./JB721TiersHook.sol";
-import {IJB721TiersHookDeployer} from "./interfaces/IJB721TiersHookDeployer.sol";
 import {IJB721TiersHook} from "./interfaces/IJB721TiersHook.sol";
+import {IJB721TiersHookDeployer} from "./interfaces/IJB721TiersHookDeployer.sol";
 import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 import {JBDeploy721TiersHookConfig} from "./structs/JBDeploy721TiersHookConfig.sol";
 

@@ -17,8 +17,8 @@ import {JBRuleset} from "@bananapus/core-v6/src/structs/JBRuleset.sol";
 import {IERC2981} from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
-import {ERC721} from "./ERC721.sol";
 import {IJB721Hook} from "../interfaces/IJB721Hook.sol";
+import {ERC721} from "./ERC721.sol";
 
 /// @title JB721Hook
 /// @notice When a project which uses this hook is paid, this hook may mint NFTs to the payer, depending on this hook's
@@ -67,26 +67,6 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     //*********************************************************************//
     // ------------------------- external views -------------------------- //
     //*********************************************************************//
-
-    /// @notice The data calculated before a payment is recorded in the terminal store. This data is provided to the
-    /// terminal's `pay(...)` transaction.
-    /// @dev Sets this contract as the pay hook. Part of `IJBRulesetDataHook`.
-    /// @param context The payment context passed to this contract by the `pay(...)` function.
-    /// @return weight The new `weight` to use, overriding the ruleset's `weight`.
-    /// @return hookSpecifications The amount and data to send to pay hooks (this contract) instead of adding to the
-    /// terminal's balance.
-    function beforePayRecordedWith(JBBeforePayRecordedContext calldata context)
-        public
-        view
-        virtual
-        override
-        returns (uint256 weight, JBPayHookSpecification[] memory hookSpecifications)
-    {
-        // Forward the received weight and use this contract as the only pay hook.
-        weight = context.weight;
-        hookSpecifications = new JBPayHookSpecification[](1);
-        hookSpecifications[0] = JBPayHookSpecification({hook: this, amount: 0, metadata: bytes("")});
-    }
 
     /// @notice The data calculated before a cash out is recorded in the terminal store. This data is provided to the
     /// terminal's `cashOutTokensOf(...)` transaction.
@@ -138,6 +118,26 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
         cashOutTaxRate = context.cashOutTaxRate;
     }
 
+    /// @notice The data calculated before a payment is recorded in the terminal store. This data is provided to the
+    /// terminal's `pay(...)` transaction.
+    /// @dev Sets this contract as the pay hook. Part of `IJBRulesetDataHook`.
+    /// @param context The payment context passed to this contract by the `pay(...)` function.
+    /// @return weight The new `weight` to use, overriding the ruleset's `weight`.
+    /// @return hookSpecifications The amount and data to send to pay hooks (this contract) instead of adding to the
+    /// terminal's balance.
+    function beforePayRecordedWith(JBBeforePayRecordedContext calldata context)
+        public
+        view
+        virtual
+        override
+        returns (uint256 weight, JBPayHookSpecification[] memory hookSpecifications)
+    {
+        // Forward the received weight and use this contract as the only pay hook.
+        weight = context.weight;
+        hookSpecifications = new JBPayHookSpecification[](1);
+        hookSpecifications[0] = JBPayHookSpecification({hook: this, amount: 0, metadata: bytes("")});
+    }
+
     /// @notice Required by the IJBRulesetDataHook interfaces. Return false to not leak any permissions.
     function hasMintPermissionFor(uint256, JBRuleset memory, address) external pure returns (bool) {
         return false;
@@ -174,24 +174,6 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     //*********************************************************************//
     // ---------------------- external transactions ---------------------- //
     //*********************************************************************//
-
-    /// @notice Mints one or more NFTs to the `context.beneficiary` upon payment if conditions are met. Part of
-    /// `IJBPayHook`.
-    /// @dev Reverts if the calling contract is not one of the project's terminals.
-    /// @param context The payment context passed in by the terminal.
-    // slither-disable-next-line locked-ether
-    function afterPayRecordedWith(JBAfterPayRecordedContext calldata context) external payable virtual override {
-        uint256 projectId = PROJECT_ID;
-
-        // Make sure the caller is a terminal of the project, and that the call is being made on behalf of an
-        // interaction with the correct project.
-        if (!DIRECTORY.isTerminalOf(projectId, IJBTerminal(msg.sender)) || context.projectId != projectId) {
-            revert JB721Hook_InvalidPay();
-        }
-
-        // Process the payment.
-        _processPayment(context);
-    }
 
     /// @notice Burns the specified NFTs upon token holder cash out, reclaiming funds from the project's balance for
     /// `context.beneficiary`. Part of `IJBCashOutHook`.
@@ -241,9 +223,31 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
         _didBurn(decodedTokenIds);
     }
 
+    /// @notice Mints one or more NFTs to the `context.beneficiary` upon payment if conditions are met. Part of
+    /// `IJBPayHook`.
+    /// @dev Reverts if the calling contract is not one of the project's terminals.
+    /// @param context The payment context passed in by the terminal.
+    // slither-disable-next-line locked-ether
+    function afterPayRecordedWith(JBAfterPayRecordedContext calldata context) external payable virtual override {
+        uint256 projectId = PROJECT_ID;
+
+        // Make sure the caller is a terminal of the project, and that the call is being made on behalf of an
+        // interaction with the correct project.
+        if (!DIRECTORY.isTerminalOf(projectId, IJBTerminal(msg.sender)) || context.projectId != projectId) {
+            revert JB721Hook_InvalidPay();
+        }
+
+        // Process the payment.
+        _processPayment(context);
+    }
+
     //*********************************************************************//
-    // ---------------------- internal transactions ---------------------- //
+    // ------------------------ internal functions ----------------------- //
     //*********************************************************************//
+
+    /// @notice Executes after NFTs have been burned via cash out.
+    /// @param tokenIds The token IDs of the NFTs that were burned.
+    function _didBurn(uint256[] memory tokenIds) internal virtual;
 
     /// @notice Initializes the contract by associating it with a project and adding ERC721 details.
     /// @param projectId The ID of the project that this contract is associated with.
@@ -253,10 +257,6 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
         ERC721._initialize({name_: name, symbol_: symbol});
         PROJECT_ID = projectId;
     }
-
-    /// @notice Executes after NFTs have been burned via cash out.
-    /// @param tokenIds The token IDs of the NFTs that were burned.
-    function _didBurn(uint256[] memory tokenIds) internal virtual;
 
     /// @notice Process a received payment.
     /// @param context The payment context passed in by the terminal.

@@ -383,18 +383,6 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     // -------------------------- public views --------------------------- //
     //*********************************************************************//
 
-    /// @notice Get the tier with the provided ID from the provided 721 contract.
-    /// @param hook The 721 contract to get the tier from.
-    /// @param id The ID of the tier to get.
-    /// @param includeResolvedUri If set to `true`, if the contract has a token URI resolver, its content will be
-    /// resolved and included.
-    /// @return The tier.
-    function tierOf(address hook, uint256 id, bool includeResolvedUri) public view override returns (JB721Tier memory) {
-        return _getTierFrom({
-            hook: hook, tierId: id, storedTier: _storedTierOf[hook][id], includeResolvedUri: includeResolvedUri
-        });
-    }
-
     /// @notice Get the number of NFTs that the specified address has from the specified 721 contract (across all
     /// tiers).
     /// @param hook The 721 contract to get the balance within.
@@ -452,6 +440,18 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @return The ID of the 721's tier.
     function tierIdOfToken(uint256 tokenId) public pure override returns (uint256) {
         return tokenId / _ONE_BILLION;
+    }
+
+    /// @notice Get the tier with the provided ID from the provided 721 contract.
+    /// @param hook The 721 contract to get the tier from.
+    /// @param id The ID of the tier to get.
+    /// @param includeResolvedUri If set to `true`, if the contract has a token URI resolver, its content will be
+    /// resolved and included.
+    /// @return The tier.
+    function tierOf(address hook, uint256 id, bool includeResolvedUri) public view override returns (JB721Tier memory) {
+        return _getTierFrom({
+            hook: hook, tierId: id, storedTier: _storedTierOf[hook][id], includeResolvedUri: includeResolvedUri
+        });
     }
 
     /// @notice The combined cash out weight for all NFTs from the provided 721 contract.

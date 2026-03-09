@@ -23,12 +23,12 @@ import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "./interfaces/IJB721TokenUriResolver.sol";
 import {JB721TiersHookLib} from "./libraries/JB721TiersHookLib.sol";
 import {JB721TiersRulesetMetadataResolver} from "./libraries/JB721TiersRulesetMetadataResolver.sol";
+import {JB721InitTiersConfig} from "./structs/JB721InitTiersConfig.sol";
 import {JB721Tier} from "./structs/JB721Tier.sol";
 import {JB721TierConfig} from "./structs/JB721TierConfig.sol";
-import {JB721TiersSetDiscountPercentConfig} from "./structs/JB721TiersSetDiscountPercentConfig.sol";
-import {JB721InitTiersConfig} from "./structs/JB721InitTiersConfig.sol";
 import {JB721TiersHookFlags} from "./structs/JB721TiersHookFlags.sol";
 import {JB721TiersMintReservesConfig} from "./structs/JB721TiersMintReservesConfig.sol";
+import {JB721TiersSetDiscountPercentConfig} from "./structs/JB721TiersSetDiscountPercentConfig.sol";
 
 /// @title JB721TiersHook
 /// @notice A Juicebox project can use this hook to sell tiered ERC-721 NFTs with different prices and metadata. When
@@ -190,13 +190,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         return STORE.cashOutWeightOf({hook: address(this), tokenIds: tokenIds});
     }
 
-    /// @notice Indicates if this contract adheres to the specified interface.
-    /// @dev See {IERC165-supportsInterface}.
-    /// @param interfaceId The ID of the interface to check for adherence to.
-    function supportsInterface(bytes4 interfaceId) public view override(IERC165, JB721Hook) returns (bool) {
-        return interfaceId == type(IJB721TiersHook).interfaceId || JB721Hook.supportsInterface(interfaceId);
-    }
-
     /// @notice Initializes a cloned copy of the original hook contract.
     /// @param projectId The ID of the project this this hook is associated with.
     /// @param name The name of the NFT collection.
@@ -267,6 +260,13 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
         // Transfer ownership to the initializer.
         _transferOwnership(_msgSender());
+    }
+
+    /// @notice Indicates if this contract adheres to the specified interface.
+    /// @dev See {IERC165-supportsInterface}.
+    /// @param interfaceId The ID of the interface to check for adherence to.
+    function supportsInterface(bytes4 interfaceId) public view override(IERC165, JB721Hook) returns (bool) {
+        return interfaceId == type(IJB721TiersHook).interfaceId || JB721Hook.supportsInterface(interfaceId);
     }
 
     /// @notice The metadata URI of the NFT with the specified token ID.
