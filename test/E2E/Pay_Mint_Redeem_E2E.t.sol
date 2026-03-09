@@ -798,6 +798,7 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
             reserveBeneficiary: reserveBeneficiary,
             flags: JB721TiersHookFlags({
                 preventOverspending: false,
+                splitsDontReduceWeight: false,
                 noNewTiersWithReserves: false,
                 noNewTiersWithVotes: false,
                 noNewTiersWithOwnerMinting: true
@@ -891,6 +892,7 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
             reserveBeneficiary: reserveBeneficiary,
             flags: JB721TiersHookFlags({
                 preventOverspending: false,
+                splitsDontReduceWeight: false,
                 noNewTiersWithReserves: false,
                 noNewTiersWithVotes: false,
                 noNewTiersWithOwnerMinting: true

@@ -585,6 +585,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             IJB721TiersHookStore(address(store)),
             JB721TiersHookFlags({
                 preventOverspending: false,
+                splitsDontReduceWeight: false,
                 noNewTiersWithReserves: false,
                 noNewTiersWithVotes: false,
                 noNewTiersWithOwnerMinting: true
@@ -715,6 +716,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             }),
             JB721TiersHookFlags({
                 preventOverspending: false,
+                splitsDontReduceWeight: false,
                 noNewTiersWithReserves: false,
                 noNewTiersWithVotes: false,
                 noNewTiersWithOwnerMinting: true
@@ -904,6 +906,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             IJB721TiersHookStore(address(store)),
             JB721TiersHookFlags({
                 preventOverspending: false,
+                splitsDontReduceWeight: false,
                 noNewTiersWithReserves: false,
                 noNewTiersWithVotes: true,
                 noNewTiersWithOwnerMinting: true
@@ -1023,6 +1026,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             IJB721TiersHookStore(address(store)),
             JB721TiersHookFlags({
                 preventOverspending: false,
+                splitsDontReduceWeight: false,
                 noNewTiersWithReserves: true, // <-- This is the flag we're testing.
                 noNewTiersWithVotes: false,
                 noNewTiersWithOwnerMinting: true
@@ -1141,6 +1145,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             }),
             JB721TiersHookFlags({
                 preventOverspending: false,
+                splitsDontReduceWeight: false,
                 noNewTiersWithReserves: false,
                 noNewTiersWithVotes: false,
                 noNewTiersWithOwnerMinting: true
@@ -1213,6 +1218,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             IJB721TiersHookStore(address(store)),
             JB721TiersHookFlags({
                 preventOverspending: false,
+                splitsDontReduceWeight: false,
                 noNewTiersWithReserves: false,
                 noNewTiersWithVotes: false,
                 noNewTiersWithOwnerMinting: true
@@ -1359,6 +1365,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             IJB721TiersHookStore(address(store)),
             JB721TiersHookFlags({
                 preventOverspending: false,
+                splitsDontReduceWeight: false,
                 noNewTiersWithReserves: false,
                 noNewTiersWithVotes: true, // <-- This is the flag we're testing.
                 noNewTiersWithOwnerMinting: true
@@ -1444,6 +1451,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             IJB721TiersHookStore(address(store)),
             JB721TiersHookFlags({
                 preventOverspending: false,
+                splitsDontReduceWeight: false,
                 noNewTiersWithReserves: false,
                 noNewTiersWithVotes: true, // <-- This is the flag we're testing.
                 noNewTiersWithOwnerMinting: true
@@ -1578,6 +1586,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             IJB721TiersHookStore(address(store)),
             JB721TiersHookFlags({
                 preventOverspending: false,
+                splitsDontReduceWeight: false,
                 noNewTiersWithReserves: false,
                 noNewTiersWithVotes: false,
                 noNewTiersWithOwnerMinting: true
@@ -1686,6 +1695,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             }),
             JB721TiersHookFlags({
                 preventOverspending: false,
+                splitsDontReduceWeight: false,
                 noNewTiersWithReserves: false,
                 noNewTiersWithVotes: false,
                 noNewTiersWithOwnerMinting: true
@@ -1762,6 +1772,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             }),
             JB721TiersHookFlags({
                 preventOverspending: false,
+                splitsDontReduceWeight: false,
                 noNewTiersWithReserves: false,
                 noNewTiersWithVotes: false,
                 noNewTiersWithOwnerMinting: true
