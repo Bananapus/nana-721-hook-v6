@@ -91,8 +91,8 @@ contract Test_TierSplitRouting is UnitTestSetup {
 
         (uint256 weight, JBPayHookSpecification[] memory specs) = testHook.beforePayRecordedWith(context);
 
-        // Weight unchanged.
-        assertEq(weight, 10e18);
+        // Weight adjusted for 50% split: 10e18 * 0.5 = 5e18.
+        assertEq(weight, 5e18);
         // Hook spec should forward 50% of 1 ETH = 0.5 ETH.
         assertEq(specs.length, 1);
         assertEq(specs[0].amount, 0.5 ether);
@@ -182,6 +182,121 @@ contract Test_TierSplitRouting is UnitTestSetup {
 
         // Total split = 1 ETH * 30% + 2 ETH * 100% = 0.3 + 2.0 = 2.3 ETH.
         assertEq(specs[0].amount, 2.3 ether);
+    }
+
+    // ──────────────────────────────────────────────
+    // Test: weight adjusted for splits
+    // ──────────────────────────────────────────────
+
+    function test_beforePayRecorded_weightAdjustedForSplits() public {
+        ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
+        IJB721TiersHookStore hookStore = testHook.STORE();
+
+        // Add a tier with 30% split.
+        JB721TierConfig[] memory tierConfigs = new JB721TierConfig[](1);
+        tierConfigs[0] = _tierConfigWithSplit(1 ether, 300_000_000); // 30%
+        vm.prank(address(testHook));
+        uint256[] memory tierIds = hookStore.recordAddTiers(tierConfigs);
+
+        uint16[] memory mintIds = new uint16[](1);
+        mintIds[0] = uint16(tierIds[0]);
+        bytes memory payerMetadata = _buildPayerMetadata(address(testHook), mintIds);
+
+        JBBeforePayRecordedContext memory context = JBBeforePayRecordedContext({
+            terminal: mockTerminalAddress,
+            payer: beneficiary,
+            amount: JBTokenAmount({
+                token: JBConstants.NATIVE_TOKEN,
+                value: 1 ether,
+                decimals: 18,
+                currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+            }),
+            projectId: projectId,
+            rulesetId: 0,
+            beneficiary: beneficiary,
+            weight: 10e18,
+            reservedPercent: 5000,
+            metadata: payerMetadata
+        });
+
+        (uint256 weight,) = testHook.beforePayRecordedWith(context);
+
+        // Weight adjusted for 30% split: 10e18 * 0.7 = 7e18.
+        assertEq(weight, 7e18);
+    }
+
+    function test_beforePayRecorded_noSplitPercent_weightUnchanged() public {
+        ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
+        IJB721TiersHookStore hookStore = testHook.STORE();
+
+        // Add a tier with 0% split.
+        JB721TierConfig[] memory tierConfigs = new JB721TierConfig[](1);
+        tierConfigs[0] = _tierConfigWithSplit(1 ether, 0);
+        vm.prank(address(testHook));
+        uint256[] memory tierIds = hookStore.recordAddTiers(tierConfigs);
+
+        uint16[] memory mintIds = new uint16[](1);
+        mintIds[0] = uint16(tierIds[0]);
+        bytes memory payerMetadata = _buildPayerMetadata(address(testHook), mintIds);
+
+        JBBeforePayRecordedContext memory context = JBBeforePayRecordedContext({
+            terminal: mockTerminalAddress,
+            payer: beneficiary,
+            amount: JBTokenAmount({
+                token: JBConstants.NATIVE_TOKEN,
+                value: 1 ether,
+                decimals: 18,
+                currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+            }),
+            projectId: projectId,
+            rulesetId: 0,
+            beneficiary: beneficiary,
+            weight: 10e18,
+            reservedPercent: 5000,
+            metadata: payerMetadata
+        });
+
+        (uint256 weight,) = testHook.beforePayRecordedWith(context);
+
+        // No split = weight unchanged.
+        assertEq(weight, 10e18);
+    }
+
+    function test_beforePayRecorded_fullSplitPercent_weightZero() public {
+        ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
+        IJB721TiersHookStore hookStore = testHook.STORE();
+
+        // Add a tier with 100% split, priced at full payment amount.
+        JB721TierConfig[] memory tierConfigs = new JB721TierConfig[](1);
+        tierConfigs[0] = _tierConfigWithSplit(1 ether, 1_000_000_000); // 100%
+        vm.prank(address(testHook));
+        uint256[] memory tierIds = hookStore.recordAddTiers(tierConfigs);
+
+        uint16[] memory mintIds = new uint16[](1);
+        mintIds[0] = uint16(tierIds[0]);
+        bytes memory payerMetadata = _buildPayerMetadata(address(testHook), mintIds);
+
+        JBBeforePayRecordedContext memory context = JBBeforePayRecordedContext({
+            terminal: mockTerminalAddress,
+            payer: beneficiary,
+            amount: JBTokenAmount({
+                token: JBConstants.NATIVE_TOKEN,
+                value: 1 ether,
+                decimals: 18,
+                currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+            }),
+            projectId: projectId,
+            rulesetId: 0,
+            beneficiary: beneficiary,
+            weight: 10e18,
+            reservedPercent: 5000,
+            metadata: payerMetadata
+        });
+
+        (uint256 weight,) = testHook.beforePayRecordedWith(context);
+
+        // 100% split of full amount = weight 0.
+        assertEq(weight, 0);
     }
 
     // ──────────────────────────────────────────────
