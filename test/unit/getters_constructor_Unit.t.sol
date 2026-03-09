@@ -38,7 +38,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
             address(0),
             JB721TiersHookFlags({
                 preventOverspending: false,
-                splitsDontReduceWeight: false,
+                issueTokensForSplits: false,
                 noNewTiersWithReserves: true,
                 noNewTiersWithVotes: true,
                 noNewTiersWithOwnerMinting: true
@@ -545,7 +545,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
             }),
             JB721TiersHookFlags({
                 preventOverspending: false,
-                splitsDontReduceWeight: false,
+                issueTokensForSplits: false,
                 noNewTiersWithReserves: true,
                 noNewTiersWithVotes: true,
                 noNewTiersWithOwnerMinting: true

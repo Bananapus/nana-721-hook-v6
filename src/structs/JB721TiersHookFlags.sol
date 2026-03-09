@@ -9,12 +9,12 @@ pragma solidity ^0.8.0;
 /// `allowOwnerMint` set to true will revert.
 /// @custom:member preventOverspending A boolean indicating whether payments attempting to spend more than the price of
 /// the NFTs being minted will revert.
-/// @custom:member splitsDontReduceWeight A boolean indicating whether the weight adjustment for tier splits should be
-/// skipped, giving payers full token credit even when splits route funds away from the project.
+/// @custom:member issueTokensForSplits A boolean indicating whether payers receive token credit for the portion of
+/// their payment that is routed to tier splits. When false (default), weight is reduced proportionally.
 struct JB721TiersHookFlags {
     bool noNewTiersWithReserves;
     bool noNewTiersWithVotes;
     bool noNewTiersWithOwnerMinting;
     bool preventOverspending;
-    bool splitsDontReduceWeight;
+    bool issueTokensForSplits;
 }

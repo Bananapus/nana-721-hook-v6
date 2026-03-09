@@ -164,7 +164,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @dev Overrides the base to calculate the split amount to forward based on tier split percentages.
     /// @param context The payment context.
     /// @return weight The weight to use for token minting, adjusted down when tier splits route funds away from the
-    /// project (unless `splitsDontReduceWeight` is set).
+    /// project (unless `issueTokensForSplits` is set).
     /// @return hookSpecifications The hook specifications, with the split amount to forward.
     function beforePayRecordedWith(JBBeforePayRecordedContext calldata context)
         public
@@ -180,7 +180,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             JB721TiersHookLib.calculateSplitAmounts(STORE, address(this), METADATA_ID_TARGET, context.metadata);
 
         // Adjust weight so the terminal mints tokens only for the amount that actually enters the project.
-        if (totalSplitAmount == 0 || STORE.flagsOf(address(this)).splitsDontReduceWeight) {
+        if (totalSplitAmount == 0 || STORE.flagsOf(address(this)).issueTokensForSplits) {
             // No splits, or hook configured to give full token credit regardless — full weight.
             weight = context.weight;
         } else if (context.amount.value > totalSplitAmount) {
@@ -268,7 +268,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // Set the flags if needed.
         if (
             flags.noNewTiersWithReserves || flags.noNewTiersWithVotes || flags.noNewTiersWithOwnerMinting
-                || flags.preventOverspending || flags.splitsDontReduceWeight
+                || flags.preventOverspending || flags.issueTokensForSplits
         ) STORE.recordFlags(flags);
 
         // Transfer ownership to the initializer.

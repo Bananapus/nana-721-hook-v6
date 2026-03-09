@@ -390,14 +390,14 @@ contract Test_TierSplitRouting is UnitTestSetup {
     }
 
     // ──────────────────────────────────────────────
-    // Test: splitsDontReduceWeight flag gives full weight with partial splits
+    // Test: issueTokensForSplits flag gives full weight with partial splits
     // ──────────────────────────────────────────────
 
-    function test_beforePayRecorded_splitsDontReduceWeight_fullWeight() public {
+    function test_beforePayRecorded_issueTokensForSplits_fullWeight() public {
         ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
         IJB721TiersHookStore hookStore = testHook.STORE();
 
-        // Set the splitsDontReduceWeight flag.
+        // Set the issueTokensForSplits flag.
         vm.prank(address(testHook));
         hookStore.recordFlags(
             JB721TiersHookFlags({
@@ -405,7 +405,7 @@ contract Test_TierSplitRouting is UnitTestSetup {
                 noNewTiersWithVotes: false,
                 noNewTiersWithOwnerMinting: false,
                 preventOverspending: false,
-                splitsDontReduceWeight: true
+                issueTokensForSplits: true
             })
         );
 
@@ -443,14 +443,14 @@ contract Test_TierSplitRouting is UnitTestSetup {
     }
 
     // ──────────────────────────────────────────────
-    // Test: splitsDontReduceWeight flag gives full weight even when splits consume entire payment
+    // Test: issueTokensForSplits flag gives full weight even when splits consume entire payment
     // ──────────────────────────────────────────────
 
-    function test_beforePayRecorded_splitsDontReduceWeight_fullSplit_stillFullWeight() public {
+    function test_beforePayRecorded_issueTokensForSplits_fullSplit_stillFullWeight() public {
         ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
         IJB721TiersHookStore hookStore = testHook.STORE();
 
-        // Set the splitsDontReduceWeight flag.
+        // Set the issueTokensForSplits flag.
         vm.prank(address(testHook));
         hookStore.recordFlags(
             JB721TiersHookFlags({
@@ -458,7 +458,7 @@ contract Test_TierSplitRouting is UnitTestSetup {
                 noNewTiersWithVotes: false,
                 noNewTiersWithOwnerMinting: false,
                 preventOverspending: false,
-                splitsDontReduceWeight: true
+                issueTokensForSplits: true
             })
         );
 

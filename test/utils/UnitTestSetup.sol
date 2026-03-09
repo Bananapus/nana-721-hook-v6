@@ -222,7 +222,7 @@ contract UnitTestSetup is Test {
             address(0),
             JB721TiersHookFlags({
                 preventOverspending: false,
-                splitsDontReduceWeight: false,
+                issueTokensForSplits: false,
                 noNewTiersWithReserves: true,
                 noNewTiersWithVotes: true,
                 noNewTiersWithOwnerMinting: true
@@ -582,7 +582,7 @@ contract UnitTestSetup is Test {
         // Initialize the hook's flags and init config in memory (for stack's sake).
         JB721TiersHookFlags memory flags = JB721TiersHookFlags({
             preventOverspending: preventOverspending,
-            splitsDontReduceWeight: false,
+            issueTokensForSplits: false,
             noNewTiersWithReserves: false,
             noNewTiersWithVotes: false,
             noNewTiersWithOwnerMinting: false
@@ -629,7 +629,7 @@ contract UnitTestSetup is Test {
             IJB721TiersHookStore(address(hookStore)),
             JB721TiersHookFlags({
                 preventOverspending: false,
-                splitsDontReduceWeight: false,
+                issueTokensForSplits: false,
                 noNewTiersWithReserves: false,
                 noNewTiersWithVotes: false,
                 noNewTiersWithOwnerMinting: true
@@ -688,7 +688,7 @@ contract UnitTestSetup is Test {
             reserveBeneficiary: reserveBeneficiary,
             flags: JB721TiersHookFlags({
                 preventOverspending: false,
-                splitsDontReduceWeight: false,
+                issueTokensForSplits: false,
                 noNewTiersWithReserves: true,
                 noNewTiersWithVotes: true,
                 noNewTiersWithOwnerMinting: true
