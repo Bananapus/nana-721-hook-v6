@@ -6,7 +6,7 @@ import {IJBPrices} from "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
 import {JB721TierConfig} from "./JB721TierConfig.sol";
 
 /// @notice Config to initialize a `JB721TiersHook` with tiers and price data.
-/// @dev The `tiers` must be sorted by price (from least to greatest).
+/// @dev The `tiers` must be sorted by category (from least to greatest).
 /// @custom:member tiers The tiers to initialize the hook with.
 /// @custom:member currency The currency that the tier prices are denoted in. See `JBPrices`.
 /// @custom:member decimals The number of decimals in the fixed point tier prices.

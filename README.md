@@ -222,7 +222,7 @@ Each pay/cash out hook can then execute custom behavior based on the custom data
 A project using a 721 tiers hook can specify any number of NFT tiers (up to 65,535 total).
 
 - NFT tiers can be removed by the project owner as long as they are not locked (`cannotBeRemoved`). After removing tiers, call `cleanTiers()` on the store to optimize tier iteration.
-- NFT tiers can be added by the project owner as long as they respect the hook's `flags`. The flags specify if newly added tiers can have votes (voting units), if new tiers can have non-zero reserve frequencies, if new tiers can allow on-demand minting by the project's owner, and if overspending is allowed.
+- NFT tiers can be added by the project owner as long as they respect the hook's `flags`. Tiers must be sorted by category in ascending order — the store reverts with `JB721TiersHookStore_InvalidCategorySortOrder` if not. The flags specify if newly added tiers can have votes (voting units), if new tiers can have non-zero reserve frequencies, if new tiers can allow on-demand minting by the project's owner, and if overspending is allowed.
 
 Each tier has the following properties:
 

@@ -3,7 +3,7 @@
 
 Config to initialize a `JB721TiersHook` with tiers and price data.
 
-*The `tiers` must be sorted by price (from least to greatest).*
+*The `tiers` must be sorted by category (from least to greatest).*
 
 **Notes:**
 - member: tiers The tiers to initialize the hook with.

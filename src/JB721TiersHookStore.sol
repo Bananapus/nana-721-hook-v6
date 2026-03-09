@@ -132,7 +132,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @custom:returns The stored tier, as a `JBStored721Tier` struct.
     mapping(address hook => mapping(uint256 tierId => JBStored721Tier)) internal _storedTierOf;
 
-    /// @notice Returns the ID of the tier which comes after the provided tier ID (sorted by price).
+    /// @notice Returns the ID of the tier which comes after the provided tier ID (sorted by category).
     /// @dev If empty, assume the next tier ID should come after.
     /// @custom:param hook The address of the 721 contract to get the next tier ID from.
     /// @custom:param tierId The ID of the tier to get the next tier ID in relation to.
@@ -247,7 +247,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @param categories An array tier categories to get tiers from. Send an empty array to get all categories.
     /// @param includeResolvedUri If set to `true`, if the contract has a token URI resolver, its content will be
     /// resolved and included.
-    /// @param startingId The ID of the first tier to get (sorted by price). Send 0 to get all active tiers.
+    /// @param startingId The ID of the first tier to get (sorted by category). Send 0 to get all active tiers.
     /// @param size The number of tiers to include.
     /// @return tiers An array of active 721 tiers.
     function tiersOf(
@@ -482,7 +482,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     // -------------------------- internal views ------------------------- //
     //*********************************************************************//
 
-    /// @notice Get the first tier ID from an 721 contract (when sorted by price) within a provided category.
+    /// @notice Get the first tier ID from an 721 contract (when sorted by category) within a provided category.
     /// @param hook The 721 contract to get the first sorted tier ID of.
     /// @param category The category to get the first sorted tier ID within. Send 0 for the first ID across all tiers,
     /// which might not be in the 0th category if the 0th category does not exist.
@@ -578,7 +578,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         return bitmapWord.isTierIdRemoved(tierId);
     }
 
-    /// @notice The last sorted tier ID from an 721 contract (when sorted by price).
+    /// @notice The last sorted tier ID from an 721 contract (when sorted by category).
     /// @param hook The 721 contract to get the last sorted tier ID of.
     /// @return id The last sorted tier ID.
     function _lastSortedTierIdOf(address hook) internal view returns (uint256 id) {
@@ -587,7 +587,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         if (id == 0) id = maxTierIdOf[hook];
     }
 
-    /// @notice Get the tier ID which comes after the provided one when sorted by price.
+    /// @notice Get the tier ID which comes after the provided one when sorted by category.
     /// @param hook The 721 contract to get the next sorted tier ID from.
     /// @param id The tier ID to get the next sorted tier ID relative to.
     /// @param max The maximum tier ID.
@@ -782,7 +782,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             revert JB721TiersHookStore_MaxTiersExceeded(currentMaxTierIdOf + tiersToAdd.length, type(uint16).max);
         }
 
-        // Keep a reference to the current last sorted tier ID (sorted by price).
+        // Keep a reference to the current last sorted tier ID (sorted by category).
         uint256 currentLastSortedTierId = _lastSortedTierIdOf(msg.sender);
 
         // Initialize an array for the new tier IDs to be returned.
