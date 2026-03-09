@@ -6,7 +6,6 @@ import {IJB721TiersHookStore} from "../../src/interfaces/IJB721TiersHookStore.so
 import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 import {IJBSplitHook} from "@bananapus/core-v6/src/interfaces/IJBSplitHook.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
-import {IJBController} from "@bananapus/core-v6/src/interfaces/IJBController.sol";
 import {JB721TiersHookFlags} from "../../src/structs/JB721TiersHookFlags.sol";
 
 contract Test_TierSplitRouting is UnitTestSetup {
@@ -14,11 +13,10 @@ contract Test_TierSplitRouting is UnitTestSetup {
 
     address alice = makeAddr("alice");
     address bob = makeAddr("bob");
-    address mockSplits = makeAddr("mockSplits");
 
     function setUp() public override {
         super.setUp();
-        vm.etch(mockSplits, new bytes(0x69));
+        vm.etch(mockJBSplits, new bytes(0x69));
     }
 
     // Helper: build a tier config with splits.
@@ -320,12 +318,6 @@ contract Test_TierSplitRouting is UnitTestSetup {
             abi.encodeWithSelector(IJBDirectory.isTerminalOf.selector, projectId, mockTerminalAddress),
             abi.encode(true)
         );
-        mockAndExpect(
-            address(mockJBDirectory),
-            abi.encodeWithSelector(IJBDirectory.controllerOf.selector, projectId),
-            abi.encode(mockJBController)
-        );
-        mockAndExpect(mockJBController, abi.encodeWithSelector(IJBController.SPLITS.selector), abi.encode(mockSplits));
 
         // Mock splits: alice gets 100%.
         JBSplit[] memory splits = new JBSplit[](1);
@@ -340,7 +332,7 @@ contract Test_TierSplitRouting is UnitTestSetup {
 
         uint256 groupId = uint256(uint160(address(testHook))) | (uint256(tierIds[0]) << 160);
         mockAndExpect(
-            mockSplits, abi.encodeWithSelector(IJBSplits.splitsOf.selector, projectId, 0, groupId), abi.encode(splits)
+            mockJBSplits, abi.encodeWithSelector(IJBSplits.splitsOf.selector, projectId, 0, groupId), abi.encode(splits)
         );
 
         // Build payer metadata.

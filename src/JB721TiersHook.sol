@@ -6,6 +6,7 @@ import {IJBPermissions} from "@bananapus/core-v6/src/interfaces/IJBPermissions.s
 import {IJBPrices} from "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
 import {IJBRulesetDataHook} from "@bananapus/core-v6/src/interfaces/IJBRulesetDataHook.sol";
 import {IJBRulesets} from "@bananapus/core-v6/src/interfaces/IJBRulesets.sol";
+import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 import {JBMetadataResolver} from "@bananapus/core-v6/src/libraries/JBMetadataResolver.sol";
 import {JBRulesetMetadataResolver} from "@bananapus/core-v6/src/libraries/JBRulesetMetadataResolver.sol";
 import {JBAfterPayRecordedContext} from "@bananapus/core-v6/src/structs/JBAfterPayRecordedContext.sol";
@@ -59,6 +60,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @notice The contract that stores and manages data for this contract's NFTs.
     IJB721TiersHookStore public immutable override STORE;
 
+    /// @notice The contract that stores and manages splits.
+    IJBSplits public immutable override SPLITS;
+
     //*********************************************************************//
     // ---------------------- public stored properties ------------------- //
     //*********************************************************************//
@@ -98,12 +102,14 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @param permissions A contract storing permissions.
     /// @param rulesets A contract storing and managing project rulesets.
     /// @param store The contract which stores the NFT's data.
+    /// @param splits The contract that stores and manages splits.
     /// @param trustedForwarder The trusted forwarder for the ERC2771Context.
     constructor(
         IJBDirectory directory,
         IJBPermissions permissions,
         IJBRulesets rulesets,
         IJB721TiersHookStore store,
+        IJBSplits splits,
         address trustedForwarder
     )
         JBOwnable(permissions, directory.PROJECTS(), msg.sender, uint88(0))
@@ -112,6 +118,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     {
         RULESETS = rulesets;
         STORE = store;
+        SPLITS = splits;
     }
 
     //*********************************************************************//
@@ -261,9 +268,12 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             _recordSetTokenUriResolver(tokenUriResolver);
         }
 
-        // Record the tiers in this hook's store.
-        // slither-disable-next-line unused-return
-        if (tiersConfig.tiers.length != 0) STORE.recordAddTiers(tiersConfig.tiers);
+        // Record the tiers in this hook's store and set any tier split groups.
+        if (tiersConfig.tiers.length != 0) {
+            JB721TiersHookLib.recordAddTiersFor(
+                STORE, SPLITS, projectId, address(this), _msgSender(), tiersConfig.tiers
+            );
+        }
 
         // Set the flags if needed.
         if (
@@ -317,7 +327,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
         // Delegate to the library (via DELEGATECALL) for tier removal, addition, event emission, and split setting.
         JB721TiersHookLib.adjustTiersFor(
-            STORE, DIRECTORY, PROJECT_ID, address(this), _msgSender(), tiersToAdd, tierIdsToRemove
+            STORE, SPLITS, PROJECT_ID, address(this), _msgSender(), tiersToAdd, tierIdsToRemove
         );
     }
 
@@ -666,7 +676,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // Distribute any forwarded funds to tier split groups.
         if (context.hookMetadata.length != 0 && context.forwardedAmount.value != 0) {
             JB721TiersHookLib.distributeAll(
-                DIRECTORY, PROJECT_ID, address(this), context.forwardedAmount.token, context.hookMetadata
+                DIRECTORY, SPLITS, PROJECT_ID, address(this), context.forwardedAmount.token, context.hookMetadata
             );
         }
     }

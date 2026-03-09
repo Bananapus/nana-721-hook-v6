@@ -7,7 +7,6 @@ import {JB721TiersHookLib} from "../../src/libraries/JB721TiersHookLib.sol";
 import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 import {IJBSplitHook} from "@bananapus/core-v6/src/interfaces/IJBSplitHook.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
-import {IJBController} from "@bananapus/core-v6/src/interfaces/IJBController.sol";
 import {IJBTerminal} from "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
 
 /// @notice Split with no beneficiary and no projectId should route funds to the project's
@@ -15,12 +14,11 @@ import {IJBTerminal} from "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
 contract Test_L36_SplitNoBeneficiary is UnitTestSetup {
     using stdStorage for StdStorage;
 
-    address mockSplits = makeAddr("mockSplits");
     address mockProjectTerminal = makeAddr("mockProjectTerminal");
 
     function setUp() public override {
         super.setUp();
-        vm.etch(mockSplits, new bytes(0x69));
+        vm.etch(mockJBSplits, new bytes(0x69));
         vm.etch(mockProjectTerminal, new bytes(0x69));
     }
 
@@ -47,12 +45,6 @@ contract Test_L36_SplitNoBeneficiary is UnitTestSetup {
             abi.encodeWithSelector(IJBDirectory.isTerminalOf.selector, projectId, mockTerminalAddress),
             abi.encode(true)
         );
-        mockAndExpect(
-            address(mockJBDirectory),
-            abi.encodeWithSelector(IJBDirectory.controllerOf.selector, projectId),
-            abi.encode(mockJBController)
-        );
-        mockAndExpect(mockJBController, abi.encodeWithSelector(IJBController.SPLITS.selector), abi.encode(mockSplits));
 
         // Mock splits: a split with projectId==0 and beneficiary==address(0).
         JBSplit[] memory splits = new JBSplit[](1);
@@ -67,7 +59,7 @@ contract Test_L36_SplitNoBeneficiary is UnitTestSetup {
 
         uint256 groupId = uint256(uint160(address(testHook))) | (uint256(tierIds[0]) << 160);
         mockAndExpect(
-            mockSplits, abi.encodeWithSelector(IJBSplits.splitsOf.selector, projectId, 0, groupId), abi.encode(splits)
+            mockJBSplits, abi.encodeWithSelector(IJBSplits.splitsOf.selector, projectId, 0, groupId), abi.encode(splits)
         );
 
         // Mock the project's primary terminal for addToBalanceOf (this is the fallback for no-recipient splits).
