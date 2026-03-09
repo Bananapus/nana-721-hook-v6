@@ -329,7 +329,7 @@ Standard config across all repos:
 ```toml
 [profile.default]
 solc = '0.8.26'
-evm_version = 'paris'
+evm_version = 'cancun'
 optimizer_runs = 200
 libs = ["node_modules", "lib"]
 fs_permissions = [{ access = "read-write", path = "./"}]
@@ -356,7 +356,7 @@ wrap_comments = true
 - `via_ir = true` for repos hitting stack-too-deep (buyback-hook, banny-retail, univ4-lp-split-hook, deploy-all)
 - `optimizer = false` only for deploy-all-v6 (stack-too-deep with optimization)
 
-This repo uses the standard config with no deviations: `paris`, `optimizer_runs=200`, no `via_ir`.
+This repo uses the standard config with no deviations: `cancun`, `optimizer_runs=200`, no `via_ir`.
 
 ### CI Workflows
 
