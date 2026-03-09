@@ -43,37 +43,43 @@ contract ForTest_JB721TiersHook is JB721TiersHook {
     uint256 constant CASH_OUT_TAX_RATE = JBConstants.MAX_CASH_OUT_TAX_RATE; // 40%
     address _trustedForwarder = address(123_456);
 
+    /// @dev Bundles ForTest_JB721TiersHook constructor args to avoid stack-too-deep.
+    struct ForTestInitConfig {
+        uint256 projectId;
+        string name;
+        string symbol;
+        string baseUri;
+        IJB721TokenUriResolver tokenUriResolver;
+        string contractUri;
+        JB721TierConfig[] tiers;
+        JB721TiersHookFlags flags;
+    }
+
     constructor(
-        uint256 projectId,
+        ForTestInitConfig memory config,
         IJBDirectory directory,
-        string memory name,
-        string memory symbol,
         IJBRulesets rulesets,
-        string memory baseUri,
-        IJB721TokenUriResolver tokenUriResolver,
-        string memory contractUri,
-        JB721TierConfig[] memory tiers,
         IJB721TiersHookStore store,
-        JB721TiersHookFlags memory flags
+        IJBSplits splits
     )
         // The directory is also `IJBPermissioned`.
-        JB721TiersHook(directory, IJBPermissioned(address(directory)).PERMISSIONS(), rulesets, store, _trustedForwarder)
+        JB721TiersHook(directory, IJBPermissioned(address(directory)).PERMISSIONS(), rulesets, store, splits, _trustedForwarder)
     {
         // Disable the safety check to not allow initializing the original contract
         JB721TiersHook.initialize(
-            projectId,
-            name,
-            symbol,
-            baseUri,
-            tokenUriResolver,
-            contractUri,
+            config.projectId,
+            config.name,
+            config.symbol,
+            config.baseUri,
+            config.tokenUriResolver,
+            config.contractUri,
             JB721InitTiersConfig({
-                tiers: tiers,
+                tiers: config.tiers,
                 currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
                 decimals: 18,
                 prices: IJBPrices(address(0))
             }),
-            flags
+            config.flags
         );
         test_store = IJB721TiersHookStore_ForTest(address(store));
 

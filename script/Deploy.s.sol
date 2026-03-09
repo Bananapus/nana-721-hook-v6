@@ -74,13 +74,13 @@ contract DeployScript is Script, Sphinx {
             (address _hook, bool _hookIsDeployed) = _isDeployed(
                 HOOK_SALT,
                 type(JB721TiersHook).creationCode,
-                abi.encode(core.directory, core.permissions, core.rulesets, store, TRUSTED_FORWARDER)
+                abi.encode(core.directory, core.permissions, core.rulesets, store, core.splits, TRUSTED_FORWARDER)
             );
 
             // Deploy it if it has not been deployed yet.
             hook = !_hookIsDeployed
                 ? new JB721TiersHook{salt: HOOK_SALT}(
-                    core.directory, core.permissions, core.rulesets, store, TRUSTED_FORWARDER
+                    core.directory, core.permissions, core.rulesets, store, core.splits, TRUSTED_FORWARDER
                 )
                 : JB721TiersHook(_hook);
         }

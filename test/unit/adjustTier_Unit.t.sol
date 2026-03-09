@@ -573,23 +573,26 @@ contract Test_adjustTier_Unit is UnitTestSetup {
         }
         ForTest_JB721TiersHookStore store = new ForTest_JB721TiersHookStore();
         ForTest_JB721TiersHook hook = new ForTest_JB721TiersHook(
-            projectId,
+            ForTest_JB721TiersHook.ForTestInitConfig({
+                projectId: projectId,
+                name: name,
+                symbol: symbol,
+                baseUri: baseUri,
+                tokenUriResolver: IJB721TokenUriResolver(mockTokenUriResolver),
+                contractUri: contractUri,
+                tiers: tierConfigs,
+                flags: JB721TiersHookFlags({
+                    preventOverspending: false,
+                    issueTokensForSplits: false,
+                    noNewTiersWithReserves: false,
+                    noNewTiersWithVotes: false,
+                    noNewTiersWithOwnerMinting: true
+                })
+            }),
             IJBDirectory(mockJBDirectory),
-            name,
-            symbol,
             IJBRulesets(mockJBRulesets),
-            baseUri,
-            IJB721TokenUriResolver(mockTokenUriResolver),
-            contractUri,
-            tierConfigs,
             IJB721TiersHookStore(address(store)),
-            JB721TiersHookFlags({
-                preventOverspending: false,
-                issueTokensForSplits: false,
-                noNewTiersWithReserves: false,
-                noNewTiersWithVotes: false,
-                noNewTiersWithOwnerMinting: true
-            })
+            IJBSplits(mockJBSplits)
         );
         hook.transferOwnership(owner);
 
@@ -894,23 +897,26 @@ contract Test_adjustTier_Unit is UnitTestSetup {
         }
         ForTest_JB721TiersHookStore store = new ForTest_JB721TiersHookStore();
         ForTest_JB721TiersHook hook = new ForTest_JB721TiersHook(
-            projectId,
+            ForTest_JB721TiersHook.ForTestInitConfig({
+                projectId: projectId,
+                name: name,
+                symbol: symbol,
+                baseUri: baseUri,
+                tokenUriResolver: IJB721TokenUriResolver(mockTokenUriResolver),
+                contractUri: contractUri,
+                tiers: tierConfigs,
+                flags: JB721TiersHookFlags({
+                    preventOverspending: false,
+                    issueTokensForSplits: false,
+                    noNewTiersWithReserves: false,
+                    noNewTiersWithVotes: true,
+                    noNewTiersWithOwnerMinting: true
+                })
+            }),
             IJBDirectory(mockJBDirectory),
-            name,
-            symbol,
             IJBRulesets(mockJBRulesets),
-            baseUri,
-            IJB721TokenUriResolver(mockTokenUriResolver),
-            contractUri,
-            tierConfigs,
             IJB721TiersHookStore(address(store)),
-            JB721TiersHookFlags({
-                preventOverspending: false,
-                issueTokensForSplits: false,
-                noNewTiersWithReserves: false,
-                noNewTiersWithVotes: true,
-                noNewTiersWithOwnerMinting: true
-            })
+            IJBSplits(mockJBSplits)
         );
         hook.transferOwnership(owner);
         JB721TierConfig[] memory tierConfigsToAdd = new JB721TierConfig[](numberTiersToAdd);
@@ -1014,23 +1020,26 @@ contract Test_adjustTier_Unit is UnitTestSetup {
         }
         ForTest_JB721TiersHookStore store = new ForTest_JB721TiersHookStore();
         ForTest_JB721TiersHook hook = new ForTest_JB721TiersHook(
-            projectId,
+            ForTest_JB721TiersHook.ForTestInitConfig({
+                projectId: projectId,
+                name: name,
+                symbol: symbol,
+                baseUri: baseUri,
+                tokenUriResolver: IJB721TokenUriResolver(mockTokenUriResolver),
+                contractUri: contractUri,
+                tiers: tierConfigs,
+                flags: JB721TiersHookFlags({
+                    preventOverspending: false,
+                    issueTokensForSplits: false,
+                    noNewTiersWithReserves: true, // <-- This is the flag we're testing.
+                    noNewTiersWithVotes: false,
+                    noNewTiersWithOwnerMinting: true
+                })
+            }),
             IJBDirectory(mockJBDirectory),
-            name,
-            symbol,
             IJBRulesets(mockJBRulesets),
-            baseUri,
-            IJB721TokenUriResolver(mockTokenUriResolver),
-            contractUri,
-            tierConfigs,
             IJB721TiersHookStore(address(store)),
-            JB721TiersHookFlags({
-                preventOverspending: false,
-                issueTokensForSplits: false,
-                noNewTiersWithReserves: true, // <-- This is the flag we're testing.
-                noNewTiersWithVotes: false,
-                noNewTiersWithOwnerMinting: true
-            })
+            IJBSplits(mockJBSplits)
         );
         hook.transferOwnership(owner);
         JB721TierConfig[] memory tierConfigsToAdd = new JB721TierConfig[](numberTiersToAdd);
@@ -1206,23 +1215,26 @@ contract Test_adjustTier_Unit is UnitTestSetup {
         }
         ForTest_JB721TiersHookStore store = new ForTest_JB721TiersHookStore();
         ForTest_JB721TiersHook hook = new ForTest_JB721TiersHook(
-            projectId,
+            ForTest_JB721TiersHook.ForTestInitConfig({
+                projectId: projectId,
+                name: name,
+                symbol: symbol,
+                baseUri: baseUri,
+                tokenUriResolver: IJB721TokenUriResolver(mockTokenUriResolver),
+                contractUri: contractUri,
+                tiers: tierConfigs,
+                flags: JB721TiersHookFlags({
+                    preventOverspending: false,
+                    issueTokensForSplits: false,
+                    noNewTiersWithReserves: false,
+                    noNewTiersWithVotes: false,
+                    noNewTiersWithOwnerMinting: true
+                })
+            }),
             IJBDirectory(mockJBDirectory),
-            name,
-            symbol,
             IJBRulesets(mockJBRulesets),
-            baseUri,
-            IJB721TokenUriResolver(mockTokenUriResolver),
-            contractUri,
-            tierConfigs,
             IJB721TiersHookStore(address(store)),
-            JB721TiersHookFlags({
-                preventOverspending: false,
-                issueTokensForSplits: false,
-                noNewTiersWithReserves: false,
-                noNewTiersWithVotes: false,
-                noNewTiersWithOwnerMinting: true
-            })
+            IJBSplits(mockJBSplits)
         );
         hook.transferOwnership(owner);
         JB721TierConfig[] memory tierConfigsToAdd = new JB721TierConfig[](numberTiersToAdd);
@@ -1353,23 +1365,26 @@ contract Test_adjustTier_Unit is UnitTestSetup {
 
         ForTest_JB721TiersHookStore store = new ForTest_JB721TiersHookStore();
         ForTest_JB721TiersHook hook = new ForTest_JB721TiersHook(
-            projectId,
+            ForTest_JB721TiersHook.ForTestInitConfig({
+                projectId: projectId,
+                name: name,
+                symbol: symbol,
+                baseUri: baseUri,
+                tokenUriResolver: IJB721TokenUriResolver(mockTokenUriResolver),
+                contractUri: contractUri,
+                tiers: tierConfigs,
+                flags: JB721TiersHookFlags({
+                    preventOverspending: false,
+                    issueTokensForSplits: false,
+                    noNewTiersWithReserves: false,
+                    noNewTiersWithVotes: true, // <-- This is the flag we're testing.
+                    noNewTiersWithOwnerMinting: true
+                })
+            }),
             IJBDirectory(mockJBDirectory),
-            name,
-            symbol,
             IJBRulesets(mockJBRulesets),
-            baseUri,
-            IJB721TokenUriResolver(mockTokenUriResolver),
-            contractUri,
-            tierConfigs,
             IJB721TiersHookStore(address(store)),
-            JB721TiersHookFlags({
-                preventOverspending: false,
-                issueTokensForSplits: false,
-                noNewTiersWithReserves: false,
-                noNewTiersWithVotes: true, // <-- This is the flag we're testing.
-                noNewTiersWithOwnerMinting: true
-            })
+            IJBSplits(mockJBSplits)
         );
         hook.transferOwnership(owner);
 
@@ -1439,23 +1454,26 @@ contract Test_adjustTier_Unit is UnitTestSetup {
 
         ForTest_JB721TiersHookStore store = new ForTest_JB721TiersHookStore();
         ForTest_JB721TiersHook hook = new ForTest_JB721TiersHook(
-            projectId,
+            ForTest_JB721TiersHook.ForTestInitConfig({
+                projectId: projectId,
+                name: name,
+                symbol: symbol,
+                baseUri: baseUri,
+                tokenUriResolver: IJB721TokenUriResolver(mockTokenUriResolver),
+                contractUri: contractUri,
+                tiers: tierConfigs,
+                flags: JB721TiersHookFlags({
+                    preventOverspending: false,
+                    issueTokensForSplits: false,
+                    noNewTiersWithReserves: false,
+                    noNewTiersWithVotes: true, // <-- This is the flag we're testing.
+                    noNewTiersWithOwnerMinting: true
+                })
+            }),
             IJBDirectory(mockJBDirectory),
-            name,
-            symbol,
             IJBRulesets(mockJBRulesets),
-            baseUri,
-            IJB721TokenUriResolver(mockTokenUriResolver),
-            contractUri,
-            tierConfigs,
             IJB721TiersHookStore(address(store)),
-            JB721TiersHookFlags({
-                preventOverspending: false,
-                issueTokensForSplits: false,
-                noNewTiersWithReserves: false,
-                noNewTiersWithVotes: true, // <-- This is the flag we're testing.
-                noNewTiersWithOwnerMinting: true
-            })
+            IJBSplits(mockJBSplits)
         );
         hook.transferOwnership(owner);
 
@@ -1574,23 +1592,26 @@ contract Test_adjustTier_Unit is UnitTestSetup {
         }
         ForTest_JB721TiersHookStore store = new ForTest_JB721TiersHookStore();
         ForTest_JB721TiersHook hook = new ForTest_JB721TiersHook(
-            projectId,
+            ForTest_JB721TiersHook.ForTestInitConfig({
+                projectId: projectId,
+                name: name,
+                symbol: symbol,
+                baseUri: baseUri,
+                tokenUriResolver: IJB721TokenUriResolver(mockTokenUriResolver),
+                contractUri: contractUri,
+                tiers: tierConfigs,
+                flags: JB721TiersHookFlags({
+                    preventOverspending: false,
+                    issueTokensForSplits: false,
+                    noNewTiersWithReserves: false,
+                    noNewTiersWithVotes: false,
+                    noNewTiersWithOwnerMinting: true
+                })
+            }),
             IJBDirectory(mockJBDirectory),
-            name,
-            symbol,
             IJBRulesets(mockJBRulesets),
-            baseUri,
-            IJB721TokenUriResolver(mockTokenUriResolver),
-            contractUri,
-            tierConfigs,
             IJB721TiersHookStore(address(store)),
-            JB721TiersHookFlags({
-                preventOverspending: false,
-                issueTokensForSplits: false,
-                noNewTiersWithReserves: false,
-                noNewTiersWithVotes: false,
-                noNewTiersWithOwnerMinting: true
-            })
+            IJBSplits(mockJBSplits)
         );
         hook.transferOwnership(owner);
         // Will be resized later

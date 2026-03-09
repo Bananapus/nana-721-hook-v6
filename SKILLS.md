@@ -21,7 +21,7 @@ Tiered ERC-721 NFT hook for Juicebox V6 that mints NFTs when a project is paid a
 
 | Function | Contract | What it does |
 |----------|----------|--------------|
-| `initialize(projectId, name, symbol, baseUri, tokenUriResolver, contractUri, tiersConfig, flags)` | `JB721TiersHook` | One-time setup for a cloned hook instance. Stores pricing context (currency, decimals, prices contract packed into uint256), records tiers and flags in the store. Validates `decimals <= 18`. |
+| `initialize(projectId, name, symbol, baseUri, tokenUriResolver, contractUri, tiersConfig, flags)` | `JB721TiersHook` | One-time setup for a cloned hook instance. Stores pricing context (currency, decimals, prices contract packed into uint256), records tiers and flags in the store. Registers any configured tier splits in `JBSplits` via `SPLITS.setSplitGroupsOf`. Validates `decimals <= 18`. |
 | `afterPayRecordedWith(context)` | `JB721Hook` | Called by terminal after payment. Validates caller is a project terminal, delegates to virtual `_processPayment`. |
 | `_processPayment(context)` | `JB721TiersHook` | Normalizes payment value via pricing context, decodes payer metadata for tier IDs to mint, calls `_mintAll`, manages pay credits for overspending. Distributes tier split funds via `JB721TiersHookLib.distributeAll` if split amounts were forwarded. |
 | `afterCashOutRecordedWith(context)` | `JB721Hook` | Called by terminal during cash out. Decodes token IDs from metadata, validates ownership, burns NFTs, delegates to virtual `_didBurn`. Reverts if `msg.value != 0`. |
@@ -60,8 +60,8 @@ Tiered ERC-721 NFT hook for Juicebox V6 that mints NFTs when a project is paid a
 | `votingUnitsOf(hook, account)` | `JB721TiersHookStore` | Returns total voting units for an address across all tiers. Uses custom `votingUnits` if `useVotingUnits` is set, otherwise uses tier price. |
 | `tierVotingUnitsOf(hook, account, tierId)` | `JB721TiersHookStore` | Returns voting units for an address within a specific tier. |
 | `calculateSplitAmounts(store, hook, metadataIdTarget, metadata)` | `JB721TiersHookLib` | Called in `beforePayRecordedWith`. Decodes tier IDs from payer metadata, looks up each tier's `splitPercent`, calculates `mulDiv(price, splitPercent, SPLITS_TOTAL_PERCENT)` per tier, returns `totalSplitAmount` (forwarded to hook as `amount`) and encoded `hookMetadata` (tier IDs + amounts). |
-| `distributeAll(directory, projectId, hookAddress, token, encodedSplitData)` | `JB721TiersHookLib` | Called in `afterPayRecordedWith`. Decodes per-tier amounts, looks up each tier's splits from `JBSplits` by group ID (`hookAddress | (tierId << 160)`), distributes to split recipients. Leftover goes to project balance via `addToBalance`. |
-| `adjustTiersFor(store, directory, projectId, hookAddress, caller, tiersToAdd, tierIdsToRemove)` | `JB721TiersHookLib` | Called via DELEGATECALL from `adjustTiers`. Removes tiers, adds tiers, emits events, and registers any configured splits in `JBSplits` via the project's controller. |
+| `distributeAll(directory, splits, projectId, hookAddress, token, encodedSplitData)` | `JB721TiersHookLib` | Called in `afterPayRecordedWith`. Decodes per-tier amounts, looks up each tier's splits from `JBSplits` by group ID (`hookAddress | (tierId << 160)`), distributes to split recipients. Leftover goes to project balance via `addToBalance`. |
+| `adjustTiersFor(store, splits, projectId, hookAddress, caller, tiersToAdd, tierIdsToRemove)` | `JB721TiersHookLib` | Called via DELEGATECALL from `adjustTiers`. Removes tiers, adds tiers, emits events, and registers any configured splits directly in `JBSplits`. |
 | `normalizePaymentValue(packedPricingContext, projectId, amountValue, amountCurrency, amountDecimals)` | `JB721TiersHookLib` | Converts a payment value to the hook's pricing currency using `JBPrices`. Returns `(0, false)` if currencies differ and no prices contract is set. |
 | `resolveTokenURI(store, hook, baseUri, tokenId)` | `JB721TiersHookLib` | Resolves token URI: checks for custom `tokenUriResolver` first, otherwise decodes IPFS URI via `JBIpfsDecoder`. |
 
@@ -69,7 +69,7 @@ Tiered ERC-721 NFT hook for Juicebox V6 that mints NFTs when a project is paid a
 
 | Dependency | Import | Used For |
 |------------|--------|----------|
-| `@bananapus/core-v6` | `IJBDirectory`, `IJBRulesets`, `IJBPrices`, `IJBController`, `IJBTerminal`, `IJBSplits`, `JBRuleset`, `JBRulesetMetadata`, `JBAfterPayRecordedContext`, `JBBeforeCashOutRecordedContext`, `JBSplit`, `JBSplitGroup`, `JBConstants`, etc. | Terminal validation, ruleset metadata, pricing, payment/cash-out contexts, splits |
+| `@bananapus/core-v6` | `IJBDirectory`, `IJBRulesets`, `IJBPrices`, `IJBSplits`, `IJBTerminal`, `JBRuleset`, `JBRulesetMetadata`, `JBAfterPayRecordedContext`, `JBBeforeCashOutRecordedContext`, `JBSplit`, `JBSplitGroup`, `JBConstants`, etc. | Terminal validation, ruleset metadata, pricing, payment/cash-out contexts, splits |
 | `@bananapus/ownable-v6` | `JBOwnable` | Project-based ownership for the hook (ownership can be transferred to a project NFT) |
 | `@bananapus/permission-ids-v6` | `JBPermissionIds` | Permission IDs: `ADJUST_721_TIERS`, `MINT_721`, `SET_721_METADATA`, `SET_721_DISCOUNT_PERCENT`, `QUEUE_RULESETS`, `SET_TERMINALS` |
 | `@bananapus/address-registry-v6` | `IJBAddressRegistry` | Registering deployed hook clones |
@@ -137,14 +137,14 @@ Each tier has configurable voting power:
 
 - Each tier can route a percentage of its mint price to configured split recipients. The `splitPercent` field (out of `JBConstants.SPLITS_TOTAL_PERCENT` = 1,000,000,000) determines how much of the price is forwarded.
 - Split recipients are stored in `JBSplits` using group IDs computed as `uint256(uint160(hookAddress)) | (uint256(tierId) << 160)`.
-- Splits are registered via `JB721TiersHookLib._setSplitGroupsFor` when tiers with `splits` are added.
+- Splits are registered in `JBSplits` both during `initialize()` (for tiers included at launch) and during `adjustTiers()` (for tiers added later), using the hook's `SPLITS` immutable directly.
 - In `beforePayRecordedWith`, `calculateSplitAmounts` decodes tier IDs from payer metadata, computes `mulDiv(price, splitPercent, SPLITS_TOTAL_PERCENT)` per tier, and returns the total to be forwarded to the hook. The weight is adjusted down proportionally unless the `issueTokensForSplits` flag is set, in which case the full `context.weight` is returned.
 - In `afterPayRecordedWith`, `distributeAll` distributes forwarded funds to each tier's split group recipients. Leftover after all splits goes back to the project's balance via `addToBalance`.
 - Split recipients can be projects (via `terminal.pay` or `terminal.addToBalance`) or plain addresses (direct ETH transfer or `SafeERC20.safeTransfer`). Splits with no `projectId` and no `beneficiary` are skipped -- their share stays in the leftover and is routed to the project's own balance via `addToBalanceOf`, preventing a misconfigured split from bricking the payout distribution.
 
 ## Gotchas
 
-- `JB721TiersHook` is deployed as a **minimal clone** (not a full deployment). The constructor sets immutables (`RULESETS`, `STORE`, `DIRECTORY`, `METADATA_ID_TARGET`), and `initialize()` sets per-instance state. Calling `initialize()` twice reverts with `JB721TiersHook_AlreadyInitialized`.
+- `JB721TiersHook` is deployed as a **minimal clone** (not a full deployment). The constructor sets immutables (`RULESETS`, `STORE`, `SPLITS`, `DIRECTORY`, `METADATA_ID_TARGET`), and `initialize()` sets per-instance state. Calling `initialize()` twice reverts with `JB721TiersHook_AlreadyInitialized`.
 - **`JB721Hook` abstract base**: `JB721TiersHook` extends `JB721Hook`, which handles generic 721 hook lifecycle (terminal validation, burn loop, metadata decoding). `JB721TiersHook` overrides `cashOutWeightOf`, `totalCashOutWeight`, `_didBurn`, `_processPayment`, and `beforePayRecordedWith`. Errors like `JB721Hook_InvalidPay` and `JB721Hook_InvalidCashOut` are defined on the abstract class, not `JB721TiersHook`.
 - **Pricing context is bit-packed** into a single `uint256`: currency (bits 0-31), decimals (bits 32-39), prices contract address (bits 40-199). Read it via `pricingContext()`.
 - **Pricing decimals must be <= 18**: `initialize` reverts with `JB721TiersHook_InvalidPricingDecimals` otherwise.

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import {IJBController} from "@bananapus/core-v6/src/interfaces/IJBController.sol";
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 import {IJBPrices} from "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
@@ -31,7 +30,7 @@ library JB721TiersHookLib {
     /// @notice Handles the full tier adjustment logic: removes tiers, adds tiers, emits events, and sets splits.
     /// @dev Called via DELEGATECALL from the hook, so events are emitted from the hook's address.
     /// @param store The 721 tiers hook store.
-    /// @param directory The directory to look up controllers.
+    /// @param splits The splits contract to register tier split groups in.
     /// @param projectId The project ID.
     /// @param hookAddress The hook address.
     /// @param caller The msg.sender of the original call (for event emission).
@@ -39,7 +38,7 @@ library JB721TiersHookLib {
     /// @param tierIdsToRemove The tier IDs to remove.
     function adjustTiersFor(
         IJB721TiersHookStore store,
-        IJBDirectory directory,
+        IJBSplits splits,
         uint256 projectId,
         address hookAddress,
         address caller,
@@ -67,7 +66,7 @@ library JB721TiersHookLib {
             }
 
             // Set split groups for tiers that have splits configured.
-            _setSplitGroupsFor(directory, projectId, hookAddress, tiersToAdd, tierIdsAdded);
+            _setSplitGroupsFor(splits, projectId, hookAddress, tiersToAdd, tierIdsAdded);
         }
     }
 
@@ -163,7 +162,7 @@ library JB721TiersHookLib {
 
     /// @notice Sets split groups in JBSplits for tiers that have splits configured.
     function _setSplitGroupsFor(
-        IJBDirectory directory,
+        IJBSplits splits,
         uint256 projectId,
         address hookAddress,
         JB721TierConfig[] calldata tiersToAdd,
@@ -187,17 +186,19 @@ library JB721TiersHookLib {
                 groupIndex++;
             }
         }
-        IJBController(address(directory.controllerOf(projectId))).SPLITS().setSplitGroupsOf(projectId, 0, splitGroups);
+        splits.setSplitGroupsOf(projectId, 0, splitGroups);
     }
 
     /// @notice Distributes forwarded funds for all tiers in the hook metadata.
-    /// @param directory The directory to look up controllers and terminals.
+    /// @param directory The directory to look up terminals.
+    /// @param splits The splits contract to read tier split groups from.
     /// @param projectId The project ID of the hook.
     /// @param hookAddress The hook address (for computing split group IDs).
     /// @param token The token being distributed.
     /// @param encodedSplitData The encoded per-tier breakdown from hookMetadata.
     function distributeAll(
         IJBDirectory directory,
+        IJBSplits splits,
         uint256 projectId,
         address hookAddress,
         address token,
@@ -207,7 +208,7 @@ library JB721TiersHookLib {
     {
         (uint16[] memory tierIds, uint256[] memory amounts) = abi.decode(encodedSplitData, (uint16[], uint256[]));
 
-        IJBSplits splitsContract = IJBController(address(directory.controllerOf(projectId))).SPLITS();
+        IJBSplits splitsContract = splits;
 
         for (uint256 i; i < tierIds.length; i++) {
             if (amounts[i] == 0) continue;

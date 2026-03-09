@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IJBPrices} from "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
 import {IJBRulesets} from "@bananapus/core-v6/src/interfaces/IJBRulesets.sol";
+import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 
 import {IJB721Hook} from "./IJB721Hook.sol";
 import {IJB721TiersHookStore} from "./IJB721TiersHookStore.sol";
@@ -123,6 +124,10 @@ interface IJB721TiersHook is IJB721Hook {
     /// @notice The contract that stores and manages data for this contract's NFTs.
     /// @return The store contract.
     function STORE() external view returns (IJB721TiersHookStore);
+
+    /// @notice The contract that stores and manages splits.
+    /// @return The splits contract.
+    function SPLITS() external view returns (IJBSplits);
 
     /// @notice Add or remove tiers.
     /// @param tiersToAdd The tiers to add, as an array of `JB721TierConfig` structs.

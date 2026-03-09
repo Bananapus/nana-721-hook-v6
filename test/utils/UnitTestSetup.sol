@@ -43,6 +43,7 @@ contract UnitTestSetup is Test {
     address mockTerminalAddress;
     address mockJBProjects;
     address mockJBPermissions;
+    address mockJBSplits;
 
     string name = "NAME";
     string symbol = "SYM";
@@ -126,6 +127,7 @@ contract UnitTestSetup is Test {
         mockTerminalAddress = makeAddr("mockTerminalAddress");
         mockJBProjects = makeAddr("mockJBProjects");
         mockJBPermissions = makeAddr("mockJBPermissions");
+        mockJBSplits = makeAddr("mockJBSplits");
         mockJBController = makeAddr("mockJBController");
         mockTokenUriResolver = address(0);
 
@@ -203,6 +205,7 @@ contract UnitTestSetup is Test {
             IJBPermissions(mockJBPermissions),
             IJBRulesets(mockJBRulesets),
             IJB721TiersHookStore(store),
+            IJBSplits(mockJBSplits),
             trustedForwarder
         );
         addressRegistry = new JBAddressRegistry();
@@ -617,23 +620,26 @@ contract UnitTestSetup is Test {
 
         // Deploy the ForTest hook.
         tiersHook = new ForTest_JB721TiersHook(
-            projectId,
+            ForTest_JB721TiersHook.ForTestInitConfig({
+                projectId: projectId,
+                name: name,
+                symbol: symbol,
+                baseUri: baseUri,
+                tokenUriResolver: IJB721TokenUriResolver(mockTokenUriResolver),
+                contractUri: contractUri,
+                tiers: tierConfigs,
+                flags: JB721TiersHookFlags({
+                    preventOverspending: false,
+                    issueTokensForSplits: false,
+                    noNewTiersWithReserves: false,
+                    noNewTiersWithVotes: false,
+                    noNewTiersWithOwnerMinting: true
+                })
+            }),
             IJBDirectory(mockJBDirectory),
-            name,
-            symbol,
             IJBRulesets(mockJBRulesets),
-            baseUri,
-            IJB721TokenUriResolver(mockTokenUriResolver),
-            contractUri,
-            tierConfigs,
             IJB721TiersHookStore(address(hookStore)),
-            JB721TiersHookFlags({
-                preventOverspending: false,
-                issueTokensForSplits: false,
-                noNewTiersWithReserves: false,
-                noNewTiersWithVotes: false,
-                noNewTiersWithOwnerMinting: true
-            })
+            IJBSplits(mockJBSplits)
         );
 
         // Transfer the hook's ownership to owner.
