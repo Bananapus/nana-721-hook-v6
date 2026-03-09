@@ -235,8 +235,8 @@ Each tier has the following properties:
 - Voting units (optional). By default, each NFT's voting power equals its tier price. If `useVotingUnits` is true, a custom `votingUnits` value is used instead.
 - A flag to specify whether the NFTs in the tier can always be transferred, or if transfers can be paused depending on the project's ruleset.
 - A flag to specify whether the contract's owner can mint NFTs from the tier on-demand.
-- A split percent and a set of splits (optional). Each tier can route a percentage of its mint price to configured split recipients (other projects, addresses, etc.) every time an NFT from the tier is purchased. The remaining funds stay in the project's balance. The `splitPercent` is out of `JBConstants.SPLITS_TOTAL_PERCENT` (1,000,000,000).
-- A set of flags which restrict tiers added in the future (the votes/reserved frequency/on-demand minting/overspending flags noted above).
+- A split percent and a set of splits (optional). Each tier can route a percentage of its mint price to configured split recipients (other projects, addresses, etc.) every time an NFT from the tier is purchased. The remaining funds stay in the project's balance. The `splitPercent` is out of `JBConstants.SPLITS_TOTAL_PERCENT` (1,000,000,000). When splits are active, the hook adjusts the returned weight so the terminal only mints tokens proportional to the amount that actually enters the project treasury (e.g., a 50% split on a 1 ETH payment results in half the normal token issuance). This weight adjustment can be disabled with the `issueTokensForSplits` flag, which gives payers full token credit regardless of where the funds go.
+- A set of flags which restrict tiers added in the future (the votes/reserved frequency/on-demand minting/overspending/issueTokensForSplits flags noted above).
 
 Additional notes:
 

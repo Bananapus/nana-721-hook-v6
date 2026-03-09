@@ -22,6 +22,7 @@ import {IJB721TiersHook} from "./interfaces/IJB721TiersHook.sol";
 import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "./interfaces/IJB721TokenUriResolver.sol";
 import {JB721TiersHookLib} from "./libraries/JB721TiersHookLib.sol";
+import {mulDiv} from "@prb/math/src/Common.sol";
 import {JB721TiersRulesetMetadataResolver} from "./libraries/JB721TiersRulesetMetadataResolver.sol";
 import {JB721InitTiersConfig} from "./structs/JB721InitTiersConfig.sol";
 import {JB721Tier} from "./structs/JB721Tier.sol";
@@ -162,7 +163,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @notice The data calculated before a payment is recorded in the terminal store.
     /// @dev Overrides the base to calculate the split amount to forward based on tier split percentages.
     /// @param context The payment context.
-    /// @return weight The weight to use for token minting (unchanged from ruleset weight).
+    /// @return weight The weight to use for token minting, adjusted down when tier splits route funds away from the
+    /// project (unless `issueTokensForSplits` is set).
     /// @return hookSpecifications The hook specifications, with the split amount to forward.
     function beforePayRecordedWith(JBBeforePayRecordedContext calldata context)
         public
@@ -171,12 +173,23 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         override(JB721Hook, IJBRulesetDataHook)
         returns (uint256 weight, JBPayHookSpecification[] memory hookSpecifications)
     {
-        weight = context.weight;
         hookSpecifications = new JBPayHookSpecification[](1);
 
         // Calculate per-tier split amounts via the library.
         (uint256 totalSplitAmount, bytes memory splitMetadata) =
             JB721TiersHookLib.calculateSplitAmounts(STORE, address(this), METADATA_ID_TARGET, context.metadata);
+
+        // Adjust weight so the terminal mints tokens only for the amount that actually enters the project.
+        if (totalSplitAmount == 0 || STORE.flagsOf(address(this)).issueTokensForSplits) {
+            // No splits, or hook configured to give full token credit regardless — full weight.
+            weight = context.weight;
+        } else if (context.amount.value > totalSplitAmount) {
+            // Partial splits — scale weight by the fraction that enters the project.
+            weight = mulDiv(context.weight, context.amount.value - totalSplitAmount, context.amount.value);
+        } else {
+            // Splits consume the entire payment — no tokens should be minted.
+            weight = 0;
+        }
 
         hookSpecifications[0] = JBPayHookSpecification({hook: this, amount: totalSplitAmount, metadata: splitMetadata});
     }
@@ -255,7 +268,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // Set the flags if needed.
         if (
             flags.noNewTiersWithReserves || flags.noNewTiersWithVotes || flags.noNewTiersWithOwnerMinting
-                || flags.preventOverspending
+                || flags.preventOverspending || flags.issueTokensForSplits
         ) STORE.recordFlags(flags);
 
         // Transfer ownership to the initializer.
