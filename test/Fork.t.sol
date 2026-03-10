@@ -340,7 +340,7 @@ contract Fork_721Hook_Test is Test {
 
     /// @dev Build pay metadata that requests specific tier IDs. `allowOverspending` controls revert behavior.
     function _buildPayMetadata(
-        address hook,
+        address,
         uint16[] memory tierIds,
         bool allowOverspending
     )
@@ -356,7 +356,7 @@ contract Fork_721Hook_Test is Test {
     }
 
     /// @dev Build cash out metadata that specifies token IDs to burn.
-    function _buildCashOutMetadata(address hook, uint256[] memory tokenIds) internal view returns (bytes memory) {
+    function _buildCashOutMetadata(address, uint256[] memory tokenIds) internal view returns (bytes memory) {
         bytes[] memory data = new bytes[](1);
         data[0] = abi.encode(tokenIds);
         bytes4[] memory ids = new bytes4[](1);
@@ -729,7 +729,7 @@ contract Fork_721Hook_Test is Test {
         tierConfigs[0].reserveFrequency = 0; // Initial tier has no reserves (allowed).
         JB721TiersHookFlags memory flags = _defaultFlags();
         flags.noNewTiersWithReserves = true;
-        (uint256 projectId, address hook) = _launchProject(tierConfigs, flags, 5000, true, 0x00);
+        (, address hook) = _launchProject(tierConfigs, flags, 5000, true, 0x00);
 
         // Try to add a new tier with reserves.
         JB721TierConfig[] memory newTiers = new JB721TierConfig[](1);
@@ -762,7 +762,7 @@ contract Fork_721Hook_Test is Test {
         JB721TierConfig[] memory tierConfigs = _makeStandardTiers(1, 10, false);
         JB721TiersHookFlags memory flags = _defaultFlags();
         flags.noNewTiersWithOwnerMinting = true;
-        (uint256 projectId, address hook) = _launchProject(tierConfigs, flags, 5000, true, 0x00);
+        (, address hook) = _launchProject(tierConfigs, flags, 5000, true, 0x00);
 
         JB721TierConfig[] memory newTiers = new JB721TierConfig[](1);
         newTiers[0] = JB721TierConfig({
@@ -794,7 +794,7 @@ contract Fork_721Hook_Test is Test {
         JB721TierConfig[] memory tierConfigs = _makeStandardTiers(1, 10, false);
         tierConfigs[0].cannotBeRemoved = true;
         JB721TiersHookFlags memory flags = _defaultFlags();
-        (uint256 projectId, address hook) = _launchProject(tierConfigs, flags, 5000, true, 0x00);
+        (, address hook) = _launchProject(tierConfigs, flags, 5000, true, 0x00);
 
         uint256[] memory toRemove = new uint256[](1);
         toRemove[0] = 1;
@@ -859,7 +859,7 @@ contract Fork_721Hook_Test is Test {
         tierConfigs[0].discountPercent = 50;
         tierConfigs[0].cannotIncreaseDiscountPercent = true;
         JB721TiersHookFlags memory flags = _defaultFlags();
-        (uint256 projectId, address hook) = _launchProject(tierConfigs, flags, 5000, true, 0x00);
+        (, address hook) = _launchProject(tierConfigs, flags, 5000, true, 0x00);
 
         vm.prank(multisig);
         vm.expectRevert();
@@ -1032,7 +1032,7 @@ contract Fork_721Hook_Test is Test {
         JB721TierConfig[] memory tierConfigs = _makeStandardTiers(1, 10, true); // allowOwnerMint=true
         tierConfigs[0].reserveFrequency = 0; // No reserves (required: can't have both).
         JB721TiersHookFlags memory flags = _defaultFlags();
-        (uint256 projectId, address hook) = _launchProject(tierConfigs, flags, 5000, true, 0x00);
+        (, address hook) = _launchProject(tierConfigs, flags, 5000, true, 0x00);
 
         uint16[] memory tierIds = new uint16[](2);
         tierIds[0] = 1;
@@ -1049,7 +1049,7 @@ contract Fork_721Hook_Test is Test {
         JB721TierConfig[] memory tierConfigs = _makeStandardTiers(1, 10, true);
         tierConfigs[0].reserveFrequency = 0;
         JB721TiersHookFlags memory flags = _defaultFlags();
-        (uint256 projectId, address hook) = _launchProject(tierConfigs, flags, 5000, true, 0x00);
+        (, address hook) = _launchProject(tierConfigs, flags, 5000, true, 0x00);
 
         uint16[] memory tierIds = new uint16[](1);
         tierIds[0] = 1;
@@ -1403,7 +1403,7 @@ contract Fork_721Hook_Test is Test {
 
     /// @notice Calling initialize() again on a deployed hook should revert.
     function test_fork_reInitialize_reverts() public {
-        (uint256 projectId, address hook,) = _launchStandardProject();
+        (, address hook,) = _launchStandardProject();
 
         JB721TierConfig[] memory emptyTiers = new JB721TierConfig[](0);
 
@@ -1463,7 +1463,7 @@ contract Fork_721Hook_Test is Test {
 
     /// @notice Non-owner cannot adjustTiers.
     function test_fork_adjustTiers_noPermission_reverts() public {
-        (uint256 projectId, address hook,) = _launchStandardProject();
+        (, address hook,) = _launchStandardProject();
 
         JB721TierConfig[] memory newTiers = new JB721TierConfig[](1);
         newTiers[0] = JB721TierConfig({
@@ -1901,7 +1901,7 @@ contract Fork_721Hook_Test is Test {
         JB721TiersHookFlags memory flags = _defaultFlags();
 
         (uint256 projectId1, address hook1) = _launchProject(tierConfigs, flags, 5000, true, 0x00);
-        (uint256 projectId2, address hook2) = _launchProject(tierConfigs, flags, 5000, true, 0x00);
+        (, address hook2) = _launchProject(tierConfigs, flags, 5000, true, 0x00);
 
         assertTrue(hook1 != hook2, "hooks are different clones");
 
@@ -1984,7 +1984,7 @@ contract Fork_721Hook_Test is Test {
         uint24 category
     )
         internal
-        view
+        pure
         returns (JB721TierConfig memory)
     {
         return JB721TierConfig({

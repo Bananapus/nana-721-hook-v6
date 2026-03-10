@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 import {stdJson} from "forge-std/Script.sol";
 import {Vm} from "forge-std/Vm.sol";
 
-import {SphinxConstants, NetworkInfo} from "@sphinx-labs/contracts/contracts/foundry/SphinxConstants.sol";
+import {SphinxConstants, NetworkInfo} from "@sphinx-labs/contracts/SphinxConstants.sol";
 
 import {IJB721TiersHookDeployer} from "../../src/interfaces/IJB721TiersHookDeployer.sol";
 import {IJB721TiersHookProjectDeployer} from "../../src/interfaces/IJB721TiersHookProjectDeployer.sol";
