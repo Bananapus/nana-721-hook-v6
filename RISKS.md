@@ -90,10 +90,10 @@ Deep implementation-level risk analysis covering all contracts in the 721 tiered
 ### R-9: Price Feed Dependency -- DoS Vector
 
 - **Severity**: MEDIUM
-- **Location**: `JB721TiersHookLib.sol` lines 121-138 (`normalizePaymentValue`)
-- **Description**: When the hook's pricing currency differs from the payment currency and a `JBPrices` contract is configured, the hook calls `prices.pricePerUnitOf()` to normalize the payment value. If the price feed reverts (e.g., stale Chainlink data, sequencer down on L2), all payments in non-native currencies will revert. This is a DoS vector but not a fund-loss vector.
-- **Tested**: NOT directly tested for the revert-on-stale-feed scenario.
-- **Mitigation**: If `address(prices) == address(0)`, payments in non-matching currencies silently return `(0, false)` and the hook skips minting (line 600). Projects using cross-currency pricing should monitor feed health.
+- **Location**: `JB721TiersHookLib.sol` — `normalizePaymentValue` and `convertSplitAmounts`
+- **Description**: When the hook's pricing currency differs from the payment currency and a `JBPrices` contract is configured, the hook calls `prices.pricePerUnitOf()` in two places: (1) `normalizePaymentValue` to convert the payment amount for tier price comparison, and (2) `convertSplitAmounts` to convert per-tier split amounts back to the payment token denomination for forwarding. If the price feed reverts (e.g., stale Chainlink data, sequencer down on L2), all payments in non-native currencies will revert. This is a DoS vector but not a fund-loss vector.
+- **Tested**: Cross-currency split conversion is tested in `deploy-all-v6/test/fork/CrossCurrencyFork.t.sol` (USD-priced tiers paid with USDC). The revert-on-stale-feed scenario is not directly tested.
+- **Mitigation**: If `address(prices) == address(0)`, payments in non-matching currencies silently return `(0, false)` and the hook skips minting. `convertSplitAmounts` also returns early if no prices contract is set. Projects using cross-currency pricing should monitor feed health.
 
 ### R-10: Large Tier Array Gas Exhaustion
 
@@ -285,7 +285,7 @@ An attacker could observe a large cash-out and front-run it with their own cash-
 ### Notable Coverage Gaps
 
 1. **No reentrancy test** for the split distribution `.call{value}` path.
-2. **No price feed failure test** for cross-currency payment scenarios.
+2. **No price feed failure test** for stale/reverting feed scenarios (cross-currency payment and split conversion are tested with live feeds in `deploy-all-v6`).
 3. **No gas limit test** for operations with many tiers (hundreds+).
 4. **No test** for token URI resolver returning malicious/reverting data.
 5. **No test** for `initialize()` front-running on deterministic clones.
