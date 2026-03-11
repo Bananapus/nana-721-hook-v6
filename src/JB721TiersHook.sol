@@ -191,6 +191,18 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         (uint256 totalSplitAmount, bytes memory splitMetadata) =
             JB721TiersHookLib.calculateSplitAmounts(STORE, address(this), METADATA_ID_TARGET, context.metadata);
 
+        // Convert split amounts from tier pricing to payment token denomination if currencies differ.
+        if (totalSplitAmount != 0) {
+            (totalSplitAmount, splitMetadata) = JB721TiersHookLib.convertSplitAmounts(
+                totalSplitAmount,
+                splitMetadata,
+                _packedPricingContext,
+                context.projectId,
+                context.amount.currency,
+                context.amount.decimals
+            );
+        }
+
         // Adjust weight so the terminal mints tokens only for the amount that actually enters the project.
         if (totalSplitAmount == 0 || STORE.flagsOf(address(this)).issueTokensForSplits) {
             // No splits, or hook configured to give full token credit regardless — full weight.
