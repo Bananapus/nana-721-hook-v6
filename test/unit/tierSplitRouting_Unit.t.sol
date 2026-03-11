@@ -6,7 +6,18 @@ import {IJB721TiersHookStore} from "../../src/interfaces/IJB721TiersHookStore.so
 import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 import {IJBSplitHook} from "@bananapus/core-v6/src/interfaces/IJBSplitHook.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
+import {IJBTerminal} from "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
+import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 import {JB721TiersHookFlags} from "../../src/structs/JB721TiersHookFlags.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+contract MockERC20 is ERC20 {
+    constructor() ERC20("Mock Token", "MOCK") {}
+
+    function mint(address to, uint256 amount) external {
+        _mint(to, amount);
+    }
+}
 
 contract Test_TierSplitRouting is UnitTestSetup {
     using stdStorage for StdStorage;
@@ -485,5 +496,275 @@ contract Test_TierSplitRouting is UnitTestSetup {
 
         // Flag set — weight should be full despite 100% split consuming entire payment.
         assertEq(weight, 10e18);
+    }
+
+    // ──────────────────────────────────────────────
+    // ERC20 Tests: afterPayRecordedWith with ERC20 tokens
+    // ──────────────────────────────────────────────
+
+    /// @notice Helper: set up an ERC20 tier split test. Returns (hook, tierIds, mockToken).
+    function _setupERC20TierSplit()
+        internal
+        returns (JB721TiersHook testHook, uint256[] memory tierIds, MockERC20 token)
+    {
+        // Deploy mock ERC20.
+        token = new MockERC20();
+
+        // Initialize hook with ERC20 currency (0 default tiers).
+        testHook = _initHookDefaultTiers(0, false, uint32(uint160(address(token))), 18, address(0));
+        IJB721TiersHookStore hookStore = testHook.STORE();
+
+        // Add a tier with 50% split, priced at 100 tokens.
+        JB721TierConfig[] memory tierConfigs = new JB721TierConfig[](1);
+        tierConfigs[0] = _tierConfigWithSplit(100, 500_000_000); // 50%
+        vm.prank(address(testHook));
+        tierIds = hookStore.recordAddTiers(tierConfigs);
+
+        // Mock directory checks.
+        mockAndExpect(
+            address(mockJBDirectory),
+            abi.encodeWithSelector(IJBDirectory.isTerminalOf.selector, projectId, mockTerminalAddress),
+            abi.encode(true)
+        );
+    }
+
+    /// @notice Helper: build afterPayRecordedWith context for ERC20 payments.
+    function _buildERC20PayContext(
+        JB721TiersHook testHook,
+        uint256[] memory tierIds,
+        address token,
+        uint256 payAmount,
+        uint256 forwardedAmount
+    )
+        internal
+        view
+        returns (JBAfterPayRecordedContext memory)
+    {
+        uint16[] memory mintIds = new uint16[](1);
+        mintIds[0] = uint16(tierIds[0]);
+        // Use METADATA_ID_TARGET (the original hook address) for metadata resolution.
+        bytes memory payerMetadata = _buildPayerMetadata(testHook.METADATA_ID_TARGET(), mintIds);
+
+        uint16[] memory splitTierIds = new uint16[](1);
+        splitTierIds[0] = uint16(tierIds[0]);
+        uint256[] memory splitAmounts = new uint256[](1);
+        splitAmounts[0] = forwardedAmount;
+
+        return JBAfterPayRecordedContext({
+            payer: beneficiary,
+            projectId: projectId,
+            rulesetId: 0,
+            amount: JBTokenAmount({
+                token: token,
+                value: payAmount,
+                decimals: 18,
+                currency: uint32(uint160(token))
+            }),
+            forwardedAmount: JBTokenAmount({
+                token: token,
+                value: forwardedAmount,
+                decimals: 18,
+                currency: uint32(uint160(token))
+            }),
+            weight: 10e18,
+            newlyIssuedTokenCount: 0,
+            beneficiary: beneficiary,
+            hookMetadata: abi.encode(splitTierIds, splitAmounts),
+            payerMetadata: payerMetadata
+        });
+    }
+
+    function test_afterPayRecorded_erc20_distributesToBeneficiary() public {
+        (JB721TiersHook testHook, uint256[] memory tierIds, MockERC20 token) = _setupERC20TierSplit();
+
+        // Mock splits: alice gets 100%.
+        JBSplit[] memory splits = new JBSplit[](1);
+        splits[0] = JBSplit({
+            percent: uint32(JBConstants.SPLITS_TOTAL_PERCENT),
+            projectId: 0,
+            beneficiary: payable(alice),
+            preferAddToBalance: false,
+            lockedUntil: 0,
+            hook: IJBSplitHook(address(0))
+        });
+
+        uint256 groupId = uint256(uint160(address(testHook))) | (uint256(tierIds[0]) << 160);
+        mockAndExpect(
+            mockJBSplits, abi.encodeWithSelector(IJBSplits.splitsOf.selector, projectId, 0, groupId), abi.encode(splits)
+        );
+
+        // Give terminal the ERC20 tokens and approve the hook.
+        token.mint(mockTerminalAddress, 100);
+        vm.prank(mockTerminalAddress);
+        token.approve(address(testHook), 50);
+
+        JBAfterPayRecordedContext memory payContext =
+            _buildERC20PayContext(testHook, tierIds, address(token), 100, 50);
+
+        vm.prank(mockTerminalAddress);
+        testHook.afterPayRecordedWith(payContext);
+
+        // Alice should have received 50 tokens.
+        assertEq(token.balanceOf(alice), 50);
+        // NFT should have been minted.
+        assertEq(testHook.balanceOf(beneficiary), 1);
+    }
+
+    function test_afterPayRecorded_erc20_splitToProject_addToBalance() public {
+        (JB721TiersHook testHook, uint256[] memory tierIds, MockERC20 token) = _setupERC20TierSplit();
+
+        // Target project for split.
+        uint256 targetProjectId = 99;
+        address targetTerminal = makeAddr("targetTerminal");
+        vm.etch(targetTerminal, new bytes(0x69));
+
+        // Mock splits: 100% to target project with preferAddToBalance.
+        JBSplit[] memory splits = new JBSplit[](1);
+        splits[0] = JBSplit({
+            percent: uint32(JBConstants.SPLITS_TOTAL_PERCENT),
+            projectId: uint56(targetProjectId),
+            beneficiary: payable(address(0)),
+            preferAddToBalance: true,
+            lockedUntil: 0,
+            hook: IJBSplitHook(address(0))
+        });
+
+        uint256 groupId = uint256(uint160(address(testHook))) | (uint256(tierIds[0]) << 160);
+        mockAndExpect(
+            mockJBSplits, abi.encodeWithSelector(IJBSplits.splitsOf.selector, projectId, 0, groupId), abi.encode(splits)
+        );
+
+        // Mock directory: target project's primary terminal.
+        mockAndExpect(
+            address(mockJBDirectory),
+            abi.encodeWithSelector(IJBDirectory.primaryTerminalOf.selector, targetProjectId, address(token)),
+            abi.encode(targetTerminal)
+        );
+
+        // Mock the addToBalanceOf call on the target terminal.
+        vm.mockCall(
+            targetTerminal,
+            abi.encodeWithSelector(IJBTerminal.addToBalanceOf.selector),
+            abi.encode()
+        );
+
+        // Give terminal the ERC20 tokens and approve the hook.
+        token.mint(mockTerminalAddress, 100);
+        vm.prank(mockTerminalAddress);
+        token.approve(address(testHook), 50);
+
+        JBAfterPayRecordedContext memory payContext =
+            _buildERC20PayContext(testHook, tierIds, address(token), 100, 50);
+
+        vm.prank(mockTerminalAddress);
+        testHook.afterPayRecordedWith(payContext);
+
+        // Hook approved the target terminal (library calls forceApprove before addToBalanceOf).
+        // Mock terminal doesn't pull, so hook still holds the tokens. Verify approval was set.
+        assertGe(token.allowance(address(testHook), targetTerminal), 50);
+        assertEq(testHook.balanceOf(beneficiary), 1);
+    }
+
+    function test_afterPayRecorded_erc20_splitToProject_pay() public {
+        (JB721TiersHook testHook, uint256[] memory tierIds, MockERC20 token) = _setupERC20TierSplit();
+
+        uint256 targetProjectId = 99;
+        address targetTerminal = makeAddr("targetTerminal");
+        vm.etch(targetTerminal, new bytes(0x69));
+
+        // Mock splits: 100% to target project with preferAddToBalance = false (pay).
+        JBSplit[] memory splits = new JBSplit[](1);
+        splits[0] = JBSplit({
+            percent: uint32(JBConstants.SPLITS_TOTAL_PERCENT),
+            projectId: uint56(targetProjectId),
+            beneficiary: payable(alice),
+            preferAddToBalance: false,
+            lockedUntil: 0,
+            hook: IJBSplitHook(address(0))
+        });
+
+        uint256 groupId = uint256(uint160(address(testHook))) | (uint256(tierIds[0]) << 160);
+        mockAndExpect(
+            mockJBSplits, abi.encodeWithSelector(IJBSplits.splitsOf.selector, projectId, 0, groupId), abi.encode(splits)
+        );
+
+        // Mock directory: target project's primary terminal.
+        mockAndExpect(
+            address(mockJBDirectory),
+            abi.encodeWithSelector(IJBDirectory.primaryTerminalOf.selector, targetProjectId, address(token)),
+            abi.encode(targetTerminal)
+        );
+
+        // Mock the pay call on the target terminal.
+        vm.mockCall(
+            targetTerminal,
+            abi.encodeWithSelector(IJBTerminal.pay.selector),
+            abi.encode(0)
+        );
+
+        // Give terminal the ERC20 tokens and approve the hook.
+        token.mint(mockTerminalAddress, 100);
+        vm.prank(mockTerminalAddress);
+        token.approve(address(testHook), 50);
+
+        JBAfterPayRecordedContext memory payContext =
+            _buildERC20PayContext(testHook, tierIds, address(token), 100, 50);
+
+        vm.prank(mockTerminalAddress);
+        testHook.afterPayRecordedWith(payContext);
+
+        // Hook approved the target terminal (library calls forceApprove before pay).
+        assertGe(token.allowance(address(testHook), targetTerminal), 50);
+        assertEq(testHook.balanceOf(beneficiary), 1);
+    }
+
+    function test_afterPayRecorded_erc20_noBeneficiary_routesToProjectBalance() public {
+        (JB721TiersHook testHook, uint256[] memory tierIds, MockERC20 token) = _setupERC20TierSplit();
+
+        // Mock splits: no beneficiary and no projectId — leftover goes to project balance.
+        JBSplit[] memory splits = new JBSplit[](1);
+        splits[0] = JBSplit({
+            percent: uint32(JBConstants.SPLITS_TOTAL_PERCENT),
+            projectId: 0,
+            beneficiary: payable(address(0)),
+            preferAddToBalance: false,
+            lockedUntil: 0,
+            hook: IJBSplitHook(address(0))
+        });
+
+        uint256 groupId = uint256(uint160(address(testHook))) | (uint256(tierIds[0]) << 160);
+        mockAndExpect(
+            mockJBSplits, abi.encodeWithSelector(IJBSplits.splitsOf.selector, projectId, 0, groupId), abi.encode(splits)
+        );
+
+        // Mock the project's primary terminal for the leftover addToBalance.
+        address projectTerminal = makeAddr("projectTerminal");
+        vm.etch(projectTerminal, new bytes(0x69));
+        mockAndExpect(
+            address(mockJBDirectory),
+            abi.encodeWithSelector(IJBDirectory.primaryTerminalOf.selector, projectId, address(token)),
+            abi.encode(projectTerminal)
+        );
+
+        vm.mockCall(
+            projectTerminal,
+            abi.encodeWithSelector(IJBTerminal.addToBalanceOf.selector),
+            abi.encode()
+        );
+
+        // Give terminal the ERC20 tokens and approve the hook.
+        token.mint(mockTerminalAddress, 100);
+        vm.prank(mockTerminalAddress);
+        token.approve(address(testHook), 50);
+
+        JBAfterPayRecordedContext memory payContext =
+            _buildERC20PayContext(testHook, tierIds, address(token), 100, 50);
+
+        vm.prank(mockTerminalAddress);
+        testHook.afterPayRecordedWith(payContext);
+
+        // Hook approved the project terminal (library calls forceApprove before addToBalanceOf).
+        assertGe(token.allowance(address(testHook), projectTerminal), 50);
+        assertEq(testHook.balanceOf(beneficiary), 1);
     }
 }
