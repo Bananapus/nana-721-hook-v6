@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 import "@bananapus/core-v6/script/helpers/CoreDeploymentLib.sol";
 import "@bananapus/address-registry-v6/script/helpers/AddressRegistryDeploymentLib.sol";
 
-import {Sphinx} from "@sphinx-labs/contracts/SphinxPlugin.sol";
+import {Sphinx} from "@sphinx-labs/contracts/contracts/foundry/SphinxPlugin.sol";
 import {Script} from "forge-std/Script.sol";
 
 import {JB721TiersHookDeployer} from "../src/JB721TiersHookDeployer.sol";
