@@ -90,10 +90,10 @@ Deep implementation-level risk analysis covering all contracts in the 721 tiered
 ### R-9: Price Feed Dependency -- DoS Vector
 
 - **Severity**: MEDIUM
-- **Location**: `JB721TiersHookLib.sol` lines 121-138 (`normalizePaymentValue`)
-- **Description**: When the hook's pricing currency differs from the payment currency and a `JBPrices` contract is configured, the hook calls `prices.pricePerUnitOf()` to normalize the payment value. If the price feed reverts (e.g., stale Chainlink data, sequencer down on L2), all payments in non-native currencies will revert. This is a DoS vector but not a fund-loss vector.
-- **Tested**: NOT directly tested for the revert-on-stale-feed scenario.
-- **Mitigation**: If `address(prices) == address(0)`, payments in non-matching currencies silently return `(0, false)` and the hook skips minting (line 600). Projects using cross-currency pricing should monitor feed health.
+- **Location**: `JB721TiersHookLib.sol` — `normalizePaymentValue` and `convertSplitAmounts`
+- **Description**: When the hook's pricing currency differs from the payment currency and a `JBPrices` contract is configured, the hook calls `prices.pricePerUnitOf()` in two places: (1) `normalizePaymentValue` to convert the payment amount for tier price comparison, and (2) `convertSplitAmounts` to convert per-tier split amounts back to the payment token denomination for forwarding. If the price feed reverts (e.g., stale Chainlink data, sequencer down on L2), all payments in non-native currencies will revert. This is a DoS vector but not a fund-loss vector.
+- **Tested**: YES — `test/unit/pay_CrossCurrency_Unit.t.sol` tests 8-9 verify reverting price feeds block both `normalizePaymentValue` and `convertSplitAmounts`. Live cross-currency split conversion tested in `deploy-all-v6/test/fork/CrossCurrencyFork.t.sol`.
+- **Mitigation**: If `address(prices) == address(0)`, payments in non-matching currencies silently return `(0, false)` and the hook skips minting. `convertSplitAmounts` also returns early if no prices contract is set. Projects using cross-currency pricing should monitor feed health.
 
 ### R-10: Large Tier Array Gas Exhaustion
 
@@ -258,7 +258,7 @@ An attacker could observe a large cash-out and front-run it with their own cash-
 | R-6 Soft removal cash-out weight | YES (attacks t5) | YES (INV-721-2) | YES |
 | R-7 Pay credit payer/beneficiary | PARTIAL | YES (INV-721-3) | YES |
 | R-8 Reserve supply protection | YES (M6) | YES (INV-721-1,4) | YES |
-| R-9 Price feed DoS | NO | NO | NO |
+| R-9 Price feed DoS | YES (cc t8-t9) | NO | NO |
 | R-10 Large tier array gas | PARTIAL | NO | NO |
 | R-11 Metadata decode silent skip | PARTIAL | NO | NO |
 | R-12 ERC-721 receiver DoS | NO | NO | NO |
@@ -285,7 +285,7 @@ An attacker could observe a large cash-out and front-run it with their own cash-
 ### Notable Coverage Gaps
 
 1. **No reentrancy test** for the split distribution `.call{value}` path.
-2. **No price feed failure test** for cross-currency payment scenarios.
+2. **Price feed failure** is tested: `test/unit/pay_CrossCurrency_Unit.t.sol` tests 8-9 verify reverting price feeds block both payment normalization and split conversion. Live feed integration tested in `deploy-all-v6`.
 3. **No gas limit test** for operations with many tiers (hundreds+).
 4. **No test** for token URI resolver returning malicious/reverting data.
 5. **No test** for `initialize()` front-running on deterministic clones.

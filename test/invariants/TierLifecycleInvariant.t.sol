@@ -76,7 +76,6 @@ contract TierLifecycleInvariant_Local is StdInvariant, UnitTestSetup {
     function invariant_721_2_totalCashOutWeightConsistency() public {
         uint256 totalWeight = store.totalCashOutWeight(address(hook));
 
-        uint256 maxTierId = store.maxTierIdOf(address(hook));
         uint256 computedWeight = 0;
 
         uint256[] memory categories = new uint256[](0);
@@ -175,7 +174,6 @@ contract TierLifecycleInvariant_Local is StdInvariant, UnitTestSetup {
         JB721Tier[] memory allTiers = store.tiersOf(address(hook), categories, false, 0, 100);
 
         for (uint256 i = 0; i < allTiers.length; i++) {
-            uint256 tierId = allTiers[i].id;
             uint256 price = allTiers[i].price;
 
             // Cash out weight per token for this tier is just `price` (from the store)

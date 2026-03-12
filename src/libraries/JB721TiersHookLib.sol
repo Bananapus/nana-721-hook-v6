@@ -189,6 +189,50 @@ library JB721TiersHookLib {
         }
     }
 
+    /// @notice Converts split amounts from tier pricing denomination to payment token denomination.
+    /// @dev Called after `calculateSplitAmounts` when the payment currency differs from the tier pricing currency.
+    /// @param totalSplitAmount The total split amount in tier pricing denomination.
+    /// @param splitMetadata The encoded per-tier breakdown (tierIds, amounts) from calculateSplitAmounts.
+    /// @param packedPricingContext The packed pricing context (currency, decimals, prices address).
+    /// @param projectId The project ID.
+    /// @param amountCurrency The payment amount currency.
+    /// @param amountDecimals The payment amount decimals.
+    /// @return convertedTotal The total split amount converted to payment token denomination.
+    /// @return convertedMetadata The re-encoded per-tier breakdown with converted amounts.
+    function convertSplitAmounts(
+        uint256 totalSplitAmount,
+        bytes memory splitMetadata,
+        uint256 packedPricingContext,
+        uint256 projectId,
+        uint256 amountCurrency,
+        uint256 amountDecimals
+    )
+        external
+        view
+        returns (uint256 convertedTotal, bytes memory convertedMetadata)
+    {
+        uint256 pricingCurrency = uint256(uint32(packedPricingContext));
+        if (amountCurrency == pricingCurrency) return (totalSplitAmount, splitMetadata);
+
+        IJBPrices prices = IJBPrices(address(uint160(packedPricingContext >> 40)));
+        if (address(prices) == address(0)) return (totalSplitAmount, splitMetadata);
+
+        uint256 pricingDecimals = uint256(uint8(packedPricingContext >> 32));
+        uint256 ratio = prices.pricePerUnitOf({
+            projectId: projectId,
+            pricingCurrency: amountCurrency,
+            unitCurrency: pricingCurrency,
+            decimals: amountDecimals
+        });
+
+        (uint16[] memory tierIds, uint256[] memory amounts) = abi.decode(splitMetadata, (uint16[], uint256[]));
+        for (uint256 i; i < amounts.length; i++) {
+            amounts[i] = mulDiv(amounts[i], ratio, 10 ** pricingDecimals);
+            convertedTotal += amounts[i];
+        }
+        convertedMetadata = abi.encode(tierIds, amounts);
+    }
+
     /// @notice Sets split groups in JBSplits for tiers that have splits configured.
     function _setSplitGroupsFor(
         IJBSplits splits,

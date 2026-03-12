@@ -26,13 +26,18 @@ src/
 ### NFT Minting (via Payment)
 ```
 User → JBMultiTerminal.pay(metadata)
+  → beforePayRecordedWith()
+    → calculateSplitAmounts(): per-tier split amounts (in tier pricing denomination)
+    → convertSplitAmounts(): convert to payment token denomination (if currencies differ)
+    → Adjust weight down by split fraction
   → JBTerminalStore records payment
-  → JB721TiersHook.afterPayRecordedWith()
+  → afterPayRecordedWith()
     → Decode tier IDs from metadata
     → For each tier:
       → Validate: not removed, not paused, supply available
-      → Check price (with optional discount)
+      → Check price (with optional discount, normalized to tier pricing currency)
       → Mint NFT to beneficiary
+    → Distribute split funds to tier split recipients
     → Leftover amount optionally mints best-available tiers
 ```
 
