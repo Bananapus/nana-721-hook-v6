@@ -554,17 +554,9 @@ contract Test_TierSplitRouting is UnitTestSetup {
             payer: beneficiary,
             projectId: projectId,
             rulesetId: 0,
-            amount: JBTokenAmount({
-                token: token,
-                value: payAmount,
-                decimals: 18,
-                currency: uint32(uint160(token))
-            }),
+            amount: JBTokenAmount({token: token, value: payAmount, decimals: 18, currency: uint32(uint160(token))}),
             forwardedAmount: JBTokenAmount({
-                token: token,
-                value: forwardedAmount,
-                decimals: 18,
-                currency: uint32(uint160(token))
+                token: token, value: forwardedAmount, decimals: 18, currency: uint32(uint160(token))
             }),
             weight: 10e18,
             newlyIssuedTokenCount: 0,
@@ -598,8 +590,7 @@ contract Test_TierSplitRouting is UnitTestSetup {
         vm.prank(mockTerminalAddress);
         token.approve(address(testHook), 50);
 
-        JBAfterPayRecordedContext memory payContext =
-            _buildERC20PayContext(testHook, tierIds, address(token), 100, 50);
+        JBAfterPayRecordedContext memory payContext = _buildERC20PayContext(testHook, tierIds, address(token), 100, 50);
 
         vm.prank(mockTerminalAddress);
         testHook.afterPayRecordedWith(payContext);
@@ -642,19 +633,14 @@ contract Test_TierSplitRouting is UnitTestSetup {
         );
 
         // Mock the addToBalanceOf call on the target terminal.
-        vm.mockCall(
-            targetTerminal,
-            abi.encodeWithSelector(IJBTerminal.addToBalanceOf.selector),
-            abi.encode()
-        );
+        vm.mockCall(targetTerminal, abi.encodeWithSelector(IJBTerminal.addToBalanceOf.selector), abi.encode());
 
         // Give terminal the ERC20 tokens and approve the hook.
         token.mint(mockTerminalAddress, 100);
         vm.prank(mockTerminalAddress);
         token.approve(address(testHook), 50);
 
-        JBAfterPayRecordedContext memory payContext =
-            _buildERC20PayContext(testHook, tierIds, address(token), 100, 50);
+        JBAfterPayRecordedContext memory payContext = _buildERC20PayContext(testHook, tierIds, address(token), 100, 50);
 
         vm.prank(mockTerminalAddress);
         testHook.afterPayRecordedWith(payContext);
@@ -696,19 +682,14 @@ contract Test_TierSplitRouting is UnitTestSetup {
         );
 
         // Mock the pay call on the target terminal.
-        vm.mockCall(
-            targetTerminal,
-            abi.encodeWithSelector(IJBTerminal.pay.selector),
-            abi.encode(0)
-        );
+        vm.mockCall(targetTerminal, abi.encodeWithSelector(IJBTerminal.pay.selector), abi.encode(0));
 
         // Give terminal the ERC20 tokens and approve the hook.
         token.mint(mockTerminalAddress, 100);
         vm.prank(mockTerminalAddress);
         token.approve(address(testHook), 50);
 
-        JBAfterPayRecordedContext memory payContext =
-            _buildERC20PayContext(testHook, tierIds, address(token), 100, 50);
+        JBAfterPayRecordedContext memory payContext = _buildERC20PayContext(testHook, tierIds, address(token), 100, 50);
 
         vm.prank(mockTerminalAddress);
         testHook.afterPayRecordedWith(payContext);
@@ -746,19 +727,14 @@ contract Test_TierSplitRouting is UnitTestSetup {
             abi.encode(projectTerminal)
         );
 
-        vm.mockCall(
-            projectTerminal,
-            abi.encodeWithSelector(IJBTerminal.addToBalanceOf.selector),
-            abi.encode()
-        );
+        vm.mockCall(projectTerminal, abi.encodeWithSelector(IJBTerminal.addToBalanceOf.selector), abi.encode());
 
         // Give terminal the ERC20 tokens and approve the hook.
         token.mint(mockTerminalAddress, 100);
         vm.prank(mockTerminalAddress);
         token.approve(address(testHook), 50);
 
-        JBAfterPayRecordedContext memory payContext =
-            _buildERC20PayContext(testHook, tierIds, address(token), 100, 50);
+        JBAfterPayRecordedContext memory payContext = _buildERC20PayContext(testHook, tierIds, address(token), 100, 50);
 
         vm.prank(mockTerminalAddress);
         testHook.afterPayRecordedWith(payContext);

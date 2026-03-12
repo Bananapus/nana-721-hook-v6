@@ -106,16 +106,10 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
             projectId: projectId,
             rulesetId: 0,
             amount: JBTokenAmount({
-                token: JBConstants.NATIVE_TOKEN,
-                value: 1e18,
-                decimals: 18,
-                currency: nativeCurrency
+                token: JBConstants.NATIVE_TOKEN, value: 1e18, decimals: 18, currency: nativeCurrency
             }),
             forwardedAmount: JBTokenAmount({
-                token: JBConstants.NATIVE_TOKEN,
-                value: 0,
-                decimals: 18,
-                currency: nativeCurrency
+                token: JBConstants.NATIVE_TOKEN, value: 0, decimals: 18, currency: nativeCurrency
             }),
             weight: 10 ** 18,
             newlyIssuedTokenCount: 0,
@@ -161,17 +155,9 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
             payer: beneficiary,
             projectId: projectId,
             rulesetId: 0,
-            amount: JBTokenAmount({
-                token: JBConstants.NATIVE_TOKEN,
-                value: 10,
-                decimals: 18,
-                currency: nativeCurrency
-            }),
+            amount: JBTokenAmount({token: JBConstants.NATIVE_TOKEN, value: 10, decimals: 18, currency: nativeCurrency}),
             forwardedAmount: JBTokenAmount({
-                token: JBConstants.NATIVE_TOKEN,
-                value: 0,
-                decimals: 18,
-                currency: nativeCurrency
+                token: JBConstants.NATIVE_TOKEN, value: 0, decimals: 18, currency: nativeCurrency
             }),
             weight: 10 ** 18,
             newlyIssuedTokenCount: 0,
@@ -209,17 +195,9 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
             payer: beneficiary,
             projectId: projectId,
             rulesetId: 0,
-            amount: JBTokenAmount({
-                token: JBConstants.NATIVE_TOKEN,
-                value: 9,
-                decimals: 18,
-                currency: nativeCurrency
-            }),
+            amount: JBTokenAmount({token: JBConstants.NATIVE_TOKEN, value: 9, decimals: 18, currency: nativeCurrency}),
             forwardedAmount: JBTokenAmount({
-                token: JBConstants.NATIVE_TOKEN,
-                value: 0,
-                decimals: 18,
-                currency: nativeCurrency
+                token: JBConstants.NATIVE_TOKEN, value: 0, decimals: 18, currency: nativeCurrency
             }),
             weight: 10 ** 18,
             newlyIssuedTokenCount: 0,
@@ -252,16 +230,10 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
             projectId: projectId,
             rulesetId: 0,
             amount: JBTokenAmount({
-                token: JBConstants.NATIVE_TOKEN,
-                value: 1e18,
-                decimals: 18,
-                currency: nativeCurrency
+                token: JBConstants.NATIVE_TOKEN, value: 1e18, decimals: 18, currency: nativeCurrency
             }),
             forwardedAmount: JBTokenAmount({
-                token: JBConstants.NATIVE_TOKEN,
-                value: 0,
-                decimals: 18,
-                currency: nativeCurrency
+                token: JBConstants.NATIVE_TOKEN, value: 0, decimals: 18, currency: nativeCurrency
             }),
             weight: 10 ** 18,
             newlyIssuedTokenCount: 0,
@@ -309,16 +281,10 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
             projectId: projectId,
             rulesetId: 0,
             amount: JBTokenAmount({
-                token: JBConstants.NATIVE_TOKEN,
-                value: 1e18,
-                decimals: 18,
-                currency: nativeCurrency
+                token: JBConstants.NATIVE_TOKEN, value: 1e18, decimals: 18, currency: nativeCurrency
             }),
             forwardedAmount: JBTokenAmount({
-                token: JBConstants.NATIVE_TOKEN,
-                value: 0,
-                decimals: 18,
-                currency: nativeCurrency
+                token: JBConstants.NATIVE_TOKEN, value: 0, decimals: 18, currency: nativeCurrency
             }),
             weight: 10 ** 18,
             newlyIssuedTokenCount: 0,
@@ -365,16 +331,10 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
             projectId: projectId,
             rulesetId: 0,
             amount: JBTokenAmount({
-                token: JBConstants.NATIVE_TOKEN,
-                value: 1e18,
-                decimals: 18,
-                currency: nativeCurrency
+                token: JBConstants.NATIVE_TOKEN, value: 1e18, decimals: 18, currency: nativeCurrency
             }),
             forwardedAmount: JBTokenAmount({
-                token: JBConstants.NATIVE_TOKEN,
-                value: 0,
-                decimals: 18,
-                currency: nativeCurrency
+                token: JBConstants.NATIVE_TOKEN, value: 0, decimals: 18, currency: nativeCurrency
             }),
             weight: 10 ** 18,
             newlyIssuedTokenCount: 0,
@@ -418,12 +378,11 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
             payer: beneficiary,
             projectId: projectId,
             rulesetId: 0,
-            amount: JBTokenAmount({token: JBConstants.NATIVE_TOKEN, value: 1e18, decimals: 18, currency: nativeCurrency}),
+            amount: JBTokenAmount({
+                token: JBConstants.NATIVE_TOKEN, value: 1e18, decimals: 18, currency: nativeCurrency
+            }),
             forwardedAmount: JBTokenAmount({
-                token: JBConstants.NATIVE_TOKEN,
-                value: 0,
-                decimals: 18,
-                currency: nativeCurrency
+                token: JBConstants.NATIVE_TOKEN, value: 0, decimals: 18, currency: nativeCurrency
             }),
             weight: 10 ** 18,
             newlyIssuedTokenCount: 0,
@@ -462,7 +421,9 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
         JBBeforePayRecordedContext memory context = JBBeforePayRecordedContext({
             terminal: mockTerminalAddress,
             payer: beneficiary,
-            amount: JBTokenAmount({token: JBConstants.NATIVE_TOKEN, value: 200, decimals: 18, currency: nativeCurrency}),
+            amount: JBTokenAmount({
+                token: JBConstants.NATIVE_TOKEN, value: 200, decimals: 18, currency: nativeCurrency
+            }),
             projectId: projectId,
             rulesetId: 0,
             beneficiary: beneficiary,
@@ -517,16 +478,10 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
             projectId: projectId,
             rulesetId: 0,
             amount: JBTokenAmount({
-                token: JBConstants.NATIVE_TOKEN,
-                value: 800,
-                decimals: 18,
-                currency: nativeCurrency
+                token: JBConstants.NATIVE_TOKEN, value: 800, decimals: 18, currency: nativeCurrency
             }),
             forwardedAmount: JBTokenAmount({
-                token: JBConstants.NATIVE_TOKEN,
-                value: 0,
-                decimals: 18,
-                currency: nativeCurrency
+                token: JBConstants.NATIVE_TOKEN, value: 0, decimals: 18, currency: nativeCurrency
             }),
             weight: 10 ** 18,
             newlyIssuedTokenCount: 0,

@@ -186,10 +186,7 @@ contract ERC20TierSplitFork is Test {
             tokenUriResolver: IJB721TokenUriResolver(address(0)),
             contractUri: "ipfs://contract",
             tiersConfig: JB721InitTiersConfig({
-                tiers: tierConfigs,
-                currency: currency,
-                decimals: tokenDecimals,
-                prices: IJBPrices(address(0))
+                tiers: tierConfigs, currency: currency, decimals: tokenDecimals, prices: IJBPrices(address(0))
             }),
             reserveBeneficiary: reserveBeneficiary,
             flags: JB721TiersHookFlags({
@@ -250,9 +247,7 @@ contract ERC20TierSplitFork is Test {
     }
 
     /// @dev Launch with ETH accounting (for regression test).
-    function _launchETHProject(
-        JB721TierConfig[] memory tierConfigs
-    )
+    function _launchETHProject(JB721TierConfig[] memory tierConfigs)
         internal
         returns (uint256 projectId, address dataHook)
     {
@@ -307,9 +302,7 @@ contract ERC20TierSplitFork is Test {
 
         JBAccountingContext[] memory accountingContexts = new JBAccountingContext[](1);
         accountingContexts[0] = JBAccountingContext({
-            token: JBConstants.NATIVE_TOKEN,
-            currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-            decimals: 18
+            token: JBConstants.NATIVE_TOKEN, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18
         });
 
         JBTerminalConfig[] memory terminalConfigs = new JBTerminalConfig[](1);
@@ -474,8 +467,7 @@ contract ERC20TierSplitFork is Test {
         vm.stopPrank();
 
         // Target project should have received 30 USDC via addToBalance.
-        uint256 targetBalanceAfter =
-            jbTerminalStore.balanceOf(address(jbMultiTerminal), targetProjectId, address(usdc));
+        uint256 targetBalanceAfter = jbTerminalStore.balanceOf(address(jbMultiTerminal), targetProjectId, address(usdc));
         assertEq(targetBalanceAfter - targetBalanceBefore, 30e6, "target project should have 30 USDC more");
         // NFT minted.
         assertEq(IERC721(hook).balanceOf(beneficiary), 1, "beneficiary should own 1 NFT");

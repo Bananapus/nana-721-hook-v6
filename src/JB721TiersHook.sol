@@ -694,9 +694,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         if (context.hookMetadata.length != 0 && context.forwardedAmount.value != 0) {
             // For ERC20 tokens, pull from terminal using the allowance it granted via _beforeTransferTo.
             if (context.forwardedAmount.token != JBConstants.NATIVE_TOKEN) {
-                IERC20(context.forwardedAmount.token).safeTransferFrom(
-                    msg.sender, address(this), context.forwardedAmount.value
-                );
+                IERC20(context.forwardedAmount.token)
+                    .safeTransferFrom(msg.sender, address(this), context.forwardedAmount.value);
             }
 
             JB721TiersHookLib.distributeAll(
