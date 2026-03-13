@@ -18,5 +18,19 @@ number_underscore = "thousands"
 multiline_func_header = "all"
 wrap_comments = true
 
+[lint]
+exclude_lints = [
+    "incorrect-shift",       # false positive on bitmap `1 << (index % 256)`
+    "mixed-case-function",   # OZ ERC721 naming (_baseURI, _checkOnERC721Received)
+    "mixed-case-variable",   # OZ ERC721 naming (name_, symbol_)
+    "pascal-case-struct",    # JB prefix convention (JBFoo, not Jbfoo)
+    "screaming-snake-case-const", # OZ ERC721 / interface naming
+    "unsafe-typecast",       # intentional narrowing casts in known-safe packed contexts
+    "unaliased-plain-import", # test files use `import "forge-std/Test.sol"`
+    "unused-import",         # test helpers re-export for downstream convenience
+    "named-struct-fields",   # struct literals already follow our named-args rule
+    "unsafe-cheatcode",      # test-only cheatcodes
+]
+
 [rpc_endpoints]
 ethereum = "${RPC_ETHEREUM_MAINNET}"
