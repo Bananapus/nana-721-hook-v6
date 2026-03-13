@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/script/helpers/CoreDeploymentLib.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/address-registry-v6/script/helpers/AddressRegistryDeploymentLib.sol";
 
 import {Sphinx} from "@sphinx-labs/contracts/contracts/foundry/SphinxPlugin.sol";
@@ -19,12 +21,17 @@ contract DeployScript is Script, Sphinx {
     AddressRegistryDeployment registry;
 
     /// @notice The address that is allowed to forward calls to the terminal and controller on a users behalf.
+    // forge-lint: disable-next-line(mixed-case-variable)
     address private TRUSTED_FORWARDER;
 
     /// @notice the salts that are used to deploy the contracts.
+    // forge-lint: disable-next-line(mixed-case-variable)
     bytes32 HOOK_SALT = "JB721TiersHookV6_";
+    // forge-lint: disable-next-line(mixed-case-variable)
     bytes32 HOOK_DEPLOYER_SALT = "JB721TiersHookDeployerV6_";
+    // forge-lint: disable-next-line(mixed-case-variable)
     bytes32 HOOK_STORE_SALT = "JB721TiersHookStoreV6_";
+    // forge-lint: disable-next-line(mixed-case-variable)
     bytes32 PROJECT_DEPLOYER_SALT = "JB721TiersHookProjectDeployerV6";
 
     function configureSphinx() public override {

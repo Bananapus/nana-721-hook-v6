@@ -50,6 +50,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     //*********************************************************************//
 
     /// @notice The ID of the project that this contract is associated with.
+    // forge-lint: disable-next-line(mixed-case-variable)
     uint256 public override PROJECT_ID;
 
     //*********************************************************************//

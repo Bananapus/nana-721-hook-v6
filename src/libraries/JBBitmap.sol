@@ -39,6 +39,7 @@ library JBBitmap {
     /// @dev This is a one-way operation.
     function removeTier(mapping(uint256 => uint256) storage self, uint256 index) internal {
         uint256 depth = _retrieveDepth(index);
+        // forge-lint: disable-next-line(incorrect-shift)
         self[depth] |= uint256(1 << (index % 256));
     }
 

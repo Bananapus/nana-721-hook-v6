@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../utils/UnitTestSetup.sol";
 
 contract Test_Getters_Constructor_Unit is UnitTestSetup {
@@ -21,22 +22,22 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
     function test_pricingContext_packingFunctionsAsExpected(uint32 currency, uint8 decimals, bytes32 salt) public {
         // Decimals must be <= 18 per validation in initialize.
         vm.assume(decimals <= 18);
-        JBDeploy721TiersHookConfig memory hookConfig = JBDeploy721TiersHookConfig(
-            name,
-            symbol,
-            baseUri,
-            IJB721TokenUriResolver(mockTokenUriResolver),
-            contractUri,
-            JB721InitTiersConfig({tiers: tiers, currency: currency, decimals: decimals}),
-            address(0),
-            JB721TiersHookFlags({
+        JBDeploy721TiersHookConfig memory hookConfig = JBDeploy721TiersHookConfig({
+            name: name,
+            symbol: symbol,
+            baseUri: baseUri,
+            tokenUriResolver: IJB721TokenUriResolver(mockTokenUriResolver),
+            contractUri: contractUri,
+            tiersConfig: JB721InitTiersConfig({tiers: tiers, currency: currency, decimals: decimals}),
+            reserveBeneficiary: address(0),
+            flags: JB721TiersHookFlags({
                 preventOverspending: false,
                 issueTokensForSplits: false,
                 noNewTiersWithReserves: true,
                 noNewTiersWithVotes: true,
                 noNewTiersWithOwnerMinting: true
             })
-        );
+        });
 
         JB721TiersHook hook = JB721TiersHook(address(jbHookDeployer.deployHookFor(projectId, hookConfig, salt)));
 
@@ -62,6 +63,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         numberOfTiers = bound(numberOfTiers, 0, 30);
 
         // Use a non-null resolved URI.
+        // forge-lint: disable-next-line(unsafe-typecast)
         defaultTierConfig.encodedIPFSUri = bytes32(hex"69");
 
         (, JB721Tier[] memory tiers) = _createTiers(defaultTierConfig, numberOfTiers);
@@ -228,8 +230,11 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                     i + 1,
                     JBStored721Tier({
                         price: uint104((i + 1) * 10),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         remainingSupply: uint32(initialSupply - totalMinted),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         initialSupply: uint32(initialSupply),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         reserveFrequency: uint16(reserveFrequency),
                         category: uint24(100),
                         discountPercent: uint8(0),
@@ -259,6 +264,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         balances = bound(balances, 1, type(uint32).max);
 
         defaultTierConfig.useVotingUnits = true;
+        // forge-lint: disable-next-line(unsafe-typecast)
         defaultTierConfig.votingUnits = uint32(votingUnits);
         ForTest_JB721TiersHook hook = _initializeForTestHook(numberOfTiers);
 
@@ -424,8 +430,11 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                     address(hook),
                     i,
                     JBStored721Tier({
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         price: uint104(i * 10),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         remainingSupply: uint32(10 * i - 5 * i),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         initialSupply: uint32(10 * i),
                         reserveFrequency: uint16(0),
                         category: uint24(100),
@@ -524,6 +533,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         // Populate the tiers array with the default tier config.
         for (uint256 i; i < numberOfTiers; i++) {
             tiers[i] = JB721TierConfig({
+                // forge-lint: disable-next-line(unsafe-typecast)
                 price: uint104(i * 10),
                 initialSupply: uint32(100),
                 votingUnits: uint16(0),

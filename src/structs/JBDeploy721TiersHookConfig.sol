@@ -13,6 +13,7 @@ import {IJB721TokenUriResolver} from "../interfaces/IJB721TokenUriResolver.sol";
 /// @custom:member tiersConfig The NFT tiers and pricing config to launch the hook with.
 /// @custom:member reserveBeneficiary The default reserved beneficiary for all tiers.
 /// @custom:member flags A set of boolean options to configure the hook with.
+// forge-lint: disable-next-line(pascal-case-struct)
 struct JBDeploy721TiersHookConfig {
     string name;
     string symbol;

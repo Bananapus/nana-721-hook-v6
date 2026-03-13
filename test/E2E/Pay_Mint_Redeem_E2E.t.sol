@@ -1,15 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/address-registry-v6/src/JBAddressRegistry.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/JB721TiersHook.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/JB721TiersHookProjectDeployer.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/JB721TiersHookDeployer.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/JB721TiersHookStore.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../utils/TestBaseWorkflow.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/interfaces/IJB721TiersHook.sol";
 import {MetadataResolverHelper} from "@bananapus/core-v6/test/helpers/MetadataResolverHelper.sol";
 
@@ -117,6 +125,7 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
 
         // Crafting the payment metadata: add the highest tier ID.
         uint16[] memory rawMetadata = new uint16[](1);
+        // forge-lint: disable-next-line(unsafe-typecast)
         rawMetadata[0] = uint16(highestTier);
 
         // Build the metadata using the tiers to mint and the overspending flag.
@@ -191,13 +200,17 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
         // Cap the highest tier ID.
         uint256 highestTier = 1;
 
-        (JBDeploy721TiersHookConfig memory tiersHookConfig, JBLaunchProjectConfig memory launchProjectConfig) =
-            createDiscountedData(tierStartPrice, uint8(discountPercent));
+        (
+            JBDeploy721TiersHookConfig memory tiersHookConfig,
+            JBLaunchProjectConfig memory launchProjectConfig
+            // forge-lint: disable-next-line(unsafe-typecast)
+        ) = createDiscountedData(tierStartPrice, uint8(discountPercent));
         (uint256 projectId, IJB721TiersHook _hook) =
             deployer.launchProjectFor(projectOwner, tiersHookConfig, launchProjectConfig, jbController, bytes32(0));
 
         // Crafting the payment metadata: add the highest tier ID.
         uint16[] memory rawMetadata = new uint16[](1);
+        // forge-lint: disable-next-line(unsafe-typecast)
         rawMetadata[0] = uint16(highestTier);
 
         // Build the metadata using the tiers to mint and the overspending flag.
@@ -248,7 +261,9 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
         if (totalSupplyAfterPay < type(uint208).max) {
             if (tierStartPrice > type(uint104).max) {
                 uint256 expectedDiscount =
-                    mulDiv(uint104(tierStartPrice), discountPercent, JB721Constants.DISCOUNT_DENOMINATOR);
+                // forge-lint: disable-next-line(unsafe-typecast)
+                mulDiv(uint104(tierStartPrice), discountPercent, JB721Constants.DISCOUNT_DENOMINATOR);
+                // forge-lint: disable-next-line(unsafe-typecast)
                 uint256 paidForNft = uint104(tierStartPrice) - expectedDiscount;
 
                 // Check: should be credited tierStartPrice minus what you paid for the NFT plus the discount
@@ -295,6 +310,7 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
 
         // Mint one NFT per tier from the first 5 tiers.
         for (uint256 i = 0; i < 5; i++) {
+            // forge-lint: disable-next-line(unsafe-typecast)
             rawMetadata[i] = uint16(i + 1); // Start at `tierId` 1.
             // Check: correct tier IDs and token IDs?
             vm.expectEmit(true, true, true, true);
@@ -436,6 +452,7 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
 
         // Crafting the payment metadata: add the highest tier ID.
         uint16[] memory rawMetadata = new uint16[](1);
+        // forge-lint: disable-next-line(unsafe-typecast)
         rawMetadata[0] = uint16(highestTier);
 
         // Build the metadata using the tiers to mint and the overspending flag.
@@ -526,6 +543,7 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
         assertEq(address(_hook), dataHook);
         {
             uint16[] memory rawMetadata = new uint16[](1);
+            // forge-lint: disable-next-line(unsafe-typecast)
             rawMetadata[0] = uint16(highestTier);
 
             // Build the metadata using the tiers to mint and the overspending flag.
@@ -596,6 +614,7 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
 
         {
             uint16[] memory rawMetadata = new uint16[](1);
+            // forge-lint: disable-next-line(unsafe-typecast)
             rawMetadata[0] = uint16(highestTier);
 
             // Build the metadata using the tiers to mint and the overspending flag.
@@ -643,6 +662,7 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
         // Craft the metadata: buy 5 NFTs from tier 10.
         uint16[] memory rawMetadata = new uint16[](5);
         for (uint256 i; i < rawMetadata.length; i++) {
+            // forge-lint: disable-next-line(unsafe-typecast)
             rawMetadata[i] = uint16(tier);
         }
 
@@ -722,6 +742,7 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
         // Craft the metadata: buy *1* NFT from tier 10.
         uint16[] memory rawMetadata2 = new uint16[](1);
         for (uint256 i; i < rawMetadata2.length; i++) {
+            // forge-lint: disable-next-line(unsafe-typecast)
             rawMetadata2[i] = uint16(tier);
         }
 
@@ -859,6 +880,7 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
     {
         JB721TierConfig[] memory tierConfigs = new JB721TierConfig[](1);
         tierConfigs[0] = JB721TierConfig({
+            // forge-lint: disable-next-line(unsafe-typecast)
             price: uint104(_price),
             initialSupply: uint32(10),
             votingUnits: uint32(10),

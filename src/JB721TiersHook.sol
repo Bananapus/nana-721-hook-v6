@@ -157,8 +157,10 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // Get a reference to the packed pricing context.
         uint256 packed = _packedPricingContext;
         // currency in bits 0-31 (32 bits).
+        // forge-lint: disable-next-line(unsafe-typecast)
         currency = uint256(uint32(packed));
         // pricing decimals in bits 32-39 (8 bits).
+        // forge-lint: disable-next-line(unsafe-typecast)
         decimals = uint256(uint8(packed >> 32));
     }
 
@@ -456,7 +458,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         string calldata baseUri,
         string calldata contractUri,
         IJB721TokenUriResolver tokenUriResolver,
+        // forge-lint: disable-next-line(mixed-case-variable)
         uint256 encodedIPFSUriTierId,
+        // forge-lint: disable-next-line(mixed-case-variable)
         bytes32 encodedIPFSUri
     )
         external

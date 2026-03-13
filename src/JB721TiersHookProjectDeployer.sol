@@ -124,6 +124,7 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
         returns (uint256 rulesetId, IJB721TiersHook hook)
     {
         // Get the project's projects contract.
+        // forge-lint: disable-next-line(mixed-case-variable)
         IJBProjects PROJECTS = DIRECTORY.PROJECTS();
 
         // Enforce permissions.

@@ -110,6 +110,7 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      * token will be the concatenation of the `baseURI` and the `tokenId`. Empty
      * by default, can be overridden in child contracts.
      */
+    // forge-lint: disable-next-line(mixed-case-function)
     function _baseURI() internal view virtual returns (string memory) {
         return "";
     }
@@ -477,6 +478,7 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      * @param tokenId uint256 ID of the token to be transferred
      * @param data bytes optional data to send along with the call
      */
+    // forge-lint: disable-next-line(mixed-case-function)
     function _checkOnERC721Received(address from, address to, uint256 tokenId, bytes memory data) private {
         if (to.code.length > 0) {
             try IERC721Receiver(to)

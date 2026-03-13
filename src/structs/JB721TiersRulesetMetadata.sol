@@ -6,6 +6,7 @@ pragma solidity ^0.8.0;
 /// @custom:member pauseTransfers A boolean indicating whether NFT transfers are paused during this ruleset.
 /// @custom:member pauseMintPendingReserves A boolean indicating whether pending/outstanding NFT reserves can be minted
 /// during this ruleset.
+// forge-lint: disable-next-line(pascal-case-struct)
 struct JB721TiersRulesetMetadata {
     bool pauseTransfers;
     bool pauseMintPendingReserves;

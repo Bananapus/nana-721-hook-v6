@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../utils/UnitTestSetup.sol";
 import {IJB721TiersHookStore} from "../../src/interfaces/IJB721TiersHookStore.sol";
 import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
@@ -503,6 +504,7 @@ contract Test_TierSplitRouting is UnitTestSetup {
     // ──────────────────────────────────────────────
 
     /// @notice Helper: set up an ERC20 tier split test. Returns (hook, tierIds, mockToken).
+    // forge-lint: disable-next-line(mixed-case-function)
     function _setupERC20TierSplit()
         internal
         returns (JB721TiersHook testHook, uint256[] memory tierIds, MockERC20 token)
@@ -529,6 +531,7 @@ contract Test_TierSplitRouting is UnitTestSetup {
     }
 
     /// @notice Helper: build afterPayRecordedWith context for ERC20 payments.
+    // forge-lint: disable-next-line(mixed-case-function)
     function _buildERC20PayContext(
         JB721TiersHook testHook,
         uint256[] memory tierIds,
@@ -554,9 +557,15 @@ contract Test_TierSplitRouting is UnitTestSetup {
             payer: beneficiary,
             projectId: projectId,
             rulesetId: 0,
+            // forge-lint: disable-next-line(unsafe-typecast)
             amount: JBTokenAmount({token: token, value: payAmount, decimals: 18, currency: uint32(uint160(token))}),
             forwardedAmount: JBTokenAmount({
-                token: token, value: forwardedAmount, decimals: 18, currency: uint32(uint160(token))
+                // forge-lint: disable-next-line(unsafe-typecast)
+                token: token,
+                value: forwardedAmount,
+                decimals: 18,
+                // forge-lint: disable-next-line(unsafe-typecast)
+                currency: uint32(uint160(token))
             }),
             weight: 10e18,
             newlyIssuedTokenCount: 0,
@@ -613,6 +622,7 @@ contract Test_TierSplitRouting is UnitTestSetup {
         JBSplit[] memory splits = new JBSplit[](1);
         splits[0] = JBSplit({
             percent: uint32(JBConstants.SPLITS_TOTAL_PERCENT),
+            // forge-lint: disable-next-line(unsafe-typecast)
             projectId: uint56(targetProjectId),
             beneficiary: payable(address(0)),
             preferAddToBalance: true,
@@ -662,6 +672,7 @@ contract Test_TierSplitRouting is UnitTestSetup {
         JBSplit[] memory splits = new JBSplit[](1);
         splits[0] = JBSplit({
             percent: uint32(JBConstants.SPLITS_TOTAL_PERCENT),
+            // forge-lint: disable-next-line(unsafe-typecast)
             projectId: uint56(targetProjectId),
             beneficiary: payable(alice),
             preferAddToBalance: false,

@@ -1,34 +1,58 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "forge-std/Test.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../utils/ForTest_JB721TiersHook.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/JB721TiersHookDeployer.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/JB721TiersHook.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/abstract/JB721Hook.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/JB721TiersHookStore.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/libraries/JBRulesetMetadataResolver.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBAccountingContext.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBTokenAmount.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBAfterPayRecordedContext.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBAfterCashOutRecordedContext.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBAfterCashOutRecordedContext.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBCashOutHookSpecification.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBFundAccessLimitGroup.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBSplit.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/interfaces/IJBRulesetApprovalHook.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/structs/JBLaunchProjectConfig.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/structs/JBPayDataHookRulesetMetadata.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/address-registry-v6/src/JBAddressRegistry.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/libraries/JBCurrencyIds.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/libraries/JBConstants.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBBeforeCashOutRecordedContext.sol";
 import {MetadataResolverHelper} from "@bananapus/core-v6/test/helpers/MetadataResolverHelper.sol";
 
@@ -36,14 +60,21 @@ contract UnitTestSetup is Test {
     address beneficiary;
     address owner;
     address reserveBeneficiary;
+    // forge-lint: disable-next-line(mixed-case-variable)
     address mockJBController;
+    // forge-lint: disable-next-line(mixed-case-variable)
     address mockJBDirectory;
+    // forge-lint: disable-next-line(mixed-case-variable)
     address mockJBPrices;
+    // forge-lint: disable-next-line(mixed-case-variable)
     address mockJBRulesets;
     address mockTokenUriResolver;
     address mockTerminalAddress;
+    // forge-lint: disable-next-line(mixed-case-variable)
     address mockJBProjects;
+    // forge-lint: disable-next-line(mixed-case-variable)
     address mockJBPermissions;
+    // forge-lint: disable-next-line(mixed-case-variable)
     address mockJBSplits;
 
     string name = "NAME";
@@ -58,6 +89,7 @@ contract UnitTestSetup is Test {
 
     uint256 constant CASH_OUT_TAX_RATE = 6000; // 60%
 
+    // forge-lint: disable-next-line(screaming-snake-case-const)
     address constant trustedForwarder = address(123_456);
 
     JB721TierConfig defaultTierConfig;
@@ -99,6 +131,7 @@ contract UnitTestSetup is Test {
     JB721TiersHookDeployer jbHookDeployer;
     MetadataResolverHelper metadataHelper;
 
+    // forge-lint: disable-next-line(mixed-case-variable)
     address hook_i = address(bytes20(keccak256("hook_implementation")));
 
     event Mint(
@@ -213,22 +246,24 @@ contract UnitTestSetup is Test {
         );
         addressRegistry = new JBAddressRegistry();
         jbHookDeployer = new JB721TiersHookDeployer(hookOrigin, store, addressRegistry, trustedForwarder);
-        JBDeploy721TiersHookConfig memory hookConfig = JBDeploy721TiersHookConfig(
-            name,
-            symbol,
-            baseUri,
-            IJB721TokenUriResolver(mockTokenUriResolver),
-            contractUri,
-            JB721InitTiersConfig({tiers: tiers, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18}),
-            address(0),
-            JB721TiersHookFlags({
+        JBDeploy721TiersHookConfig memory hookConfig = JBDeploy721TiersHookConfig({
+            name: name,
+            symbol: symbol,
+            baseUri: baseUri,
+            tokenUriResolver: IJB721TokenUriResolver(mockTokenUriResolver),
+            contractUri: contractUri,
+            tiersConfig: JB721InitTiersConfig({
+                tiers: tiers, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18
+            }),
+            reserveBeneficiary: address(0),
+            flags: JB721TiersHookFlags({
                 preventOverspending: false,
                 issueTokensForSplits: false,
                 noNewTiersWithReserves: true,
                 noNewTiersWithVotes: true,
                 noNewTiersWithOwnerMinting: true
             })
-        );
+        });
 
         hook = JB721TiersHook(address(jbHookDeployer.deployHookFor(projectId, hookConfig, bytes32(0))));
         hook.transferOwnership(owner);
@@ -236,30 +271,37 @@ contract UnitTestSetup is Test {
         metadataHelper = new MetadataResolverHelper();
     }
 
+    // forge-lint: disable-next-line(mixed-case-function)
     function USD() internal pure returns (uint256) {
         return JBCurrencyIds.USD;
     }
 
+    // forge-lint: disable-next-line(mixed-case-function)
     function NATIVE_TOKEN() internal pure returns (address) {
         return JBConstants.NATIVE_TOKEN;
     }
 
+    // forge-lint: disable-next-line(mixed-case-function)
     function MAX_FEE() internal pure returns (uint256) {
         return JBConstants.MAX_FEE;
     }
 
+    // forge-lint: disable-next-line(mixed-case-function)
     function MAX_RESERVED_PERCENT() internal pure returns (uint256) {
         return JBConstants.MAX_RESERVED_PERCENT;
     }
 
+    // forge-lint: disable-next-line(mixed-case-function)
     function MAX_CASH_OUT_TAX_RATE() internal pure returns (uint256) {
         return JBConstants.MAX_CASH_OUT_TAX_RATE;
     }
 
+    // forge-lint: disable-next-line(mixed-case-function)
     function MAX_WEIGHT_CUT_PERCENT() internal pure returns (uint256) {
         return JBConstants.MAX_WEIGHT_CUT_PERCENT;
     }
 
+    // forge-lint: disable-next-line(mixed-case-function)
     function SPLITS_TOTAL_PERCENT() internal pure returns (uint256) {
         return JBConstants.SPLITS_TOTAL_PERCENT;
     }
@@ -470,7 +512,9 @@ contract UnitTestSetup is Test {
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: i < tokenUris.length ? tokenUris[i] : tokenUris[0],
                 category: categoryIncrement == 0
+                    // forge-lint: disable-next-line(unsafe-typecast)
                     ? tierConfig.category == type(uint24).max ? uint24(i * 2 + 1) : tierConfig.category
+                    // forge-lint: disable-next-line(unsafe-typecast)
                     : uint24(i * 2 + categoryIncrement),
                 discountPercent: tierConfig.discountPercent,
                 allowOwnerMint: tierConfig.allowOwnerMint,
@@ -484,6 +528,7 @@ contract UnitTestSetup is Test {
             });
 
             newTiers[i] = JB721Tier({
+                // forge-lint: disable-next-line(unsafe-typecast)
                 id: uint32(initialId + i + 1),
                 price: tierConfigs[i].price,
                 remainingSupply: tierConfigs[i].initialSupply,

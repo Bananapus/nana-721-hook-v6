@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../utils/UnitTestSetup.sol";
 
 contract Test_afterPayRecorded_Unit is UnitTestSetup {
@@ -17,7 +18,9 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
         reserveFrequency = bound(reserveFrequency, 0, 200);
         nftsToMint = bound(nftsToMint, 1, 200);
 
+        // forge-lint: disable-next-line(unsafe-typecast)
         defaultTierConfig.initialSupply = uint32(initialSupply);
+        // forge-lint: disable-next-line(unsafe-typecast)
         defaultTierConfig.reserveFrequency = uint16(reserveFrequency);
         ForTest_JB721TiersHook hook = _initializeForTestHook(1); // Initialize with 1 default tier.
 
@@ -754,6 +757,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
 
         bool allowOverspending;
         uint16[] memory tierIdsToMint = new uint16[](1);
+        // forge-lint: disable-next-line(unsafe-typecast)
         tierIdsToMint[0] = uint16(invalidTier);
 
         // Build the metadata using the tiers to mint and the overspending flag.
@@ -1009,10 +1013,15 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                 payer: msg.sender,
                 projectId: projectId,
                 rulesetId: 0,
-                amount: JBTokenAmount(token, 0, 18, uint32(uint160(JBConstants.NATIVE_TOKEN))),
-                forwardedAmount: JBTokenAmount(
-                    JBConstants.NATIVE_TOKEN, 0, 18, uint32(uint160(JBConstants.NATIVE_TOKEN))
-                ), // 0,
+                amount: JBTokenAmount({
+                    token: token, decimals: 0, currency: 18, value: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                }),
+                forwardedAmount: JBTokenAmount({
+                    token: JBConstants.NATIVE_TOKEN,
+                    decimals: 0,
+                    currency: 18,
+                    value: uint32(uint160(JBConstants.NATIVE_TOKEN))
+                }),
                 // forwarded to the hook.
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,

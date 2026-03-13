@@ -62,6 +62,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @custom:param hook The 721 contract that the tier belongs to.
     /// @custom:param tierId The ID of the tier to get the encoded IPFS URI of.
     /// @custom:returns The encoded IPFS URI.
+    // forge-lint: disable-next-line(mixed-case-variable)
     mapping(address hook => mapping(uint256 tierId => bytes32)) public override encodedIPFSUriOf;
 
     /// @notice Returns the largest tier ID currently used on the provided 721 contract.
@@ -155,6 +156,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @param hook The 721 contract that the encoded IPFS URI belongs to.
     /// @param tokenId The token ID of the 721 to get the encoded tier IPFS URI of.
     /// @return The encoded IPFS URI.
+    // forge-lint: disable-next-line(mixed-case-function)
     function encodedTierIPFSUriOf(address hook, uint256 tokenId) external view override returns (bytes32) {
         return encodedIPFSUriOf[hook][tierIdOfToken(tokenId)];
     }
@@ -532,6 +534,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
         // slither-disable-next-line calls-loop
         return JB721Tier({
+            // forge-lint: disable-next-line(unsafe-typecast)
             id: uint32(tierId),
             price: storedTier.price,
             remainingSupply: storedTier.remainingSupply,
@@ -1180,12 +1183,14 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         }
 
         // Set the discount.
+        // forge-lint: disable-next-line(unsafe-typecast)
         storedTier.discountPercent = uint8(discountPercent);
     }
 
     /// @notice Record a new encoded IPFS URI for a tier.
     /// @param tierId The ID of the tier to set the encoded IPFS URI of.
     /// @param encodedIPFSUri The encoded IPFS URI to set for the tier.
+    // forge-lint: disable-next-line(mixed-case-function, mixed-case-variable)
     function recordSetEncodedIPFSUriOf(uint256 tierId, bytes32 encodedIPFSUri) external override {
         encodedIPFSUriOf[msg.sender][tierId] = encodedIPFSUri;
     }

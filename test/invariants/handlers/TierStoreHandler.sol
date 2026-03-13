@@ -7,6 +7,7 @@ import {StdUtils} from "forge-std/StdUtils.sol";
 
 import {JB721TiersHookStore} from "../../../src/JB721TiersHookStore.sol";
 import {JB721TierConfig} from "../../../src/structs/JB721TierConfig.sol";
+// forge-lint: disable-next-line(unused-import)
 import {JB721TiersHookFlags} from "../../../src/structs/JB721TiersHookFlags.sol";
 import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 
@@ -16,6 +17,7 @@ contract TierStoreHandler is CommonBase, StdCheats, StdUtils {
     JB721TiersHookStore public immutable STORE;
 
     // This contract acts as the hook.
+    // forge-lint: disable-next-line(mixed-case-variable)
     address public HOOK;
 
     // Ghost variable tracking the max tier ID seen.
@@ -104,6 +106,7 @@ contract TierStoreHandler is CommonBase, StdCheats, StdUtils {
         tierId = bound(tierId, 1, maxId);
 
         uint16[] memory tierIds = new uint16[](1);
+        // forge-lint: disable-next-line(unsafe-typecast)
         tierIds[0] = uint16(tierId);
 
         try this._doMint(type(uint256).max, tierIds) returns (uint256[] memory tokenIds) {

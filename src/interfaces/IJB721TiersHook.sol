@@ -206,7 +206,9 @@ interface IJB721TiersHook is IJB721Hook {
         string calldata baseUri,
         string calldata contractUri,
         IJB721TokenUriResolver tokenUriResolver,
+        // forge-lint: disable-next-line(mixed-case-variable)
         uint256 encodedIPFSUriTierId,
+        // forge-lint: disable-next-line(mixed-case-variable)
         bytes32 encodedIPFSUri
     )
         external;

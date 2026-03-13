@@ -8,6 +8,7 @@ import {JB721TierConfig} from "./JB721TierConfig.sol";
 /// @custom:member tiers The tiers to initialize the hook with.
 /// @custom:member currency The currency that the tier prices are denoted in. See `JBPrices`.
 /// @custom:member decimals The number of decimals in the fixed point tier prices.
+// forge-lint: disable-next-line(pascal-case-struct)
 struct JB721InitTiersConfig {
     JB721TierConfig[] tiers;
     uint32 currency;

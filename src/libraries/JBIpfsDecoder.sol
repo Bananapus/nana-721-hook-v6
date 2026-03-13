@@ -42,10 +42,12 @@ library JBIpfsDecoder {
         uint256 sourceLength = source.length;
 
         for (uint256 i; i < sourceLength; i++) {
+            // forge-lint: disable-next-line(unsafe-typecast)
             uint256 carry = uint8(source[i]);
 
             for (uint256 j; j < digitlength;) {
                 carry += uint256(digits[j]) << 8; // mul 256
+                // forge-lint: disable-next-line(unsafe-typecast)
                 digits[j] = uint8(carry % 58);
                 carry = carry / 58;
 
@@ -55,6 +57,7 @@ library JBIpfsDecoder {
             }
 
             while (carry > 0) {
+                // forge-lint: disable-next-line(unsafe-typecast)
                 digits[digitlength] = uint8(carry % 58);
                 unchecked {
                     ++digitlength;

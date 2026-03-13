@@ -11,6 +11,7 @@ pragma solidity ^0.8.0;
 /// the NFTs being minted will revert.
 /// @custom:member issueTokensForSplits A boolean indicating whether payers receive token credit for the portion of
 /// their payment that is routed to tier splits. When false (default), weight is reduced proportionally.
+// forge-lint: disable-next-line(pascal-case-struct)
 struct JB721TiersHookFlags {
     bool noNewTiersWithReserves;
     bool noNewTiersWithVotes;

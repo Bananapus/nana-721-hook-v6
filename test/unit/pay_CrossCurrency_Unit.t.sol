@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../utils/UnitTestSetup.sol";
 
 /// @notice Cross-currency unit tests for the 721 hook's normalizePaymentValue path.
@@ -13,6 +14,7 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
 
     // -- Mock USDC address
     address constant MOCK_USDC = address(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
+    // forge-lint: disable-next-line(unsafe-typecast)
     uint32 usdcCurrency = uint32(uint160(MOCK_USDC));
 
     // -- Mock prices contract

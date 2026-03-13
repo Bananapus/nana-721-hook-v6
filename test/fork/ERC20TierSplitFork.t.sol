@@ -1,48 +1,84 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "forge-std/Test.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBController.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBDirectory.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBMultiTerminal.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBFundAccessLimits.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBFeelessAddresses.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBTerminalStore.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBRulesets.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBPermissions.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBPrices.sol";
 import {JBProjects} from "@bananapus/core-v6/src/JBProjects.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBSplits.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBERC20.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBTokens.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/libraries/JBConstants.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/libraries/JBRulesetMetadataResolver.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBAccountingContext.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBTerminalConfig.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBSplit.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBFundAccessLimitGroup.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/interfaces/IJBRulesetApprovalHook.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/interfaces/IJBSplitHook.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/permission-ids-v6/src/JBPermissionIds.sol";
 import {MetadataResolverHelper} from "@bananapus/core-v6/test/helpers/MetadataResolverHelper.sol";
 import {JBMetadataResolver} from "@bananapus/core-v6/src/libraries/JBMetadataResolver.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/address-registry-v6/src/JBAddressRegistry.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/JB721TiersHook.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/JB721TiersHookDeployer.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/JB721TiersHookProjectDeployer.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/JB721TiersHookStore.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/interfaces/IJB721TiersHook.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/structs/JBDeploy721TiersHookConfig.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/structs/JBLaunchProjectConfig.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/structs/JBPayDataHookRulesetConfig.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/structs/JBPayDataHookRulesetMetadata.sol";
 
 /// @notice Mock ERC20 with 6 decimals (USDC-like).
@@ -111,6 +147,7 @@ contract ERC20TierSplitFork is Test {
         vm.deal(multisig, 10 ether);
     }
 
+    // forge-lint: disable-next-line(mixed-case-function)
     function _deployJBCore() internal {
         jbPermissions = new JBPermissions(address(0));
         jbProjects = new JBProjects(multisig, address(0), address(0));
@@ -170,6 +207,7 @@ contract ERC20TierSplitFork is Test {
     // Launch Helper
     // =========================================================================
 
+    // forge-lint: disable-next-line(mixed-case-function)
     function _launchERC20Project(
         JB721TierConfig[] memory tierConfigs,
         address token,
@@ -178,6 +216,7 @@ contract ERC20TierSplitFork is Test {
         internal
         returns (uint256 projectId, address dataHook)
     {
+        // forge-lint: disable-next-line(unsafe-typecast)
         uint32 currency = uint32(uint160(token));
 
         JBDeploy721TiersHookConfig memory hookConfig = JBDeploy721TiersHookConfig({
@@ -247,6 +286,7 @@ contract ERC20TierSplitFork is Test {
     }
 
     /// @dev Launch with ETH accounting (for regression test).
+    // forge-lint: disable-next-line(mixed-case-function)
     function _launchETHProject(JB721TierConfig[] memory tierConfigs)
         internal
         returns (uint256 projectId, address dataHook)
@@ -360,6 +400,7 @@ contract ERC20TierSplitFork is Test {
             votingUnits: 0,
             reserveFrequency: 0,
             reserveBeneficiary: address(0),
+            // forge-lint: disable-next-line(unsafe-typecast)
             encodedIPFSUri: bytes32("tier1"),
             category: 1,
             discountPercent: 0,
@@ -413,6 +454,7 @@ contract ERC20TierSplitFork is Test {
         JBSplit[] memory splits = new JBSplit[](1);
         splits[0] = JBSplit({
             percent: uint32(JBConstants.SPLITS_TOTAL_PERCENT),
+            // forge-lint: disable-next-line(unsafe-typecast)
             projectId: uint56(targetProjectId),
             beneficiary: payable(address(0)),
             preferAddToBalance: true,
@@ -427,6 +469,7 @@ contract ERC20TierSplitFork is Test {
             votingUnits: 0,
             reserveFrequency: 0,
             reserveBeneficiary: address(0),
+            // forge-lint: disable-next-line(unsafe-typecast)
             encodedIPFSUri: bytes32("tier1"),
             category: 1,
             discountPercent: 0,
@@ -493,6 +536,7 @@ contract ERC20TierSplitFork is Test {
             votingUnits: 0,
             reserveFrequency: 0,
             reserveBeneficiary: address(0),
+            // forge-lint: disable-next-line(unsafe-typecast)
             encodedIPFSUri: bytes32("tier1"),
             category: 1,
             discountPercent: 0,

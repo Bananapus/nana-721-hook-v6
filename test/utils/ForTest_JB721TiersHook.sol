@@ -1,28 +1,43 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/interfaces/IJB721TiersHook.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/JB721TiersHook.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/JB721TiersHookStore.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/structs/JBBitmapWord.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBRulesetMetadata.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/interfaces/IJBPermissioned.sol";
 import {MetadataResolverHelper} from "@bananapus/core-v6/test/helpers/MetadataResolverHelper.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/libraries/JBConstants.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "./UnitTestSetup.sol"; // Only used to get the `PAY_HOOK_ID` and `CASH_OUT_HOOK_ID` constants.
 
 interface IJB721TiersHookStore_ForTest is IJB721TiersHookStore {
+    // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_dumpTiersList(address nft) external view returns (JB721Tier[] memory tiers);
+    // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_setTier(address hook, uint256 index, JBStored721Tier calldata newTier) external;
+    // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_setTierVotingUnits(address hook, uint256 tierId, uint32 votingUnits) external;
+    // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_setBalanceOf(address hook, address holder, uint256 tier, uint256 balance) external;
+    // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_setReservesMintedFor(address hook, uint256 tier, uint256 amount) external;
+    // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_setIsTierRemoved(address hook, uint256 tokenId) external;
+    // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_packBools(
         bool allowOwnerMint,
         bool transfersPausable,
@@ -36,6 +51,7 @@ interface IJB721TiersHookStore_ForTest is IJB721TiersHookStore {
 
 // A customized 721 tiers hook for testing purposes.
 contract ForTest_JB721TiersHook is JB721TiersHook {
+    // forge-lint: disable-next-line(mixed-case-variable)
     IJB721TiersHookStore_ForTest public test_store;
     MetadataResolverHelper metadataHelper;
 
@@ -92,6 +108,7 @@ contract ForTest_JB721TiersHook is JB721TiersHook {
         metadataHelper = new MetadataResolverHelper();
     }
 
+    // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_setOwnerOf(uint256 tokenId, address owner) public {
         _owners[tokenId] = owner;
     }
@@ -109,6 +126,7 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
     using JBBitmap for mapping(uint256 => uint256);
     using JBBitmap for JBBitmapWord;
 
+    // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_dumpTiersList(address nft) public view override returns (JB721Tier[] memory tiers) {
         // Keep a reference to the max tier ID.
         uint256 maxTierId = maxTierIdOf[nft];
@@ -129,6 +147,7 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
 
             // Add the tier to the array being returned.
             tiers[numberOfIncludedTiers++] = JB721Tier({
+                // forge-lint: disable-next-line(unsafe-typecast)
                 id: uint32(currentSortIndex),
                 price: storedTier.price,
                 remainingSupply: storedTier.remainingSupply,
@@ -162,26 +181,32 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
         }
     }
 
+    // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_setTier(address hook, uint256 index, JBStored721Tier calldata newTier) public override {
         _storedTierOf[address(hook)][index] = newTier;
     }
 
+    // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_setTierVotingUnits(address hook, uint256 tierId, uint32 votingUnits) public override {
         _tierVotingUnitsOf[address(hook)][tierId] = votingUnits;
     }
 
+    // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_setBalanceOf(address hook, address holder, uint256 tier, uint256 balance) public override {
         tierBalanceOf[address(hook)][holder][tier] = balance;
     }
 
+    // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_setReservesMintedFor(address hook, uint256 tier, uint256 amount) public override {
         numberOfReservesMintedFor[address(hook)][tier] = amount;
     }
 
+    // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_setIsTierRemoved(address hook, uint256 tokenId) public override {
         _removedTiersBitmapWordOf[hook].removeTier(tokenId);
     }
 
+    // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_packBools(
         bool allowOwnerMint,
         bool transfersPausable,
@@ -199,6 +224,7 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
             );
     }
 
+    // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_unpackBools(uint8 packed) public pure returns (bool, bool, bool, bool, bool) {
         return _unpackBools(packed);
     }

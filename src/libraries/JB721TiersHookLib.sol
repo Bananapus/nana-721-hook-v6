@@ -132,11 +132,13 @@ library JB721TiersHookLib {
         view
         returns (uint256 value, bool valid)
     {
+        // forge-lint: disable-next-line(unsafe-typecast)
         uint256 pricingCurrency = uint256(uint32(packedPricingContext));
         if (amountCurrency == pricingCurrency) return (amountValue, true);
 
         if (address(prices) == address(0)) return (0, false);
 
+        // forge-lint: disable-next-line(unsafe-typecast)
         uint256 pricingDecimals = uint256(uint8(packedPricingContext >> 32));
         value = mulDiv({
             x: amountValue,
@@ -229,11 +231,13 @@ library JB721TiersHookLib {
         view
         returns (uint256 convertedTotal, bytes memory convertedMetadata)
     {
+        // forge-lint: disable-next-line(unsafe-typecast)
         uint256 pricingCurrency = uint256(uint32(packedPricingContext));
         if (amountCurrency == pricingCurrency) return (totalSplitAmount, splitMetadata);
 
         if (address(prices) == address(0)) return (totalSplitAmount, splitMetadata);
 
+        // forge-lint: disable-next-line(unsafe-typecast)
         uint256 pricingDecimals = uint256(uint8(packedPricingContext >> 32));
         uint256 ratio = prices.pricePerUnitOf({
             projectId: projectId,
