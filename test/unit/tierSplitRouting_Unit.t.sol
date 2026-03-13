@@ -513,7 +513,7 @@ contract Test_TierSplitRouting is UnitTestSetup {
         token = new MockERC20();
 
         // Initialize hook with ERC20 currency (0 default tiers).
-        testHook = _initHookDefaultTiers(0, false, uint32(uint160(address(token))), 18, address(0));
+        testHook = _initHookDefaultTiers(0, false, uint32(uint160(address(token))), 18);
         IJB721TiersHookStore hookStore = testHook.STORE();
 
         // Add a tier with 50% split, priced at 100 tokens.

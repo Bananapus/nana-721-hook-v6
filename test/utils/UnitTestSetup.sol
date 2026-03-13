@@ -587,14 +587,11 @@ contract UnitTestSetup is Test {
     // Use default pricing context (native token, 18 decimals, and 0 address as oracle).
     // Don't prevent overspending.
     function _initHookDefaultTiers(uint256 initialNumberOfTiers) internal returns (JB721TiersHook) {
-        return
-            _initHookDefaultTiers(
-                initialNumberOfTiers, false, uint32(uint160(JBConstants.NATIVE_TOKEN)), 18, address(0)
-            );
+        return _initHookDefaultTiers(initialNumberOfTiers, false, uint32(uint160(JBConstants.NATIVE_TOKEN)), 18);
     }
 
     // Initialize a hook with tiers that use the default tier config.
-    // Use default pricing context (native token, 18 decimals, and 0 address as oracle).
+    // Use default pricing context (native token, 18 decimals).
     function _initHookDefaultTiers(
         uint256 initialNumberOfTiers,
         bool preventOverspending
@@ -602,9 +599,10 @@ contract UnitTestSetup is Test {
         internal
         returns (JB721TiersHook)
     {
-        return _initHookDefaultTiers(
-            initialNumberOfTiers, preventOverspending, uint32(uint160(JBConstants.NATIVE_TOKEN)), 18, address(0)
-        );
+        return
+            _initHookDefaultTiers(
+                initialNumberOfTiers, preventOverspending, uint32(uint160(JBConstants.NATIVE_TOKEN)), 18
+            );
     }
 
     // Initialize a hook with tiers that use the default tier config.
@@ -612,8 +610,7 @@ contract UnitTestSetup is Test {
         uint256 initialNumberOfTiers,
         bool preventOverspending,
         uint32 currency,
-        uint8 decimals,
-        address oracle
+        uint8 decimals
     )
         internal
         returns (JB721TiersHook tiersHook)

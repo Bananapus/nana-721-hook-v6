@@ -17,13 +17,10 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
     // forge-lint: disable-next-line(unsafe-typecast)
     uint32 usdcCurrency = uint32(uint160(MOCK_USDC));
 
-    // -- Mock prices contract
-    address mockPrices = makeAddr("mockPrices");
-
     /// @notice Test 1: USDC payment -> USD-priced tier. normalizePaymentValue works with 1:1 USDC/USD.
     function test_normalizePaymentValue_usdcPayment_usdTier() public {
         // Initialize hook with USD-priced tiers + prices oracle.
-        JB721TiersHook crossHook = _initHookDefaultTiers(1, false, uint32(USD()), 18, mockPrices);
+        JB721TiersHook crossHook = _initHookDefaultTiers(1, false, uint32(USD()), 18);
 
         // Mock directory call.
         mockAndExpect(
@@ -34,7 +31,7 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
 
         // Mock pricePerUnitOf: USDC -> USD, 6 decimals. Returns 1e6 (1:1 USDC/USD).
         vm.mockCall(
-            mockPrices,
+            mockJBPrices,
             abi.encodeWithSelector(IJBPrices.pricePerUnitOf.selector, projectId, usdcCurrency, USD(), uint256(6)),
             abi.encode(uint256(1e6))
         );
@@ -77,7 +74,7 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
 
     /// @notice Test 2: ETH payment -> USD-priced tier (2000:1 ratio).
     function test_normalizePaymentValue_ethPayment_usdTier() public {
-        JB721TiersHook crossHook = _initHookDefaultTiers(1, false, uint32(USD()), 18, mockPrices);
+        JB721TiersHook crossHook = _initHookDefaultTiers(1, false, uint32(USD()), 18);
 
         mockAndExpect(
             address(mockJBDirectory),
@@ -88,7 +85,7 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
         // Mock: pricePerUnitOf(_, nativeCurrency, USD, 18) = 5e14 (inverse of $2000).
         // "1 nativeCurrency unit costs 5e14 USD units" which represents 1/2000 of a USD unit in 18 decimals.
         vm.mockCall(
-            mockPrices,
+            mockJBPrices,
             abi.encodeWithSelector(IJBPrices.pricePerUnitOf.selector, projectId, nativeCurrency, USD(), uint256(18)),
             abi.encode(uint256(5e14))
         );
@@ -128,7 +125,7 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
 
     /// @notice Test 3: Payment normalizes to exactly the tier price -> NFT minted.
     function test_normalizePaymentValue_exactTierBoundary() public {
-        JB721TiersHook crossHook = _initHookDefaultTiers(1, false, uint32(USD()), 18, mockPrices);
+        JB721TiersHook crossHook = _initHookDefaultTiers(1, false, uint32(USD()), 18);
 
         mockAndExpect(
             address(mockJBDirectory),
@@ -139,7 +136,7 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
         // Price feed returns exactly the amount needed for tier price of 10.
         // If we pay 10 units with a 1:1 ratio, normalized = 10. Tier price = 10 → exact match.
         vm.mockCall(
-            mockPrices,
+            mockJBPrices,
             abi.encodeWithSelector(IJBPrices.pricePerUnitOf.selector, projectId, nativeCurrency, USD(), uint256(18)),
             abi.encode(uint256(1e18)) // 1:1 ratio
         );
@@ -177,7 +174,7 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
     /// @notice Test 4: Payment normalizes to 1 wei below tier price -> no NFT minted (stored as credit).
     function test_normalizePaymentValue_justBelowTierPrice() public {
         // preventOverspending = false so it doesn't revert, just skips the tier.
-        JB721TiersHook crossHook = _initHookDefaultTiers(1, false, uint32(USD()), 18, mockPrices);
+        JB721TiersHook crossHook = _initHookDefaultTiers(1, false, uint32(USD()), 18);
 
         mockAndExpect(
             address(mockJBDirectory),
@@ -186,7 +183,7 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
         );
 
         vm.mockCall(
-            mockPrices,
+            mockJBPrices,
             abi.encodeWithSelector(IJBPrices.pricePerUnitOf.selector, projectId, nativeCurrency, USD(), uint256(18)),
             abi.encode(uint256(1e18)) // 1:1
         );
@@ -216,8 +213,40 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
 
     /// @notice Test 5: prices=address(0) + currencies differ -> normalizePaymentValue returns (0, false).
     function test_normalizePaymentValue_noPricesContract() public {
-        // Initialize with address(0) as prices, but USD currency (differs from native token currency).
-        JB721TiersHook crossHook = _initHookDefaultTiers(1, false, uint32(USD()), 18, address(0));
+        // Deploy a separate hook origin with address(0) as PRICES to test the no-prices path.
+        JB721TiersHook noPricesOrigin = new JB721TiersHook(
+            IJBDirectory(mockJBDirectory),
+            IJBPermissions(mockJBPermissions),
+            IJBPrices(address(0)),
+            IJBRulesets(mockJBRulesets),
+            IJB721TiersHookStore(store),
+            IJBSplits(mockJBSplits),
+            trustedForwarder
+        );
+
+        // Create a fresh proxy address and etch the no-prices bytecode.
+        address noPricesProxy = makeAddr("noPricesProxy");
+        vm.etch(noPricesProxy, address(noPricesOrigin).code);
+        JB721TiersHook crossHook = JB721TiersHook(noPricesProxy);
+
+        // Initialize tiers with USD currency.
+        (JB721TierConfig[] memory tierConfigs,) = _createTiers(defaultTierConfig, 1);
+        crossHook.initialize(
+            projectId,
+            name,
+            symbol,
+            baseUri,
+            IJB721TokenUriResolver(mockTokenUriResolver),
+            contractUri,
+            JB721InitTiersConfig({tiers: tierConfigs, currency: uint32(USD()), decimals: 18}),
+            JB721TiersHookFlags({
+                preventOverspending: false,
+                issueTokensForSplits: false,
+                noNewTiersWithReserves: false,
+                noNewTiersWithVotes: false,
+                noNewTiersWithOwnerMinting: false
+            })
+        );
 
         mockAndExpect(
             address(mockJBDirectory),
@@ -252,7 +281,7 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
 
     /// @notice Test 6: Extreme high price ratio (1e27) -> no overflow, correct normalization.
     function test_normalizePaymentValue_extremeHighPrice() public {
-        JB721TiersHook crossHook = _initHookDefaultTiers(1, false, uint32(USD()), 18, mockPrices);
+        JB721TiersHook crossHook = _initHookDefaultTiers(1, false, uint32(USD()), 18);
 
         mockAndExpect(
             address(mockJBDirectory),
@@ -265,7 +294,7 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
         // normalizePaymentValue: mulDiv(1e18, 1e18, 1e27) = 1e9.
         // 1e9 >= tier price 10 → NFT minted.
         vm.mockCall(
-            mockPrices,
+            mockJBPrices,
             abi.encodeWithSelector(IJBPrices.pricePerUnitOf.selector, projectId, nativeCurrency, USD(), uint256(18)),
             abi.encode(uint256(1e27))
         );
@@ -303,7 +332,7 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
 
     /// @notice Test 7: Extreme low price ratio (1 wei) -> large normalized value, no revert.
     function test_normalizePaymentValue_extremeLowPrice() public {
-        JB721TiersHook crossHook = _initHookDefaultTiers(1, false, uint32(USD()), 18, mockPrices);
+        JB721TiersHook crossHook = _initHookDefaultTiers(1, false, uint32(USD()), 18);
 
         mockAndExpect(
             address(mockJBDirectory),
@@ -315,7 +344,7 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
         // normalizePaymentValue: mulDiv(1e18, 1e18, 1) = 1e36. This is a very large number.
         // 1e36 >= tier price 10 → NFT minted.
         vm.mockCall(
-            mockPrices,
+            mockJBPrices,
             abi.encodeWithSelector(IJBPrices.pricePerUnitOf.selector, projectId, nativeCurrency, USD(), uint256(18)),
             abi.encode(uint256(1))
         );
@@ -353,7 +382,7 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
 
     /// @notice Test 8: Reverting price feed blocks afterPayRecordedWith (DoS, not fund loss).
     function test_revertingPriceFeed_blocksPayment() public {
-        JB721TiersHook crossHook = _initHookDefaultTiers(1, false, uint32(USD()), 18, mockPrices);
+        JB721TiersHook crossHook = _initHookDefaultTiers(1, false, uint32(USD()), 18);
 
         mockAndExpect(
             address(mockJBDirectory),
@@ -363,7 +392,7 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
 
         // Price feed reverts (stale data, sequencer down, etc.).
         vm.mockCallRevert(
-            mockPrices,
+            mockJBPrices,
             abi.encodeWithSelector(IJBPrices.pricePerUnitOf.selector),
             abi.encodeWithSignature("Error(string)", "stale price")
         );
@@ -402,7 +431,7 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
     function test_revertingPriceFeed_blocksSplitConversion() public {
         // Set splitPercent on the default tier config so the tier has a non-zero split.
         defaultTierConfig.splitPercent = 500_000_000; // 50%
-        JB721TiersHook crossHook = _initHookDefaultTiers(1, false, uint32(USD()), 18, mockPrices);
+        JB721TiersHook crossHook = _initHookDefaultTiers(1, false, uint32(USD()), 18);
 
         // Build payer metadata requesting tier 1.
         uint16[] memory mintIds = new uint16[](1);
@@ -415,7 +444,7 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
 
         // Price feed reverts (stale data, sequencer down, etc.).
         vm.mockCallRevert(
-            mockPrices,
+            mockJBPrices,
             abi.encodeWithSelector(IJBPrices.pricePerUnitOf.selector),
             abi.encodeWithSignature("Error(string)", "stale price")
         );
@@ -449,7 +478,7 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
         tiers[1].price = 200; // Tier 2: 200 USD units
         tiers[2].price = 500; // Tier 3: 500 USD units
 
-        JB721TiersHook crossHook = _initHookDefaultTiers(3, false, uint32(USD()), 18, mockPrices);
+        JB721TiersHook crossHook = _initHookDefaultTiers(3, false, uint32(USD()), 18);
 
         mockAndExpect(
             address(mockJBDirectory),
@@ -459,7 +488,7 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
 
         // Mock 1:1 USD/native ratio for simplicity.
         vm.mockCall(
-            mockPrices,
+            mockJBPrices,
             abi.encodeWithSelector(IJBPrices.pricePerUnitOf.selector, projectId, nativeCurrency, USD(), uint256(18)),
             abi.encode(uint256(1e18))
         );

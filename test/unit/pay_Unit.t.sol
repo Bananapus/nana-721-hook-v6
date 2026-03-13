@@ -600,11 +600,11 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
     // The terminal uses currency 1 with 18 decimals, and the hook uses currency 2 with 9 decimals.
     // The conversion rate is set at 1:2.
     function test_afterPayRecorded_mintCorrectTierWithAnotherCurrency() public {
-        address jbPrice = address(bytes20(keccak256("MockJBPrice")));
-        vm.etch(jbPrice, new bytes(1));
+        // Etch code onto mockJBPrices so it can receive calls (PRICES is immutable from the constructor).
+        vm.etch(mockJBPrices, new bytes(1));
 
         // Currency 2, with 9 decimals.
-        JB721TiersHook hook = _initHookDefaultTiers(10, false, 2, 9, jbPrice);
+        JB721TiersHook hook = _initHookDefaultTiers(10, false, 2, 9);
 
         // Mock the directory call.
         mockAndExpect(
@@ -613,10 +613,10 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
             abi.encode(true)
         );
 
-        // Mock the price oracle call.
+        // Mock the price oracle call on the hook's actual PRICES address.
         uint256 amountInEth = (tiers[0].price * 2 + tiers[1].price) * 2;
         mockAndExpect(
-            jbPrice,
+            mockJBPrices,
             abi.encodeCall(IJBPrices.pricePerUnitOf, (projectId, uint32(uint160(JBConstants.NATIVE_TOKEN)), 2, 18)),
             abi.encode(2 * 10 ** 9)
         );
@@ -998,6 +998,40 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
     function test_afterPayRecorded_silentlyReturnsOnCurrencyMismatchWithoutPriceFeed(address token) public {
         vm.assume(token != JBConstants.NATIVE_TOKEN);
 
+        // Deploy a hook with PRICES = address(0) to test the no-prices path.
+        JB721TiersHook noPricesOrigin = new JB721TiersHook(
+            IJBDirectory(mockJBDirectory),
+            IJBPermissions(mockJBPermissions),
+            IJBPrices(address(0)),
+            IJBRulesets(mockJBRulesets),
+            IJB721TiersHookStore(store),
+            IJBSplits(mockJBSplits),
+            trustedForwarder
+        );
+        address noPricesProxy = makeAddr("noPricesProxy2");
+        vm.etch(noPricesProxy, address(noPricesOrigin).code);
+        JB721TiersHook noPricesHook = JB721TiersHook(noPricesProxy);
+
+        (JB721TierConfig[] memory tierConfigs,) = _createTiers(defaultTierConfig, 10);
+        noPricesHook.initialize(
+            projectId,
+            name,
+            symbol,
+            baseUri,
+            IJB721TokenUriResolver(mockTokenUriResolver),
+            contractUri,
+            JB721InitTiersConfig({
+                tiers: tierConfigs, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18
+            }),
+            JB721TiersHookFlags({
+                    preventOverspending: false,
+                    issueTokensForSplits: false,
+                    noNewTiersWithReserves: false,
+                    noNewTiersWithVotes: false,
+                    noNewTiersWithOwnerMinting: false
+                })
+        );
+
         // Mock the directory call.
         mockAndExpect(
             address(mockJBDirectory),
@@ -1005,10 +1039,10 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
             abi.encode(true)
         );
 
-        // The payment's currency (18, from positional arg order) doesn't match the hook's pricing currency.
-        // With no price feed configured, this silently returns without minting (no revert).
+        // The payment's currency (18) doesn't match the hook's pricing currency (native token).
+        // With PRICES = address(0), normalizePaymentValue returns (0, false) → silently returns.
         vm.prank(mockTerminalAddress);
-        hook.afterPayRecordedWith(
+        noPricesHook.afterPayRecordedWith(
             JBAfterPayRecordedContext({
                 payer: msg.sender,
                 projectId: projectId,
@@ -1032,7 +1066,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
         );
 
         // Verify no credits were added (the function returned early).
-        assertEq(hook.payCreditsOf(msg.sender), 0);
+        assertEq(noPricesHook.payCreditsOf(msg.sender), 0);
     }
 
     function test_afterPayRecorded_mintWithExistingCreditsWhenMoreExistingCreditsThanNewCredits() public {
