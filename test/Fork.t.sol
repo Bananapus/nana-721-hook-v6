@@ -226,7 +226,7 @@ contract Fork_721Hook_Test is Test {
             tokenUriResolver: IJB721TokenUriResolver(address(0)),
             contractUri: "ipfs://contract",
             tiersConfig: JB721InitTiersConfig({
-                tiers: tierConfigs, currency: uint32(uint160(NATIVE_TOKEN)), decimals: 18, prices: IJBPrices(address(0))
+                tiers: tierConfigs, currency: uint32(uint160(NATIVE_TOKEN)), decimals: 18
             }),
             reserveBeneficiary: reserveBeneficiary,
             flags: flags
@@ -1420,8 +1420,7 @@ contract Fork_721Hook_Test is Test {
                 JB721InitTiersConfig({
                     tiers: emptyTiers,
                     currency: uint32(uint160(NATIVE_TOKEN)),
-                    decimals: 18,
-                    prices: IJBPrices(address(0))
+                    decimals: 18
                 }),
                 _defaultFlags()
             );

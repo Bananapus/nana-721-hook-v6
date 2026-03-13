@@ -794,8 +794,7 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
             tiersConfig: JB721InitTiersConfig({
                 tiers: tierConfigs,
                 currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18,
-                prices: IJBPrices(address(0))
+                decimals: 18
             }),
             reserveBeneficiary: reserveBeneficiary,
             flags: JB721TiersHookFlags({
@@ -889,8 +888,7 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
             tiersConfig: JB721InitTiersConfig({
                 tiers: tierConfigs,
                 currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18,
-                prices: IJBPrices(address(0))
+                decimals: 18
             }),
             reserveBeneficiary: reserveBeneficiary,
             flags: JB721TiersHookFlags({

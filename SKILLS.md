@@ -36,7 +36,7 @@ Tiered ERC-721 NFT hook for Juicebox V6 that mints NFTs when a project is paid a
 | `setDiscountPercentsOf(configs[])` | `JB721TiersHook` | Batch variant. Sets discount percent for multiple tiers. Requires `SET_721_DISCOUNT_PERCENT` permission. |
 | `tokenURI(tokenId)` | `JB721TiersHook` | Resolves token metadata URI. Delegates to `JB721TiersHookLib.resolveTokenURI`, which checks for a custom `tokenUriResolver` first, then falls back to IPFS decoding via `JBIpfsDecoder`. |
 | `firstOwnerOf(tokenId)` | `JB721TiersHook` | Returns the first owner of an NFT (the address that originally received it). Stored on first transfer out; returns current owner if never transferred. |
-| `pricingContext()` | `JB721TiersHook` | Unpacks and returns the currency, decimals, and prices contract from the packed `_packedPricingContext`. |
+| `pricingContext()` | `JB721TiersHook` | Unpacks and returns the currency and decimals from the packed `_packedPricingContext`. The prices contract is available via the `PRICES()` immutable getter. |
 | `balanceOf(owner)` | `JB721TiersHook` | Overrides ERC-721 `balanceOf` to delegate to `STORE.balanceOf`, which sums across all tiers. |
 | `hasMintPermissionFor(...)` | `JB721Hook` | Always returns `false`. Required by `IJBRulesetDataHook`; prevents the hook from granting mint permissions to anyone. |
 | `supportsInterface(interfaceId)` | `JB721TiersHook` | Returns `true` for `IJB721TiersHook`, `IJBRulesetDataHook`, `IJBPayHook`, `IJBCashOutHook`, `IERC2981`, `IERC721`, `IERC721Metadata`, `IERC165`. |

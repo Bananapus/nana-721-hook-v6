@@ -124,8 +124,7 @@ interface IJB721TiersHook is IJB721Hook {
     /// @notice Context for the pricing of this hook's tiers.
     /// @return currency The currency used for tier prices.
     /// @return decimals The amount of decimals being used in tier prices.
-    /// @return prices The prices contract used to resolve the value of payments in other currencies.
-    function pricingContext() external view returns (uint256 currency, uint256 decimals, IJBPrices prices);
+    function pricingContext() external view returns (uint256 currency, uint256 decimals);
 
     /// @notice The contract that exposes price feeds for currency conversions.
     /// @return The prices contract.

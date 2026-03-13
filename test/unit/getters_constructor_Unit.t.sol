@@ -21,7 +21,6 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
     function test_pricingContext_packingFunctionsAsExpected(
         uint32 currency,
         uint8 decimals,
-        address prices,
         bytes32 salt
     )
         public
@@ -34,7 +33,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
             baseUri,
             IJB721TokenUriResolver(mockTokenUriResolver),
             contractUri,
-            JB721InitTiersConfig({tiers: tiers, currency: currency, decimals: decimals, prices: IJBPrices(prices)}),
+            JB721InitTiersConfig({tiers: tiers, currency: currency, decimals: decimals}),
             address(0),
             JB721TiersHookFlags({
                 preventOverspending: false,
@@ -47,11 +46,10 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
 
         JB721TiersHook hook = JB721TiersHook(address(jbHookDeployer.deployHookFor(projectId, hookConfig, salt)));
 
-        (uint256 currency2, uint256 decimals2, IJBPrices prices2) = hook.pricingContext();
+        (uint256 currency2, uint256 decimals2) = hook.pricingContext();
         // Check: do the unpacked values from `pricingContext` match the values we used in the config?
         assertEq(currency2, uint256(currency));
         assertEq(decimals2, uint256(decimals));
-        assertEq(address(prices2), prices);
     }
 
     function test_bools_doesPackingAndUnpackingWork(bool a, bool b, bool c, bool d, bool e) public {
@@ -570,8 +568,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
             JB721InitTiersConfig({
                 tiers: tiers,
                 currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18,
-                prices: IJBPrices(address(0))
+                decimals: 18
             }),
             JB721TiersHookFlags({
                 preventOverspending: false,

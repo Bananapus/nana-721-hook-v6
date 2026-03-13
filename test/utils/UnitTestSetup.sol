@@ -222,8 +222,7 @@ contract UnitTestSetup is Test {
             JB721InitTiersConfig({
                 tiers: tiers,
                 currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18,
-                prices: IJBPrices(address(0))
+                decimals: 18
             }),
             address(0),
             JB721TiersHookFlags({
@@ -595,7 +594,7 @@ contract UnitTestSetup is Test {
         });
 
         JB721InitTiersConfig memory initConfig = JB721InitTiersConfig({
-            tiers: tierConfigs, currency: currency, decimals: decimals, prices: IJBPrices(oracle)
+            tiers: tierConfigs, currency: currency, decimals: decimals
         });
 
         tiersHook.initialize(
@@ -640,6 +639,7 @@ contract UnitTestSetup is Test {
                 })
             }),
             IJBDirectory(mockJBDirectory),
+            IJBPrices(mockJBPrices),
             IJBRulesets(mockJBRulesets),
             IJB721TiersHookStore(address(hookStore)),
             IJBSplits(mockJBSplits)
@@ -691,8 +691,7 @@ contract UnitTestSetup is Test {
             tiersConfig: JB721InitTiersConfig({
                 tiers: tierConfigs,
                 currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18,
-                prices: IJBPrices(address(0))
+                decimals: 18
             }),
             reserveBeneficiary: reserveBeneficiary,
             flags: JB721TiersHookFlags({

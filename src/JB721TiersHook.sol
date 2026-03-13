@@ -151,19 +151,15 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     }
 
     /// @notice Context for the pricing of this hook's tiers.
-    /// @dev If the `prices` contract is the zero address, this contract only accepts payments in the `currency` token.
     /// @return currency The currency used for tier prices.
     /// @return decimals The amount of decimals being used in tier prices.
-    /// @return prices The prices contract used to resolve the value of payments in currencies other than `currency`.
-    function pricingContext() external view override returns (uint256 currency, uint256 decimals, IJBPrices prices) {
+    function pricingContext() external view override returns (uint256 currency, uint256 decimals) {
         // Get a reference to the packed pricing context.
         uint256 packed = _packedPricingContext;
         // currency in bits 0-31 (32 bits).
         currency = uint256(uint32(packed));
         // pricing decimals in bits 32-39 (8 bits).
         decimals = uint256(uint8(packed >> 32));
-        // prices contract is an immutable.
-        prices = PRICES;
     }
 
     //*********************************************************************//

@@ -590,6 +590,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 })
             }),
             IJBDirectory(mockJBDirectory),
+            IJBPrices(mockJBPrices),
             IJBRulesets(mockJBRulesets),
             IJB721TiersHookStore(address(store)),
             IJBSplits(mockJBSplits)
@@ -714,8 +715,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             JB721InitTiersConfig({
                 tiers: tierConfigs,
                 currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18,
-                prices: IJBPrices(address(0))
+                decimals: 18
             }),
             JB721TiersHookFlags({
                 preventOverspending: false,
@@ -914,6 +914,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 })
             }),
             IJBDirectory(mockJBDirectory),
+            IJBPrices(mockJBPrices),
             IJBRulesets(mockJBRulesets),
             IJB721TiersHookStore(address(store)),
             IJBSplits(mockJBSplits)
@@ -1037,6 +1038,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 })
             }),
             IJBDirectory(mockJBDirectory),
+            IJBPrices(mockJBPrices),
             IJBRulesets(mockJBRulesets),
             IJB721TiersHookStore(address(store)),
             IJBSplits(mockJBSplits)
@@ -1149,8 +1151,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             JB721InitTiersConfig({
                 tiers: tierConfigs,
                 currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18,
-                prices: IJBPrices(address(0))
+                decimals: 18
             }),
             JB721TiersHookFlags({
                 preventOverspending: false,
@@ -1232,6 +1233,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 })
             }),
             IJBDirectory(mockJBDirectory),
+            IJBPrices(mockJBPrices),
             IJBRulesets(mockJBRulesets),
             IJB721TiersHookStore(address(store)),
             IJBSplits(mockJBSplits)
@@ -1382,6 +1384,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 })
             }),
             IJBDirectory(mockJBDirectory),
+            IJBPrices(mockJBPrices),
             IJBRulesets(mockJBRulesets),
             IJB721TiersHookStore(address(store)),
             IJBSplits(mockJBSplits)
@@ -1471,6 +1474,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 })
             }),
             IJBDirectory(mockJBDirectory),
+            IJBPrices(mockJBPrices),
             IJBRulesets(mockJBRulesets),
             IJB721TiersHookStore(address(store)),
             IJBSplits(mockJBSplits)
@@ -1609,6 +1613,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 })
             }),
             IJBDirectory(mockJBDirectory),
+            IJBPrices(mockJBPrices),
             IJBRulesets(mockJBRulesets),
             IJB721TiersHookStore(address(store)),
             IJBSplits(mockJBSplits)
@@ -1711,8 +1716,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             JB721InitTiersConfig({
                 tiers: tierConfigs,
                 currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18,
-                prices: IJBPrices(address(0))
+                decimals: 18
             }),
             JB721TiersHookFlags({
                 preventOverspending: false,
@@ -1788,8 +1792,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             JB721InitTiersConfig({
                 tiers: initialConfig,
                 currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18,
-                prices: IJBPrices(address(0))
+                decimals: 18
             }),
             JB721TiersHookFlags({
                 preventOverspending: false,
