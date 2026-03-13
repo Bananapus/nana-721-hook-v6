@@ -12,7 +12,7 @@ Deep implementation-level risk analysis covering all contracts in the 721 tiered
 4. **JBSplits** -- Trusted to store and return correct split configurations for tier split groups. The hook delegates split group management to this contract.
 5. **Token URI Resolver** -- If set, controls all NFT metadata rendering. Cannot affect funds but can misrepresent NFT properties. Set via `SET_721_METADATA` permission.
 6. **Store Contract** -- `JB721TiersHookStore` manages all tier state using a `msg.sender`-keyed trust model. The hook delegates pricing, supply, and reserve logic to the store.
-7. **JBPrices** -- If a prices contract is configured (for cross-currency payments), the hook trusts it for price conversion. A reverting price feed will block all payments in non-native currencies.
+7. **JBPrices** -- The hook's immutable `PRICES` contract (set in the constructor, shared across all clones) is trusted for cross-currency price conversion. A reverting price feed will block all payments in non-native currencies.
 
 ---
 

@@ -59,6 +59,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     // --------------- public immutable stored properties ---------------- //
     //*********************************************************************//
 
+    /// @notice The contract that exposes price feeds for currency conversions.
+    IJBPrices public immutable override PRICES;
+
     /// @notice The contract storing and managing project rulesets.
     IJBRulesets public immutable override RULESETS;
 
@@ -94,9 +97,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
     /// @notice Packed context for the pricing of this contract's tiers.
     /// @dev Packed into a uint256:
-    /// - currency in bits 0-31 (32 bits),
-    /// - pricing decimals in bits 32-39 (8 bits), and
-    /// - prices contract in bits 40-199 (160 bits).
+    /// - currency in bits 0-31 (32 bits), and
+    /// - pricing decimals in bits 32-39 (8 bits).
     uint256 internal _packedPricingContext;
 
     //*********************************************************************//
@@ -105,6 +107,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
     /// @param directory A directory of terminals and controllers for projects.
     /// @param permissions A contract storing permissions.
+    /// @param prices A contract that exposes price feeds for currency conversions.
     /// @param rulesets A contract storing and managing project rulesets.
     /// @param store The contract which stores the NFT's data.
     /// @param splits The contract that stores and manages splits.
@@ -112,6 +115,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     constructor(
         IJBDirectory directory,
         IJBPermissions permissions,
+        IJBPrices prices,
         IJBRulesets rulesets,
         IJB721TiersHookStore store,
         IJBSplits splits,
@@ -121,6 +125,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         JB721Hook(directory)
         ERC2771Context(trustedForwarder)
     {
+        PRICES = prices;
         RULESETS = rulesets;
         STORE = store;
         SPLITS = splits;
@@ -157,8 +162,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         currency = uint256(uint32(packed));
         // pricing decimals in bits 32-39 (8 bits).
         decimals = uint256(uint8(packed >> 32));
-        // prices contract in bits 40-199 (160 bits).
-        prices = IJBPrices(address(uint160(packed >> 40)));
+        // prices contract is an immutable.
+        prices = PRICES;
     }
 
     //*********************************************************************//
@@ -197,6 +202,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                 totalSplitAmount,
                 splitMetadata,
                 _packedPricingContext,
+                PRICES,
                 context.projectId,
                 context.amount.currency,
                 context.amount.decimals
@@ -268,8 +274,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         packed |= uint256(tiersConfig.currency);
         // pack the pricing decimals in bits 32-39 (8 bits).
         packed |= uint256(tiersConfig.decimals) << 32;
-        // pack the prices contract in bits 40-199 (160 bits).
-        packed |= uint256(uint160(address(tiersConfig.prices))) << 40;
         // Store the packed value.
         // slither-disable-next-line events-maths
         _packedPricingContext = packed;
@@ -623,6 +627,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             bool valid;
             (value, valid) = JB721TiersHookLib.normalizePaymentValue(
                 _packedPricingContext,
+                PRICES,
                 PROJECT_ID,
                 context.amount.value,
                 context.amount.currency,

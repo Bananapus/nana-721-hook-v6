@@ -21,7 +21,7 @@ Tiered ERC-721 NFT hook for Juicebox V6 that mints NFTs when a project is paid a
 
 | Function | Contract | What it does |
 |----------|----------|--------------|
-| `initialize(projectId, name, symbol, baseUri, tokenUriResolver, contractUri, tiersConfig, flags)` | `JB721TiersHook` | One-time setup for a cloned hook instance. Stores pricing context (currency, decimals, prices contract packed into uint256), records tiers and flags in the store. Registers any configured tier splits in `JBSplits` via `SPLITS.setSplitGroupsOf`. Validates `decimals <= 18`. |
+| `initialize(projectId, name, symbol, baseUri, tokenUriResolver, contractUri, tiersConfig, flags)` | `JB721TiersHook` | One-time setup for a cloned hook instance. Stores pricing context (currency, decimals, and the immutable `PRICES` contract packed into uint256), records tiers and flags in the store. Registers any configured tier splits in `JBSplits` via `SPLITS.setSplitGroupsOf`. Validates `decimals <= 18`. |
 | `afterPayRecordedWith(context)` | `JB721Hook` | Called by terminal after payment. Validates caller is a project terminal, delegates to virtual `_processPayment`. |
 | `_processPayment(context)` | `JB721TiersHook` | Normalizes payment value via pricing context, decodes payer metadata for tier IDs to mint, calls `_mintAll`, manages pay credits for overspending. Distributes tier split funds via `JB721TiersHookLib.distributeAll` if split amounts were forwarded. |
 | `afterCashOutRecordedWith(context)` | `JB721Hook` | Called by terminal during cash out. Decodes token IDs from metadata, validates ownership, burns NFTs, delegates to virtual `_didBurn`. Reverts if `msg.value != 0`. |
@@ -85,7 +85,7 @@ Tiered ERC-721 NFT hook for Juicebox V6 that mints NFTs when a project is paid a
 | `JB721TierConfig` | `uint104 price`, `uint32 initialSupply`, `uint32 votingUnits`, `uint16 reserveFrequency`, `address reserveBeneficiary`, `bytes32 encodedIPFSUri`, `uint24 category`, `uint8 discountPercent`, `bool allowOwnerMint`, `bool useReserveBeneficiaryAsDefault`, `bool transfersPausable`, `bool useVotingUnits`, `bool cannotBeRemoved`, `bool cannotIncreaseDiscountPercent`, `uint32 splitPercent`, `JBSplit[] splits` | `adjustTiers`, `initialize`, `recordAddTiers` |
 | `JB721Tier` | `uint32 id`, `uint104 price`, `uint32 remainingSupply`, `uint32 initialSupply`, `uint104 votingUnits`, `uint16 reserveFrequency`, `address reserveBeneficiary`, `bytes32 encodedIPFSUri`, `uint24 category`, `uint8 discountPercent`, `bool allowOwnerMint`, `bool transfersPausable`, `bool cannotBeRemoved`, `bool cannotIncreaseDiscountPercent`, `uint32 splitPercent`, `string resolvedUri` | Return type from `tierOf`, `tiersOf`, `tierOfTokenId` |
 | `JBStored721Tier` | `uint104 price`, `uint32 remainingSupply`, `uint32 initialSupply`, `uint32 splitPercent`, `uint24 category`, `uint8 discountPercent`, `uint16 reserveFrequency`, `uint8 packedBools` (allowOwnerMint, transfersPausable, useVotingUnits, cannotBeRemoved, cannotIncreaseDiscountPercent) | Internal storage in `JB721TiersHookStore`. Voting units stored separately in `_tierVotingUnitsOf` when `useVotingUnits` is true. |
-| `JB721InitTiersConfig` | `JB721TierConfig[] tiers`, `uint32 currency`, `uint8 decimals`, `IJBPrices prices` | `initialize` -- defines tiers and pricing context |
+| `JB721InitTiersConfig` | `JB721TierConfig[] tiers`, `uint32 currency`, `uint8 decimals` | `initialize` -- defines tiers and pricing context. The prices contract is an immutable on the hook, not passed per-config. |
 | `JBDeploy721TiersHookConfig` | `string name`, `string symbol`, `string baseUri`, `IJB721TokenUriResolver tokenUriResolver`, `string contractUri`, `JB721InitTiersConfig tiersConfig`, `address reserveBeneficiary`, `JB721TiersHookFlags flags` | `deployHookFor`, `launchProjectFor` |
 | `JB721TiersHookFlags` | `bool noNewTiersWithReserves`, `bool noNewTiersWithVotes`, `bool noNewTiersWithOwnerMinting`, `bool preventOverspending`, `bool issueTokensForSplits` | `initialize`, `recordFlags` |
 | `JB721TiersRulesetMetadata` | `bool pauseTransfers`, `bool pauseMintPendingReserves` | Packed into `JBRulesetMetadata.metadata` per-ruleset (bit 0 = pauseTransfers, bit 1 = pauseMintPendingReserves) |
@@ -145,9 +145,9 @@ Each tier has configurable voting power:
 
 ## Gotchas
 
-- `JB721TiersHook` is deployed as a **minimal clone** (not a full deployment). The constructor sets immutables (`RULESETS`, `STORE`, `SPLITS`, `DIRECTORY`, `METADATA_ID_TARGET`), and `initialize()` sets per-instance state. Calling `initialize()` twice reverts with `JB721TiersHook_AlreadyInitialized`.
+- `JB721TiersHook` is deployed as a **minimal clone** (not a full deployment). The constructor sets immutables (`PRICES`, `RULESETS`, `STORE`, `SPLITS`, `DIRECTORY`, `METADATA_ID_TARGET`), and `initialize()` sets per-instance state. Calling `initialize()` twice reverts with `JB721TiersHook_AlreadyInitialized`.
 - **`JB721Hook` abstract base**: `JB721TiersHook` extends `JB721Hook`, which handles generic 721 hook lifecycle (terminal validation, burn loop, metadata decoding). `JB721TiersHook` overrides `cashOutWeightOf`, `totalCashOutWeight`, `_didBurn`, `_processPayment`, and `beforePayRecordedWith`. Errors like `JB721Hook_InvalidPay` and `JB721Hook_InvalidCashOut` are defined on the abstract class, not `JB721TiersHook`.
-- **Pricing context is bit-packed** into a single `uint256`: currency (bits 0-31), decimals (bits 32-39), prices contract address (bits 40-199). Read it via `pricingContext()`.
+- **Pricing context is bit-packed** into a single `uint256`: currency (bits 0-31) and decimals (bits 32-39). The prices contract is the `PRICES` immutable (set in constructor). Read pricing context via `pricingContext()`.
 - **Pricing decimals must be <= 18**: `initialize` reverts with `JB721TiersHook_InvalidPricingDecimals` otherwise.
 - **Token IDs encode tier ID**: `tokenId = tierId * 1_000_000_000 + mintNumber`. Use `STORE.tierIdOfToken(tokenId)` to extract the tier ID.
 - **Pay credits**: If a payer overpays (amount > total tier prices), the excess is stored as `payCreditsOf[beneficiary]` and can be applied to future mints. This only works when `preventOverspending` flag is `false`. Credits are only combined with payment when `payer == beneficiary`.
@@ -219,8 +219,7 @@ tiers[0] = JB721TierConfig({
         tiersConfig: JB721InitTiersConfig({
             tiers: tiers,
             currency: 1,        // ETH
-            decimals: 18,
-            prices: IJBPrices(address(0))  // no cross-currency pricing
+            decimals: 18
         }),
         reserveBeneficiary: address(0),
         flags: JB721TiersHookFlags({

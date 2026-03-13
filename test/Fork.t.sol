@@ -191,7 +191,7 @@ contract Fork_721Hook_Test is Test {
     function _deploy721Hook() internal {
         store = new JB721TiersHookStore();
         hookImpl =
-            new JB721TiersHook(jbDirectory, jbPermissions, jbRulesets, store, IJBSplits(address(jbSplits)), address(0));
+            new JB721TiersHook(jbDirectory, jbPermissions, jbPrices, jbRulesets, store, IJBSplits(address(jbSplits)), address(0));
         addressRegistry = new JBAddressRegistry();
         hookDeployer = new JB721TiersHookDeployer(hookImpl, store, addressRegistry, address(0));
         projectDeployer = new JB721TiersHookProjectDeployer(

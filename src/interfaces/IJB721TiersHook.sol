@@ -127,6 +127,10 @@ interface IJB721TiersHook is IJB721Hook {
     /// @return prices The prices contract used to resolve the value of payments in other currencies.
     function pricingContext() external view returns (uint256 currency, uint256 decimals, IJBPrices prices);
 
+    /// @notice The contract that exposes price feeds for currency conversions.
+    /// @return The prices contract.
+    function PRICES() external view returns (IJBPrices);
+
     /// @notice The contract storing and managing project rulesets.
     /// @return The rulesets contract.
     function RULESETS() external view returns (IJBRulesets);

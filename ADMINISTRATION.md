@@ -108,12 +108,13 @@ The following are set at deploy/initialization time and **cannot be changed afte
 | Property | Set In | Scope |
 |----------|--------|-------|
 | `DIRECTORY` | Constructor | Which terminal/controller directory is trusted |
+| `PRICES` | Constructor | Which prices contract is used for cross-currency conversions |
 | `RULESETS` | Constructor | Which rulesets contract is consulted |
 | `STORE` | Constructor | Which store manages tier data |
 | `SPLITS` | Constructor | Which splits contract manages tier split groups |
 | `METADATA_ID_TARGET` | Constructor | The address used for metadata ID derivation (original implementation address for clones) |
 | `PROJECT_ID` | `initialize()` | Which project this hook belongs to |
-| Pricing context (currency, decimals, prices contract) | `initialize()` | Packed into `_packedPricingContext` -- the token denomination for tier prices |
+| Pricing context (currency, decimals) | `initialize()` | Packed into `_packedPricingContext` -- the token denomination for tier prices |
 | `JB721TiersHookFlags` | `initialize()` | `noNewTiersWithReserves`, `noNewTiersWithVotes`, `noNewTiersWithOwnerMinting`, `preventOverspending`, `issueTokensForSplits` |
 | Per-tier `cannotBeRemoved` | `recordAddTiers()` | Whether a tier can be soft-removed |
 | Per-tier `cannotIncreaseDiscountPercent` | `recordAddTiers()` | Whether a tier's discount can be increased |
@@ -145,7 +146,7 @@ What the hook owner **cannot** do:
 - **Cannot increase a tier's discount if `cannotIncreaseDiscountPercent` is set.** The store enforces this in `recordSetDiscountPercentOf()` (line 1176).
 - **Cannot mint from tiers without `allowOwnerMint`.** The `mintFor()` function passes `isOwnerMint: true` to the store, which checks the flag (line 1060).
 - **Cannot re-initialize a hook.** The `initialize()` function reverts if `PROJECT_ID != 0` (line 237).
-- **Cannot change the pricing currency or decimals.** The `_packedPricingContext` is set once during initialization.
+- **Cannot change the pricing currency, decimals, or prices contract.** `PRICES` is immutable (set in constructor), and the currency/decimals in `_packedPricingContext` are set once during initialization.
 - **Cannot bypass the flag restrictions.** Once `noNewTiersWithReserves`, `noNewTiersWithVotes`, or `noNewTiersWithOwnerMinting` are set, all future tiers added via `adjustTiers()` must comply.
 - **Cannot mint more reserves than the formula allows.** Reserve mints are bounded by `ceil(nonReserveMints / reserveFrequency)`.
 - **Cannot modify the split groups outside of `adjustTiers()`.** Tier split groups are set during tier addition via the library; there is no separate admin function to change them directly on the hook (though the project owner could call `JBSplits.setSplitGroupsOf()` directly if they have the appropriate permission).

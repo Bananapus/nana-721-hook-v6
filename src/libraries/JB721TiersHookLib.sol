@@ -100,7 +100,8 @@ library JB721TiersHookLib {
     }
 
     /// @notice Normalizes a payment value based on the packed pricing context.
-    /// @param packedPricingContext The packed pricing context (currency, decimals, prices address).
+    /// @param packedPricingContext The packed pricing context (currency, decimals).
+    /// @param prices The prices contract used for currency conversion.
     /// @param projectId The project ID.
     /// @param amountValue The payment amount value.
     /// @param amountCurrency The payment amount currency.
@@ -109,6 +110,7 @@ library JB721TiersHookLib {
     /// @return valid Whether the value is valid (false means no prices contract and currencies differ).
     function normalizePaymentValue(
         uint256 packedPricingContext,
+        IJBPrices prices,
         uint256 projectId,
         uint256 amountValue,
         uint256 amountCurrency,
@@ -121,7 +123,6 @@ library JB721TiersHookLib {
         uint256 pricingCurrency = uint256(uint32(packedPricingContext));
         if (amountCurrency == pricingCurrency) return (amountValue, true);
 
-        IJBPrices prices = IJBPrices(address(uint160(packedPricingContext >> 40)));
         if (address(prices) == address(0)) return (0, false);
 
         uint256 pricingDecimals = uint256(uint8(packedPricingContext >> 32));
@@ -193,7 +194,8 @@ library JB721TiersHookLib {
     /// @dev Called after `calculateSplitAmounts` when the payment currency differs from the tier pricing currency.
     /// @param totalSplitAmount The total split amount in tier pricing denomination.
     /// @param splitMetadata The encoded per-tier breakdown (tierIds, amounts) from calculateSplitAmounts.
-    /// @param packedPricingContext The packed pricing context (currency, decimals, prices address).
+    /// @param packedPricingContext The packed pricing context (currency, decimals).
+    /// @param prices The prices contract used for currency conversion.
     /// @param projectId The project ID.
     /// @param amountCurrency The payment amount currency.
     /// @param amountDecimals The payment amount decimals.
@@ -203,6 +205,7 @@ library JB721TiersHookLib {
         uint256 totalSplitAmount,
         bytes memory splitMetadata,
         uint256 packedPricingContext,
+        IJBPrices prices,
         uint256 projectId,
         uint256 amountCurrency,
         uint256 amountDecimals
@@ -214,7 +217,6 @@ library JB721TiersHookLib {
         uint256 pricingCurrency = uint256(uint32(packedPricingContext));
         if (amountCurrency == pricingCurrency) return (totalSplitAmount, splitMetadata);
 
-        IJBPrices prices = IJBPrices(address(uint160(packedPricingContext >> 40)));
         if (address(prices) == address(0)) return (totalSplitAmount, splitMetadata);
 
         uint256 pricingDecimals = uint256(uint8(packedPricingContext >> 32));

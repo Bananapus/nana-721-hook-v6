@@ -38,6 +38,7 @@ contract UnitTestSetup is Test {
     address reserveBeneficiary;
     address mockJBController;
     address mockJBDirectory;
+    address mockJBPrices;
     address mockJBRulesets;
     address mockTokenUriResolver;
     address mockTerminalAddress;
@@ -123,6 +124,7 @@ contract UnitTestSetup is Test {
         owner = makeAddr("owner");
         reserveBeneficiary = makeAddr("reserveBeneficiary");
         mockJBDirectory = makeAddr("mockJBDirectory");
+        mockJBPrices = makeAddr("mockJBPrices");
         mockJBRulesets = makeAddr("mockJBRulesets");
         mockTerminalAddress = makeAddr("mockTerminalAddress");
         mockJBProjects = makeAddr("mockJBProjects");
@@ -203,6 +205,7 @@ contract UnitTestSetup is Test {
         hookOrigin = new JB721TiersHook(
             IJBDirectory(mockJBDirectory),
             IJBPermissions(mockJBPermissions),
+            IJBPrices(mockJBPrices),
             IJBRulesets(mockJBRulesets),
             IJB721TiersHookStore(store),
             IJBSplits(mockJBSplits),
