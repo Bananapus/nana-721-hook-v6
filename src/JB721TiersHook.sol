@@ -189,20 +189,21 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         hookSpecifications = new JBPayHookSpecification[](1);
 
         // Calculate per-tier split amounts via the library.
-        (uint256 totalSplitAmount, bytes memory splitMetadata) =
-            JB721TiersHookLib.calculateSplitAmounts(STORE, address(this), METADATA_ID_TARGET, context.metadata);
+        (uint256 totalSplitAmount, bytes memory splitMetadata) = JB721TiersHookLib.calculateSplitAmounts({
+            store: STORE, hook: address(this), metadataIdTarget: METADATA_ID_TARGET, metadata: context.metadata
+        });
 
         // Convert split amounts from tier pricing to payment token denomination if currencies differ.
         if (totalSplitAmount != 0) {
-            (totalSplitAmount, splitMetadata) = JB721TiersHookLib.convertSplitAmounts(
-                totalSplitAmount,
-                splitMetadata,
-                _packedPricingContext,
-                PRICES,
-                context.projectId,
-                context.amount.currency,
-                context.amount.decimals
-            );
+            (totalSplitAmount, splitMetadata) = JB721TiersHookLib.convertSplitAmounts({
+                totalSplitAmount: totalSplitAmount,
+                splitMetadata: splitMetadata,
+                packedPricingContext: _packedPricingContext,
+                prices: PRICES,
+                projectId: context.projectId,
+                amountCurrency: context.amount.currency,
+                amountDecimals: context.amount.decimals
+            });
         }
 
         // Adjust weight so the terminal mints tokens only for the amount that actually enters the project.
@@ -211,7 +212,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             weight = context.weight;
         } else if (context.amount.value > totalSplitAmount) {
             // Partial splits — scale weight by the fraction that enters the project.
-            weight = mulDiv(context.weight, context.amount.value - totalSplitAmount, context.amount.value);
+            weight = mulDiv({
+                x: context.weight, y: context.amount.value - totalSplitAmount, denominator: context.amount.value
+            });
         } else {
             // Splits consume the entire payment — no tokens should be minted.
             weight = 0;
@@ -287,9 +290,14 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
         // Record the tiers in this hook's store and set any tier split groups.
         if (tiersConfig.tiers.length != 0) {
-            JB721TiersHookLib.recordAddTiersFor(
-                STORE, SPLITS, projectId, address(this), _msgSender(), tiersConfig.tiers
-            );
+            JB721TiersHookLib.recordAddTiersFor({
+                store: STORE,
+                splits: SPLITS,
+                projectId: projectId,
+                hookAddress: address(this),
+                caller: _msgSender(),
+                tiersToAdd: tiersConfig.tiers
+            });
         }
 
         // Set the flags if needed.
@@ -343,9 +351,15 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         });
 
         // Delegate to the library (via DELEGATECALL) for tier removal, addition, event emission, and split setting.
-        JB721TiersHookLib.adjustTiersFor(
-            STORE, SPLITS, PROJECT_ID, address(this), _msgSender(), tiersToAdd, tierIdsToRemove
-        );
+        JB721TiersHookLib.adjustTiersFor({
+            store: STORE,
+            splits: SPLITS,
+            projectId: PROJECT_ID,
+            hookAddress: address(this),
+            caller: _msgSender(),
+            tiersToAdd: tiersToAdd,
+            tierIdsToRemove: tierIdsToRemove
+        });
     }
 
     /// @notice Manually mint NFTs from the provided tiers .
@@ -376,7 +390,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             uint256 tokenId = tokenIds[i];
 
             // Mint the NFT.
-            _mint(beneficiary, tokenId);
+            _mint({to: beneficiary, tokenId: tokenId});
 
             emit Mint({
                 tokenId: tokenId, tierId: tierIds[i], beneficiary: beneficiary, totalAmountPaid: 0, caller: _msgSender()
@@ -523,7 +537,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
             // Mint the NFT.
             // slither-disable-next-line reentrency-events
-            _mint(reserveBeneficiary, tokenId);
+            _mint({to: reserveBeneficiary, tokenId: tokenId});
         }
     }
 
@@ -607,7 +621,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
             // Mint the NFT.
             // slither-disable-next-line reentrancy-events
-            _mint(beneficiary, tokenId);
+            _mint({to: beneficiary, tokenId: tokenId});
         }
     }
 
@@ -621,14 +635,14 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         uint256 value;
         {
             bool valid;
-            (value, valid) = JB721TiersHookLib.normalizePaymentValue(
-                _packedPricingContext,
-                PRICES,
-                PROJECT_ID,
-                context.amount.value,
-                context.amount.currency,
-                context.amount.decimals
-            );
+            (value, valid) = JB721TiersHookLib.normalizePaymentValue({
+                packedPricingContext: _packedPricingContext,
+                prices: PRICES,
+                projectId: PROJECT_ID,
+                amountValue: context.amount.value,
+                amountCurrency: context.amount.currency,
+                amountDecimals: context.amount.decimals
+            });
             if (!valid) return;
         }
 
@@ -713,9 +727,14 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                     .safeTransferFrom(msg.sender, address(this), context.forwardedAmount.value);
             }
 
-            JB721TiersHookLib.distributeAll(
-                DIRECTORY, SPLITS, PROJECT_ID, address(this), context.forwardedAmount.token, context.hookMetadata
-            );
+            JB721TiersHookLib.distributeAll({
+                directory: DIRECTORY,
+                splits: SPLITS,
+                projectId: PROJECT_ID,
+                hookAddress: address(this),
+                token: context.forwardedAmount.token,
+                encodedSplitData: context.hookMetadata
+            });
         }
     }
 
@@ -747,7 +766,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         JB721Tier memory tier = STORE.tierOfTokenId({hook: address(this), tokenId: tokenId, includeResolvedUri: false});
 
         // Record the transfers and keep a reference to where the token is coming from.
-        from = super._update(to, tokenId, auth);
+        from = super._update({to: to, tokenId: tokenId, auth: auth});
 
         // Transfers must not be paused (when not minting or burning).
         if (from != address(0)) {

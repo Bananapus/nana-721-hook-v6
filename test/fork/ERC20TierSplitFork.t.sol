@@ -155,8 +155,9 @@ contract ERC20TierSplitFork is Test {
 
     function _deploy721Hook() internal {
         store = new JB721TiersHookStore();
-        hookImpl =
-            new JB721TiersHook(jbDirectory, jbPermissions, jbPrices, jbRulesets, store, IJBSplits(address(jbSplits)), address(0));
+        hookImpl = new JB721TiersHook(
+            jbDirectory, jbPermissions, jbPrices, jbRulesets, store, IJBSplits(address(jbSplits)), address(0)
+        );
         addressRegistry = new JBAddressRegistry();
         hookDeployer = new JB721TiersHookDeployer(hookImpl, store, addressRegistry, address(0));
         projectDeployer = new JB721TiersHookProjectDeployer(
@@ -185,9 +186,7 @@ contract ERC20TierSplitFork is Test {
             baseUri: "ipfs://base/",
             tokenUriResolver: IJB721TokenUriResolver(address(0)),
             contractUri: "ipfs://contract",
-            tiersConfig: JB721InitTiersConfig({
-                tiers: tierConfigs, currency: currency, decimals: tokenDecimals
-            }),
+            tiersConfig: JB721InitTiersConfig({tiers: tierConfigs, currency: currency, decimals: tokenDecimals}),
             reserveBeneficiary: reserveBeneficiary,
             flags: JB721TiersHookFlags({
                 preventOverspending: false,
@@ -259,9 +258,7 @@ contract ERC20TierSplitFork is Test {
             tokenUriResolver: IJB721TokenUriResolver(address(0)),
             contractUri: "ipfs://contract",
             tiersConfig: JB721InitTiersConfig({
-                tiers: tierConfigs,
-                currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18
+                tiers: tierConfigs, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18
             }),
             reserveBeneficiary: reserveBeneficiary,
             flags: JB721TiersHookFlags({

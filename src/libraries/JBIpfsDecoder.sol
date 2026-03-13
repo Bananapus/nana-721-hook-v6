@@ -62,7 +62,7 @@ library JBIpfsDecoder {
                 carry = carry / 58;
             }
         }
-        return string(_toAlphabet(_reverse(_truncate(digits, digitlength))));
+        return string(_toAlphabet(_reverse(_truncate({array: digits, length: digitlength}))));
     }
 
     function _truncate(uint8[] memory array, uint8 length) private pure returns (uint8[] memory) {

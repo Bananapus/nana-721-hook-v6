@@ -65,7 +65,13 @@ contract ForTest_JB721TiersHook is JB721TiersHook {
     )
         // The directory is also `IJBPermissioned`.
         JB721TiersHook(
-            directory, IJBPermissioned(address(directory)).PERMISSIONS(), prices, rulesets, store, splits, _trustedForwarder
+            directory,
+            IJBPermissioned(address(directory)).PERMISSIONS(),
+            prices,
+            rulesets,
+            store,
+            splits,
+            _trustedForwarder
         )
     {
         // Disable the safety check to not allow initializing the original contract
@@ -77,9 +83,7 @@ contract ForTest_JB721TiersHook is JB721TiersHook {
             config.tokenUriResolver,
             config.contractUri,
             JB721InitTiersConfig({
-                tiers: config.tiers,
-                currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18
+                tiers: config.tiers, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18
             }),
             config.flags
         );

@@ -1067,7 +1067,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
             // Apply a discount if needed.
             if (storedTier.discountPercent > 0) {
-                price -= mulDiv(price, storedTier.discountPercent, JB721Constants.DISCOUNT_DENOMINATOR);
+                price -= mulDiv({
+                    x: price, y: storedTier.discountPercent, denominator: JB721Constants.DISCOUNT_DENOMINATOR
+                });
             }
 
             // Make sure the `amount` is greater than or equal to the tier's price.

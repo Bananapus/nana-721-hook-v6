@@ -792,9 +792,7 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
             tokenUriResolver: IJB721TokenUriResolver(address(0)),
             contractUri: contractUri,
             tiersConfig: JB721InitTiersConfig({
-                tiers: tierConfigs,
-                currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18
+                tiers: tierConfigs, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18
             }),
             reserveBeneficiary: reserveBeneficiary,
             flags: JB721TiersHookFlags({
@@ -886,9 +884,7 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
             tokenUriResolver: IJB721TokenUriResolver(address(0)),
             contractUri: contractUri,
             tiersConfig: JB721InitTiersConfig({
-                tiers: tierConfigs,
-                currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18
+                tiers: tierConfigs, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18
             }),
             reserveBeneficiary: reserveBeneficiary,
             flags: JB721TiersHookFlags({

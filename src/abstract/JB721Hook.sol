@@ -233,7 +233,10 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
 
         // Make sure the caller is a terminal of the project, and that the call is being made on behalf of an
         // interaction with the correct project.
-        if (!DIRECTORY.isTerminalOf(projectId, IJBTerminal(msg.sender)) || context.projectId != projectId) {
+        if (
+            !DIRECTORY.isTerminalOf({projectId: projectId, terminal: IJBTerminal(msg.sender)})
+                || context.projectId != projectId
+        ) {
             revert JB721Hook_InvalidPay();
         }
 

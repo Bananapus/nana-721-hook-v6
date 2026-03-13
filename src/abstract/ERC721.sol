@@ -118,7 +118,7 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      * @dev See {IERC721-approve}.
      */
     function approve(address to, uint256 tokenId) public virtual {
-        _approve(to, tokenId, _msgSender());
+        _approve({to: to, tokenId: tokenId, auth: _msgSender()});
     }
 
     /**
@@ -134,7 +134,7 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      * @dev See {IERC721-setApprovalForAll}.
      */
     function setApprovalForAll(address operator, bool approved) public virtual {
-        _setApprovalForAll(_msgSender(), operator, approved);
+        _setApprovalForAll({owner: _msgSender(), operator: operator, approved: approved});
     }
 
     /**
@@ -153,7 +153,7 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
         }
         // Setting an "auth" arguments enables the `_isAuthorized` check which verifies that the token exists
         // (from != 0). Therefore, it is not needed to verify that the return value is not 0 here.
-        address previousOwner = _update(to, tokenId, _msgSender());
+        address previousOwner = _update({to: to, tokenId: tokenId, auth: _msgSender()});
         if (previousOwner != from) {
             revert ERC721IncorrectOwner(from, tokenId, previousOwner);
         }
@@ -163,15 +163,15 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      * @dev See {IERC721-safeTransferFrom}.
      */
     function safeTransferFrom(address from, address to, uint256 tokenId) public {
-        safeTransferFrom(from, to, tokenId, "");
+        safeTransferFrom({from: from, to: to, tokenId: tokenId, data: ""});
     }
 
     /**
      * @dev See {IERC721-safeTransferFrom}.
      */
     function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data) public virtual {
-        transferFrom(from, to, tokenId);
-        _checkOnERC721Received(from, to, tokenId, data);
+        transferFrom({from: from, to: to, tokenId: tokenId});
+        _checkOnERC721Received({from: from, to: to, tokenId: tokenId, data: data});
     }
 
     /**
@@ -255,13 +255,13 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
 
         // Perform (optional) operator check
         if (auth != address(0)) {
-            _checkAuthorized(from, auth, tokenId);
+            _checkAuthorized({owner: from, spender: auth, tokenId: tokenId});
         }
 
         // Execute the update
         if (from != address(0)) {
             // Clear approval. No need to re-authorize or emit the Approval event
-            _approve(address(0), tokenId, address(0), false);
+            _approve({to: address(0), tokenId: tokenId, auth: address(0), emitEvent: false});
 
             unchecked {
                 _balances[from] -= 1;
@@ -297,7 +297,7 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
         if (to == address(0)) {
             revert ERC721InvalidReceiver(address(0));
         }
-        address previousOwner = _update(to, tokenId, address(0));
+        address previousOwner = _update({to: to, tokenId: tokenId, auth: address(0)});
         if (previousOwner != address(0)) {
             revert ERC721InvalidSender(address(0));
         }
@@ -315,7 +315,7 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      * Emits a {Transfer} event.
      */
     function _safeMint(address to, uint256 tokenId) internal {
-        _safeMint(to, tokenId, "");
+        _safeMint({to: to, tokenId: tokenId, data: ""});
     }
 
     /**
@@ -323,8 +323,8 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      * forwarded in {IERC721Receiver-onERC721Received} to contract recipients.
      */
     function _safeMint(address to, uint256 tokenId, bytes memory data) internal virtual {
-        _mint(to, tokenId);
-        _checkOnERC721Received(address(0), to, tokenId, data);
+        _mint({to: to, tokenId: tokenId});
+        _checkOnERC721Received({from: address(0), to: to, tokenId: tokenId, data: data});
     }
 
     /**
@@ -339,7 +339,7 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      * Emits a {Transfer} event.
      */
     function _burn(uint256 tokenId) internal {
-        address previousOwner = _update(address(0), tokenId, address(0));
+        address previousOwner = _update({to: address(0), tokenId: tokenId, auth: address(0)});
         if (previousOwner == address(0)) {
             revert ERC721NonexistentToken(tokenId);
         }
@@ -360,7 +360,7 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
         if (to == address(0)) {
             revert ERC721InvalidReceiver(address(0));
         }
-        address previousOwner = _update(to, tokenId, address(0));
+        address previousOwner = _update({to: to, tokenId: tokenId, auth: address(0)});
         if (previousOwner == address(0)) {
             revert ERC721NonexistentToken(tokenId);
         } else if (previousOwner != from) {
@@ -389,7 +389,7 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      * Emits a {Transfer} event.
      */
     function _safeTransfer(address from, address to, uint256 tokenId) internal {
-        _safeTransfer(from, to, tokenId, "");
+        _safeTransfer({from: from, to: to, tokenId: tokenId, data: ""});
     }
 
     /**
@@ -398,8 +398,8 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      * forwarded in {IERC721Receiver-onERC721Received} to contract recipients.
      */
     function _safeTransfer(address from, address to, uint256 tokenId, bytes memory data) internal virtual {
-        _transfer(from, to, tokenId);
-        _checkOnERC721Received(from, to, tokenId, data);
+        _transfer({from: from, to: to, tokenId: tokenId});
+        _checkOnERC721Received({from: from, to: to, tokenId: tokenId, data: data});
     }
 
     /**
@@ -413,7 +413,7 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      * Overrides to this logic should be done to the variant with an additional `bool emitEvent` argument.
      */
     function _approve(address to, uint256 tokenId, address auth) internal {
-        _approve(to, tokenId, auth, true);
+        _approve({to: to, tokenId: tokenId, auth: auth, emitEvent: true});
     }
 
     /**
@@ -479,7 +479,10 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      */
     function _checkOnERC721Received(address from, address to, uint256 tokenId, bytes memory data) private {
         if (to.code.length > 0) {
-            try IERC721Receiver(to).onERC721Received(_msgSender(), from, tokenId, data) returns (bytes4 retval) {
+            try IERC721Receiver(to)
+                .onERC721Received({operator: _msgSender(), from: from, tokenId: tokenId, data: data}) returns (
+                bytes4 retval
+            ) {
                 if (retval != IERC721Receiver.onERC721Received.selector) {
                     revert ERC721InvalidReceiver(to);
                 }

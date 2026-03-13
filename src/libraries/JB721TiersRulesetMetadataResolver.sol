@@ -39,6 +39,9 @@ library JB721TiersRulesetMetadataResolver {
     /// @param packedMetadata The packed metadata to expand.
     /// @return metadata The metadata as a `JB721TiersRulesetMetadata` struct.
     function expandMetadata(uint16 packedMetadata) internal pure returns (JB721TiersRulesetMetadata memory metadata) {
-        return JB721TiersRulesetMetadata(transfersPaused(packedMetadata), mintPendingReservesPaused(packedMetadata));
+        return JB721TiersRulesetMetadata({
+            pauseTransfers: transfersPaused(packedMetadata),
+            pauseMintPendingReserves: mintPendingReservesPaused(packedMetadata)
+        });
     }
 }

@@ -713,17 +713,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             IJB721TokenUriResolver(mockTokenUriResolver),
             contractUri,
             JB721InitTiersConfig({
-                tiers: tierConfigs,
-                currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18
+                tiers: tierConfigs, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18
             }),
             JB721TiersHookFlags({
-                preventOverspending: false,
-                issueTokensForSplits: false,
-                noNewTiersWithReserves: false,
-                noNewTiersWithVotes: false,
-                noNewTiersWithOwnerMinting: true
-            })
+                    preventOverspending: false,
+                    issueTokensForSplits: false,
+                    noNewTiersWithReserves: false,
+                    noNewTiersWithVotes: false,
+                    noNewTiersWithOwnerMinting: true
+                })
         );
         hook.transferOwnership(owner);
 
@@ -1149,17 +1147,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             IJB721TokenUriResolver(mockTokenUriResolver),
             contractUri,
             JB721InitTiersConfig({
-                tiers: tierConfigs,
-                currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18
+                tiers: tierConfigs, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18
             }),
             JB721TiersHookFlags({
-                preventOverspending: false,
-                issueTokensForSplits: false,
-                noNewTiersWithReserves: false,
-                noNewTiersWithVotes: false,
-                noNewTiersWithOwnerMinting: true
-            })
+                    preventOverspending: false,
+                    issueTokensForSplits: false,
+                    noNewTiersWithReserves: false,
+                    noNewTiersWithVotes: false,
+                    noNewTiersWithOwnerMinting: true
+                })
         );
         hook.transferOwnership(owner);
 
@@ -1714,17 +1710,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             IJB721TokenUriResolver(mockTokenUriResolver),
             contractUri,
             JB721InitTiersConfig({
-                tiers: tierConfigs,
-                currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18
+                tiers: tierConfigs, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18
             }),
             JB721TiersHookFlags({
-                preventOverspending: false,
-                issueTokensForSplits: false,
-                noNewTiersWithReserves: false,
-                noNewTiersWithVotes: false,
-                noNewTiersWithOwnerMinting: true
-            })
+                    preventOverspending: false,
+                    issueTokensForSplits: false,
+                    noNewTiersWithReserves: false,
+                    noNewTiersWithVotes: false,
+                    noNewTiersWithOwnerMinting: true
+                })
         );
         hook.transferOwnership(owner);
 
@@ -1790,9 +1784,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             IJB721TokenUriResolver(mockTokenUriResolver),
             contractUri,
             JB721InitTiersConfig({
-                tiers: initialConfig,
-                currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18
+                tiers: initialConfig, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18
             }),
             JB721TiersHookFlags({
                 preventOverspending: false,

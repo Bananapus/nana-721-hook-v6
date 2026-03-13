@@ -219,11 +219,7 @@ contract UnitTestSetup is Test {
             baseUri,
             IJB721TokenUriResolver(mockTokenUriResolver),
             contractUri,
-            JB721InitTiersConfig({
-                tiers: tiers,
-                currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18
-            }),
+            JB721InitTiersConfig({tiers: tiers, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18}),
             address(0),
             JB721TiersHookFlags({
                 preventOverspending: false,
@@ -593,9 +589,8 @@ contract UnitTestSetup is Test {
             noNewTiersWithOwnerMinting: false
         });
 
-        JB721InitTiersConfig memory initConfig = JB721InitTiersConfig({
-            tiers: tierConfigs, currency: currency, decimals: decimals
-        });
+        JB721InitTiersConfig memory initConfig =
+            JB721InitTiersConfig({tiers: tierConfigs, currency: currency, decimals: decimals});
 
         tiersHook.initialize(
             projectId,
@@ -689,9 +684,7 @@ contract UnitTestSetup is Test {
             tokenUriResolver: IJB721TokenUriResolver(mockTokenUriResolver),
             contractUri: contractUri,
             tiersConfig: JB721InitTiersConfig({
-                tiers: tierConfigs,
-                currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18
+                tiers: tierConfigs, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18
             }),
             reserveBeneficiary: reserveBeneficiary,
             flags: JB721TiersHookFlags({

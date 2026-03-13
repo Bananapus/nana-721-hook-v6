@@ -18,13 +18,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         assertTrue(_isIn(tiers, hook.test_store().tiersOf(address(hook), new uint256[](0), false, 0, numberOfTiers)));
     }
 
-    function test_pricingContext_packingFunctionsAsExpected(
-        uint32 currency,
-        uint8 decimals,
-        bytes32 salt
-    )
-        public
-    {
+    function test_pricingContext_packingFunctionsAsExpected(uint32 currency, uint8 decimals, bytes32 salt) public {
         // Decimals must be <= 18 per validation in initialize.
         vm.assume(decimals <= 18);
         JBDeploy721TiersHookConfig memory hookConfig = JBDeploy721TiersHookConfig(
@@ -565,11 +559,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
             baseUri,
             IJB721TokenUriResolver(mockTokenUriResolver),
             contractUri,
-            JB721InitTiersConfig({
-                tiers: tiers,
-                currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18
-            }),
+            JB721InitTiersConfig({tiers: tiers, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18}),
             JB721TiersHookFlags({
                 preventOverspending: false,
                 issueTokensForSplits: false,

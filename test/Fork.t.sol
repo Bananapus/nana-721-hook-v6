@@ -190,8 +190,9 @@ contract Fork_721Hook_Test is Test {
 
     function _deploy721Hook() internal {
         store = new JB721TiersHookStore();
-        hookImpl =
-            new JB721TiersHook(jbDirectory, jbPermissions, jbPrices, jbRulesets, store, IJBSplits(address(jbSplits)), address(0));
+        hookImpl = new JB721TiersHook(
+            jbDirectory, jbPermissions, jbPrices, jbRulesets, store, IJBSplits(address(jbSplits)), address(0)
+        );
         addressRegistry = new JBAddressRegistry();
         hookDeployer = new JB721TiersHookDeployer(hookImpl, store, addressRegistry, address(0));
         projectDeployer = new JB721TiersHookProjectDeployer(
@@ -1417,11 +1418,7 @@ contract Fork_721Hook_Test is Test {
                 "ipfs://evil/",
                 IJB721TokenUriResolver(address(0)),
                 "ipfs://evil-contract",
-                JB721InitTiersConfig({
-                    tiers: emptyTiers,
-                    currency: uint32(uint160(NATIVE_TOKEN)),
-                    decimals: 18
-                }),
+                JB721InitTiersConfig({tiers: emptyTiers, currency: uint32(uint160(NATIVE_TOKEN)), decimals: 18}),
                 _defaultFlags()
             );
     }
