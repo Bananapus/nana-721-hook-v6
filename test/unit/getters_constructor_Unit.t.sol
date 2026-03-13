@@ -343,10 +343,40 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         hook.ForTest_setOwnerOf(tokenId, address(123));
 
         vm.prank(owner);
-        hook.setMetadata("", "", IJB721TokenUriResolver(address(0)), 1, tokenUris[1]);
+        hook.setMetadata("", "", "", "", IJB721TokenUriResolver(address(0)), 1, tokenUris[1]);
 
         // Check: does the token URI match the theoretic hash?
         assertEq(hook.tokenURI(tokenId), string(abi.encodePacked(baseUri, theoreticHashes[1])));
+    }
+
+    function test_setMetadata_setsNameAndSymbol() public {
+        ForTest_JB721TiersHook hook = _initializeForTestHook(10);
+
+        // Verify initial name and symbol.
+        assertEq(hook.name(), name);
+        assertEq(hook.symbol(), symbol);
+
+        // Set new name and symbol.
+        vm.prank(owner);
+        hook.setMetadata("New Name", "NEW", "", "", IJB721TokenUriResolver(address(this)), 0, bytes32(0));
+
+        // Check: did the name and symbol change?
+        assertEq(hook.name(), "New Name");
+        assertEq(hook.symbol(), "NEW");
+    }
+
+    function test_setMetadata_emptyNameAndSymbolUnchanged() public {
+        ForTest_JB721TiersHook hook = _initializeForTestHook(10);
+
+        // Set only baseUri, leaving name and symbol empty.
+        vm.prank(owner);
+        hook.setMetadata("", "", "ipfs://newBase/", "", IJB721TokenUriResolver(address(this)), 0, bytes32(0));
+
+        // Check: name and symbol should be unchanged.
+        assertEq(hook.name(), name);
+        assertEq(hook.symbol(), symbol);
+        // Check: baseURI should be updated.
+        assertEq(hook.baseURI(), "ipfs://newBase/");
     }
 
     function test_cashOutWeightOf_returnsCorrectWeightAsCumSumOfPrices(

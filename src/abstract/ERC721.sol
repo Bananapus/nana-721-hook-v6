@@ -43,6 +43,20 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
     }
 
     /**
+     * @dev Updates the token collection name.
+     */
+    function _setName(string memory name_) internal {
+        _name = name_;
+    }
+
+    /**
+     * @dev Updates the token collection symbol.
+     */
+    function _setSymbol(string memory symbol_) internal {
+        _symbol = symbol_;
+    }
+
+    /**
      * @dev See {IERC165-supportsInterface}.
      */
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {

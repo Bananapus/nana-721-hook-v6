@@ -15,7 +15,7 @@ Tiered ERC-721 NFT hook for Juicebox V6 that mints NFTs when a project is paid a
 | `JB721TiersHookProjectDeployer` | Convenience deployer: creates a Juicebox project + hook in one transaction. Also supports `launchRulesetsFor` and `queueRulesetsOf`. Wires the hook as the data hook with `useDataHookForPay: true`. |
 | `JB721TiersHookLib` (library) | External library called via DELEGATECALL from the hook. Handles tier adjustments (`adjustTiersFor`), split amount calculation (`calculateSplitAmounts`), split fund distribution (`distributeAll`), price normalization (`normalizePaymentValue`), and token URI resolution (`resolveTokenURI`). Extracted to stay within EIP-170 contract size limit. |
 | `IJB721Hook` (interface) | Interface for `JB721Hook`: extends `IJBRulesetDataHook`, `IJBPayHook`, `IJBCashOutHook`. Declares `DIRECTORY()`, `METADATA_ID_TARGET()`, `PROJECT_ID()`. |
-| `ERC721` (abstract) | Clone-compatible ERC-721 with `_initialize(name, symbol)` instead of constructor args. |
+| `ERC721` (abstract) | Clone-compatible ERC-721 with `_initialize(name, symbol)` instead of constructor args. Exposes `_setName()` and `_setSymbol()` for post-initialization updates. |
 
 ## Key Functions
 
@@ -31,7 +31,7 @@ Tiered ERC-721 NFT hook for Juicebox V6 that mints NFTs when a project is paid a
 | `mintFor(tierIds, beneficiary)` | `JB721TiersHook` | Owner-only manual mint. Requires `MINT_721` permission. Passes `amount: type(uint256).max` and `isOwnerMint: true` to force the mint. |
 | `mintPendingReservesFor(tierId, count)` | `JB721TiersHook` | Public. Mints pending reserve NFTs for a tier to the tier's `reserveBeneficiary`. Checks ruleset metadata for `mintPendingReservesPaused`. |
 | `mintPendingReservesFor(configs[])` | `JB721TiersHook` | Batch variant. Calls `mintPendingReservesFor(tierId, count)` for each config. |
-| `setMetadata(baseUri, contractUri, tokenUriResolver, encodedIPFSUriTierId, encodedIPFSUri)` | `JB721TiersHook` | Owner-only. Updates base URI, contract URI, token URI resolver, or per-tier encoded IPFS URI. Requires `SET_721_METADATA` permission. |
+| `setMetadata(name, symbol, baseUri, contractUri, tokenUriResolver, encodedIPFSUriTierId, encodedIPFSUri)` | `JB721TiersHook` | Owner-only. Updates collection name, symbol, base URI, contract URI, token URI resolver, or per-tier encoded IPFS URI. Empty strings leave values unchanged. Requires `SET_721_METADATA` permission. |
 | `setDiscountPercentOf(tierId, discountPercent)` | `JB721TiersHook` | Owner-only. Sets discount percent for a tier. Requires `SET_721_DISCOUNT_PERCENT` permission. |
 | `setDiscountPercentsOf(configs[])` | `JB721TiersHook` | Batch variant. Sets discount percent for multiple tiers. Requires `SET_721_DISCOUNT_PERCENT` permission. |
 | `tokenURI(tokenId)` | `JB721TiersHook` | Resolves token metadata URI. Delegates to `JB721TiersHookLib.resolveTokenURI`, which checks for a custom `tokenUriResolver` first, then falls back to IPFS decoding via `JBIpfsDecoder`. |
@@ -156,6 +156,7 @@ Each tier has configurable voting power:
 - **Pending reserves inflate totalCashOutWeight**: `totalCashOutWeight` includes pending reserves in the denominator (`price * (minted + pendingReserves)`). This dilutes cash-out value before reserves are minted, preventing early cashers from extracting more than their fair share.
 - **Reserve minting is permissionless** but governed by ruleset metadata. Anyone can call `mintPendingReservesFor` as long as `mintPendingReservesPaused` is not set in the current ruleset's metadata.
 - **Reserve + owner-mint mutual exclusion**: Tiers with `allowOwnerMint: true` cannot have a `reserveFrequency`. The store rejects this combination during `recordAddTiers`.
+- `setMetadata` accepts `name` and `symbol` as the first two parameters. Empty strings leave the current values unchanged.
 - `setMetadata` uses `address(this)` as the sentinel for "no change" on `tokenUriResolver` (not `address(0)`). Passing `address(0)` will clear the resolver.
 - `JBPayDataHookRulesetConfig` hardcodes `useDataHookForPay: true` when wiring rulesets through the project deployer. All other metadata fields are passed through.
 - The `_update` override in `JB721TiersHook` checks `tier.transfersPausable` and consults the current ruleset's metadata for `transfersPaused`. Transfers to `address(0)` (burns) are never blocked.
@@ -164,7 +165,7 @@ Each tier has configurable voting power:
 - **`useReserveBeneficiaryAsDefault` overwrites globally**: Adding a tier with `useReserveBeneficiaryAsDefault: true` silently overwrites `defaultReserveBeneficiaryOf` for ALL existing tiers that lack a tier-specific beneficiary. A `SetDefaultReserveBeneficiary` event is emitted when the default changes.
 - **Removing tiers does not update the sorted list**: `recordRemoveTierIds` only marks tiers in the bitmap. Call `cleanTiers()` afterward to remove them from the iteration sequence.
 - `JB721TiersHookStore` is a **shared singleton** -- all hook instances on the same chain use the same store, keyed by `address(hook)`.
-- The `ERC721` abstract uses `_initialize(name, symbol)` instead of a constructor, making it clone-compatible. The standard `_owners` mapping is `internal` (not `private`).
+- The `ERC721` abstract uses `_initialize(name, symbol)` instead of a constructor, making it clone-compatible. It also exposes `_setName()` and `_setSymbol()` for post-initialization updates. The standard `_owners` mapping is `internal` (not `private`).
 - **`hasMintPermissionFor` always returns `false`**: The hook never grants mint permission to any address. This is part of the `IJBRulesetDataHook` interface.
 - **Max tier count is 65,535** (`type(uint16).max`). Adding tiers beyond this limit reverts.
 - **Max initial supply per tier is 999,999,999** (`_ONE_BILLION - 1`). Exceeding this would cause token ID overflow into the next tier's ID space.

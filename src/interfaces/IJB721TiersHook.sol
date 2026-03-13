@@ -57,6 +57,16 @@ interface IJB721TiersHook is IJB721Hook {
     /// @param caller The address that called the function.
     event RemoveTier(uint256 indexed tierId, address caller);
 
+    /// @notice Emitted when the collection name is set.
+    /// @param name The new collection name.
+    /// @param caller The address that called the function.
+    event SetName(string indexed name, address caller);
+
+    /// @notice Emitted when the collection symbol is set.
+    /// @param symbol The new collection symbol.
+    /// @param caller The address that called the function.
+    event SetSymbol(string indexed symbol, address caller);
+
     /// @notice Emitted when the base URI is set.
     /// @param baseUri The new base URI.
     /// @param caller The address that called the function.
@@ -179,13 +189,17 @@ interface IJB721TiersHook is IJB721Hook {
     /// @param configs The configs to set the discount percent for.
     function setDiscountPercentsOf(JB721TiersSetDiscountPercentConfig[] calldata configs) external;
 
-    /// @notice Update this hook's URI metadata properties.
+    /// @notice Update this hook's metadata properties.
+    /// @param name The new collection name. Send empty to leave unchanged.
+    /// @param symbol The new collection symbol. Send empty to leave unchanged.
     /// @param baseUri The new base URI.
     /// @param contractUri The new contract URI.
     /// @param tokenUriResolver The new URI resolver.
     /// @param encodedIPFSUriTierId The ID of the tier to set the encoded IPFS URI of.
     /// @param encodedIPFSUri The encoded IPFS URI to set.
     function setMetadata(
+        string calldata name,
+        string calldata symbol,
         string calldata baseUri,
         string calldata contractUri,
         IJB721TokenUriResolver tokenUriResolver,

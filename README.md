@@ -162,7 +162,7 @@ nana-721-hook/
 │   ├── JB721TiersHookStore.sol - Stores and manages data for tiered NFT hooks.
 │   ├── abstract/
 │   │   ├── JB721Hook.sol - Abstract base hook: handles pay/cash out lifecycle, metadata, and terminal validation.
-│   │   └── ERC721.sol - Clone-compatible abstract ERC-721 implementation.
+│   │   └── ERC721.sol - Clone-compatible abstract ERC-721 implementation with mutable name/symbol.
 │   ├── interfaces/ - Contract interfaces.
 │   ├── libraries/ - Libraries (includes JB721TiersHookLib for tier adjustments, split distribution, price normalization, and token URI resolution).
 │   └── structs/ - Structs.

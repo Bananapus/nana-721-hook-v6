@@ -427,14 +427,18 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         }
     }
 
-    /// @notice Update this hook's URI metadata properties.
-    /// @dev Only this contract's owner can set the metadata.
+    /// @notice Update this hook's metadata properties.
+    /// @dev Only this contract's owner or an operator with the `SET_721_METADATA` permission can set the metadata.
+    /// @param name The new collection name. Send empty to leave unchanged.
+    /// @param symbol The new collection symbol. Send empty to leave unchanged.
     /// @param baseUri The new base URI.
     /// @param contractUri The new contract URI.
     /// @param tokenUriResolver The new URI resolver.
     /// @param encodedIPFSUriTierId The ID of the tier to set the encoded IPFS URI of.
     /// @param encodedIPFSUri The encoded IPFS URI to set.
     function setMetadata(
+        string calldata name,
+        string calldata symbol,
         string calldata baseUri,
         string calldata contractUri,
         IJB721TokenUriResolver tokenUriResolver,
@@ -449,6 +453,16 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             account: owner(), projectId: PROJECT_ID, permissionId: JBPermissionIds.SET_721_METADATA
         });
 
+        if (bytes(name).length != 0) {
+            // Store the new collection name.
+            _setName(name);
+            emit SetName({name: name, caller: _msgSender()});
+        }
+        if (bytes(symbol).length != 0) {
+            // Store the new collection symbol.
+            _setSymbol(symbol);
+            emit SetSymbol({symbol: symbol, caller: _msgSender()});
+        }
         if (bytes(baseUri).length != 0) {
             // Store the new base URI.
             baseURI = baseUri;
