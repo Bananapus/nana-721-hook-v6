@@ -38,7 +38,7 @@ Admin privileges and their scope in nana-721-hook-v6.
 | `mintFor()` (line 338) | `MINT_721` | `owner()` | Manually mints NFTs from tiers that have `allowOwnerMint` enabled. Bypasses price checks (passes `type(uint256).max` as amount). |
 | `setDiscountPercentOf()` (line 389) | `SET_721_DISCOUNT_PERCENT` | `owner()` | Sets the discount percentage for a single tier. |
 | `setDiscountPercentsOf()` (line 399) | `SET_721_DISCOUNT_PERCENT` | `owner()` | Batch-sets discount percentages for multiple tiers. |
-| `setMetadata()` (line 420) | `SET_721_METADATA` | `owner()` | Updates baseURI, contractURI, tokenUriResolver, and/or per-tier encoded IPFS URIs. |
+| `setMetadata()` (line 430) | `SET_721_METADATA` | `owner()` | Updates collection name, symbol, baseURI, contractURI, tokenUriResolver, and/or per-tier encoded IPFS URIs. Empty strings leave values unchanged. |
 | `initialize()` (line 223) | None (one-time) | `PROJECT_ID == 0` check | Initializes a cloned hook. Can only be called once. Transfers ownership to caller on completion. |
 
 ### JB721TiersHookProjectDeployer

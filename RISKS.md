@@ -6,7 +6,7 @@ Deep implementation-level risk analysis covering all contracts in the 721 tiered
 
 ## Trust Assumptions
 
-1. **Project Owner / Hook Owner** -- Can adjust tiers (add/remove), set metadata, set discount percent, manually mint from `allowOwnerMint` tiers, and configure hook flags. Full control over NFT economics within the boundaries enforced by immutable per-tier flags.
+1. **Project Owner / Hook Owner** -- Can adjust tiers (add/remove), set metadata (including collection name and symbol), set discount percent, manually mint from `allowOwnerMint` tiers, and configure hook flags. Full control over NFT economics within the boundaries enforced by immutable per-tier flags.
 2. **Core Protocol (JBMultiTerminal)** -- The hook trusts that `afterPayRecordedWith()` and `afterCashOutRecordedWith()` are only called by a registered terminal. Verification at `JB721Hook.sol` lines 194-197 and 236-237 via `DIRECTORY.isTerminalOf()`.
 3. **JBDirectory** -- Trusted to correctly report terminal registrations. If compromised, arbitrary addresses could call pay/cashout hooks.
 4. **JBSplits** -- Trusted to store and return correct split configurations for tier split groups. The hook delegates split group management to this contract.
