@@ -11,6 +11,8 @@ pragma solidity ^0.8.0;
 /// during the funding cycle.
 /// @custom:member allowOwnerMinting A flag indicating if the project owner or an operator with the `MINT_TOKENS`
 /// permission from the owner should be allowed to mint project tokens on demand during this ruleset.
+/// @custom:member allowSetCustomToken A flag indicating if the project owner can set the project's token to a custom
+/// ERC-20.
 /// @custom:member allowTerminalMigration A flag indicating if migrating terminals should be allowed during this
 /// ruleset.
 /// @custom:member allowSetTerminals A flag indicating if a project's terminals can be added or removed.
@@ -33,6 +35,7 @@ struct JBPayDataHookRulesetMetadata {
     bool pausePay;
     bool pauseCreditTransfers;
     bool allowOwnerMinting;
+    bool allowSetCustomToken;
     bool allowTerminalMigration;
     bool allowSetTerminals;
     bool allowSetController;
