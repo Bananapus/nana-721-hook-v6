@@ -343,7 +343,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         hook.ForTest_setOwnerOf(tokenId, address(123));
 
         vm.prank(owner);
-        hook.setMetadata("", "", IJB721TokenUriResolver(address(0)), 1, tokenUris[1]);
+        hook.setMetadata("", "", "", "", IJB721TokenUriResolver(address(0)), 1, tokenUris[1]);
 
         // Check: does the token URI match the theoretic hash?
         assertEq(hook.tokenURI(tokenId), string(abi.encodePacked(baseUri, theoreticHashes[1])));
