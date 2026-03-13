@@ -710,6 +710,7 @@ contract UnitTestSetup is Test {
             pausePay: false,
             pauseCreditTransfers: false,
             allowOwnerMinting: false,
+            allowSetCustomToken: false,
             allowTerminalMigration: false,
             allowSetTerminals: false,
             allowSetController: false,

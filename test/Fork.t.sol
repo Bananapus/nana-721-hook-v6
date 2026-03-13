@@ -239,6 +239,7 @@ contract Fork_721Hook_Test is Test {
             pausePay: false,
             pauseCreditTransfers: false,
             allowOwnerMinting: true,
+            allowSetCustomToken: false,
             allowTerminalMigration: false,
             allowSetTerminals: false,
             allowSetController: false,
