@@ -41,7 +41,7 @@ Deep implementation-level risk analysis covering all contracts in the 721 tiered
 - **Severity**: MEDIUM
 - **Location**: `JB721TiersHookLib.sol` lines 265-285 (`_distributeSingleSplit`) and lines 312-315 (`_sendPayoutToSplit`)
 - **Description**: During `afterPayRecordedWith()`, if tiers have `splitPercent > 0`, the hook distributes forwarded funds to split beneficiaries. For native token splits, this involves a low-level `.call{value: amount}("")` to the beneficiary address (line 314). This is an external call to an untrusted address during payment processing.
-- **Reentrancy path**: `afterPayRecordedWith` -> `_processPayment` -> `distributeAll` -> `_distributeSingleSplit` -> `_sendPayoutToSplit` -> `beneficiary.call{value}` -- the beneficiary could reenter the hook.
+- **Reentrancy path**: `afterPayRecordedWith` -> `_processPayment` -> `distributeAll` (DELEGATECALL) -> `safeTransferFrom` (ERC-20 pull) -> `_distributeSingleSplit` -> `_sendPayoutToSplit` -> `beneficiary.call{value}` -- the beneficiary could reenter the hook.
 - **Why it is mitigated**: The NFT mint (`_mintAll`) happens BEFORE split distribution (line 646 vs. line 678 in `JB721TiersHook.sol`). The store's `recordMint` has already decremented supply. Pay credits are already updated. A reentrant call to `afterPayRecordedWith` would require terminal authorization and would process as a separate independent payment.
 - **Tested**: PARTIALLY -- Split distribution is tested in `test/unit/tierSplitRouting_Unit.t.sol` and `test/regression/L36_SplitNoBeneficiary.t.sol`, but no explicit reentrancy test exists for the `.call{value}` path.
 - **Mitigation**: State is settled before external calls. The terminal authorization check prevents casual reentrancy. No explicit `ReentrancyGuard` is used.
@@ -203,6 +203,7 @@ An attacker could observe a large cash-out and front-run it with their own cash-
    - `STORE.recordMint()` (cross-contract, trusted)
    - `_mint()` (internal, no receiver callback)
    - `JB721TiersHookLib.distributeAll()` via DELEGATECALL:
+     - `SafeERC20.safeTransferFrom()` (ERC-20 token pull from terminal)
      - `SPLITS.splitsOf()` (cross-contract, trusted)
      - `split.beneficiary.call{value}()` (untrusted external call)
      - `terminal.pay()` (cross-contract, semi-trusted)
