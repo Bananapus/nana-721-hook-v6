@@ -84,7 +84,7 @@ Permissions flow through two mechanisms:
 
 1. **JBOwnable** (`JB721TiersHook` inherits from it): The hook has a single `owner()` that can be an EOA or a Juicebox project. When owned by a project, the holder of that project's ERC-721 NFT is the effective owner.
 
-2. **JBPermissions** (protocol-wide permission registry): The owner can grant specific permission IDs to operator addresses. Each permission is scoped to a `(operator, account, projectId, permissionId)` tuple. The `ROOT` permission (ID 255) grants all permissions.
+2. **JBPermissions** (protocol-wide permission registry): The owner can grant specific permission IDs to operator addresses. Each permission is scoped to a `(operator, account, projectId, permissionId)` tuple. The `ROOT` permission (ID 1) grants all permissions.
 
 The `_requirePermissionFrom()` check (inherited from `JBOwnable` via `JBPermissioned`) passes if:
 - `msg.sender == account` (the owner themselves), OR
