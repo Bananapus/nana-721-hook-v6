@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../utils/UnitTestSetup.sol";
 
 contract Test_cashOut_Unit is UnitTestSetup {
@@ -18,8 +19,11 @@ contract Test_cashOut_Unit is UnitTestSetup {
                     address(hook),
                     i,
                     JBStored721Tier({
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         price: uint104(i * 10),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         remainingSupply: uint32(10 * i - 5 * i),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         initialSupply: uint32(10 * i),
                         reserveFrequency: uint16(0),
                         category: uint24(100),
@@ -89,8 +93,11 @@ contract Test_cashOut_Unit is UnitTestSetup {
                     address(hook),
                     i,
                     JBStored721Tier({
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         price: uint104(i * 10),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         remainingSupply: uint32(10 * i - 5 * i),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         initialSupply: uint32(10 * i),
                         reserveFrequency: uint16(0),
                         category: uint24(100),
@@ -146,8 +153,11 @@ contract Test_cashOut_Unit is UnitTestSetup {
                     address(hook),
                     i,
                     JBStored721Tier({
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         price: uint104(i * 10),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         remainingSupply: uint32(10 * i - 5 * i),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         initialSupply: uint32(10 * i),
                         reserveFrequency: uint16(0),
                         category: uint24(100),

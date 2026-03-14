@@ -28,6 +28,7 @@ pragma solidity ^0.8.0;
 /// during
 /// this ruleset.
 /// @custom:member metadata Metadata of the metadata, up to uint8 in size.
+// forge-lint: disable-next-line(pascal-case-struct)
 struct JBPayDataHookRulesetMetadata {
     uint16 reservedPercent;
     uint16 cashOutTaxRate;

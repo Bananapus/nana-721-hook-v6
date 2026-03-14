@@ -1,45 +1,77 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBController.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBDirectory.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBMultiTerminal.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBFundAccessLimits.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBFeelessAddresses.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBTerminalStore.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBRulesets.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBPermissions.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBPrices.sol";
 import {JBProjects} from "@bananapus/core-v6/src/JBProjects.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBSplits.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBERC20.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBTokens.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBAfterPayRecordedContext.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBAfterCashOutRecordedContext.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBFee.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBFundAccessLimitGroup.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBRuleset.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBRulesetConfig.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBRulesetMetadata.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBPermissionsData.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBBeforePayRecordedContext.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBBeforeCashOutRecordedContext.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBSplit.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/interfaces/IJBToken.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/permission-ids-v6/src/JBPermissionIds.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/libraries/JBRulesetMetadataResolver.sol";
 
+// forge-lint: disable-next-line(unused-import)
 import {mulDiv} from "@prb/math/src/Common.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "forge-std/Test.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "./AccessJBLib.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/structs/JBPayDataHookRulesetConfig.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/structs/JBPayDataHookRulesetMetadata.sol";
 
 /// @notice Base contract for Juicebox system tests.
@@ -68,6 +100,7 @@ contract TestBaseWorkflow is Test {
     string internal projectUri;
     IJBToken internal tokenV2;
 
+    // forge-lint: disable-next-line(mixed-case-variable)
     AccessJBLib internal accessJBLib;
 
     //*********************************************************************//
@@ -156,14 +189,19 @@ contract TestBaseWorkflow is Test {
         if (nonce == 0x00) {
             data = abi.encodePacked(bytes1(0xd6), bytes1(0x94), origin, bytes1(0x80));
         } else if (nonce <= 0x7f) {
+            // forge-lint: disable-next-line(unsafe-typecast)
             data = abi.encodePacked(bytes1(0xd6), bytes1(0x94), origin, uint8(nonce));
         } else if (nonce <= 0xff) {
+            // forge-lint: disable-next-line(unsafe-typecast)
             data = abi.encodePacked(bytes1(0xd7), bytes1(0x94), origin, bytes1(0x81), uint8(nonce));
         } else if (nonce <= 0xffff) {
+            // forge-lint: disable-next-line(unsafe-typecast)
             data = abi.encodePacked(bytes1(0xd8), bytes1(0x94), origin, bytes1(0x82), uint16(nonce));
         } else if (nonce <= 0xffffff) {
+            // forge-lint: disable-next-line(unsafe-typecast)
             data = abi.encodePacked(bytes1(0xd9), bytes1(0x94), origin, bytes1(0x83), uint24(nonce));
         } else {
+            // forge-lint: disable-next-line(unsafe-typecast)
             data = abi.encodePacked(bytes1(0xda), bytes1(0x94), origin, bytes1(0x84), uint32(nonce));
         }
         bytes32 hash = keccak256(data);

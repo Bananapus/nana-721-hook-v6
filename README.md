@@ -241,7 +241,7 @@ Each tier has the following properties:
 Additional notes:
 
 - A payer can specify any number of tiers to mint as long as the total price does not exceed the amount being paid. If tiers aren't specified, the leftover amount is stored as pay credits (if allowed).
-- If the payment and a tier's price are specified in different currencies, the `JBPrices` contract is used to normalize the values. If no `JBPrices` contract is set and the currencies differ, the payment is silently ignored (no mint, no revert).
+- If the payment and a tier's price are specified in different currencies, the hook's immutable `PRICES` contract is used to normalize the values. If `PRICES` is the zero address and the currencies differ, the payment is silently ignored (no mint, no revert).
 - If some of a payment does not go towards purchasing an NFT, those extra funds will be stored as "NFT credits" which can be used for future purchases. Credits are only combined with the payment when `payer == beneficiary`. Optionally, the hook can disallow credits and reject payments with leftover funds (via `preventOverspending`).
 - If enabled by the project owner, holders can burn their NFTs to reclaim funds from the project. These cash outs are proportional to the NFTs price, relative to the combined price of all the NFTs (including pending reserves in the denominator).
 - NFT cash outs can be enabled by setting `useDataHookForCashOut` to `true` in the project's `JBRulesetMetadata`. If NFT cash outs are enabled, project token cash outs are disabled -- attempting to cash out fungible tokens when the data hook is active will revert.

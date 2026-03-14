@@ -50,6 +50,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     //*********************************************************************//
 
     /// @notice The ID of the project that this contract is associated with.
+    // forge-lint: disable-next-line(mixed-case-variable)
     uint256 public override PROJECT_ID;
 
     //*********************************************************************//
@@ -233,7 +234,10 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
 
         // Make sure the caller is a terminal of the project, and that the call is being made on behalf of an
         // interaction with the correct project.
-        if (!DIRECTORY.isTerminalOf(projectId, IJBTerminal(msg.sender)) || context.projectId != projectId) {
+        if (
+            !DIRECTORY.isTerminalOf({projectId: projectId, terminal: IJBTerminal(msg.sender)})
+                || context.projectId != projectId
+        ) {
             revert JB721Hook_InvalidPay();
         }
 

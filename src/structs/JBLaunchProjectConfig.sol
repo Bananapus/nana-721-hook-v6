@@ -10,6 +10,7 @@ import {JBPayDataHookRulesetConfig} from "./JBPayDataHookRulesetConfig.sol";
 /// @custom:member rulesetConfigurations The ruleset configurations to queue.
 /// @custom:member terminalConfigurations The terminal configurations to add for the project.
 /// @custom:member memo A memo to pass along to the emitted event.
+// forge-lint: disable-next-line(pascal-case-struct)
 struct JBLaunchProjectConfig {
     string projectUri;
     JBPayDataHookRulesetConfig[] rulesetConfigurations;

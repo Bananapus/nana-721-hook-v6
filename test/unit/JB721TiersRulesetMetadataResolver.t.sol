@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "forge-std/Test.sol";
 
 import {JB721TiersRulesetMetadataResolver} from "../../src/libraries/JB721TiersRulesetMetadataResolver.sol";
@@ -99,6 +100,7 @@ contract TestJB721TiersRulesetMetadataResolver is Test {
                 JB721TiersRulesetMetadata({pauseTransfers: transfers, pauseMintPendingReserves: reserves});
 
             uint256 packed = JB721TiersRulesetMetadataResolver.pack721TiersRulesetMetadata(meta);
+            // forge-lint: disable-next-line(unsafe-typecast)
             JB721TiersRulesetMetadata memory expanded = JB721TiersRulesetMetadataResolver.expandMetadata(uint16(packed));
 
             assertEq(expanded.pauseTransfers, transfers, "transfers round-trip");
@@ -116,6 +118,7 @@ contract TestJB721TiersRulesetMetadataResolver is Test {
         });
 
         uint256 packed = JB721TiersRulesetMetadataResolver.pack721TiersRulesetMetadata(meta);
+        // forge-lint: disable-next-line(unsafe-typecast)
         JB721TiersRulesetMetadata memory expanded = JB721TiersRulesetMetadataResolver.expandMetadata(uint16(packed));
 
         assertEq(expanded.pauseTransfers, pauseTransfers, "fuzz transfers round-trip");

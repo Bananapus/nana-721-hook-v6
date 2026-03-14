@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "forge-std/Test.sol";
 
 import {JBIpfsDecoder} from "../../src/libraries/JBIpfsDecoder.sol";
@@ -36,7 +37,9 @@ contract TestJBIpfsDecoder is Test {
         // All CIDv0 hashes start with "Qm" because the 0x1220 prefix encodes to "Qm" in base58.
         string memory result = JBIpfsDecoder.decode("", TEST_HASH);
         bytes memory resultBytes = bytes(result);
+        // forge-lint: disable-next-line(unsafe-typecast)
         assertEq(resultBytes[0], bytes1("Q"), "first char should be Q");
+        // forge-lint: disable-next-line(unsafe-typecast)
         assertEq(resultBytes[1], bytes1("m"), "second char should be m");
     }
 
@@ -97,7 +100,9 @@ contract TestJBIpfsDecoder is Test {
     function testFuzz_decode_alwaysStartsWithQm(bytes32 hash) public {
         string memory result = JBIpfsDecoder.decode("", hash);
         bytes memory resultBytes = bytes(result);
+        // forge-lint: disable-next-line(unsafe-typecast)
         assertEq(resultBytes[0], bytes1("Q"), "first char should be Q");
+        // forge-lint: disable-next-line(unsafe-typecast)
         assertEq(resultBytes[1], bytes1("m"), "second char should be m");
     }
 

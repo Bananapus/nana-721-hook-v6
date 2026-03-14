@@ -1,14 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "forge-std/Test.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../../src/JB721TiersHook.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../../src/JB721TiersHookStore.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../../src/structs/JB721TierConfig.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../../src/structs/JB721Tier.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../../src/interfaces/IJB721TiersHookStore.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/libraries/JBConstants.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBAfterPayRecordedContext.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBTokenAmount.sol";
 
 /// @title TierLifecycleHandler
@@ -27,28 +36,44 @@ contract TierLifecycleHandler is Test {
     address[] public actors;
 
     // Ghost variables for supply tracking
+    // forge-lint: disable-next-line(mixed-case-variable)
     mapping(uint256 => uint256) public ghost_mintedPerTier; // tierId => minted count
+    // forge-lint: disable-next-line(mixed-case-variable)
     mapping(uint256 => uint256) public ghost_burnedPerTier; // tierId => burned count
+    // forge-lint: disable-next-line(mixed-case-variable)
     mapping(uint256 => uint256) public ghost_reservesMintedPerTier; // tierId => reserves minted
+    // forge-lint: disable-next-line(mixed-case-variable)
     uint256 public ghost_totalPayCredits;
+    // forge-lint: disable-next-line(mixed-case-variable)
     mapping(address => uint256) public ghost_actorCredits; // actor => credit balance
+    // forge-lint: disable-next-line(mixed-case-variable)
     uint256 public ghost_tiersAdded;
+    // forge-lint: disable-next-line(mixed-case-variable)
     uint256 public ghost_tiersRemoved;
 
     // Track token IDs per actor for cash outs
     mapping(address => uint256[]) internal _actorTokenIds;
 
     // Track removed tier IDs
+    // forge-lint: disable-next-line(mixed-case-variable)
     mapping(uint256 => bool) public ghost_tierRemoved;
 
     // Operation counters
+    // forge-lint: disable-next-line(mixed-case-variable)
     uint256 public callCount_payAndMint;
+    // forge-lint: disable-next-line(mixed-case-variable)
     uint256 public callCount_cashOut;
+    // forge-lint: disable-next-line(mixed-case-variable)
     uint256 public callCount_addTier;
+    // forge-lint: disable-next-line(mixed-case-variable)
     uint256 public callCount_removeTier;
+    // forge-lint: disable-next-line(mixed-case-variable)
     uint256 public callCount_mintReserves;
+    // forge-lint: disable-next-line(mixed-case-variable)
     uint256 public callCount_setDiscount;
+    // forge-lint: disable-next-line(mixed-case-variable)
     uint256 public callCount_ownerMint;
+    // forge-lint: disable-next-line(mixed-case-variable)
     uint256 public callCount_advanceTime;
 
     constructor(JB721TiersHook _hook, JB721TiersHookStore _store, address _owner, address _mockController) {
@@ -59,6 +84,7 @@ contract TierLifecycleHandler is Test {
         mockController = _mockController;
 
         for (uint256 i = 0; i < NUM_ACTORS; i++) {
+            // forge-lint: disable-next-line(unsafe-typecast)
             address actor = address(uint160(0x6000 + i));
             actors.push(actor);
         }
@@ -69,6 +95,7 @@ contract TierLifecycleHandler is Test {
     }
 
     /// @notice Simulate a payment that mints NFTs by directly calling store.recordMint.
+    // forge-lint: disable-next-line(mixed-case-function)
     function payAndMintNFT(uint256 seed) external {
         address actor = _getActor(seed);
 
@@ -98,6 +125,7 @@ contract TierLifecycleHandler is Test {
 
         // Call recordMint as the hook
         uint16[] memory tierIds = new uint16[](1);
+        // forge-lint: disable-next-line(unsafe-typecast)
         tierIds[0] = uint16(tierId);
 
         vm.prank(hookAddress);
@@ -112,6 +140,7 @@ contract TierLifecycleHandler is Test {
     }
 
     /// @notice Simulate a cash out by burning an NFT.
+    // forge-lint: disable-next-line(mixed-case-function)
     function cashOutNFT(uint256 seed) external {
         address actor = _getActor(seed);
 
@@ -150,7 +179,9 @@ contract TierLifecycleHandler is Test {
 
         JB721TierConfig[] memory newTiers = new JB721TierConfig[](1);
         newTiers[0] = JB721TierConfig({
+            // forge-lint: disable-next-line(unsafe-typecast)
             price: uint104(price),
+            // forge-lint: disable-next-line(unsafe-typecast)
             initialSupply: uint32(supply),
             votingUnits: 0,
             reserveFrequency: 0,
@@ -233,6 +264,7 @@ contract TierLifecycleHandler is Test {
         if (ghost_tierRemoved[tierId]) return;
 
         uint16[] memory tierIds = new uint16[](1);
+        // forge-lint: disable-next-line(unsafe-typecast)
         tierIds[0] = uint16(tierId);
 
         vm.prank(hookAddress);

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../utils/UnitTestSetup.sol";
 
 contract Test_Getters_Constructor_Unit is UnitTestSetup {
@@ -18,40 +19,32 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         assertTrue(_isIn(tiers, hook.test_store().tiersOf(address(hook), new uint256[](0), false, 0, numberOfTiers)));
     }
 
-    function test_pricingContext_packingFunctionsAsExpected(
-        uint32 currency,
-        uint8 decimals,
-        address prices,
-        bytes32 salt
-    )
-        public
-    {
+    function test_pricingContext_packingFunctionsAsExpected(uint32 currency, uint8 decimals, bytes32 salt) public {
         // Decimals must be <= 18 per validation in initialize.
         vm.assume(decimals <= 18);
-        JBDeploy721TiersHookConfig memory hookConfig = JBDeploy721TiersHookConfig(
-            name,
-            symbol,
-            baseUri,
-            IJB721TokenUriResolver(mockTokenUriResolver),
-            contractUri,
-            JB721InitTiersConfig({tiers: tiers, currency: currency, decimals: decimals, prices: IJBPrices(prices)}),
-            address(0),
-            JB721TiersHookFlags({
+        JBDeploy721TiersHookConfig memory hookConfig = JBDeploy721TiersHookConfig({
+            name: name,
+            symbol: symbol,
+            baseUri: baseUri,
+            tokenUriResolver: IJB721TokenUriResolver(mockTokenUriResolver),
+            contractUri: contractUri,
+            tiersConfig: JB721InitTiersConfig({tiers: tiers, currency: currency, decimals: decimals}),
+            reserveBeneficiary: address(0),
+            flags: JB721TiersHookFlags({
                 preventOverspending: false,
                 issueTokensForSplits: false,
                 noNewTiersWithReserves: true,
                 noNewTiersWithVotes: true,
                 noNewTiersWithOwnerMinting: true
             })
-        );
+        });
 
         JB721TiersHook hook = JB721TiersHook(address(jbHookDeployer.deployHookFor(projectId, hookConfig, salt)));
 
-        (uint256 currency2, uint256 decimals2, IJBPrices prices2) = hook.pricingContext();
+        (uint256 currency2, uint256 decimals2) = hook.pricingContext();
         // Check: do the unpacked values from `pricingContext` match the values we used in the config?
         assertEq(currency2, uint256(currency));
         assertEq(decimals2, uint256(decimals));
-        assertEq(address(prices2), prices);
     }
 
     function test_bools_doesPackingAndUnpackingWork(bool a, bool b, bool c, bool d, bool e) public {
@@ -70,6 +63,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         numberOfTiers = bound(numberOfTiers, 0, 30);
 
         // Use a non-null resolved URI.
+        // forge-lint: disable-next-line(unsafe-typecast)
         defaultTierConfig.encodedIPFSUri = bytes32(hex"69");
 
         (, JB721Tier[] memory tiers) = _createTiers(defaultTierConfig, numberOfTiers);
@@ -236,8 +230,11 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                     i + 1,
                     JBStored721Tier({
                         price: uint104((i + 1) * 10),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         remainingSupply: uint32(initialSupply - totalMinted),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         initialSupply: uint32(initialSupply),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         reserveFrequency: uint16(reserveFrequency),
                         category: uint24(100),
                         discountPercent: uint8(0),
@@ -267,6 +264,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         balances = bound(balances, 1, type(uint32).max);
 
         defaultTierConfig.useVotingUnits = true;
+        // forge-lint: disable-next-line(unsafe-typecast)
         defaultTierConfig.votingUnits = uint32(votingUnits);
         ForTest_JB721TiersHook hook = _initializeForTestHook(numberOfTiers);
 
@@ -432,8 +430,11 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                     address(hook),
                     i,
                     JBStored721Tier({
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         price: uint104(i * 10),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         remainingSupply: uint32(10 * i - 5 * i),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         initialSupply: uint32(10 * i),
                         reserveFrequency: uint16(0),
                         category: uint24(100),
@@ -532,6 +533,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         // Populate the tiers array with the default tier config.
         for (uint256 i; i < numberOfTiers; i++) {
             tiers[i] = JB721TierConfig({
+                // forge-lint: disable-next-line(unsafe-typecast)
                 price: uint104(i * 10),
                 initialSupply: uint32(100),
                 votingUnits: uint16(0),
@@ -567,12 +569,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
             baseUri,
             IJB721TokenUriResolver(mockTokenUriResolver),
             contractUri,
-            JB721InitTiersConfig({
-                tiers: tiers,
-                currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18,
-                prices: IJBPrices(address(0))
-            }),
+            JB721InitTiersConfig({tiers: tiers, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18}),
             JB721TiersHookFlags({
                 preventOverspending: false,
                 issueTokensForSplits: false,

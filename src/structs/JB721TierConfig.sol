@@ -30,12 +30,14 @@ import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 /// an NFT from this tier is minted. Out of `JBConstants.SPLITS_TOTAL_PERCENT`.
 /// @custom:member splits The splits to use for this tier's split group. These define where the split portion of the
 /// tier's price gets routed when an NFT from this tier is minted.
+// forge-lint: disable-next-line(pascal-case-struct)
 struct JB721TierConfig {
     uint104 price;
     uint32 initialSupply;
     uint32 votingUnits;
     uint16 reserveFrequency;
     address reserveBeneficiary;
+    // forge-lint: disable-next-line(mixed-case-variable)
     bytes32 encodedIPFSUri;
     uint24 category;
     uint8 discountPercent;

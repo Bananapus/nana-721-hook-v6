@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../utils/UnitTestSetup.sol";
 
 contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
@@ -27,8 +28,11 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                     i + 1,
                     JBStored721Tier({
                         price: uint104((i + 1) * 10),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         remainingSupply: uint32(initialSupply - totalMinted),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         initialSupply: uint32(initialSupply),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         reserveFrequency: uint16(reserveFrequency),
                         category: uint24(100),
                         discountPercent: uint8(0),
@@ -74,8 +78,11 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                 1,
                 JBStored721Tier({
                     price: uint104(10),
+                    // forge-lint: disable-next-line(unsafe-typecast)
                     remainingSupply: uint32(initialSupply),
+                    // forge-lint: disable-next-line(unsafe-typecast)
                     initialSupply: uint32(initialSupply),
+                    // forge-lint: disable-next-line(unsafe-typecast)
                     reserveFrequency: uint16(reserveFrequency),
                     category: uint24(100),
                     discountPercent: uint8(0),
@@ -115,6 +122,7 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
 
         // Package reserves to mint.
         JB721TiersMintReservesConfig[] memory reservesToMint = new JB721TiersMintReservesConfig[](1);
+        // forge-lint: disable-next-line(unsafe-typecast)
         reservesToMint[0] = JB721TiersMintReservesConfig({tierId: uint32(1), count: uint16(mintable)});
 
         // Mint the pending reserve NFTs.
@@ -177,8 +185,11 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                     i + 1,
                     JBStored721Tier({
                         price: uint104((i + 1) * 10),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         remainingSupply: uint32(initialSupply - totalMinted),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         initialSupply: uint32(initialSupply),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         reserveFrequency: uint16(reserveFrequency),
                         category: uint24(100),
                         discountPercent: uint8(0),
@@ -198,6 +209,7 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
         // Iterate through the tiers, calculating how many reserve NFTs should be mintable.
         for (uint256 tier = 1; tier <= numberOfTiers; tier++) {
             uint256 mintable = hook.test_store().numberOfPendingReservesFor(address(hook), tier);
+            // forge-lint: disable-next-line(unsafe-typecast)
             reservesToMint[tier - 1] = JB721TiersMintReservesConfig({tierId: uint32(tier), count: uint16(mintable)});
             totalMintable += mintable;
             for (uint256 token = 1; token <= mintable; token++) {
@@ -275,8 +287,11 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                     i + 1,
                     JBStored721Tier({
                         price: uint104((i + 1) * 10),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         remainingSupply: uint32(initialSupply - totalMinted),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         initialSupply: uint32(initialSupply),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         reserveFrequency: uint16(reserveFrequency),
                         category: uint24(100),
                         discountPercent: uint8(0),
@@ -313,8 +328,11 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                     i + 1,
                     JBStored721Tier({
                         price: uint104((i + 1) * 10),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         remainingSupply: uint32(initialSupply - totalMinted),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         initialSupply: uint32(initialSupply),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         reserveFrequency: uint16(reserveFrequency),
                         category: uint24(100),
                         discountPercent: uint8(0),
@@ -361,8 +379,11 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                     i + 1,
                     JBStored721Tier({
                         price: uint104((i + 1) * 10),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         remainingSupply: uint32(initialSupply - totalMinted),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         initialSupply: uint32(initialSupply),
+                        // forge-lint: disable-next-line(unsafe-typecast)
                         reserveFrequency: uint16(reserveFrequency),
                         category: uint24(100),
                         discountPercent: uint8(0),
@@ -400,7 +421,9 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
         // Mint 6 NFTs, 2 from each tier.
         uint16[] memory tiersToMint = new uint16[](numberOfTiers * 2);
         for (uint256 i; i < numberOfTiers; i++) {
+            // forge-lint: disable-next-line(unsafe-typecast)
             tiersToMint[i] = uint16(i) + 1;
+            // forge-lint: disable-next-line(unsafe-typecast)
             tiersToMint[tiersToMint.length - 1 - i] = uint16(i) + 1;
         }
 
@@ -424,7 +447,9 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
 
         uint16[] memory tiersToMint = new uint16[](numberOfTiers * 2);
         for (uint256 i; i < numberOfTiers; i++) {
+            // forge-lint: disable-next-line(unsafe-typecast)
             tiersToMint[i] = uint16(i) + 1;
+            // forge-lint: disable-next-line(unsafe-typecast)
             tiersToMint[tiersToMint.length - 1 - i] = uint16(i) + 1;
         }
 

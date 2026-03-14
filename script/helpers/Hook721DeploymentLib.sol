@@ -11,7 +11,9 @@ import {IJB721TiersHookProjectDeployer} from "../../src/interfaces/IJB721TiersHo
 import {IJB721TiersHookStore} from "../../src/interfaces/IJB721TiersHookStore.sol";
 
 struct Hook721Deployment {
+    // forge-lint: disable-next-line(mixed-case-variable)
     IJB721TiersHookDeployer hook_deployer;
+    // forge-lint: disable-next-line(mixed-case-variable)
     IJB721TiersHookProjectDeployer project_deployer;
     IJB721TiersHookStore store;
 }
@@ -19,6 +21,7 @@ struct Hook721Deployment {
 library Hook721DeploymentLib {
     // Cheat code address, 0x7109709ECfa91a80626fF3989D68f67F5b1DD12D.
     address internal constant VM_ADDRESS = address(uint160(uint256(keccak256("hevm cheat code"))));
+    // forge-lint: disable-next-line(screaming-snake-case-const)
     Vm internal constant vm = Vm(VM_ADDRESS);
 
     function getDeployment(string memory path) internal returns (Hook721Deployment memory deployment) {
@@ -41,6 +44,7 @@ library Hook721DeploymentLib {
 
     function getDeployment(
         string memory path,
+        // forge-lint: disable-next-line(mixed-case-variable)
         string memory network_name
     )
         internal
@@ -66,7 +70,9 @@ library Hook721DeploymentLib {
     /// @return The address of the contract.
     function _getDeploymentAddress(
         string memory path,
+        // forge-lint: disable-next-line(mixed-case-variable)
         string memory project_name,
+        // forge-lint: disable-next-line(mixed-case-variable)
         string memory network_name,
         string memory contractName
     )
@@ -75,7 +81,8 @@ library Hook721DeploymentLib {
         returns (address)
     {
         string memory deploymentJson =
-            vm.readFile(string.concat(path, project_name, "/", network_name, "/", contractName, ".json"));
+        // forge-lint: disable-next-line(unsafe-cheatcode)
+        vm.readFile(string.concat(path, project_name, "/", network_name, "/", contractName, ".json"));
         return stdJson.readAddress(deploymentJson, ".address");
     }
 }

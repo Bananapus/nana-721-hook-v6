@@ -1,18 +1,29 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/address-registry-v6/src/JBAddressRegistry.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/interfaces/IJBController.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/interfaces/IJBRulesets.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/JB721TiersHookProjectDeployer.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/JB721TiersHookStore.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/interfaces/IJB721TiersHookProjectDeployer.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/structs/JBLaunchProjectConfig.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/structs/JB721InitTiersConfig.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../utils/UnitTestSetup.sol";
 
 /// @dev A minimal mock for IJBProjects whose `count()` can be bumped by the mock controller.

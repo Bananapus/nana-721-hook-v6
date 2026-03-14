@@ -1,48 +1,86 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "forge-std/Test.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBController.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBDirectory.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBMultiTerminal.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBFundAccessLimits.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBFeelessAddresses.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBTerminalStore.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBRulesets.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBPermissions.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBPrices.sol";
 import {JBProjects} from "@bananapus/core-v6/src/JBProjects.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBSplits.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBERC20.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/JBTokens.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/libraries/JBConstants.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/libraries/JBRulesetMetadataResolver.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBAccountingContext.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBTerminalConfig.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBSplit.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBSplitGroup.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/structs/JBFundAccessLimitGroup.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/interfaces/IJBRulesetApprovalHook.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/permission-ids-v6/src/JBPermissionIds.sol";
 import {MetadataResolverHelper} from "@bananapus/core-v6/test/helpers/MetadataResolverHelper.sol";
+// forge-lint: disable-next-line(unused-import)
 import {mulDiv} from "@prb/math/src/Common.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/address-registry-v6/src/JBAddressRegistry.sol";
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../src/JB721TiersHook.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../src/JB721TiersHookDeployer.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../src/JB721TiersHookProjectDeployer.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../src/JB721TiersHookStore.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../src/interfaces/IJB721TiersHook.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../src/structs/JBDeploy721TiersHookConfig.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../src/structs/JBLaunchProjectConfig.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../src/structs/JBPayDataHookRulesetConfig.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../src/structs/JBPayDataHookRulesetMetadata.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../src/structs/JB721TiersRulesetMetadata.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../src/libraries/JB721TiersRulesetMetadataResolver.sol";
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../src/libraries/JB721Constants.sol";
 
 /// @title Fork_721Hook_Test
@@ -139,6 +177,7 @@ contract Fork_721Hook_Test is Test {
         vm.label(attacker, "attacker");
     }
 
+    // forge-lint: disable-next-line(mixed-case-function)
     function _deployJBCore() internal {
         jbPermissions = new JBPermissions(address(0));
         jbProjects = new JBProjects(multisig, address(0), address(0));
@@ -190,8 +229,9 @@ contract Fork_721Hook_Test is Test {
 
     function _deploy721Hook() internal {
         store = new JB721TiersHookStore();
-        hookImpl =
-            new JB721TiersHook(jbDirectory, jbPermissions, jbRulesets, store, IJBSplits(address(jbSplits)), address(0));
+        hookImpl = new JB721TiersHook(
+            jbDirectory, jbPermissions, jbPrices, jbRulesets, store, IJBSplits(address(jbSplits)), address(0)
+        );
         addressRegistry = new JBAddressRegistry();
         hookDeployer = new JB721TiersHookDeployer(hookImpl, store, addressRegistry, address(0));
         projectDeployer = new JB721TiersHookProjectDeployer(
@@ -226,7 +266,11 @@ contract Fork_721Hook_Test is Test {
             tokenUriResolver: IJB721TokenUriResolver(address(0)),
             contractUri: "ipfs://contract",
             tiersConfig: JB721InitTiersConfig({
-                tiers: tierConfigs, currency: uint32(uint160(NATIVE_TOKEN)), decimals: 18, prices: IJBPrices(address(0))
+                // forge-lint: disable-next-line(unsafe-typecast)
+                tiers: tierConfigs,
+                // forge-lint: disable-next-line(unsafe-typecast)
+                currency: uint32(uint160(NATIVE_TOKEN)),
+                decimals: 18
             }),
             reserveBeneficiary: reserveBeneficiary,
             flags: flags
@@ -235,6 +279,7 @@ contract Fork_721Hook_Test is Test {
         JBPayDataHookRulesetMetadata memory rulesetMetadata = JBPayDataHookRulesetMetadata({
             reservedPercent: 5000, // 50%
             cashOutTaxRate: cashOutTaxRate,
+            // forge-lint: disable-next-line(unsafe-typecast)
             baseCurrency: uint32(uint160(NATIVE_TOKEN)),
             pausePay: false,
             pauseCreditTransfers: false,
@@ -262,7 +307,8 @@ contract Fork_721Hook_Test is Test {
 
         JBAccountingContext[] memory accountingContexts = new JBAccountingContext[](1);
         accountingContexts[0] =
-            JBAccountingContext({token: NATIVE_TOKEN, currency: uint32(uint160(NATIVE_TOKEN)), decimals: 18});
+        // forge-lint: disable-next-line(unsafe-typecast)
+        JBAccountingContext({token: NATIVE_TOKEN, currency: uint32(uint160(NATIVE_TOKEN)), decimals: 18});
 
         JBTerminalConfig[] memory terminalConfigs = new JBTerminalConfig[](1);
         terminalConfigs[0] =
@@ -954,6 +1000,7 @@ contract Fork_721Hook_Test is Test {
 
         // Pack 721 metadata: bit 0 = pauseTransfers = true.
         uint16 packed721Meta = uint16(
+            // forge-lint: disable-next-line(named-struct-fields)
             JB721TiersRulesetMetadataResolver.pack721TiersRulesetMetadata(JB721TiersRulesetMetadata(true, false))
         );
 
@@ -978,6 +1025,7 @@ contract Fork_721Hook_Test is Test {
 
         // 721 metadata: transfers NOT paused.
         uint16 packed721Meta = uint16(
+            // forge-lint: disable-next-line(named-struct-fields)
             JB721TiersRulesetMetadataResolver.pack721TiersRulesetMetadata(JB721TiersRulesetMetadata(false, false))
         );
 
@@ -1007,6 +1055,7 @@ contract Fork_721Hook_Test is Test {
 
         // 721 metadata: bit 1 = pauseMintPendingReserves = true.
         uint16 packed721Meta = uint16(
+            // forge-lint: disable-next-line(named-struct-fields)
             JB721TiersRulesetMetadataResolver.pack721TiersRulesetMetadata(JB721TiersRulesetMetadata(false, true))
         );
 
@@ -1417,12 +1466,8 @@ contract Fork_721Hook_Test is Test {
                 "ipfs://evil/",
                 IJB721TokenUriResolver(address(0)),
                 "ipfs://evil-contract",
-                JB721InitTiersConfig({
-                    tiers: emptyTiers,
-                    currency: uint32(uint160(NATIVE_TOKEN)),
-                    decimals: 18,
-                    prices: IJBPrices(address(0))
-                }),
+                // forge-lint: disable-next-line(unsafe-typecast)
+                JB721InitTiersConfig({tiers: emptyTiers, currency: uint32(uint160(NATIVE_TOKEN)), decimals: 18}),
                 _defaultFlags()
             );
     }
@@ -2193,6 +2238,7 @@ contract Fork_721Hook_Test is Test {
         JBRulesetMetadata memory receiverMetadata = JBRulesetMetadata({
             reservedPercent: 0,
             cashOutTaxRate: 0,
+            // forge-lint: disable-next-line(unsafe-typecast)
             baseCurrency: uint32(uint160(NATIVE_TOKEN)),
             pausePay: false,
             pauseCreditTransfers: false,
@@ -2226,7 +2272,8 @@ contract Fork_721Hook_Test is Test {
 
         JBAccountingContext[] memory receiverAccounting = new JBAccountingContext[](1);
         receiverAccounting[0] =
-            JBAccountingContext({token: NATIVE_TOKEN, currency: uint32(uint160(NATIVE_TOKEN)), decimals: 18});
+        // forge-lint: disable-next-line(unsafe-typecast)
+        JBAccountingContext({token: NATIVE_TOKEN, currency: uint32(uint160(NATIVE_TOKEN)), decimals: 18});
         JBTerminalConfig[] memory receiverTerminals = new JBTerminalConfig[](1);
         receiverTerminals[0] =
             JBTerminalConfig({terminal: jbMultiTerminal, accountingContextsToAccept: receiverAccounting});
@@ -2245,6 +2292,7 @@ contract Fork_721Hook_Test is Test {
         splits[0] = JBSplit({
             preferAddToBalance: false,
             percent: uint32(JBConstants.SPLITS_TOTAL_PERCENT),
+            // forge-lint: disable-next-line(unsafe-typecast)
             projectId: uint56(receiverProjectId),
             beneficiary: payable(splitReceiver),
             lockedUntil: 0,

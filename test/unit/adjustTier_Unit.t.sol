@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../utils/UnitTestSetup.sol";
 
 contract Test_adjustTier_Unit is UnitTestSetup {
@@ -538,6 +539,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 price: uint104((i + 1) * 10),
                 initialSupply: uint32(100),
                 votingUnits: uint16(0),
+                // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[0],
@@ -553,6 +555,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 splits: new JBSplit[](0)
             });
             tiers[i] = JB721Tier({
+                // forge-lint: disable-next-line(unsafe-typecast)
                 id: uint32(i + 1),
                 price: tierConfigs[i].price,
                 remainingSupply: tierConfigs[i].initialSupply,
@@ -590,6 +593,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 })
             }),
             IJBDirectory(mockJBDirectory),
+            IJBPrices(mockJBPrices),
             IJBRulesets(mockJBRulesets),
             IJB721TiersHookStore(address(store)),
             IJBSplits(mockJBSplits)
@@ -668,6 +672,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 price: uint104((i + 1) * 10),
                 initialSupply: uint32(100),
                 votingUnits: uint16(0),
+                // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[0],
@@ -683,6 +688,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 splits: new JBSplit[](0)
             });
             tiers[i] = JB721Tier({
+                // forge-lint: disable-next-line(unsafe-typecast)
                 id: uint32(i + 1),
                 price: tierConfigs[i].price,
                 remainingSupply: tierConfigs[i].initialSupply,
@@ -712,18 +718,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             IJB721TokenUriResolver(mockTokenUriResolver),
             contractUri,
             JB721InitTiersConfig({
-                tiers: tierConfigs,
-                currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18,
-                prices: IJBPrices(address(0))
+                tiers: tierConfigs, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18
             }),
             JB721TiersHookFlags({
-                preventOverspending: false,
-                issueTokensForSplits: false,
-                noNewTiersWithReserves: false,
-                noNewTiersWithVotes: false,
-                noNewTiersWithOwnerMinting: true
-            })
+                    preventOverspending: false,
+                    issueTokensForSplits: false,
+                    noNewTiersWithReserves: false,
+                    noNewTiersWithVotes: false,
+                    noNewTiersWithOwnerMinting: true
+                })
         );
         hook.transferOwnership(owner);
 
@@ -738,6 +741,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                     price: uint104((i + 1) * 10),
                     initialSupply: uint32(100),
                     votingUnits: uint16(0),
+                    // forge-lint: disable-next-line(unsafe-typecast)
                     reserveFrequency: uint16(i),
                     reserveBeneficiary: reserveBeneficiary,
                     encodedIPFSUri: tokenUris[0],
@@ -753,6 +757,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                     splits: new JBSplit[](0)
                 });
                 tiersRemaining[arrayIndex] = JB721Tier({
+                    // forge-lint: disable-next-line(unsafe-typecast)
                     id: uint32(i + 1),
                     price: tierConfigsRemaining[arrayIndex].price,
                     remainingSupply: tierConfigsRemaining[arrayIndex].initialSupply,
@@ -790,6 +795,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 reserveFrequency: uint16(0),
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[0],
+                // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(100 + i),
                 discountPercent: uint8(0),
                 allowOwnerMint: false,
@@ -862,6 +868,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 price: uint104((i + 1) * 10),
                 initialSupply: uint32(100),
                 votingUnits: uint16(0),
+                // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[0],
@@ -877,6 +884,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 splits: new JBSplit[](0)
             });
             tiers[i] = JB721Tier({
+                // forge-lint: disable-next-line(unsafe-typecast)
                 id: uint32(i + 1),
                 price: tierConfigs[i].price,
                 remainingSupply: tierConfigs[i].initialSupply,
@@ -914,6 +922,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 })
             }),
             IJBDirectory(mockJBDirectory),
+            IJBPrices(mockJBPrices),
             IJBRulesets(mockJBRulesets),
             IJB721TiersHookStore(address(store)),
             IJBSplits(mockJBSplits)
@@ -925,7 +934,9 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             tierConfigsToAdd[i] = JB721TierConfig({
                 price: uint104(0),
                 initialSupply: uint32(100),
+                // forge-lint: disable-next-line(unsafe-typecast)
                 votingUnits: uint16(i + 1),
+                // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[0],
@@ -985,6 +996,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 price: uint104((i + 1) * 10),
                 initialSupply: uint32(100),
                 votingUnits: uint16(0),
+                // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[0],
@@ -1000,6 +1012,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 splits: new JBSplit[](0)
             });
             tiers[i] = JB721Tier({
+                // forge-lint: disable-next-line(unsafe-typecast)
                 id: uint32(i + 1),
                 price: tierConfigs[i].price,
                 remainingSupply: tierConfigs[i].initialSupply,
@@ -1037,6 +1050,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 })
             }),
             IJBDirectory(mockJBDirectory),
+            IJBPrices(mockJBPrices),
             IJBRulesets(mockJBRulesets),
             IJB721TiersHookStore(address(store)),
             IJBSplits(mockJBSplits)
@@ -1049,6 +1063,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 price: uint104((i + 1) * 100),
                 initialSupply: uint32(100),
                 votingUnits: uint16(0),
+                // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i + 1),
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[0],
@@ -1147,18 +1162,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             IJB721TokenUriResolver(mockTokenUriResolver),
             contractUri,
             JB721InitTiersConfig({
-                tiers: tierConfigs,
-                currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18,
-                prices: IJBPrices(address(0))
+                tiers: tierConfigs, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18
             }),
             JB721TiersHookFlags({
-                preventOverspending: false,
-                issueTokensForSplits: false,
-                noNewTiersWithReserves: false,
-                noNewTiersWithVotes: false,
-                noNewTiersWithOwnerMinting: true
-            })
+                    preventOverspending: false,
+                    issueTokensForSplits: false,
+                    noNewTiersWithReserves: false,
+                    noNewTiersWithVotes: false,
+                    noNewTiersWithOwnerMinting: true
+                })
         );
         hook.transferOwnership(owner);
 
@@ -1180,6 +1192,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 price: uint104((i + 1) * 10),
                 initialSupply: uint32(100),
                 votingUnits: uint16(0),
+                // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[0],
@@ -1195,6 +1208,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 splits: new JBSplit[](0)
             });
             tiers[i] = JB721Tier({
+                // forge-lint: disable-next-line(unsafe-typecast)
                 id: uint32(i + 1),
                 price: tierConfigs[i].price,
                 remainingSupply: tierConfigs[i].initialSupply,
@@ -1232,6 +1246,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 })
             }),
             IJBDirectory(mockJBDirectory),
+            IJBPrices(mockJBPrices),
             IJBRulesets(mockJBRulesets),
             IJB721TiersHookStore(address(store)),
             IJBSplits(mockJBSplits)
@@ -1305,6 +1320,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 price: uint104((i + 1) * 100),
                 initialSupply: uint32(100),
                 votingUnits: uint16(0),
+                // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[0],
@@ -1347,6 +1363,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 price: uint104((i + 1) * 10),
                 initialSupply: uint32(100),
                 votingUnits: uint16(0),
+                // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[0],
@@ -1382,6 +1399,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 })
             }),
             IJBDirectory(mockJBDirectory),
+            IJBPrices(mockJBPrices),
             IJBRulesets(mockJBRulesets),
             IJB721TiersHookStore(address(store)),
             IJBSplits(mockJBSplits)
@@ -1394,6 +1412,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 price: uint104((i + 1) * 100),
                 initialSupply: uint32(100),
                 votingUnits: uint16(0),
+                // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[0],
@@ -1436,6 +1455,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 price: uint104((i + 1) * 10),
                 initialSupply: uint32(100),
                 votingUnits: uint16(0),
+                // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[0],
@@ -1471,6 +1491,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 })
             }),
             IJBDirectory(mockJBDirectory),
+            IJBPrices(mockJBPrices),
             IJBRulesets(mockJBRulesets),
             IJB721TiersHookStore(address(store)),
             IJBSplits(mockJBSplits)
@@ -1483,6 +1504,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 price: uint104((i + 1) * 100),
                 initialSupply: uint32(100),
                 votingUnits: uint16(0),
+                // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[0],
@@ -1557,6 +1579,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 price: uint104((i + 1) * 10),
                 initialSupply: uint32(100),
                 votingUnits: uint16(0),
+                // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[0],
@@ -1572,6 +1595,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 splits: new JBSplit[](0)
             });
             tiers[i] = JB721Tier({
+                // forge-lint: disable-next-line(unsafe-typecast)
                 id: uint32(i + 1),
                 price: tierConfigs[i].price,
                 remainingSupply: tierConfigs[i].initialSupply,
@@ -1609,6 +1633,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 })
             }),
             IJBDirectory(mockJBDirectory),
+            IJBPrices(mockJBPrices),
             IJBRulesets(mockJBRulesets),
             IJB721TiersHookStore(address(store)),
             IJBSplits(mockJBSplits)
@@ -1709,18 +1734,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             IJB721TokenUriResolver(mockTokenUriResolver),
             contractUri,
             JB721InitTiersConfig({
-                tiers: tierConfigs,
-                currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18,
-                prices: IJBPrices(address(0))
+                tiers: tierConfigs, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18
             }),
             JB721TiersHookFlags({
-                preventOverspending: false,
-                issueTokensForSplits: false,
-                noNewTiersWithReserves: false,
-                noNewTiersWithVotes: false,
-                noNewTiersWithOwnerMinting: true
-            })
+                    preventOverspending: false,
+                    issueTokensForSplits: false,
+                    noNewTiersWithReserves: false,
+                    noNewTiersWithVotes: false,
+                    noNewTiersWithOwnerMinting: true
+                })
         );
         hook.transferOwnership(owner);
 
@@ -1786,10 +1808,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             IJB721TokenUriResolver(mockTokenUriResolver),
             contractUri,
             JB721InitTiersConfig({
-                tiers: initialConfig,
-                currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-                decimals: 18,
-                prices: IJBPrices(address(0))
+                tiers: initialConfig, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18
             }),
             JB721TiersHookFlags({
                 preventOverspending: false,

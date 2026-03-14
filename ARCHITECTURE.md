@@ -16,7 +16,7 @@ src/
 │   ├── JB721Hook.sol                 — Base ERC-721 + pay/cashout hook integration
 │   └── ERC721.sol                    — Minimal ERC-721 implementation
 ├── libraries/
-│   └── JB721TiersHookLib.sol         — Tier packing/unpacking helpers
+│   └── JB721TiersHookLib.sol         — Split calculations, price normalization, weight math, fund distribution
 ├── interfaces/                       — All interfaces (IJB721TiersHook, etc.)
 └── structs/                          — Tier config, mint context, cash-out structs
 ```
@@ -29,7 +29,7 @@ User → JBMultiTerminal.pay(metadata)
   → beforePayRecordedWith()
     → calculateSplitAmounts(): per-tier split amounts (in tier pricing denomination)
     → convertSplitAmounts(): convert to payment token denomination (if currencies differ)
-    → Adjust weight down by split fraction
+    → calculateWeight(): adjust weight down by split fraction
   → JBTerminalStore records payment
   → afterPayRecordedWith()
     → Decode tier IDs from metadata

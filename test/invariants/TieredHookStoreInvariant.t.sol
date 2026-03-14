@@ -1,12 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "forge-std/Test.sol";
 
 import {JB721TiersHookStore} from "../../src/JB721TiersHookStore.sol";
+// forge-lint: disable-next-line(unused-import)
 import {JB721TierConfig} from "../../src/structs/JB721TierConfig.sol";
+// forge-lint: disable-next-line(unused-import)
 import {JBStored721Tier} from "../../src/structs/JBStored721Tier.sol";
+// forge-lint: disable-next-line(unused-import)
 import {JB721TiersHookFlags} from "../../src/structs/JB721TiersHookFlags.sol";
+// forge-lint: disable-next-line(unused-import)
 import {JBBitmapWord} from "../../src/structs/JBBitmapWord.sol";
 import {JB721Tier} from "../../src/structs/JB721Tier.sol";
 import {TierStoreHandler} from "./handlers/TierStoreHandler.sol";

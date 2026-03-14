@@ -22,6 +22,7 @@ pragma solidity ^0.8.0;
 /// an NFT from this tier is minted. Out of `JBConstants.SPLITS_TOTAL_PERCENT`.
 /// @custom:member resolvedUri A resolved token URI for NFTs in this tier. Only available if the NFT this tier belongs
 /// to has a resolver.
+// forge-lint: disable-next-line(pascal-case-struct)
 struct JB721Tier {
     uint32 id;
     uint104 price;
@@ -30,6 +31,7 @@ struct JB721Tier {
     uint104 votingUnits;
     uint16 reserveFrequency;
     address reserveBeneficiary;
+    // forge-lint: disable-next-line(mixed-case-variable)
     bytes32 encodedIPFSUri;
     uint24 category;
     uint8 discountPercent;

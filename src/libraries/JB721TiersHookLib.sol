@@ -66,7 +66,13 @@ library JB721TiersHookLib {
             }
 
             // Set split groups for tiers that have splits configured.
-            _setSplitGroupsFor(splits, projectId, hookAddress, tiersToAdd, tierIdsAdded);
+            _setSplitGroupsFor({
+                splits: splits,
+                projectId: projectId,
+                hookAddress: hookAddress,
+                tiersToAdd: tiersToAdd,
+                tierIdsAdded: tierIdsAdded
+            });
         }
     }
 
@@ -96,11 +102,18 @@ library JB721TiersHookLib {
         }
 
         // Set split groups for tiers that have splits configured.
-        _setSplitGroupsFor(splits, projectId, hookAddress, tiersToAdd, tierIdsAdded);
+        _setSplitGroupsFor({
+            splits: splits,
+            projectId: projectId,
+            hookAddress: hookAddress,
+            tiersToAdd: tiersToAdd,
+            tierIdsAdded: tierIdsAdded
+        });
     }
 
     /// @notice Normalizes a payment value based on the packed pricing context.
-    /// @param packedPricingContext The packed pricing context (currency, decimals, prices address).
+    /// @param packedPricingContext The packed pricing context (currency, decimals).
+    /// @param prices The prices contract used for currency conversion.
     /// @param projectId The project ID.
     /// @param amountValue The payment amount value.
     /// @param amountCurrency The payment amount currency.
@@ -109,6 +122,7 @@ library JB721TiersHookLib {
     /// @return valid Whether the value is valid (false means no prices contract and currencies differ).
     function normalizePaymentValue(
         uint256 packedPricingContext,
+        IJBPrices prices,
         uint256 projectId,
         uint256 amountValue,
         uint256 amountCurrency,
@@ -118,23 +132,24 @@ library JB721TiersHookLib {
         view
         returns (uint256 value, bool valid)
     {
+        // forge-lint: disable-next-line(unsafe-typecast)
         uint256 pricingCurrency = uint256(uint32(packedPricingContext));
         if (amountCurrency == pricingCurrency) return (amountValue, true);
 
-        IJBPrices prices = IJBPrices(address(uint160(packedPricingContext >> 40)));
         if (address(prices) == address(0)) return (0, false);
 
+        // forge-lint: disable-next-line(unsafe-typecast)
         uint256 pricingDecimals = uint256(uint8(packedPricingContext >> 32));
-        value = mulDiv(
-            amountValue,
-            10 ** pricingDecimals,
-            prices.pricePerUnitOf({
+        value = mulDiv({
+            x: amountValue,
+            y: 10 ** pricingDecimals,
+            denominator: prices.pricePerUnitOf({
                 projectId: projectId,
                 pricingCurrency: amountCurrency,
                 unitCurrency: pricingCurrency,
                 decimals: amountDecimals
             })
-        );
+        });
         valid = true;
     }
 
@@ -158,7 +173,9 @@ library JB721TiersHookLib {
         bytes memory data;
         {
             bool found;
-            (found, data) = JBMetadataResolver.getDataFor(JBMetadataResolver.getId("pay", metadataIdTarget), metadata);
+            (found, data) = JBMetadataResolver.getDataFor({
+                id: JBMetadataResolver.getId({purpose: "pay", target: metadataIdTarget}), metadata: metadata
+            });
             if (!found) return (0, bytes(""));
         }
 
@@ -171,10 +188,11 @@ library JB721TiersHookLib {
 
         for (uint256 i; i < tierIdsToMint.length; i++) {
             // slither-disable-next-line calls-loop
-            JB721Tier memory tier = store.tierOf(hook, tierIdsToMint[i], false);
+            JB721Tier memory tier = store.tierOf({hook: hook, id: tierIdsToMint[i], includeResolvedUri: false});
             if (tier.splitPercent != 0) {
                 splitTierIds[splitTierCount] = tierIdsToMint[i];
-                splitAmounts[splitTierCount] = mulDiv(tier.price, tier.splitPercent, JBConstants.SPLITS_TOTAL_PERCENT);
+                splitAmounts[splitTierCount] =
+                    mulDiv({x: tier.price, y: tier.splitPercent, denominator: JBConstants.SPLITS_TOTAL_PERCENT});
                 totalSplitAmount += splitAmounts[splitTierCount];
                 splitTierCount++;
             }
@@ -193,7 +211,8 @@ library JB721TiersHookLib {
     /// @dev Called after `calculateSplitAmounts` when the payment currency differs from the tier pricing currency.
     /// @param totalSplitAmount The total split amount in tier pricing denomination.
     /// @param splitMetadata The encoded per-tier breakdown (tierIds, amounts) from calculateSplitAmounts.
-    /// @param packedPricingContext The packed pricing context (currency, decimals, prices address).
+    /// @param packedPricingContext The packed pricing context (currency, decimals).
+    /// @param prices The prices contract used for currency conversion.
     /// @param projectId The project ID.
     /// @param amountCurrency The payment amount currency.
     /// @param amountDecimals The payment amount decimals.
@@ -203,6 +222,7 @@ library JB721TiersHookLib {
         uint256 totalSplitAmount,
         bytes memory splitMetadata,
         uint256 packedPricingContext,
+        IJBPrices prices,
         uint256 projectId,
         uint256 amountCurrency,
         uint256 amountDecimals
@@ -211,12 +231,13 @@ library JB721TiersHookLib {
         view
         returns (uint256 convertedTotal, bytes memory convertedMetadata)
     {
+        // forge-lint: disable-next-line(unsafe-typecast)
         uint256 pricingCurrency = uint256(uint32(packedPricingContext));
         if (amountCurrency == pricingCurrency) return (totalSplitAmount, splitMetadata);
 
-        IJBPrices prices = IJBPrices(address(uint160(packedPricingContext >> 40)));
         if (address(prices) == address(0)) return (totalSplitAmount, splitMetadata);
 
+        // forge-lint: disable-next-line(unsafe-typecast)
         uint256 pricingDecimals = uint256(uint8(packedPricingContext >> 32));
         uint256 ratio = prices.pricePerUnitOf({
             projectId: projectId,
@@ -227,10 +248,39 @@ library JB721TiersHookLib {
 
         (uint16[] memory tierIds, uint256[] memory amounts) = abi.decode(splitMetadata, (uint16[], uint256[]));
         for (uint256 i; i < amounts.length; i++) {
-            amounts[i] = mulDiv(amounts[i], ratio, 10 ** pricingDecimals);
+            amounts[i] = mulDiv({x: amounts[i], y: ratio, denominator: 10 ** pricingDecimals});
             convertedTotal += amounts[i];
         }
         convertedMetadata = abi.encode(tierIds, amounts);
+    }
+
+    /// @notice Calculates the weight for token minting after accounting for tier split amounts.
+    /// @dev Extracted from the hook to keep mulDiv's bytecode out of the hook (EIP-170 compliance).
+    /// @param contextWeight The original weight from the payment context.
+    /// @param amountValue The payment amount value.
+    /// @param totalSplitAmount The total amount routed to tier splits.
+    /// @param issueTokensForSplits Whether to issue tokens for the full payment regardless of splits.
+    /// @return weight The adjusted weight for token minting.
+    function calculateWeight(
+        uint256 contextWeight,
+        uint256 amountValue,
+        uint256 totalSplitAmount,
+        bool issueTokensForSplits
+    )
+        external
+        pure
+        returns (uint256 weight)
+    {
+        if (totalSplitAmount == 0 || issueTokensForSplits) {
+            // No splits, or hook configured to give full token credit regardless — full weight.
+            weight = contextWeight;
+        } else if (amountValue > totalSplitAmount) {
+            // Partial splits — scale weight by the fraction that enters the project.
+            weight = mulDiv({x: contextWeight, y: amountValue - totalSplitAmount, denominator: amountValue});
+        } else {
+            // Splits consume the entire payment — no tokens should be minted.
+            weight = 0;
+        }
     }
 
     /// @notice Sets split groups in JBSplits for tiers that have splits configured.
@@ -259,15 +309,17 @@ library JB721TiersHookLib {
                 groupIndex++;
             }
         }
-        splits.setSplitGroupsOf(projectId, 0, splitGroups);
+        splits.setSplitGroupsOf({projectId: projectId, rulesetId: 0, splitGroups: splitGroups});
     }
 
-    /// @notice Distributes forwarded funds for all tiers in the hook metadata.
+    /// @notice Pulls ERC-20 tokens from the terminal (if needed) and distributes forwarded funds to tier splits.
+    /// @dev For ERC-20 tokens, pulls from the terminal using the allowance it granted via _beforeTransferTo.
     /// @param directory The directory to look up terminals.
     /// @param splits The splits contract to read tier split groups from.
     /// @param projectId The project ID of the hook.
     /// @param hookAddress The hook address (for computing split group IDs).
     /// @param token The token being distributed.
+    /// @param amount The total amount to distribute.
     /// @param encodedSplitData The encoded per-tier breakdown from hookMetadata.
     function distributeAll(
         IJBDirectory directory,
@@ -275,16 +327,29 @@ library JB721TiersHookLib {
         uint256 projectId,
         address hookAddress,
         address token,
+        uint256 amount,
         bytes calldata encodedSplitData
     )
         external
     {
+        // For ERC20 tokens, pull from terminal using the allowance it granted via _beforeTransferTo.
+        if (token != JBConstants.NATIVE_TOKEN) {
+            SafeERC20.safeTransferFrom({token: IERC20(token), from: msg.sender, to: address(this), value: amount});
+        }
+
         (uint16[] memory tierIds, uint256[] memory amounts) = abi.decode(encodedSplitData, (uint16[], uint256[]));
 
         for (uint256 i; i < tierIds.length; i++) {
             if (amounts[i] == 0) continue;
             uint256 groupId = uint256(uint160(hookAddress)) | (uint256(tierIds[i]) << 160);
-            _distributeSingleSplit(directory, splits, projectId, token, groupId, amounts[i]);
+            _distributeSingleSplit({
+                directory: directory,
+                splitsContract: splits,
+                projectId: projectId,
+                token: token,
+                groupId: groupId,
+                amount: amounts[i]
+            });
         }
     }
 
@@ -300,19 +365,25 @@ library JB721TiersHookLib {
         private
     {
         // slither-disable-next-line calls-loop
-        JBSplit[] memory tierSplits = splitsContract.splitsOf(projectId, 0, groupId);
+        JBSplit[] memory tierSplits = splitsContract.splitsOf({projectId: projectId, rulesetId: 0, groupId: groupId});
 
         bool isNativeToken = token == JBConstants.NATIVE_TOKEN;
         uint256 leftoverPercentage = JBConstants.SPLITS_TOTAL_PERCENT;
         uint256 leftoverAmount = amount;
 
         for (uint256 j; j < tierSplits.length; j++) {
-            uint256 payoutAmount = mulDiv(amount, tierSplits[j].percent, leftoverPercentage);
+            uint256 payoutAmount = mulDiv({x: amount, y: tierSplits[j].percent, denominator: leftoverPercentage});
             if (payoutAmount != 0) {
                 // Only subtract from leftover if the split has a valid recipient.
                 // Splits with no projectId and no beneficiary are skipped — their share
                 // stays in leftoverAmount and is added to the project's balance below.
-                if (_sendPayoutToSplit(directory, tierSplits[j], token, payoutAmount, isNativeToken)) {
+                if (_sendPayoutToSplit({
+                        directory: directory,
+                        split: tierSplits[j],
+                        token: token,
+                        amount: payoutAmount,
+                        isNativeToken: isNativeToken
+                    })) {
                     unchecked {
                         leftoverAmount -= payoutAmount;
                     }
@@ -324,7 +395,13 @@ library JB721TiersHookLib {
         }
 
         if (leftoverAmount != 0) {
-            _addToBalance(directory, projectId, token, leftoverAmount, isNativeToken);
+            _addToBalance({
+                directory: directory,
+                projectId: projectId,
+                token: token,
+                amount: leftoverAmount,
+                isNativeToken: isNativeToken
+            });
         }
     }
 
@@ -343,13 +420,26 @@ library JB721TiersHookLib {
     {
         if (split.projectId != 0) {
             // slither-disable-next-line calls-loop
-            IJBTerminal terminal = directory.primaryTerminalOf(split.projectId, token);
+            IJBTerminal terminal = directory.primaryTerminalOf({projectId: split.projectId, token: token});
             if (address(terminal) == address(0)) return false;
 
             if (split.preferAddToBalance) {
-                _terminalAddToBalance(terminal, split.projectId, token, amount, isNativeToken);
+                _terminalAddToBalance({
+                    terminal: terminal,
+                    projectId: split.projectId,
+                    token: token,
+                    amount: amount,
+                    isNativeToken: isNativeToken
+                });
             } else {
-                _terminalPay(terminal, split.projectId, token, amount, split.beneficiary, isNativeToken);
+                _terminalPay({
+                    terminal: terminal,
+                    projectId: split.projectId,
+                    token: token,
+                    amount: amount,
+                    beneficiary: split.beneficiary,
+                    isNativeToken: isNativeToken
+                });
             }
             return true;
         } else if (split.beneficiary != address(0)) {
@@ -358,7 +448,7 @@ library JB721TiersHookLib {
                 (bool success,) = split.beneficiary.call{value: amount}("");
                 if (!success) revert();
             } else {
-                SafeERC20.safeTransfer(IERC20(token), split.beneficiary, amount);
+                SafeERC20.safeTransfer({token: IERC20(token), to: split.beneficiary, value: amount});
             }
             return true;
         }
@@ -376,9 +466,11 @@ library JB721TiersHookLib {
         private
     {
         // slither-disable-next-line calls-loop
-        IJBTerminal terminal = directory.primaryTerminalOf(projectId, token);
+        IJBTerminal terminal = directory.primaryTerminalOf({projectId: projectId, token: token});
         if (address(terminal) == address(0)) return;
-        _terminalAddToBalance(terminal, projectId, token, amount, isNativeToken);
+        _terminalAddToBalance({
+            terminal: terminal, projectId: projectId, token: token, amount: amount, isNativeToken: isNativeToken
+        });
     }
 
     function _terminalAddToBalance(
@@ -392,11 +484,25 @@ library JB721TiersHookLib {
     {
         if (isNativeToken) {
             // slither-disable-next-line arbitrary-send-eth,calls-loop
-            terminal.addToBalanceOf{value: amount}(projectId, token, amount, false, "", bytes(""));
+            terminal.addToBalanceOf{value: amount}({
+                projectId: projectId,
+                token: token,
+                amount: amount,
+                shouldReturnHeldFees: false,
+                memo: "",
+                metadata: bytes("")
+            });
         } else {
-            SafeERC20.forceApprove(IERC20(token), address(terminal), amount);
+            SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: amount});
             // slither-disable-next-line calls-loop
-            terminal.addToBalanceOf(projectId, token, amount, false, "", bytes(""));
+            terminal.addToBalanceOf({
+                projectId: projectId,
+                token: token,
+                amount: amount,
+                shouldReturnHeldFees: false,
+                memo: "",
+                metadata: bytes("")
+            });
         }
     }
 
@@ -412,11 +518,27 @@ library JB721TiersHookLib {
     {
         if (isNativeToken) {
             // slither-disable-next-line arbitrary-send-eth,unused-return,calls-loop
-            terminal.pay{value: amount}(projectId, token, amount, beneficiary, 0, "", bytes(""));
+            terminal.pay{value: amount}({
+                projectId: projectId,
+                token: token,
+                amount: amount,
+                beneficiary: beneficiary,
+                minReturnedTokens: 0,
+                memo: "",
+                metadata: bytes("")
+            });
         } else {
-            SafeERC20.forceApprove(IERC20(token), address(terminal), amount);
+            SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: amount});
             // slither-disable-next-line unused-return,calls-loop
-            terminal.pay(projectId, token, amount, beneficiary, 0, "", bytes(""));
+            terminal.pay({
+                projectId: projectId,
+                token: token,
+                amount: amount,
+                beneficiary: beneficiary,
+                minReturnedTokens: 0,
+                memo: "",
+                metadata: bytes("")
+            });
         }
     }
 
