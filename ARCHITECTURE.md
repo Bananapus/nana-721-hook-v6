@@ -72,4 +72,4 @@ Owner → JB721TiersHook.adjustTiers()
 - `@bananapus/permission-ids-v6` — Permission constants
 - `@openzeppelin/contracts` — ERC-721 utils, Ownable
 - `@prb/math` — mulDiv
-- `solady` — LibString, Base64
+- `solady` — LibClone
