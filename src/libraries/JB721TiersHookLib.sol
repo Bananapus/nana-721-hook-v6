@@ -254,6 +254,35 @@ library JB721TiersHookLib {
         convertedMetadata = abi.encode(tierIds, amounts);
     }
 
+    /// @notice Calculates the weight for token minting after accounting for tier split amounts.
+    /// @dev Extracted from the hook to keep mulDiv's bytecode out of the hook (EIP-170 compliance).
+    /// @param contextWeight The original weight from the payment context.
+    /// @param amountValue The payment amount value.
+    /// @param totalSplitAmount The total amount routed to tier splits.
+    /// @param issueTokensForSplits Whether to issue tokens for the full payment regardless of splits.
+    /// @return weight The adjusted weight for token minting.
+    function calculateWeight(
+        uint256 contextWeight,
+        uint256 amountValue,
+        uint256 totalSplitAmount,
+        bool issueTokensForSplits
+    )
+        external
+        pure
+        returns (uint256 weight)
+    {
+        if (totalSplitAmount == 0 || issueTokensForSplits) {
+            // No splits, or hook configured to give full token credit regardless — full weight.
+            weight = contextWeight;
+        } else if (amountValue > totalSplitAmount) {
+            // Partial splits — scale weight by the fraction that enters the project.
+            weight = mulDiv({x: contextWeight, y: amountValue - totalSplitAmount, denominator: amountValue});
+        } else {
+            // Splits consume the entire payment — no tokens should be minted.
+            weight = 0;
+        }
+    }
+
     /// @notice Sets split groups in JBSplits for tiers that have splits configured.
     function _setSplitGroupsFor(
         IJBSplits splits,
@@ -283,12 +312,14 @@ library JB721TiersHookLib {
         splits.setSplitGroupsOf({projectId: projectId, rulesetId: 0, splitGroups: splitGroups});
     }
 
-    /// @notice Distributes forwarded funds for all tiers in the hook metadata.
+    /// @notice Pulls ERC-20 tokens from the terminal (if needed) and distributes forwarded funds to tier splits.
+    /// @dev For ERC-20 tokens, pulls from the terminal using the allowance it granted via _beforeTransferTo.
     /// @param directory The directory to look up terminals.
     /// @param splits The splits contract to read tier split groups from.
     /// @param projectId The project ID of the hook.
     /// @param hookAddress The hook address (for computing split group IDs).
     /// @param token The token being distributed.
+    /// @param amount The total amount to distribute.
     /// @param encodedSplitData The encoded per-tier breakdown from hookMetadata.
     function distributeAll(
         IJBDirectory directory,
@@ -296,10 +327,16 @@ library JB721TiersHookLib {
         uint256 projectId,
         address hookAddress,
         address token,
+        uint256 amount,
         bytes calldata encodedSplitData
     )
         external
     {
+        // For ERC20 tokens, pull from terminal using the allowance it granted via _beforeTransferTo.
+        if (token != JBConstants.NATIVE_TOKEN) {
+            SafeERC20.safeTransferFrom({token: IERC20(token), from: msg.sender, to: address(this), value: amount});
+        }
+
         (uint16[] memory tierIds, uint256[] memory amounts) = abi.decode(encodedSplitData, (uint16[], uint256[]));
 
         for (uint256 i; i < tierIds.length; i++) {
