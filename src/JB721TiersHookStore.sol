@@ -210,40 +210,6 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         });
     }
 
-    /// @notice Returns the number of voting units an addresses has within the specified tier of the specified 721
-    /// contract.
-    /// @dev NFTs have a tier-specific number of voting units. If the tier does not have a custom number of voting
-    /// units, the price is used.
-    /// @param hook The 721 contract that the tier belongs to.
-    /// @param account The address to get the voting units of within the tier.
-    /// @param tierId The ID of the tier to get voting units within.
-    /// @return The address' voting units within the tier.
-    function tierVotingUnitsOf(
-        address hook,
-        address account,
-        uint256 tierId
-    )
-        external
-        view
-        virtual
-        override
-        returns (uint256)
-    {
-        // Get a reference to the account's balance in this tier.
-        uint256 balance = tierBalanceOf[hook][account][tierId];
-
-        if (balance == 0) return 0;
-
-        // Keep a reference to the stored tier.
-        JBStored721Tier memory storedTier = _storedTierOf[hook][tierId];
-
-        // Check if voting units should be used. Price will be used otherwise.
-        (,, bool useVotingUnits,,) = _unpackBools(storedTier.packedBools);
-
-        // Return the address' voting units within the tier.
-        return balance * (useVotingUnits ? _tierVotingUnitsOf[hook][tierId] : storedTier.price);
-    }
-
     /// @notice Gets an array of currently active 721 tiers for the provided 721 contract.
     /// @param hook The 721 contract to get the tiers of.
     /// @param categories An array tier categories to get tiers from. Send an empty array to get all categories.
@@ -332,6 +298,40 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                 mstore(tiers, numberOfIncludedTiers)
             }
         }
+    }
+
+    /// @notice Returns the number of voting units an addresses has within the specified tier of the specified 721
+    /// contract.
+    /// @dev NFTs have a tier-specific number of voting units. If the tier does not have a custom number of voting
+    /// units, the price is used.
+    /// @param hook The 721 contract that the tier belongs to.
+    /// @param account The address to get the voting units of within the tier.
+    /// @param tierId The ID of the tier to get voting units within.
+    /// @return The address' voting units within the tier.
+    function tierVotingUnitsOf(
+        address hook,
+        address account,
+        uint256 tierId
+    )
+        external
+        view
+        virtual
+        override
+        returns (uint256)
+    {
+        // Get a reference to the account's balance in this tier.
+        uint256 balance = tierBalanceOf[hook][account][tierId];
+
+        if (balance == 0) return 0;
+
+        // Keep a reference to the stored tier.
+        JBStored721Tier memory storedTier = _storedTierOf[hook][tierId];
+
+        // Check if voting units should be used. Price will be used otherwise.
+        (,, bool useVotingUnits,,) = _unpackBools(storedTier.packedBools);
+
+        // Return the address' voting units within the tier.
+        return balance * (useVotingUnits ? _tierVotingUnitsOf[hook][tierId] : storedTier.price);
     }
 
     /// @notice Get the number of NFTs which have been minted from the provided 721 contract (across all tiers).
