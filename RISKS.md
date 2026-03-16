@@ -1,314 +1,77 @@
-# nana-721-hook-v6 -- Risks
-
-Deep implementation-level risk analysis covering all contracts in the 721 tiered hook system.
-
----
-
-## Trust Assumptions
-
-1. **Project Owner / Hook Owner** -- Can adjust tiers (add/remove), set metadata (including collection name and symbol), set discount percent, manually mint from `allowOwnerMint` tiers, and configure hook flags. Full control over NFT economics within the boundaries enforced by immutable per-tier flags.
-2. **Core Protocol (JBMultiTerminal)** -- The hook trusts that `afterPayRecordedWith()` and `afterCashOutRecordedWith()` are only called by a registered terminal. Verification at `JB721Hook.sol` lines 194-197 and 236-237 via `DIRECTORY.isTerminalOf()`.
-3. **JBDirectory** -- Trusted to correctly report terminal registrations. If compromised, arbitrary addresses could call pay/cashout hooks.
-4. **JBSplits** -- Trusted to store and return correct split configurations for tier split groups. The hook delegates split group management to this contract.
-5. **Token URI Resolver** -- If set, controls all NFT metadata rendering. Cannot affect funds but can misrepresent NFT properties. Set via `SET_721_METADATA` permission.
-6. **Store Contract** -- `JB721TiersHookStore` manages all tier state using a `msg.sender`-keyed trust model. The hook delegates pricing, supply, and reserve logic to the store.
-7. **JBPrices** -- The hook's immutable `PRICES` contract (set in the constructor, shared across all clones) is trusted for cross-currency price conversion. A reverting price feed will block all payments in non-native currencies.
-
----
-
-## Risk Analysis
-
-### R-1: Default Reserve Beneficiary Global Overwrite
-
-- **Severity**: MEDIUM
-- **Location**: `JB721TiersHookStore.sol` lines 890-897 (`recordAddTiers`)
-- **Description**: When adding a tier with `useReserveBeneficiaryAsDefault = true`, the `defaultReserveBeneficiaryOf[msg.sender]` is overwritten. This silently redirects reserve mints for ALL existing tiers that rely on the default (i.e., tiers without a tier-specific `_reserveBeneficiaryOf` entry).
-- **Attack scenario**: A project owner adds a new tier with `useReserveBeneficiaryAsDefault = true` and a different beneficiary address. Existing tiers whose reserves were flowing to the old default now silently redirect to the new address.
-- **Tested**: YES -- `test/regression/L34_ReserveBeneficiaryOverwrite.t.sol` explicitly tests this behavior with 3 scenarios.
-- **Mitigation**: Documented via `@dev WARNING` in the store. Callers should use per-tier beneficiaries (`useReserveBeneficiaryAsDefault = false`) when adding tiers to hooks with existing tiers.
-
-### R-2: 100% Discount Enables Free Minting With Full Cash-Out Weight
-
-- **Severity**: HIGH
-- **Location**: `JB721TiersHookStore.sol` lines 1069-1071 (`recordMint`), `JB721Constants.sol` line 6
-- **Description**: Setting `discountPercent = 200` (the `DISCOUNT_DENOMINATOR`) makes the effective mint price zero: `price - mulDiv(price, 200, 200) = 0`. However, the cash-out weight is always based on the original `storedTier.price` (lines 415-417 of `cashOutWeightOf`), not the discounted price. An attacker granted discount-setting permission could set 100% discount, mint for free, then cash out at full weight.
-- **Attack scenario**: Compromised operator with `SET_721_DISCOUNT_PERCENT` permission sets discount to 200 on a high-value tier. Mints for free. Burns NFTs via cash-out to extract funds proportional to the original price.
-- **Tested**: YES -- `test/721HookAttacks.t.sol` tests 2 and 3 cover discount behavior and `cannotIncreaseDiscountPercent` enforcement.
-- **Mitigation**: Use `cannotIncreaseDiscountPercent = true` on tiers where this is a concern. Only grant `SET_721_DISCOUNT_PERCENT` to trusted addresses. The `discountPercent > storedTier.discountPercent && cannotIncreaseDiscountPercent` check at store line 1176 enforces the immutable cap.
-
-### R-3: Tier Split Fund Distribution -- Reentrancy Surface
-
-- **Severity**: MEDIUM
-- **Location**: `JB721TiersHookLib.sol` `_distributeSingleSplit` and `_sendPayoutToSplit`
-- **Description**: During `afterPayRecordedWith()`, if tiers have `splitPercent > 0`, the hook distributes forwarded funds to split recipients. The `_sendPayoutToSplit` function follows a priority chain: `split.hook` > `split.projectId` > `split.beneficiary`. Each path involves external calls to untrusted addresses: (1) `split.hook.processSplitWith()` receives a `JBSplitHookContext` with token, amount, decimals, project ID, group ID, and the split struct -- for native tokens, ETH is forwarded via `{value: amount}`; for ERC-20s, tokens are transferred first via `SafeERC20.safeTransfer` then `processSplitWith` is called; (2) `terminal.pay()` or `terminal.addToBalanceOf()` for project splits; (3) `.call{value}` or `SafeERC20.safeTransfer` for beneficiary splits.
-- **Reentrancy path**: `afterPayRecordedWith` -> `_processPayment` -> `distributeAll` (DELEGATECALL) -> `safeTransferFrom` (ERC-20 pull) -> `_distributeSingleSplit` -> `_sendPayoutToSplit` -> `split.hook.processSplitWith{value}` / `beneficiary.call{value}` / `terminal.pay()` -- any of these could reenter the hook.
-- **Why it is mitigated**: The NFT mint (`_mintAll`) happens BEFORE split distribution in `JB721TiersHook.sol`. The store's `recordMint` has already decremented supply. Pay credits are already updated. A reentrant call to `afterPayRecordedWith` would require terminal authorization and would process as a separate independent payment.
-- **Tested**: PARTIALLY -- Split distribution is tested in `test/unit/tierSplitRouting_Unit.t.sol`, `test/unit/splitHookDistribution_Unit.t.sol`, and `test/regression/L36_SplitNoBeneficiary.t.sol`, but no explicit reentrancy test exists.
-- **Mitigation**: State is settled before external calls. The terminal authorization check prevents casual reentrancy. No explicit `ReentrancyGuard` is used.
-
-### R-4: Split With No Recipient -- Fund Routing
-
-- **Severity**: LOW (fixed)
-- **Location**: `JB721TiersHookLib.sol` `_sendPayoutToSplit`
-- **Description**: A split with `hook == address(0)`, `projectId == 0`, and `beneficiary == address(0)` returns `false`, causing the calling function to keep those funds in `leftoverAmount`, which is then routed to the project's balance via `_addToBalance`. The priority chain (`split.hook` > `split.projectId` > `split.beneficiary`) ensures funds always have a clear destination.
-- **Tested**: YES -- `test/regression/L36_SplitNoBeneficiary.t.sol` verifies funds are routed to the project's balance.
-- **Mitigation**: Fixed by design. Funds are never silently lost.
-
-### R-5: Category Sort Order Enforcement -- Off-Chain Burden
-
-- **Severity**: LOW
-- **Location**: `JB721TiersHookStore.sol` lines 820-822 (`recordAddTiers`)
-- **Description**: Tiers must be sorted by category when added. The store reverts `InvalidCategorySortOrder` if violated. This is an on-chain enforcement that protects invariants, but the error is difficult to debug for integrators.
-- **Tested**: YES -- Implicit in all tier creation tests.
-- **Mitigation**: Validate tier ordering off-chain before submitting transactions.
-
-### R-6: Soft Removal Preserves Cash-Out Weight
-
-- **Severity**: LOW (by design)
-- **Location**: `JB721TiersHookStore.sol` lines 1139-1156 (`recordRemoveTierIds`), lines 460-478 (`totalCashOutWeight`)
-- **Description**: Removing a tier only marks it in a bitmap (`_removedTiersBitmapWordOf`). The tier data (`_storedTierOf`) is not deleted. `totalCashOutWeight()` iterates by `maxTierIdOf` (line 462-466), not by the sorted tier list, so removed tiers' minted NFTs continue to contribute to cash-out weight. Existing NFTs from removed tiers retain their full cash-out value.
-- **Attack scenario**: None -- this is intentional. Prevents retroactive value destruction of already-minted NFTs.
-- **Tested**: YES -- `test/721HookAttacks.t.sol` test 5 explicitly verifies cash-out weight is preserved after tier removal.
-- **Mitigation**: By design. Tier removal prevents new mints, not cash-outs.
-
-### R-7: Pay Credit Accumulation -- Payer vs. Beneficiary Separation
-
-- **Severity**: LOW
-- **Location**: `JB721TiersHook.sol` lines 604-616 (`_processPayment`)
-- **Description**: Pay credits are tracked per beneficiary, not per payer. When `payer != beneficiary`, the payer's existing credits are NOT applied to the mint. Credits from the payment's leftover are stored for the beneficiary. This means a payer who directs payment to another beneficiary loses access to any overspend -- it becomes the beneficiary's credit.
-- **Tested**: PARTIALLY -- Pay credit tests exist in `test/unit/pay_Unit.t.sol` but the payer-beneficiary divergence case may not be exhaustively covered.
-- **Mitigation**: This is documented behavior. Payers should be aware that credits accrue to the beneficiary.
-
-### R-8: Reserve Supply Protection -- Post-Mint Check
-
-- **Severity**: MEDIUM (fixed)
-- **Location**: `JB721TiersHookStore.sol` lines 1079-1095 (`recordMint`)
-- **Description**: The store decrements `remainingSupply` BEFORE checking whether enough supply remains for pending reserves (lines 1081-1086). After decrementing, it checks `remainingSupply < _numberOfPendingReservesFor(...)`. This is the correct order because `_numberOfPendingReservesFor` needs to see the post-mint state (the new non-reserve mint increases pending reserves). Without this ordering, the last available slot could be consumed by a paid mint, making pending reserves unmintable.
-- **Tested**: YES -- `test/unit/M6_TierSupplyCheck.t.sol` provides 4 targeted tests for this edge case with varying supply and reserve frequency combinations.
-- **Mitigation**: The decrement-then-check pattern is intentional and correct. The test proves a 7th paid mint correctly reverts when it would steal a reserve slot.
-
-### R-9: Price Feed Dependency -- DoS Vector
-
-- **Severity**: MEDIUM
-- **Location**: `JB721TiersHookLib.sol` — `normalizePaymentValue` and `convertSplitAmounts`
-- **Description**: When the hook's pricing currency differs from the payment currency and a `JBPrices` contract is configured, the hook calls `prices.pricePerUnitOf()` in two places: (1) `normalizePaymentValue` to convert the payment amount for tier price comparison, and (2) `convertSplitAmounts` to convert per-tier split amounts back to the payment token denomination for forwarding. If the price feed reverts (e.g., stale Chainlink data, sequencer down on L2), all payments in non-native currencies will revert. This is a DoS vector but not a fund-loss vector.
-- **Tested**: YES — `test/unit/pay_CrossCurrency_Unit.t.sol` tests 8-9 verify reverting price feeds block both `normalizePaymentValue` and `convertSplitAmounts`. Live cross-currency split conversion tested in `deploy-all-v6/test/fork/CrossCurrencyFork.t.sol`.
-- **Mitigation**: If `address(prices) == address(0)`, payments in non-matching currencies silently return `(0, false)` and the hook skips minting. `convertSplitAmounts` also returns early if no prices contract is set. Projects using cross-currency pricing should monitor feed health.
-
-### R-10: Large Tier Array Gas Exhaustion
-
-- **Severity**: LOW
-- **Location**: `JB721TiersHookStore.sol` lines 253-333 (`tiersOf`), lines 358-380 (`votingUnitsOf`), lines 391-400 (`balanceOf`), lines 338-349 (`totalSupplyOf`), lines 460-478 (`totalCashOutWeight`)
-- **Description**: Several view functions iterate from `maxTierIdOf` down to 1. With many tiers (up to 65,535 theoretically), these functions could exceed block gas limits. `totalCashOutWeight()` iterates ALL tier IDs (not just active ones), making it the most gas-intensive.
-- **Attack scenario**: An attacker with `ADJUST_721_TIERS` permission adds thousands of tiers, causing `totalCashOutWeight()` to become uncallable. Since `beforeCashOutRecordedWith()` calls `totalCashOutWeight()` (line 115 of `JB721Hook.sol`), this could block all NFT cash-outs.
-- **Tested**: `test/721HookAttacks.t.sol` test 10 tests `maxSupplyTier_noOverflow` but does not test gas limits with many tiers.
-- **Mitigation**: The `maxTierIdOf` is capped at `type(uint16).max` (65,535) by the store (line 781-783). Keep tier count manageable in practice.
-
-### R-11: Metadata Decode Failure -- Silent Skip
-
-- **Severity**: LOW
-- **Location**: `JB721TiersHook.sol` lines 622-648 (`_processPayment`)
-- **Description**: If `JBMetadataResolver.getDataFor()` returns `found = false` (line 627), the hook skips NFT minting entirely. If `preventOverspending` is also false (the default), the payment goes through and the entire amount becomes pay credits for the beneficiary. No NFTs are minted, but the payment is not reverted.
-- **Tested**: PARTIALLY -- `test/721HookAttacks.t.sol` test 6 tests invalid tier IDs with `preventOverspending = true`, but the silent-skip path (malformed metadata + `preventOverspending = false`) lacks a dedicated test.
-- **Mitigation**: Use `JBMetadataResolver` for encoding. Set `preventOverspending = true` if unintended credit accumulation is a concern.
-
-### R-12: ERC-721 Receiver Callback -- Potential DoS on Mint
-
-- **Severity**: LOW
-- **Location**: `ERC721.sol` lines 466-483 (`_checkOnERC721Received`), `JB721TiersHook.sol` line 579 (`_mint`)
-- **Description**: The hook uses `_mint()` (not `_safeMint()`), so the `onERC721Received` callback is NOT triggered during minting. However, `safeTransferFrom` and `transferFrom` do trigger the `_update` override which calls `STORE.recordTransferForTier()` -- this is a cross-contract call during every transfer.
-- **Tested**: Not specifically for DoS via receiver callbacks.
-- **Mitigation**: `_mint()` avoids the receiver callback, preventing mint-time DoS. Transfers use the standard ERC-721 flow.
-
-### R-13: Token URI Resolver -- Arbitrary External Call
-
-- **Severity**: LOW
-- **Location**: `JB721TiersHookLib.sol` lines 396-407 (`resolveTokenURI`), store line 551-556 (`_getTierFrom`)
-- **Description**: If a `tokenUriResolver` is set, `tokenURI()` and `tiersOf(..., includeResolvedUri=true)` make external calls to the resolver contract. A malicious resolver could revert (blocking metadata reads) or return misleading data. Since these are view functions, there is no fund risk, but integrators (marketplaces, frontends) could be affected.
-- **Tested**: NOT directly tested for malicious resolver behavior.
-- **Mitigation**: Only the hook owner (via `SET_721_METADATA`) can set the resolver. The resolver cannot affect fund flows.
-
-### R-14: Split Distribution -- Terminal Pay/AddToBalance External Calls
-
-- **Severity**: MEDIUM
-- **Location**: `JB721TiersHookLib.sol` lines 340-377 (`_terminalAddToBalance`, `_terminalPay`)
-- **Description**: When distributing split funds to projects, the library calls `terminal.pay()` or `terminal.addToBalanceOf()` on the target project's primary terminal. These are external calls to potentially untrusted terminal contracts. For ERC-20 tokens, `SafeERC20.forceApprove()` is used before the call (lines 353, 373).
-- **Reentrancy path**: The target terminal could call back into the hook during `pay()` processing. However, since the hook's own state (supply, credits) is already settled before distribution begins, reentrancy through this path cannot double-mint or corrupt state.
-- **Tested**: `test/unit/tierSplitRouting_Unit.t.sol` tests split distribution with mocked terminals.
-- **Mitigation**: State is fully settled before distribution. `SafeERC20` handles token approval safely.
-
-### R-15: Initialize Front-Running on Deterministic Clones
-
-- **Severity**: LOW
-- **Location**: `JB721TiersHookDeployer.sol` lines 78-84 (`deployHookFor`)
-- **Description**: When deploying with a salt (deterministic address via `LibClone.cloneDeterministic`), the salt is derived from `keccak256(abi.encode(_msgSender(), salt))`. An attacker who knows the deployer's address and salt could front-run the deployment. However, since `initialize()` is called in the same transaction as the clone creation (line 88-97), and ownership is transferred to `_msgSender()` (line 100), the front-runner would end up with a hook they do not own.
-- **Tested**: NOT directly tested for front-running scenarios.
-- **Mitigation**: The sender-specific salt derivation prevents third-party address prediction. The atomic deploy+initialize+transfer pattern prevents initialization hijacking.
-
-### R-16: cleanTiers() -- Permissionless Tier List Reorganization
-
-- **Severity**: LOW
-- **Location**: `JB721TiersHookStore.sol` lines 726-763 (`cleanTiers`)
-- **Description**: `cleanTiers()` is callable by anyone. It reorganizes the sorted tier linked list to skip removed tiers. While this is pure bookkeeping (no value at risk), a griefing attacker could call it repeatedly to waste gas or to ensure the tier list is in a particular order.
-- **Tested**: NOT specifically tested for griefing.
-- **Mitigation**: The function is idempotent and only modifies the `_tierIdAfter` mapping. No economic impact.
-
-### R-17: Voting Units Manipulation via Tier Addition
-
-- **Severity**: LOW
-- **Location**: `JB721TiersHookStore.sol` lines 829-835 (`recordAddTiers`)
-- **Description**: If `noNewTiersWithVotes` is NOT set, an owner can add new tiers with custom `votingUnits`. This could allow governance manipulation by creating tiers with high voting power relative to their price. If `useVotingUnits = false`, voting power defaults to the tier's price, which could also be set to artificially high values.
-- **Tested**: PARTIALLY -- The flag enforcement is tested in the store invariant tests, but governance manipulation scenarios are not explicitly tested.
-- **Mitigation**: Set `noNewTiersWithVotes = true` at initialization for projects where governance voting power is economically significant.
-
-### R-18: mulDiv Rounding in Discount Application
-
-- **Severity**: LOW
-- **Location**: `JB721TiersHookStore.sol` line 1070 (`recordMint`)
-- **Description**: The discounted price is calculated as `price - mulDiv(price, discountPercent, DISCOUNT_DENOMINATOR)`. The `mulDiv` from PRBMath rounds down, meaning the discount amount is slightly less than the mathematical result, and the effective price is slightly higher than expected. For small prices, this could mean the discount has no effect (e.g., `price=1, discountPercent=1` -> `mulDiv(1, 1, 200) = 0`).
-- **Tested**: PARTIALLY -- Discount tests exist in `test/721HookAttacks.t.sol` tests 2-3, but edge cases with very small prices are not explicitly tested.
-- **Mitigation**: Rounding always favors the protocol (charges slightly more). Economically insignificant for typical tier prices.
-
-### R-19: Transfer Pause Bypass via Tier Configuration
-
-- **Severity**: LOW
-- **Location**: `JB721TiersHook.sol` lines 715-727 (`_update`)
-- **Description**: Transfer pausing only applies to tiers with `transfersPausable = true` AND requires the current ruleset's metadata to have `transfersPaused` set (bit 0). If a tier is created with `transfersPausable = false`, its NFTs can never be paused regardless of ruleset settings. This is by design but could surprise project owners who expect blanket pause capability.
-- **Tested**: PARTIALLY -- The transfer pause logic is tested but not for the interaction between tier-level and ruleset-level flags.
-- **Mitigation**: Set `transfersPausable = true` on all tiers where pause capability is desired.
-
----
-
-## MEV / Frontrunning Vectors
-
-### F-1: Tier Addition Frontrunning
-
-An attacker who sees a pending `adjustTiers()` transaction could front-run it with payments to mint NFTs from existing tiers before the new (possibly cheaper or more favorable) tiers are added. This is standard mempool visibility risk and not specific to this hook.
-
-### F-2: Discount Change Frontrunning
-
-When the owner calls `setDiscountPercentOf()` to increase a discount, a frontrunner could observe the pending transaction and mint before the discount takes effect (paying the higher price). Conversely, when decreasing a discount, a frontrunner could mint at the current lower price before the increase takes effect.
-
-### F-3: Cash-Out Sandwich
-
-An attacker could observe a large cash-out and front-run it with their own cash-out to claim a larger share of the surplus (since `totalCashOutWeight` decreases after each burn). This is a standard bonding curve risk inherited from the core protocol.
-
----
-
-## Reentrancy Analysis
-
-### External Call Map
-
-1. **`afterPayRecordedWith()`** -> `_processPayment()`:
-   - `STORE.recordMint()` (cross-contract, trusted)
-   - `_mint()` (internal, no receiver callback)
-   - `JB721TiersHookLib.distributeAll()` via DELEGATECALL:
-     - `SafeERC20.safeTransferFrom()` (ERC-20 token pull from terminal)
-     - `SPLITS.splitsOf()` (cross-contract, trusted)
-     - `split.hook.processSplitWith{value}()` (untrusted external call -- highest priority)
-     - `SafeERC20.safeTransfer()` to split hook + `split.hook.processSplitWith()` (ERC-20 path)
-     - `terminal.pay()` (cross-contract, semi-trusted -- project splits)
-     - `terminal.addToBalanceOf()` (cross-contract, semi-trusted -- project splits)
-     - `split.beneficiary.call{value}()` (untrusted external call -- lowest priority)
-     - `SafeERC20.safeTransfer()` (token transfer to beneficiary)
-     - `SafeERC20.forceApprove()` (token approval for terminal calls)
-
-2. **`afterCashOutRecordedWith()`**:
-   - `_ownerOf()` (internal read)
-   - `_burn()` -> `_update()` (internal) -> `STORE.recordTransferForTier()` (cross-contract, trusted)
-   - `STORE.recordBurn()` (cross-contract, trusted)
-
-3. **`adjustTiers()`**:
-   - `JB721TiersHookLib.adjustTiersFor()` via DELEGATECALL:
-     - `STORE.recordRemoveTierIds()` (cross-contract, trusted)
-     - `STORE.recordAddTiers()` (cross-contract, trusted)
-     - `SPLITS.setSplitGroupsOf()` (cross-contract, trusted)
-
-4. **`mintFor()`**:
-   - `STORE.recordMint()` (cross-contract, trusted)
-   - `_mint()` (internal, no receiver callback)
-
-5. **`mintPendingReservesFor()`**:
-   - `RULESETS.currentOf()` (cross-contract, trusted)
-   - `STORE.recordMintReservesFor()` (cross-contract, trusted)
-   - `STORE.reserveBeneficiaryOf()` (cross-contract, trusted)
-   - `_mint()` (internal, no receiver callback)
-
-### Reentrancy Assessment
-
-**No explicit reentrancy guard** (`ReentrancyGuard`) is used. Protection relies on state ordering:
-
-- All `STORE.record*` calls (state mutations) happen BEFORE any untrusted external calls.
-- `_mint()` uses the non-safe variant, avoiding `onERC721Received` callbacks.
-- The only untrusted external calls (split beneficiary `.call{value}`, terminal `.pay()`, terminal `.addToBalanceOf()`) happen after all state is settled.
-- A reentering call would need terminal authorization (`DIRECTORY.isTerminalOf`) and would be processed as an independent operation with its own state changes.
-
-**Risk level**: LOW. The state-before-interaction pattern is consistently applied.
-
----
-
-## Test Coverage Summary
-
-### By Risk
-
-| Risk | Has Direct Test | Invariant Covered | Fuzz Tested |
-|------|:-:|:-:|:-:|
-| R-1 Reserve beneficiary overwrite | YES (L34) | NO | NO |
-| R-2 100% discount free mint | YES (attacks t2-t3) | NO | NO |
-| R-3 Split distribution reentrancy | PARTIAL | NO | NO |
-| R-4 Split no beneficiary | YES (L36) | NO | NO |
-| R-5 Category sort order | YES (implicit) | NO | YES (handler) |
-| R-6 Soft removal cash-out weight | YES (attacks t5) | YES (INV-721-2) | YES |
-| R-7 Pay credit payer/beneficiary | PARTIAL | YES (INV-721-3) | YES |
-| R-8 Reserve supply protection | YES (M6) | YES (INV-721-1,4) | YES |
-| R-9 Price feed DoS | YES (cc t8-t9) | NO | NO |
-| R-10 Large tier array gas | PARTIAL | NO | NO |
-| R-11 Metadata decode silent skip | PARTIAL | NO | NO |
-| R-12 ERC-721 receiver DoS | NO | NO | NO |
-| R-13 Token URI resolver abuse | NO | NO | NO |
-| R-14 Terminal call reentrancy | PARTIAL (mocked) | NO | NO |
-| R-15 Initialize front-running | NO | NO | NO |
-| R-16 cleanTiers griefing | NO | NO | NO |
-| R-17 Voting units manipulation | PARTIAL | NO | NO |
-| R-18 mulDiv rounding | PARTIAL | NO | NO |
-| R-19 Transfer pause bypass | PARTIAL | NO | NO |
-
-### Test Suite Overview
-
-| Category | File Count | What It Covers |
-|----------|:----------:|----------------|
-| Unit tests | 10 | `adjustTier`, `deployer`, `getters/constructor`, `mintFor/mintReservesFor`, `pay`, `redeem`, `tierSplitRouting`, `splitHookDistribution`, `JBBitmap`, `JBIpfsDecoder` |
-| Invariant tests | 2 + 2 handlers | `TierLifecycleInvariant` (6 invariants), `TieredHookStoreInvariant` (3 invariants) |
-| Attack tests | 1 | 10 adversarial scenarios (zero price, max discount, reserves, supply, permissions, overflow) |
-| Regression tests | 3 | L34 (reserve beneficiary overwrite), L35 (cached tier lookup), L36 (split no beneficiary) |
-| E2E tests | 1 | Full lifecycle with deployer, payments, cash-outs |
-| Fork tests | 1 | Deployment on live chain state |
-| Metadata unit | 2 | `JB721TiersRulesetMetadataResolver`, `M6_TierSupplyCheck` |
-
-### Notable Coverage Gaps
-
-1. **No reentrancy test** for the split distribution `.call{value}` path.
-2. **Price feed failure** is tested: `test/unit/pay_CrossCurrency_Unit.t.sol` tests 8-9 verify reverting price feeds block both payment normalization and split conversion. Live feed integration tested in `deploy-all-v6`.
-3. **No gas limit test** for operations with many tiers (hundreds+).
-4. **No test** for token URI resolver returning malicious/reverting data.
-5. **No test** for `initialize()` front-running on deterministic clones.
-6. **No explicit fuzz test** for discount percent edge cases with very small prices.
-7. **No cross-terminal reentry test** where a split's `terminal.pay()` triggers a callback into the hook.
-
----
-
-## External Dependencies
-
-| Dependency | What It Provides | Risk If Compromised |
-|------------|-----------------|---------------------|
-| `JBMultiTerminal` | Calls hook during pay/cashout | Arbitrary pay/cashout hook invocations |
-| `JBDirectory` | Terminal registration lookups | Could allow unauthorized callers |
-| `JBController` | Project lifecycle management | Hook deployment flow relies on it |
-| `JBPermissions` | Permission checks for privileged functions | Could grant unauthorized access |
-| `JBRulesets` | Current ruleset for pause checks | Could disable pause protections |
-| `JBSplits` | Tier split group storage and retrieval | Could return incorrect splits |
-| `JBPrices` | Cross-currency price conversion | Could return wrong prices or revert (DoS) |
-| `JBOwnable` | Ownership model (EOA or project) | Ownership transfer mechanics |
-| OpenZeppelin `ERC2771Context` | Meta-transaction support | Trusted forwarder could spoof `msg.sender` |
-| PRBMath `mulDiv` | Fixed-point arithmetic | Rounding errors (bounded) |
-| Solady `LibClone` | Minimal proxy cloning | Clone implementation bugs |
+# RISKS.md -- nana-721-hook-v6
+
+## 1. Trust Assumptions
+
+- **Store contract (`JB721TiersHookStore`) is fully trusted.** Record functions (`recordMint`, `recordBurn`, `recordAddTiers`, `recordTransferForTier`, `recordFlags`) have no access control -- they key state by `msg.sender`. Any address can call the store to manipulate state for a hook address it controls, but cannot affect other hooks.
+- **Tier configuration is partially immutable.** Once created: `price`, `initialSupply`, `reserveFrequency`, `category`, `votingUnits`, `splitPercent` are permanent. Mutable: `discountPercent` (owner-controlled, subject to `cannotIncreaseDiscountPercent`), `encodedIPFSUri` (owner-controlled).
+- **Category sort order is enforced only at insertion.** `recordAddTiers` reverts `InvalidCategorySortOrder` if tiers are not ascending by category. The sorted linked list (`_tierIdAfter`) depends on this invariant across all `adjustTiers` calls. Direct store callers could corrupt the list.
+- **`useReserveBeneficiaryAsDefault` has global side effects.** Setting this on ANY new tier overwrites `defaultReserveBeneficiaryOf` for ALL existing tiers that lack a tier-specific `_reserveBeneficiaryOf` entry. Documented but dangerous when calling `adjustTiers` on hooks with existing tiers.
+- **Clone initialization is one-shot, atomic.** `initialize()` guards via `PROJECT_ID != 0`. Deployer contracts call deploy+initialize in a single transaction, preventing front-running. Ownership transfers to `_msgSender()` at the end of `initialize`.
+- **JBDirectory is trusted for terminal authentication.** `afterPayRecordedWith` and `afterCashOutRecordedWith` check `DIRECTORY.isTerminalOf()`. If the directory is compromised, arbitrary addresses can invoke pay/cashout hooks.
+- **JBPrices is trusted for cross-currency conversion.** A reverting price feed blocks all payments in non-matching currencies (DoS, not fund loss). If `address(prices) == address(0)`, cross-currency payments silently skip minting.
+
+## 2. Economic Risks
+
+- **Cash out weight uses full undiscounted price.** `cashOutWeightOf` and `totalCashOutWeight` always use `storedTier.price`, not the discounted price. NFTs bought at a discount have cash-out value proportional to the full tier price. A `discountPercent=200` (100% off, denominator is 200) enables free minting with full cash-out weight. Mitigated by `cannotIncreaseDiscountPercent` flag.
+- **Pending reserves inflate the `totalCashOutWeight` denominator.** The total includes `price * pendingReserves` for unminted reserve NFTs. This dilutes per-NFT reclaim value before reserves are actually minted. Effect is proportional to reserve frequency and number of unminted reserves.
+- **Pay credits accumulate without cap.** `payCreditsOf` grows from leftover amounts after minting. Credits are per-beneficiary, not per-payer. When `payer != beneficiary`, overspend accrues to the beneficiary's credits; the payer's existing credits are not applied. No upper bound on accumulation.
+- **Zero-price tiers are valid.** A tier with `price=0` allows free minting. Cash-out weight for price-0 tiers is zero, so no value extraction risk. However, they still consume supply and generate pending reserves if `reserveFrequency > 0`.
+- **Discount denominator is 200, not 10,000.** `DISCOUNT_DENOMINATOR = 200`. A `discountPercent` of 1 = 0.5% off, 100 = 50% off, 200 = 100% off. `mulDiv` rounding makes small-price discounts lossy (e.g., `price=1, discountPercent=1` -> `mulDiv(1,1,200)=0`, no discount applied).
+- **Currency mismatch silently skips minting.** If payment currency differs from tier pricing currency and `PRICES == address(0)`, `_processPayment` returns without minting or reverting. Funds enter the project balance, no NFTs issued, no credits created (the normalized value is 0).
+- **`splitPercent` reduces minting weight.** `beforePayRecordedWith` scales down the weight returned to the terminal by `(amountValue - totalSplitAmount) / amountValue`. Payers receive fewer fungible tokens for the split portion. `issueTokensForSplits` flag overrides this to give full weight.
+- **Reserved NFT minting is permissionless.** Anyone can call `mintPendingReservesFor` to mint pending reserves to the tier's beneficiary. Only gated by the `mintPendingReservesPaused` ruleset flag. Timing of reserve minting is not owner-controlled.
+
+## 3. Reentrancy Surface
+
+- **Split hook callbacks (`processSplitWith`).** During `afterPayRecordedWith` -> `_processPayment` -> `distributeAll`, the library calls `split.hook.processSplitWith{value}()` for each split with a hook. This executes arbitrary code. At callback time: NFTs already minted, `payCreditsOf` updated, `remainingSupply` decremented in the store. Reentering `afterPayRecordedWith` requires terminal authentication and processes as an independent payment. Tested: `TestAuditGaps_Reentrancy` confirms reentrancy is blocked by terminal check.
+- **Split beneficiary ETH sends.** `_sendPayoutToSplit` uses `beneficiary.call{value: amount}("")`. If the beneficiary reverts, the function returns `false` and funds route to the project's balance via `_addToBalance`. Does not revert the entire payment.
+- **Terminal `.pay()` / `.addToBalanceOf()` during split distribution.** For project-targeted splits, the library calls the target project's primary terminal. The target terminal could call back into the hook, but the hook's state is fully settled (supply, credits, mint state). Reentrancy through this path cannot double-mint or corrupt state.
+- **`afterCashOutRecordedWith` execution order.** Burns tokens via `_burn()` -> `_update()` -> `STORE.recordTransferForTier()` in a loop, then calls `STORE.recordBurn()`. ERC721 `_update` triggers the store's tier balance decrement. Burns go to `address(0)`, so no `onERC721Received` callback.
+- **No `ReentrancyGuard`.** Protection relies entirely on state ordering (all `STORE.record*` calls before external calls) and terminal authentication checks. `_mint()` uses the non-safe variant, avoiding `onERC721Received` callbacks during minting.
+
+## 4. Gas/DoS Vectors
+
+- **`totalCashOutWeight` iterates ALL tier IDs** (1 to `maxTierIdOf`), including removed tiers with minted NFTs. Called during every `beforeCashOutRecordedWith`. At ~2-3k gas per tier, 500+ tiers approaches block gas limits. Could block all NFT cash-outs if an attacker with `ADJUST_721_TIERS` permission adds thousands of tiers.
+- **`balanceOf`, `votingUnitsOf`, `totalSupplyOf` iterate all tiers.** Same pattern: loop from `maxTierIdOf` down to 1. These are view functions but called by governance contracts.
+- **`tiersOf` traverses removed tiers.** Removed tiers are skipped via bitmap but still traversed in the linked list. `cleanTiers()` must be called separately to compact. `cleanTiers()` is permissionless and idempotent.
+- **Minting from many tiers in one payment.** `recordMint` loops per tier ID: storage read (stored tier + bitmap check) per iteration. 50 tiers in one payment ~5-7M gas (tested, fits in 30M block). 100+ tiers in a single mint is feasible but consumes most of the block.
+- **`recordAddTiers` sort-insertion cost.** Adding a low-category tier to a hook with many existing higher-category tiers iterates the entire sorted list to find the insertion point. O(n) per added tier.
+- **Reserve minting is unbounded per call.** `mintPendingReservesFor(tierId, count)` mints `count` NFTs in a loop. Large `count` could exceed block gas. Callers should batch.
+- **Max tiers capped at `uint16.max` (65,535).** Store enforces this ceiling. Practical gas limits make 1,000+ tiers problematic for on-chain reads.
+- **200+ tiers tested.** `TestAuditGaps_GasLimits` adds 200 tiers and verifies store correctness and gas within 30M block limit.
+
+## 5. Access Control
+
+- **`adjustTiers` (add/remove):** Requires `ADJUST_721_TIERS` permission from `owner()`. Respects `noNewTiersWithReserves`, `noNewTiersWithVotes`, `noNewTiersWithOwnerMinting` flags (append-only restrictions). `cannotBeRemoved` flag on individual tiers is enforced by the store.
+- **`mintFor` (owner minting):** Requires `MINT_721` permission. Bypasses price checks (`amount: type(uint256).max`). Still requires per-tier `allowOwnerMint` flag. Tiers with `reserveFrequency > 0` cannot have `allowOwnerMint` (enforced at creation).
+- **`setDiscountPercentOf`:** Requires `SET_721_DISCOUNT_PERCENT` permission. Cannot increase discount if `cannotIncreaseDiscountPercent` is set on the tier. Can always decrease.
+- **`setMetadata`:** Requires `SET_721_METADATA` permission. Can change name, symbol, baseURI, contractURI, tokenUriResolver, and per-tier IPFS URIs. Sentinel value `IJB721TokenUriResolver(address(this))` means "no change" for resolver.
+- **Transfer pause:** Ruleset-level flag (`transfersPaused` in 721-specific metadata, bit 0). Only applies to tiers with `transfersPausable = true`. Burns (transfer to address(0)) are never paused. Tiers created with `transfersPausable = false` can never be paused.
+- **`mintPendingReservesFor`:** Permissionless. Only gated by `mintPendingReservesPaused` ruleset flag (bit 1 of 721 metadata).
+- **`cleanTiers`:** Permissionless, idempotent. Compacts the sorted tier list by removing gaps from deleted tiers. No economic impact.
+- **Store `recordFlags`:** No access control -- stores against `msg.sender`. Safe because the store keys by caller address, but a compromised hook can freely change its own flags.
+
+## 6. Integration Risks
+
+- **Data hook weight override.** `beforePayRecordedWith` returns modified `weight` accounting for tier split deductions. Terminal uses this for fungible token minting. If splits consume 100% of payment, `weight = 0` and no fungible tokens are minted.
+- **Metadata encoding is fragile.** Relies on `JBMetadataResolver.getDataFor` with purpose strings `"pay"` / `"cashOut"` keyed by `METADATA_ID_TARGET` (original hook deploy address for clones). Malformed metadata results in no NFTs minted (pay) or no NFTs burned (cashout) without reverting (unless `preventOverspending` is true).
+- **`beforeCashOutRecordedWith` rejects fungible tokens.** Reverts with `JB721Hook_UnexpectedTokenCashedOut` if `context.cashOutCount > 0`. Cannot simultaneously cash out NFTs and fungible tokens in the same terminal call.
+- **Split group ID encoding.** Composite: `uint256(uint160(hookAddress)) | (tierId << 160)`. Tier IDs are capped at uint16, so no overflow. Splits are permanently coupled to a specific hook address -- migrating to a new hook requires re-creating all split groups.
+- **ERC-20 split distribution pulls from terminal.** `distributeAll` calls `SafeERC20.safeTransferFrom(token, msg.sender, address(this), amount)` to pull ERC-20s from the terminal. Requires the terminal to have granted allowance via its `_beforeTransferTo` pattern. If the terminal's allowance mechanism changes, distribution fails.
+- **ETH sent with `afterPayRecordedWith` is used for split distribution.** If no splits are configured but ETH is forwarded (non-zero `forwardedAmount`), the `hookMetadata` is empty and `distributeAll` is not called. The ETH remains in the hook contract with no recovery mechanism.
+- **Token URI resolver external calls.** `tokenURI()` and `tiersOf(..., includeResolvedUri=true)` call the resolver if set. A reverting resolver blocks all metadata reads (marketplace/frontend impact, no fund risk).
+
+## 7. Invariants to Verify
+
+- **Per-tier supply conservation:** For every tier, `remainingSupply + outstanding + burned == initialSupply`, where `outstanding = initialSupply - remainingSupply - burned`.
+- **Total cash out weight consistency:** `totalCashOutWeight >= sum(tier.price * outstandingNFTs)` for all tiers. Equality holds when no pending reserves exist. Strictly greater when pending reserves are included.
+- **Reserve mints bounded by frequency:** For each tier, `reservesMinted <= ceil(nonReserveMints / reserveFrequency)`. Enforced by `_numberOfPendingReservesFor` calculation.
+- **Remaining supply never exceeds initial:** `remainingSupply + numberOfBurnedFor <= initialSupply` for every tier.
+- **Token ID uniqueness:** Generated as `tierId * 1_000_000_000 + tokenNumber`. Token numbers monotonically assigned from `initialSupply - remainingSupply`. Supply capped at `999,999,999` per tier. No collisions possible.
+- **Credit tracking accuracy:** `payCreditsOf[addr]` equals cumulative leftover from payments where `addr` was beneficiary, minus credits consumed by subsequent mints where `payer == beneficiary`.
+- **Removed tiers excluded from active listing:** `tiersOf()` never returns tiers marked in the removal bitmap.
+- **`maxTierIdOf` monotonically increases:** Tier removal marks a bitmap, does not decrement `maxTierIdOf`.
+- **Balance consistency:** `sum(tierBalanceOf[hook][owner][tierId])` across all tiers equals `ERC721._balances[owner]` for each owner.
+- **Cash out weight uses full price regardless of discount:** `cashOutWeightOf` for any token returns the tier's stored `price`, not the discounted purchase price.
+- **Discount monotonicity when locked:** If `cannotIncreaseDiscountPercent` is set, `discountPercent` can only decrease or stay the same.
+- **Flags are append-only restrictions:** `noNewTiersWithReserves`, `noNewTiersWithVotes`, `noNewTiersWithOwnerMinting` prevent future tiers from using those features but do not retroactively affect existing tiers.
