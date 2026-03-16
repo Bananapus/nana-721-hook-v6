@@ -37,7 +37,7 @@ User → JBMultiTerminal.pay(metadata)
       → Validate: not removed, not paused, supply available
       → Check price (with optional discount, normalized to tier pricing currency)
       → Mint NFT to beneficiary
-    → Distribute split funds to tier split recipients
+    → Distribute split funds (priority: split.hook > split.projectId > split.beneficiary)
     → Leftover amount optionally mints best-available tiers
 ```
 
