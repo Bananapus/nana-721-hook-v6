@@ -3,9 +3,11 @@ pragma solidity 0.8.26;
 
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 import {IJBPrices} from "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
+import {IJBSplitHook} from "@bananapus/core-v6/src/interfaces/IJBSplitHook.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 import {IJBTerminal} from "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
 import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
+import {JBSplitHookContext} from "@bananapus/core-v6/src/structs/JBSplitHookContext.sol";
 import {JBConstants} from "@bananapus/core-v6/src/libraries/JBConstants.sol";
 import {JBMetadataResolver} from "@bananapus/core-v6/src/libraries/JBMetadataResolver.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -336,6 +338,7 @@ library JB721TiersHookLib {
         address hookAddress,
         address token,
         uint256 amount,
+        uint256 decimals,
         bytes calldata encodedSplitData
     )
         external
@@ -356,7 +359,8 @@ library JB721TiersHookLib {
                 projectId: projectId,
                 token: token,
                 groupId: groupId,
-                amount: amounts[i]
+                amount: amounts[i],
+                decimals: decimals
             });
         }
     }
@@ -368,7 +372,8 @@ library JB721TiersHookLib {
         uint256 projectId,
         address token,
         uint256 groupId,
-        uint256 amount
+        uint256 amount,
+        uint256 decimals
     )
         private
     {
@@ -391,7 +396,9 @@ library JB721TiersHookLib {
                         split: tierSplits[j],
                         token: token,
                         amount: payoutAmount,
-                        isNativeToken: isNativeToken
+                        projectId: projectId,
+                        groupId: groupId,
+                        decimals: decimals
                     })) {
                     unchecked {
                         leftoverAmount -= payoutAmount;
@@ -416,21 +423,35 @@ library JB721TiersHookLib {
 
     /// @notice Sends a payout to a split recipient.
     /// @return sent Whether the funds were actually sent. Returns false if the split has no valid recipient
-    /// (no projectId and no beneficiary), so the caller can route the funds elsewhere.
-    // split.hook is intentionally ignored. Tier split distribution handles direct ETH/token
-    // transfers only. Split hooks are not invoked because tier payouts occur within the 721 hook context
-    // (which is itself a hook). Using split.hook here would create nested hook execution with reentrancy risks.
+    /// (no hook, no projectId, and no beneficiary), so the caller can route the funds elsewhere.
     function _sendPayoutToSplit(
         IJBDirectory directory,
         JBSplit memory split,
         address token,
         uint256 amount,
-        bool isNativeToken
+        uint256 projectId,
+        uint256 groupId,
+        uint256 decimals
     )
         private
         returns (bool sent)
     {
-        if (split.projectId != 0) {
+        bool isNativeToken = token == JBConstants.NATIVE_TOKEN;
+
+        // If the split has a hook, send the funds there.
+        if (split.hook != IJBSplitHook(address(0))) {
+            JBSplitHookContext memory context = JBSplitHookContext({
+                token: token, amount: amount, decimals: decimals, projectId: projectId, groupId: groupId, split: split
+            });
+
+            if (isNativeToken) {
+                split.hook.processSplitWith{value: amount}(context);
+            } else {
+                SafeERC20.safeTransfer({token: IERC20(token), to: address(split.hook), value: amount});
+                split.hook.processSplitWith(context);
+            }
+            return true;
+        } else if (split.projectId != 0) {
             // slither-disable-next-line calls-loop
             IJBTerminal terminal = directory.primaryTerminalOf({projectId: split.projectId, token: token});
             if (address(terminal) == address(0)) return false;
