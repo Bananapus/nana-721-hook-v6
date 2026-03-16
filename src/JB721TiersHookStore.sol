@@ -459,6 +459,11 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @notice The combined cash out weight for all NFTs from the provided 721 contract.
     /// @param hook The 721 contract to get the total cash out weight of.
     /// @return weight The total cash out weight.
+    // Changing defaultReserveBeneficiary retroactively affects totalCashOutWeight. By design —
+    // cashOutWeight is calculated dynamically, not snapshotted. The defaultReserveBeneficiary determines which
+    // tiers have pending reserves (via _numberOfPendingReservesFor), affecting the denominator. Changing it is
+    // an admin action that naturally affects future cash out calculations. Snapshotting would add storage
+    // overhead and complexity.
     function totalCashOutWeight(address hook) public view override returns (uint256 weight) {
         // Keep a reference to the greatest tier ID.
         uint256 maxTierId = maxTierIdOf[hook];
@@ -1069,6 +1074,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             uint256 price = storedTier.price;
 
             // Apply a discount if needed.
+            // 100% discount (discountPercent == DISCOUNT_DENOMINATOR) is a valid configuration
+            // for promotional/free mint tiers. Project owners control discount percentages via tier config.
+            // A tier with 100% discount and no other access controls is intentionally free.
             if (storedTier.discountPercent > 0) {
                 price -= mulDiv({
                     x: price, y: storedTier.discountPercent, denominator: JB721Constants.DISCOUNT_DENOMINATOR

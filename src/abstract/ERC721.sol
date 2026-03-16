@@ -28,6 +28,9 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
 
     mapping(uint256 tokenId => address) internal _owners;
 
+    // This _balances mapping intentionally shadows any inherited balance tracking. The custom
+    // ERC721 implementation maintains its own balance accounting to support the 721 tier system's mint/burn
+    // mechanics without relying on a parent implementation.
     mapping(address owner => uint256) private _balances;
 
     mapping(uint256 tokenId => address) private _tokenApprovals;

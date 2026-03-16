@@ -417,6 +417,9 @@ library JB721TiersHookLib {
     /// @notice Sends a payout to a split recipient.
     /// @return sent Whether the funds were actually sent. Returns false if the split has no valid recipient
     /// (no projectId and no beneficiary), so the caller can route the funds elsewhere.
+    // split.hook is intentionally ignored. Tier split distribution handles direct ETH/token
+    // transfers only. Split hooks are not invoked because tier payouts occur within the 721 hook context
+    // (which is itself a hook). Using split.hook here would create nested hook execution with reentrancy risks.
     function _sendPayoutToSplit(
         IJBDirectory directory,
         JBSplit memory split,
