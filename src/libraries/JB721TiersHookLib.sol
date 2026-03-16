@@ -18,6 +18,7 @@ import {IJB721TiersHookStore} from "../interfaces/IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "../interfaces/IJB721TokenUriResolver.sol";
 import {JB721Tier} from "../structs/JB721Tier.sol";
 import {JB721TierConfig} from "../structs/JB721TierConfig.sol";
+import {JB721Constants} from "./JB721Constants.sol";
 import {JBIpfsDecoder} from "./JBIpfsDecoder.sol";
 
 /// @notice External library for JB721TiersHook operations extracted to stay within the EIP-170 contract size limit.
@@ -190,9 +191,16 @@ library JB721TiersHookLib {
             // slither-disable-next-line calls-loop
             JB721Tier memory tier = store.tierOf({hook: hook, id: tierIdsToMint[i], includeResolvedUri: false});
             if (tier.splitPercent != 0) {
+                // Apply discount to tier price to match the discounted price that recordMint charges.
+                uint256 effectivePrice = tier.price;
+                if (tier.discountPercent > 0) {
+                    effectivePrice -= mulDiv({
+                        x: effectivePrice, y: tier.discountPercent, denominator: JB721Constants.DISCOUNT_DENOMINATOR
+                    });
+                }
                 splitTierIds[splitTierCount] = tierIdsToMint[i];
                 splitAmounts[splitTierCount] =
-                    mulDiv({x: tier.price, y: tier.splitPercent, denominator: JBConstants.SPLITS_TOTAL_PERCENT});
+                    mulDiv({x: effectivePrice, y: tier.splitPercent, denominator: JBConstants.SPLITS_TOTAL_PERCENT});
                 totalSplitAmount += splitAmounts[splitTierCount];
                 splitTierCount++;
             }
@@ -372,7 +380,8 @@ library JB721TiersHookLib {
         uint256 leftoverAmount = amount;
 
         for (uint256 j; j < tierSplits.length; j++) {
-            uint256 payoutAmount = mulDiv({x: amount, y: tierSplits[j].percent, denominator: leftoverPercentage});
+            uint256 payoutAmount =
+                mulDiv({x: leftoverAmount, y: tierSplits[j].percent, denominator: leftoverPercentage});
             if (payoutAmount != 0) {
                 // Only subtract from leftover if the split has a valid recipient.
                 // Splits with no projectId and no beneficiary are skipped — their share
@@ -446,7 +455,7 @@ library JB721TiersHookLib {
             if (isNativeToken) {
                 // slither-disable-next-line arbitrary-send-eth,calls-loop
                 (bool success,) = split.beneficiary.call{value: amount}("");
-                if (!success) revert();
+                if (!success) return false;
             } else {
                 SafeERC20.safeTransfer({token: IERC20(token), to: split.beneficiary, value: amount});
             }
