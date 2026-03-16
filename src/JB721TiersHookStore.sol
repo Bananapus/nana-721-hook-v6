@@ -41,7 +41,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     error JB721TiersHookStore_ZeroInitialSupply(uint256 tierId);
 
     //*********************************************************************//
-    // -------------------- private constant properties ------------------ //
+    // ------------------------- private constants ------------------------ //
     //*********************************************************************//
 
     /// @notice Just a kind reminder to our readers.
