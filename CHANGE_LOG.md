@@ -11,7 +11,7 @@ This document describes all changes between `nana-721-hook` (v5) and `nana-721-h
 | Function | v5 Signature | v6 Signature | Notes |
 |----------|-------------|-------------|-------|
 | `pricingContext()` | `returns (uint256, uint256, IJBPrices)` | `returns (uint256 currency, uint256 decimals)` | `IJBPrices` removed from return; now a separate `PRICES()` getter |
-| `setMetadata(...)` | `(string baseUri, string contractUri, IJB721TokenUriResolver, uint256, bytes32)` | `(string name, string symbol, string baseUri, string contractUri, IJB721TokenUriResolver, uint256, bytes32)` | Added `name` and `symbol` parameters |
+| `setMetadata(...)` | `(string baseUri, string contractMetadataUri, IJB721TokenUriResolver, uint256, bytes32)` | `(string name, string symbol, string baseUri, string contractUri, IJB721TokenUriResolver, uint256, bytes32)` | Added `name` and `symbol` parameters; `contractMetadataUri` renamed to `contractUri` |
 
 ### 1.2 `JB721Hook` (abstract) — Changed Function Signatures
 
