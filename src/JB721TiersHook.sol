@@ -725,6 +725,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                 hookAddress: address(this),
                 token: context.forwardedAmount.token,
                 amount: context.forwardedAmount.value,
+                decimals: context.forwardedAmount.decimals,
                 encodedSplitData: context.hookMetadata
             });
         }

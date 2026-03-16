@@ -39,18 +39,18 @@ Deep implementation-level risk analysis covering all contracts in the 721 tiered
 ### R-3: Tier Split Fund Distribution -- Reentrancy Surface
 
 - **Severity**: MEDIUM
-- **Location**: `JB721TiersHookLib.sol` lines 265-285 (`_distributeSingleSplit`) and lines 312-315 (`_sendPayoutToSplit`)
-- **Description**: During `afterPayRecordedWith()`, if tiers have `splitPercent > 0`, the hook distributes forwarded funds to split beneficiaries. For native token splits, this involves a low-level `.call{value: amount}("")` to the beneficiary address (line 314). This is an external call to an untrusted address during payment processing.
-- **Reentrancy path**: `afterPayRecordedWith` -> `_processPayment` -> `distributeAll` (DELEGATECALL) -> `safeTransferFrom` (ERC-20 pull) -> `_distributeSingleSplit` -> `_sendPayoutToSplit` -> `beneficiary.call{value}` -- the beneficiary could reenter the hook.
-- **Why it is mitigated**: The NFT mint (`_mintAll`) happens BEFORE split distribution (line 646 vs. line 678 in `JB721TiersHook.sol`). The store's `recordMint` has already decremented supply. Pay credits are already updated. A reentrant call to `afterPayRecordedWith` would require terminal authorization and would process as a separate independent payment.
-- **Tested**: PARTIALLY -- Split distribution is tested in `test/unit/tierSplitRouting_Unit.t.sol` and `test/regression/L36_SplitNoBeneficiary.t.sol`, but no explicit reentrancy test exists for the `.call{value}` path.
+- **Location**: `JB721TiersHookLib.sol` `_distributeSingleSplit` and `_sendPayoutToSplit`
+- **Description**: During `afterPayRecordedWith()`, if tiers have `splitPercent > 0`, the hook distributes forwarded funds to split recipients. The `_sendPayoutToSplit` function follows a priority chain: `split.hook` > `split.projectId` > `split.beneficiary`. Each path involves external calls to untrusted addresses: (1) `split.hook.processSplitWith()` receives a `JBSplitHookContext` with token, amount, decimals, project ID, group ID, and the split struct -- for native tokens, ETH is forwarded via `{value: amount}`; for ERC-20s, tokens are transferred first via `SafeERC20.safeTransfer` then `processSplitWith` is called; (2) `terminal.pay()` or `terminal.addToBalanceOf()` for project splits; (3) `.call{value}` or `SafeERC20.safeTransfer` for beneficiary splits.
+- **Reentrancy path**: `afterPayRecordedWith` -> `_processPayment` -> `distributeAll` (DELEGATECALL) -> `safeTransferFrom` (ERC-20 pull) -> `_distributeSingleSplit` -> `_sendPayoutToSplit` -> `split.hook.processSplitWith{value}` / `beneficiary.call{value}` / `terminal.pay()` -- any of these could reenter the hook.
+- **Why it is mitigated**: The NFT mint (`_mintAll`) happens BEFORE split distribution in `JB721TiersHook.sol`. The store's `recordMint` has already decremented supply. Pay credits are already updated. A reentrant call to `afterPayRecordedWith` would require terminal authorization and would process as a separate independent payment.
+- **Tested**: PARTIALLY -- Split distribution is tested in `test/unit/tierSplitRouting_Unit.t.sol`, `test/unit/splitHookDistribution_Unit.t.sol`, and `test/regression/L36_SplitNoBeneficiary.t.sol`, but no explicit reentrancy test exists.
 - **Mitigation**: State is settled before external calls. The terminal authorization check prevents casual reentrancy. No explicit `ReentrancyGuard` is used.
 
-### R-4: Split Beneficiary With No Recipient -- Fund Routing
+### R-4: Split With No Recipient -- Fund Routing
 
 - **Severity**: LOW (fixed)
-- **Location**: `JB721TiersHookLib.sol` lines 300-323 (`_sendPayoutToSplit`)
-- **Description**: A split with `projectId == 0` and `beneficiary == address(0)` previously had undefined behavior. The current implementation returns `false`, causing the calling function to keep those funds in `leftoverAmount`, which is then routed to the project's balance via `_addToBalance` (line 282-284).
+- **Location**: `JB721TiersHookLib.sol` `_sendPayoutToSplit`
+- **Description**: A split with `hook == address(0)`, `projectId == 0`, and `beneficiary == address(0)` returns `false`, causing the calling function to keep those funds in `leftoverAmount`, which is then routed to the project's balance via `_addToBalance`. The priority chain (`split.hook` > `split.projectId` > `split.beneficiary`) ensures funds always have a clear destination.
 - **Tested**: YES -- `test/regression/L36_SplitNoBeneficiary.t.sol` verifies funds are routed to the project's balance.
 - **Mitigation**: Fixed by design. Funds are never silently lost.
 
@@ -205,11 +205,13 @@ An attacker could observe a large cash-out and front-run it with their own cash-
    - `JB721TiersHookLib.distributeAll()` via DELEGATECALL:
      - `SafeERC20.safeTransferFrom()` (ERC-20 token pull from terminal)
      - `SPLITS.splitsOf()` (cross-contract, trusted)
-     - `split.beneficiary.call{value}()` (untrusted external call)
-     - `terminal.pay()` (cross-contract, semi-trusted)
-     - `terminal.addToBalanceOf()` (cross-contract, semi-trusted)
-     - `SafeERC20.safeTransfer()` (token transfer)
-     - `SafeERC20.forceApprove()` (token approval)
+     - `split.hook.processSplitWith{value}()` (untrusted external call -- highest priority)
+     - `SafeERC20.safeTransfer()` to split hook + `split.hook.processSplitWith()` (ERC-20 path)
+     - `terminal.pay()` (cross-contract, semi-trusted -- project splits)
+     - `terminal.addToBalanceOf()` (cross-contract, semi-trusted -- project splits)
+     - `split.beneficiary.call{value}()` (untrusted external call -- lowest priority)
+     - `SafeERC20.safeTransfer()` (token transfer to beneficiary)
+     - `SafeERC20.forceApprove()` (token approval for terminal calls)
 
 2. **`afterCashOutRecordedWith()`**:
    - `_ownerOf()` (internal read)
@@ -275,7 +277,7 @@ An attacker could observe a large cash-out and front-run it with their own cash-
 
 | Category | File Count | What It Covers |
 |----------|:----------:|----------------|
-| Unit tests | 9 | `adjustTier`, `deployer`, `getters/constructor`, `mintFor/mintReservesFor`, `pay`, `redeem`, `tierSplitRouting`, `JBBitmap`, `JBIpfsDecoder` |
+| Unit tests | 10 | `adjustTier`, `deployer`, `getters/constructor`, `mintFor/mintReservesFor`, `pay`, `redeem`, `tierSplitRouting`, `splitHookDistribution`, `JBBitmap`, `JBIpfsDecoder` |
 | Invariant tests | 2 + 2 handlers | `TierLifecycleInvariant` (6 invariants), `TieredHookStoreInvariant` (3 invariants) |
 | Attack tests | 1 | 10 adversarial scenarios (zero price, max discount, reserves, supply, permissions, overflow) |
 | Regression tests | 3 | L34 (reserve beneficiary overwrite), L35 (cached tier lookup), L36 (split no beneficiary) |
