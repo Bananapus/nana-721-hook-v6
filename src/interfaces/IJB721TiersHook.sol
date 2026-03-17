@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {IJBPrices} from "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
 import {IJBRulesets} from "@bananapus/core-v6/src/interfaces/IJBRulesets.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
+import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 
 import {IJB721Hook} from "./IJB721Hook.sol";
 import {IJB721TiersHookStore} from "./IJB721TiersHookStore.sol";
@@ -93,6 +94,15 @@ interface IJB721TiersHook is IJB721Hook {
     /// @param resolver The new token URI resolver.
     /// @param caller The address that called the function.
     event SetTokenUriResolver(IJB721TokenUriResolver indexed resolver, address caller);
+
+    /// @notice Emitted when a split payout reverts during distribution. The failed split's funds route to the
+    /// project's balance.
+    /// @param projectId The project ID the split belongs to.
+    /// @param split The split that reverted.
+    /// @param amount The amount that was being paid out.
+    /// @param reason The revert reason bytes.
+    /// @param caller The address that called the function.
+    event SplitPayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
 
     /// @notice Emitted when pay credits are used by an account.
     /// @param amount The amount of credits used.

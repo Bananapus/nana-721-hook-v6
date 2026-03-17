@@ -29,6 +29,7 @@ library JB721TiersHookLib {
     // Events mirrored from IJB721TiersHook (emitted via DELEGATECALL from the hook's context).
     event AddTier(uint256 indexed tierId, JB721TierConfig tier, address caller);
     event RemoveTier(uint256 indexed tierId, address caller);
+    event SplitPayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
 
     /// @notice Handles the full tier adjustment logic: removes tiers, adds tiers, emits events, and sets splits.
     /// @dev Called via DELEGATECALL from the hook, so events are emitted from the hook's address.
@@ -445,36 +446,118 @@ library JB721TiersHookLib {
             });
 
             if (isNativeToken) {
-                split.hook.processSplitWith{value: amount}(context);
+                // Wrap in try-catch so a reverting hook doesn't brick all project payments.
+                // On revert, ETH stays with the caller and we return false.
+                try split.hook.processSplitWith{value: amount}(context) {
+                    return true;
+                } catch (bytes memory reason) {
+                    emit SplitPayoutReverted({
+                        projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
+                    });
+                    return false;
+                }
             } else {
+                // ERC20: transfer tokens first, then call the hook callback.
+                // We must return true regardless of whether the callback reverts because the
+                // tokens have already left this contract via safeTransfer. Returning false would
+                // cause the caller to skip subtracting this amount from leftoverAmount, leading
+                // to a double-spend when the leftover is later sent to the project's balance.
                 SafeERC20.safeTransfer({token: IERC20(token), to: address(split.hook), value: amount});
-                split.hook.processSplitWith(context);
+                try split.hook.processSplitWith(context) {}
+                catch (bytes memory reason) {
+                    emit SplitPayoutReverted({
+                        projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
+                    });
+                }
+                return true;
             }
-            return true;
         } else if (split.projectId != 0) {
             // slither-disable-next-line calls-loop
             IJBTerminal terminal = directory.primaryTerminalOf({projectId: split.projectId, token: token});
             if (address(terminal) == address(0)) return false;
 
+            // Wrap terminal calls in try-catch to prevent a failing terminal from bricking payments.
             if (split.preferAddToBalance) {
-                _terminalAddToBalance({
-                    terminal: terminal,
-                    projectId: split.projectId,
-                    token: token,
-                    amount: amount,
-                    isNativeToken: isNativeToken
-                });
+                if (isNativeToken) {
+                    // slither-disable-next-line arbitrary-send-eth,calls-loop
+                    try terminal.addToBalanceOf{value: amount}({
+                        projectId: split.projectId,
+                        token: token,
+                        amount: amount,
+                        shouldReturnHeldFees: false,
+                        memo: "",
+                        metadata: bytes("")
+                    }) {
+                        return true;
+                    } catch (bytes memory reason) {
+                        emit SplitPayoutReverted({
+                            projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
+                        });
+                        return false;
+                    }
+                } else {
+                    SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: amount});
+                    // slither-disable-next-line calls-loop
+                    try terminal.addToBalanceOf({
+                        projectId: split.projectId,
+                        token: token,
+                        amount: amount,
+                        shouldReturnHeldFees: false,
+                        memo: "",
+                        metadata: bytes("")
+                    }) {
+                        return true;
+                    } catch (bytes memory reason) {
+                        // Reset approval on failure so tokens aren't left approved to the terminal.
+                        SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
+                        emit SplitPayoutReverted({
+                            projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
+                        });
+                        return false;
+                    }
+                }
             } else {
-                _terminalPay({
-                    terminal: terminal,
-                    projectId: split.projectId,
-                    token: token,
-                    amount: amount,
-                    beneficiary: split.beneficiary,
-                    isNativeToken: isNativeToken
-                });
+                if (isNativeToken) {
+                    // slither-disable-next-line arbitrary-send-eth,unused-return,calls-loop
+                    try terminal.pay{value: amount}({
+                        projectId: split.projectId,
+                        token: token,
+                        amount: amount,
+                        beneficiary: split.beneficiary,
+                        minReturnedTokens: 0,
+                        memo: "",
+                        metadata: bytes("")
+                    }) {
+                        return true;
+                    } catch (bytes memory reason) {
+                        emit SplitPayoutReverted({
+                            projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
+                        });
+                        return false;
+                    }
+                } else {
+                    SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: amount});
+                    // slither-disable-next-line unused-return,calls-loop
+                    try terminal.pay({
+                        projectId: split.projectId,
+                        token: token,
+                        amount: amount,
+                        beneficiary: split.beneficiary,
+                        minReturnedTokens: 0,
+                        memo: "",
+                        metadata: bytes("")
+                    }) {
+                        return true;
+                    } catch (bytes memory reason) {
+                        // Reset approval on failure so tokens aren't left approved to the terminal.
+                        SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
+                        emit SplitPayoutReverted({
+                            projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
+                        });
+                        return false;
+                    }
+                }
             }
-            return true;
         } else if (split.beneficiary != address(0)) {
             if (isNativeToken) {
                 // slither-disable-next-line arbitrary-send-eth,calls-loop
@@ -501,20 +584,7 @@ library JB721TiersHookLib {
         // slither-disable-next-line calls-loop
         IJBTerminal terminal = directory.primaryTerminalOf({projectId: projectId, token: token});
         if (address(terminal) == address(0)) return;
-        _terminalAddToBalance({
-            terminal: terminal, projectId: projectId, token: token, amount: amount, isNativeToken: isNativeToken
-        });
-    }
 
-    function _terminalAddToBalance(
-        IJBTerminal terminal,
-        uint256 projectId,
-        address token,
-        uint256 amount,
-        bool isNativeToken
-    )
-        private
-    {
         if (isNativeToken) {
             // slither-disable-next-line arbitrary-send-eth,calls-loop
             terminal.addToBalanceOf{value: amount}({
@@ -533,42 +603,6 @@ library JB721TiersHookLib {
                 token: token,
                 amount: amount,
                 shouldReturnHeldFees: false,
-                memo: "",
-                metadata: bytes("")
-            });
-        }
-    }
-
-    function _terminalPay(
-        IJBTerminal terminal,
-        uint256 projectId,
-        address token,
-        uint256 amount,
-        address beneficiary,
-        bool isNativeToken
-    )
-        private
-    {
-        if (isNativeToken) {
-            // slither-disable-next-line arbitrary-send-eth,unused-return,calls-loop
-            terminal.pay{value: amount}({
-                projectId: projectId,
-                token: token,
-                amount: amount,
-                beneficiary: beneficiary,
-                minReturnedTokens: 0,
-                memo: "",
-                metadata: bytes("")
-            });
-        } else {
-            SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: amount});
-            // slither-disable-next-line unused-return,calls-loop
-            terminal.pay({
-                projectId: projectId,
-                token: token,
-                amount: amount,
-                beneficiary: beneficiary,
-                minReturnedTokens: 0,
                 memo: "",
                 metadata: bytes("")
             });
