@@ -1,5 +1,5 @@
 # JB721TierConfig
-[Git Source](https://github.com/Bananapus/nana-721-hook/blob/e813fb5b7d17cd3d18023137d70a7b2f3911ad99/src/structs/JB721TierConfig.sol)
+[Git Source](https://github.com/Bananapus/nana-721-hook-v6/blob/2d965352774f2f9c4a660a86beafc9f8172805e3/src/structs/JB721TierConfig.sol)
 
 Config for a single NFT tier within a `JB721TiersHook`.
 
@@ -27,7 +27,9 @@ reserve beneficiary if one is set.
 on-demand.
 
 - member: useReserveBeneficiaryAsDefault A boolean indicating whether this tier's `reserveBeneficiary` should
-be stored as the default beneficiary for all tiers.
+be stored as the default beneficiary for all tiers. WARNING: Setting this to `true` overwrites the global
+`defaultReserveBeneficiaryOf` for the hook, which affects ALL existing tiers that do not have a tier-specific
+reserve beneficiary. Use with caution when calling `adjustTiers` on hooks with existing tiers.
 
 - member: transfersPausable A boolean indicating whether transfers for NFTs in tier can be paused.
 
@@ -38,23 +40,32 @@ power. If `useVotingUnits` is false, voting power is based on the tier's price.
 
 - member: cannotIncreaseDiscount If the tier cannot have its discount increased.
 
+- member: splitPercent The percentage of the tier's price that gets routed to the tier's split group when
+an NFT from this tier is minted. Out of `JBConstants.SPLITS_TOTAL_PERCENT`.
+
+- member: splits The splits to use for this tier's split group. These define where the split portion of the
+tier's price gets routed when an NFT from this tier is minted.
+
 
 ```solidity
 struct JB721TierConfig {
-    uint104 price;
-    uint32 initialSupply;
-    uint32 votingUnits;
-    uint16 reserveFrequency;
-    address reserveBeneficiary;
-    bytes32 encodedIPFSUri;
-    uint24 category;
-    uint8 discountPercent;
-    bool allowOwnerMint;
-    bool useReserveBeneficiaryAsDefault;
-    bool transfersPausable;
-    bool useVotingUnits;
-    bool cannotBeRemoved;
-    bool cannotIncreaseDiscountPercent;
+uint104 price;
+uint32 initialSupply;
+uint32 votingUnits;
+uint16 reserveFrequency;
+address reserveBeneficiary;
+// forge-lint: disable-next-line(mixed-case-variable)
+bytes32 encodedIPFSUri;
+uint24 category;
+uint8 discountPercent;
+bool allowOwnerMint;
+bool useReserveBeneficiaryAsDefault;
+bool transfersPausable;
+bool useVotingUnits;
+bool cannotBeRemoved;
+bool cannotIncreaseDiscountPercent;
+uint32 splitPercent;
+JBSplit[] splits;
 }
 ```
 

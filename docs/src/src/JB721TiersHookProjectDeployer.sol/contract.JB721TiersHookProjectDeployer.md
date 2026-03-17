@@ -1,8 +1,11 @@
 # JB721TiersHookProjectDeployer
-[Git Source](https://github.com/Bananapus/nana-721-hook/blob/e813fb5b7d17cd3d18023137d70a7b2f3911ad99/src/JB721TiersHookProjectDeployer.sol)
+[Git Source](https://github.com/Bananapus/nana-721-hook-v6/blob/2d965352774f2f9c4a660a86beafc9f8172805e3/src/JB721TiersHookProjectDeployer.sol)
 
 **Inherits:**
 ERC2771Context, JBPermissioned, [IJB721TiersHookProjectDeployer](/src/interfaces/IJB721TiersHookProjectDeployer.sol/interface.IJB721TiersHookProjectDeployer.md)
+
+**Title:**
+JB721TiersHookProjectDeployer
 
 Deploys a project and a 721 tiers hook for it. Can be used to queue rulesets for the project if given
 `JBPermissionIds.QUEUE_RULESETS`.
@@ -14,7 +17,7 @@ The directory of terminals and controllers for projects.
 
 
 ```solidity
-IJBDirectory public immutable override DIRECTORY;
+IJBDirectory public immutable override DIRECTORY
 ```
 
 
@@ -23,7 +26,7 @@ The 721 tiers hook deployer.
 
 
 ```solidity
-IJB721TiersHookDeployer public immutable override HOOK_DEPLOYER;
+IJB721TiersHookDeployer public immutable override HOOK_DEPLOYER
 ```
 
 
@@ -90,8 +93,8 @@ function launchProjectFor(
 
 Launches rulesets for a project with an attached 721 tiers hook.
 
-*Only a project's owner or an operator with the `QUEUE_RULESETS & SET_TERMINALS` permission can launch its
-rulesets.*
+Only a project's owner or an operator with the `QUEUE_RULESETS & SET_TERMINALS` permission can launch its
+rulesets.
 
 
 ```solidity
@@ -128,7 +131,7 @@ function launchRulesetsFor(
 
 Queues rulesets for a project with an attached 721 tiers hook.
 
-*Only a project's owner or an operator with the `QUEUE_RULESETS` permission can queue its rulesets.*
+Only a project's owner or an operator with the `QUEUE_RULESETS` permission can queue its rulesets.
 
 
 ```solidity
@@ -159,6 +162,45 @@ function queueRulesetsOf(
 |----|----|-----------|
 |`rulesetId`|`uint256`|The ID of the successfully created ruleset.|
 |`hook`|`IJB721TiersHook`|The 721 tiers hook that was deployed for the project.|
+
+
+### _contextSuffixLength
+
+ERC-2771 specifies the context as being a single address (20 bytes).
+
+
+```solidity
+function _contextSuffixLength() internal view virtual override(ERC2771Context, Context) returns (uint256);
+```
+
+### _msgData
+
+The calldata. Preferred to use over `msg.data`.
+
+
+```solidity
+function _msgData() internal view override(ERC2771Context, Context) returns (bytes calldata);
+```
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`bytes`|calldata The `msg.data` of this call.|
+
+
+### _msgSender
+
+The message's sender. Preferred to use over `msg.sender`.
+
+
+```solidity
+function _msgSender() internal view override(ERC2771Context, Context) returns (address sender);
+```
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`sender`|`address`|The address which sent this call.|
 
 
 ### _launchProjectFor
@@ -246,43 +288,4 @@ function _queueRulesetsOf(
 |----|----|-----------|
 |`<none>`|`uint256`|The ID of the successfully created ruleset.|
 
-
-### _msgData
-
-The calldata. Preferred to use over `msg.data`.
-
-
-```solidity
-function _msgData() internal view override(ERC2771Context, Context) returns (bytes calldata);
-```
-**Returns**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`bytes`|calldata The `msg.data` of this call.|
-
-
-### _msgSender
-
-The message's sender. Preferred to use over `msg.sender`.
-
-
-```solidity
-function _msgSender() internal view override(ERC2771Context, Context) returns (address sender);
-```
-**Returns**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`sender`|`address`|The address which sent this call.|
-
-
-### _contextSuffixLength
-
-*ERC-2771 specifies the context as being a single address (20 bytes).*
-
-
-```solidity
-function _contextSuffixLength() internal view virtual override(ERC2771Context, Context) returns (uint256);
-```
 

@@ -13,6 +13,7 @@
     - [IJB721TokenUriResolver](src/interfaces/IJB721TokenUriResolver.sol/interface.IJB721TokenUriResolver.md)
   - [❱ libraries](src/libraries/README.md)
     - [JB721Constants](src/libraries/JB721Constants.sol/library.JB721Constants.md)
+    - [JB721TiersHookLib](src/libraries/JB721TiersHookLib.sol/library.JB721TiersHookLib.md)
     - [JB721TiersRulesetMetadataResolver](src/libraries/JB721TiersRulesetMetadataResolver.sol/library.JB721TiersRulesetMetadataResolver.md)
     - [JBBitmap](src/libraries/JBBitmap.sol/library.JBBitmap.md)
     - [JBIpfsDecoder](src/libraries/JBIpfsDecoder.sol/library.JBIpfsDecoder.md)

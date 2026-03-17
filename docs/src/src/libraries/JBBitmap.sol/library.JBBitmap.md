@@ -1,5 +1,8 @@
 # JBBitmap
-[Git Source](https://github.com/Bananapus/nana-721-hook/blob/e813fb5b7d17cd3d18023137d70a7b2f3911ad99/src/libraries/JBBitmap.sol)
+[Git Source](https://github.com/Bananapus/nana-721-hook-v6/blob/2d965352774f2f9c4a660a86beafc9f8172805e3/src/libraries/JBBitmap.sol)
+
+**Title:**
+JBBitmap
 
 Utilities to manage a bool bitmap. Used for storing inactive tiers.
 
@@ -11,14 +14,20 @@ Initialize a `JBBitmapWord` struct based on a mapping storage pointer and an ind
 
 
 ```solidity
-function readId(mapping(uint256 => uint256) storage self, uint256 index) internal view returns (JBBitmapWord memory);
+function readId(
+    mapping(uint256 => uint256) storage self,
+    uint256 index
+)
+    internal
+    view
+    returns (JBBitmapWord memory);
 ```
 
 ### isTierIdRemoved
 
 Get the status of the specified bit within the `JBBitmapWord` struct.
 
-*The `index` is the index that the bit would have if the bitmap were reshaped to a 1*n matrix.*
+The `index` is the index that the bit would have if the bitmap were reshaped to a 1*n matrix.
 
 
 ```solidity
@@ -35,7 +44,7 @@ function isTierIdRemoved(JBBitmapWord memory self, uint256 index) internal pure 
 
 Get the status of the specified bit within the `JBBitmapWord` struct.
 
-*The `index` is the index that the bit would have if the bitmap were reshaped to a 1*n matrix.*
+The `index` is the index that the bit would have if the bitmap were reshaped to a 1*n matrix.
 
 
 ```solidity
@@ -46,7 +55,7 @@ function isTierIdRemoved(mapping(uint256 => uint256) storage self, uint256 index
 
 Set the bit at the given index to true, indicating that the corresponding tier has been removed.
 
-*This is a one-way operation.*
+This is a one-way operation.
 
 
 ```solidity
@@ -55,10 +64,10 @@ function removeTier(mapping(uint256 => uint256) storage self, uint256 index) int
 
 ### refreshBitmapNeeded
 
-Check if the specified index is at a different depth than than the current depth of the `JBBitmapWord`
+Check if the specified index is at a different depth than the current depth of the `JBBitmapWord`
 struct.
 
-*If the depth is different, the bitmap's current depth needs to be updated.*
+If the depth is different, the bitmap's current depth needs to be updated.
 
 
 ```solidity

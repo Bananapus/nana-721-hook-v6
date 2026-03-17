@@ -1,5 +1,5 @@
 # JBLaunchRulesetsConfig
-[Git Source](https://github.com/Bananapus/nana-721-hook/blob/e813fb5b7d17cd3d18023137d70a7b2f3911ad99/src/structs/JBLaunchRulesetsConfig.sol)
+[Git Source](https://github.com/Bananapus/nana-721-hook-v6/blob/2d965352774f2f9c4a660a86beafc9f8172805e3/src/structs/JBLaunchRulesetsConfig.sol)
 
 **Notes:**
 - member: projectId The ID of the project to launch rulesets for.
@@ -13,10 +13,10 @@
 
 ```solidity
 struct JBLaunchRulesetsConfig {
-    uint56 projectId;
-    JBPayDataHookRulesetConfig[] rulesetConfigurations;
-    JBTerminalConfig[] terminalConfigurations;
-    string memo;
+uint56 projectId;
+JBPayDataHookRulesetConfig[] rulesetConfigurations;
+JBTerminalConfig[] terminalConfigurations;
+string memo;
 }
 ```
 

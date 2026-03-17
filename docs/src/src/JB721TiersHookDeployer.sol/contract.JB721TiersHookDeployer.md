@@ -1,8 +1,11 @@
 # JB721TiersHookDeployer
-[Git Source](https://github.com/Bananapus/nana-721-hook/blob/e813fb5b7d17cd3d18023137d70a7b2f3911ad99/src/JB721TiersHookDeployer.sol)
+[Git Source](https://github.com/Bananapus/nana-721-hook-v6/blob/2d965352774f2f9c4a660a86beafc9f8172805e3/src/JB721TiersHookDeployer.sol)
 
 **Inherits:**
 ERC2771Context, [IJB721TiersHookDeployer](/src/interfaces/IJB721TiersHookDeployer.sol/interface.IJB721TiersHookDeployer.md)
+
+**Title:**
+JB721TiersHookDeployer
 
 Deploys a `JB721TiersHook` for an existing project.
 
@@ -13,7 +16,7 @@ A registry which stores references to contracts and their deployers.
 
 
 ```solidity
-IJBAddressRegistry public immutable ADDRESS_REGISTRY;
+IJBAddressRegistry public immutable ADDRESS_REGISTRY
 ```
 
 
@@ -22,7 +25,7 @@ A 721 tiers hook.
 
 
 ```solidity
-JB721TiersHook public immutable HOOK;
+JB721TiersHook public immutable HOOK
 ```
 
 
@@ -31,7 +34,7 @@ The contract that stores and manages data for this contract's NFTs.
 
 
 ```solidity
-IJB721TiersHookStore public immutable STORE;
+IJB721TiersHookStore public immutable STORE
 ```
 
 
@@ -40,7 +43,7 @@ This contract's current nonce, used for the Juicebox address registry.
 
 
 ```solidity
-uint256 internal _nonce;
+uint256 internal _nonce
 ```
 
 

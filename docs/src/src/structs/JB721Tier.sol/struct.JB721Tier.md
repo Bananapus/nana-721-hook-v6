@@ -1,5 +1,5 @@
 # JB721Tier
-[Git Source](https://github.com/Bananapus/nana-721-hook/blob/e813fb5b7d17cd3d18023137d70a7b2f3911ad99/src/structs/JB721Tier.sol)
+[Git Source](https://github.com/Bananapus/nana-721-hook-v6/blob/2d965352774f2f9c4a660a86beafc9f8172805e3/src/structs/JB721Tier.sol)
 
 **Notes:**
 - member: id The tier's ID.
@@ -33,27 +33,32 @@ on-demand.
 
 - member: transfersPausable A boolean indicating whether transfers for NFTs in tier can be paused.
 
+- member: splitPercent The percentage of the tier's price that gets routed to the project's split group when
+an NFT from this tier is minted. Out of `JBConstants.SPLITS_TOTAL_PERCENT`.
+
 - member: resolvedUri A resolved token URI for NFTs in this tier. Only available if the NFT this tier belongs
 to has a resolver.
 
 
 ```solidity
 struct JB721Tier {
-    uint32 id;
-    uint104 price;
-    uint32 remainingSupply;
-    uint32 initialSupply;
-    uint104 votingUnits;
-    uint16 reserveFrequency;
-    address reserveBeneficiary;
-    bytes32 encodedIPFSUri;
-    uint24 category;
-    uint8 discountPercent;
-    bool allowOwnerMint;
-    bool transfersPausable;
-    bool cannotBeRemoved;
-    bool cannotIncreaseDiscountPercent;
-    string resolvedUri;
+uint32 id;
+uint104 price;
+uint32 remainingSupply;
+uint32 initialSupply;
+uint104 votingUnits;
+uint16 reserveFrequency;
+address reserveBeneficiary;
+// forge-lint: disable-next-line(mixed-case-variable)
+bytes32 encodedIPFSUri;
+uint24 category;
+uint8 discountPercent;
+bool allowOwnerMint;
+bool transfersPausable;
+bool cannotBeRemoved;
+bool cannotIncreaseDiscountPercent;
+uint32 splitPercent;
+string resolvedUri;
 }
 ```
 

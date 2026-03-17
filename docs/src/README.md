@@ -1,9 +1,9 @@
-# Bananapus NFT Hook
+# Juicebox 721 Hook
 
 `nana-721-hook` is:
 
 1. A pay hook for Juicebox projects to sell tiered NFTs (ERC-721s) with different prices and artwork.
-2. (Optionally) a redeem hook which allows holders to burn their NFTs to reclaim funds from the project, in proportion to the NFT's price.
+2. (Optionally) a cash out hook which allows holders to burn their NFTs to reclaim funds from the project, in proportion to the NFT's price.
 
 <details>
   <summary>Table of Contents</summary>
@@ -156,15 +156,15 @@ nana-721-hook/
 │   └── helpers/
 │       └── Hook721DeploymentLib.sol - Internal helpers for deployment scripts.
 ├── src/ - Contract source code. Top level contains implementation contracts.
-│   ├── JB721TiersHook.sol - The core tiered NFT pay/redeem hook.
+│   ├── JB721TiersHook.sol - The core tiered NFT pay/cash out hook.
 │   ├── JB721TiersHookDeployer.sol - Deploys an NFT hook for a project.
 │   ├── JB721TiersHookProjectDeployer.sol - Deploys a project with a tiered NFT hook.
 │   ├── JB721TiersHookStore.sol - Stores and manages data for tiered NFT hooks.
 │   ├── abstract/
-│   │   ├── ERC721.sol - Abstract ERC-721 implementation.
-│   │   └── JB721Hook.sol - Abstract NFT hook implementation.
+│   │   ├── JB721Hook.sol - Abstract base hook: handles pay/cash out lifecycle, metadata, and terminal validation.
+│   │   └── ERC721.sol - Clone-compatible abstract ERC-721 implementation with mutable name/symbol.
 │   ├── interfaces/ - Contract interfaces.
-│   ├── libraries/ - Libraries.
+│   ├── libraries/ - Libraries (includes JB721TiersHookLib for tier adjustments, split distribution, price normalization, and token URI resolution).
 │   └── structs/ - Structs.
 └── test/ - Forge tests and testing utilities.
     ├── E2E/
@@ -190,9 +190,9 @@ graph TD;
     D[JB721TiersHookDeployer] -->|Adds NFT hooks to| B
     A -->|Deploys| C[JB721TiersHook]
     D -->|Deploys| C
-    B -->|Calls upon pay/redeem| C
+    B -->|Calls upon pay/cash out| C
     C -->|Stores data in| E[JB721TiersHookStore]
-    B -->|Uses| F[Pay/redeem terminal]
+    B -->|Uses| F[Pay/cash out terminal]
     C -->|Mints NFTs upon payment through| F
     C -->|Burns NFTs to reclaim funds through| F
 ```
@@ -201,7 +201,8 @@ graph TD;
 
 | Contract                                                                                                                          | Description                                                                                             |
 | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| [`JB721TiersHook.sol`](https://github.com/Bananapus/nana-721-hook/blob/main/src/JB721TiersHook.sol)                               | The core tiered NFT pay/redeem hook implementation.                                                     |
+| [`JB721Hook.sol`](https://github.com/Bananapus/nana-721-hook/blob/main/src/abstract/JB721Hook.sol)                                 | Abstract base for 721 hooks: handles pay/cash out lifecycle, terminal validation, and metadata resolution. |
+| [`JB721TiersHook.sol`](https://github.com/Bananapus/nana-721-hook/blob/main/src/JB721TiersHook.sol)                               | The core tiered NFT pay/cash out hook implementation, extending `JB721Hook`.                              |
 | [`JB721TiersHookDeployer.sol`](https://github.com/Bananapus/nana-721-hook/blob/main/src/JB721TiersHookDeployer.sol)               | Exposes a `deployHookFor(…)` function which allows deploys an NFT hook for a project.                   |
 | [`JB721TiersHookProjectDeployer.sol`](https://github.com/Bananapus/nana-721-hook/blob/main/src/JB721TiersHookProjectDeployer.sol) | Exposes a `launchProjectFor(…)` function which deploys a project with a tiered NFT hook already set up. |
 | [`JB721TiersHookStore.sol`](https://github.com/Bananapus/nana-721-hook/blob/main/src/JB721TiersHookStore.sol)                     | Stores and manages data for tiered NFT hooks.                                                           |
@@ -210,44 +211,47 @@ graph TD;
 
 ### Hooks
 
-This contract is a _data hook_, a _pay hook_, and a _redeem hook_. Data hooks receive information about a payment or a redemption, and put together a payload for the pay/redeem hook to execute.
+This contract is a _data hook_, a _pay hook_, and a _cash out hook_. Data hooks receive information about a payment or a cash out, and put together a payload for the pay/cash out hook to execute.
 
-Juicebox projects can specify a data hook in their `JBRulesetMetadata`. When someone attempts to pay or redeem from the project, the project's terminal records the payment in the terminal store, passing information about the payment/redemption to the data hook in the process. The data hook responds with a list of payloads – each payload specifies the address of a pay/redeem hook, as well as some custom data and an amount of funds to send to that pay/redeem hook.
+Juicebox projects can specify a data hook in their `JBRulesetMetadata`. When someone attempts to pay or cash out from the project, the project's terminal records the payment in the terminal store, passing information about the payment/cash out to the data hook in the process. The data hook responds with a list of payloads – each payload specifies the address of a pay/cash out hook, as well as some custom data and an amount of funds to send to that pay/cash out hook.
 
-Each pay/redeem hook can then execute custom behavior based on the custom data (and funds) they receive.
+Each pay/cash out hook can then execute custom behavior based on the custom data (and funds) they receive.
 
 ### Mechanism
 
-A project using a 721 tiers hook can specify any number of NFT tiers.
+A project using a 721 tiers hook can specify any number of NFT tiers (up to 65,535 total).
 
-- NFT tiers can be removed by the project owner as long as they are not locked.
-- NFT tiers can be added by the project owner as long as they respect the hook's `flags`. The flags specify if newly added tiers can have votes (voting units), if new tiers can have non-zero reserve frequencies, if new tiers can allow on-demand minting by the project's owner, and if the tier can be removed.
+- NFT tiers can be removed by the project owner as long as they are not locked (`cannotBeRemoved`). After removing tiers, call `cleanTiers()` on the store to optimize tier iteration.
+- NFT tiers can be added by the project owner as long as they respect the hook's `flags`. Tiers must be sorted by category in ascending order — the store reverts with `JB721TiersHookStore_InvalidCategorySortOrder` if not. The flags specify if newly added tiers can have votes (voting units), if new tiers can have non-zero reserve frequencies, if new tiers can allow on-demand minting by the project's owner, and if overspending is allowed.
 
-Each tier has the following optional properties:
+Each tier has the following properties:
 
-- A price.
-- A supply (the maximum number of NFTs which can be minted from the tier).
+- A price (up to `uint104`).
+- A supply (the maximum number of NFTs which can be minted from the tier, up to 999,999,999).
 - A token URI (artwork and metadata), which can be overridden by a URI resolver. The URI resolver can return unique values for each NFT in the tier.
 - A category, so tiers can be organized and accessed for different purposes.
-- A reserve frequency (optional). With a reserve frequency of 5, an extra NFT will be minted to a pre-specified beneficiary address for every 5 NFTs purchased and minted from the tier.
-- A number of votes each NFT should represent on-chain (optional).
+- A discount percent (optional). Reduces the effective purchase price. The discount is out of 200, so a `discountPercent` of 100 means 50% off, and 200 means free. The discount can be changed later via `setDiscountPercentOf`, and tiers can be configured with `cannotIncreaseDiscountPercent` to only allow discounts to decrease. Cash out weight is always based on the original tier price, not the discounted price.
+- A reserve frequency (optional). With a reserve frequency of 5, an extra NFT will be minted to a pre-specified beneficiary address for every 5 NFTs purchased and minted from the tier. Tiers with owner minting enabled cannot have reserves.
+- Voting units (optional). By default, each NFT's voting power equals its tier price. If `useVotingUnits` is true, a custom `votingUnits` value is used instead.
 - A flag to specify whether the NFTs in the tier can always be transferred, or if transfers can be paused depending on the project's ruleset.
 - A flag to specify whether the contract's owner can mint NFTs from the tier on-demand.
-- A set of flags which restrict tiers added in the future (the votes/reserved frequency/on-demand minting/can be removed flags noted above).
+- A split percent and a set of splits (optional). Each tier can route a percentage of its mint price to configured split recipients every time an NFT from the tier is purchased. The remaining funds stay in the project's balance. The `splitPercent` is out of `JBConstants.SPLITS_TOTAL_PERCENT` (1,000,000,000). Split recipients follow the same priority as JBMultiTerminal: `split.hook` (receives funds via `IJBSplitHook.processSplitWith` with full context including token, amount, decimals, project ID, and group ID) > `split.projectId` (routed via the project's primary terminal) > `split.beneficiary` (direct transfer). When splits are active, the hook adjusts the returned weight so the terminal only mints tokens proportional to the amount that actually enters the project treasury (e.g., a 50% split on a 1 ETH payment results in half the normal token issuance). This weight adjustment can be disabled with the `issueTokensForSplits` flag, which gives payers full token credit regardless of where the funds go.
+- A set of flags which restrict tiers added in the future (the votes/reserved frequency/on-demand minting/overspending/issueTokensForSplits flags noted above).
 
 Additional notes:
 
-- A payer can specify any number of tiers to mint as long as the total price does not exceed the amount being paid. If tiers aren't specified, their payment mints the most expensive tier possible, unless they specify that the hook should not mint any NFTs.
-- If the payment and a tier's price are specified in different currencies, the `JBPrices` contract is used to normalize the values.
-- If some of a payment does not go towards purchasing an NFT, those extra funds will be stored as "NFT credits" which can be used for future purchases. Optionally, the hook can disallow credits and reject payments with leftover funds.
-- If enabled by the project owner, holders can burn their NFTs to reclaim funds from the project. These redemptions are proportional to the NFTs price, relative to the combined price of all the NFTs.
-- NFT redemptions can be enabled by setting `useDataHookForRedeem` to `true` in the project's `JBRulesetMetadata`. If NFT redemptions are enabled, project token redemptions are disabled.
-- The hook's deployer can choose if the NFTs should support on-chain voting (as `ERC721Votes`). This increases the gas fees to interact with the NFTs, and should be disabled if not needed.
+- A payer can specify any number of tiers to mint as long as the total price does not exceed the amount being paid. If tiers aren't specified, the leftover amount is stored as pay credits (if allowed).
+- If the payment and a tier's price are specified in different currencies, the hook's immutable `PRICES` contract is used to normalize the values. If `PRICES` is the zero address and the currencies differ, the payment is silently ignored (no mint, no revert).
+- If some of a payment does not go towards purchasing an NFT, those extra funds will be stored as "NFT credits" which can be used for future purchases. Credits are only combined with the payment when `payer == beneficiary`. Optionally, the hook can disallow credits and reject payments with leftover funds (via `preventOverspending`).
+- If enabled by the project owner, holders can burn their NFTs to reclaim funds from the project. These cash outs are proportional to the NFTs price, relative to the combined price of all the NFTs (including pending reserves in the denominator).
+- NFT cash outs can be enabled by setting `useDataHookForCashOut` to `true` in the project's `JBRulesetMetadata`. If NFT cash outs are enabled, project token cash outs are disabled -- attempting to cash out fungible tokens when the data hook is active will revert.
+- Per-tier voting units can be configured: either custom voting units or the tier's price as the default. Voting power is computed per-address across all tiers.
+- The hook declares support for ERC-2981 (royalties) via `supportsInterface`, but does not implement the `royaltyInfo` function. This is intended for future extension.
 
 ### Setup
 
 To use a 721 tiers hook, a Juicebox project should be created by a `JB721TiersHookProjectDeployer` instead of a `JBController`. The deployer will create a `JB721TiersHook` (through an associated `JB721TiersHookDeployer`) and add it to the project's first ruleset. New rulesets can be queued with `JB721TiersHookProjectDeployer.queueRulesetsOf(…)` if the project's owner gives the project deployer the permission [`JBPermissions.QUEUE_RULESETS`](https://github.com/Bananapus/nana-permission-ids/blob/master/src/JBPermissionIds.sol) (ID `2`) in [`JBPermissions`](https://github.com/Bananapus/nana-core/blob/main/src/JBPermissions.sol).
 
-It's also possible to add a 721 tiers hook to an existing project by calling `JB721TiersHookDeployer.deployHookFor(…)` and adding the hook to the project's ruleset – specifically, the project must set their [`JBRulesetMetadata.dataHook`](https://github.com/Bananapus/nana-core/blob/main/src/structs/JBRulesetMetadata.sol) to the newly deployed hook, and enable `JBRulesetMetadata.useDataHookForPay` and/or `JBRulesetMetadata.useDataHookForRedeem` depending on the functionality they'd like to enable.
+It's also possible to add a 721 tiers hook to an existing project by calling `JB721TiersHookDeployer.deployHookFor(…)` and adding the hook to the project's ruleset – specifically, the project must set their [`JBRulesetMetadata.dataHook`](https://github.com/Bananapus/nana-core/blob/main/src/structs/JBRulesetMetadata.sol) to the newly deployed hook, and enable `JBRulesetMetadata.useDataHookForPay` and/or `JBRulesetMetadata.useDataHookForCashOut` depending on the functionality they'd like to enable.
 
 All `JB721TiersHook`s store their data in the `JB721TiersHookStore` contract.

@@ -93,8 +93,14 @@ Contains functions extracted from `JB721TiersHook` to stay within the EIP-170 co
 | `calculateSplitAmounts(...)` | Calculates per-tier split amounts for a pay event |
 | `convertSplitAmounts(...)` | Converts split amounts between currencies |
 | `calculateWeight(...)` | Adjusts minting weight to account for split amounts |
-| `distributeAll(...)` | Pulls tokens and distributes forwarded funds to tier split recipients |
+| `distributeAll(...)` | Pulls tokens and distributes forwarded funds to tier split recipients (fault-tolerant: each split wrapped in try/catch) |
 | `resolveTokenURI(...)` | Resolves the token URI (moved IPFS decoding out of hook) |
+
+**New function on `JB721TiersHook`:**
+
+| Function | Description |
+|----------|-------------|
+| `executeSplitPayout(split, token, amount, projectId, groupId, decimals)` | External payable, self-call only. Executes a single split payout so the library can wrap it in try/catch. Mirrors nana-core-v6's `JBMultiTerminal.executePayout` pattern. |
 
 **New flag on `JB721TiersHookFlags`:**
 
@@ -135,6 +141,8 @@ The `JBPayDataHookRulesetMetadata` struct gained an `allowSetCustomToken` field.
 |-------|-----------|-------------|
 | `SetName` | `SetName(string indexed name, address caller)` | Emitted when the collection name is changed |
 | `SetSymbol` | `SetSymbol(string indexed symbol, address caller)` | Emitted when the collection symbol is changed |
+
+| `SplitPayoutReverted` | `SplitPayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller)` | Emitted when a split payout reverts during distribution. Failed split's funds route to the project's balance. |
 
 ### 3.2 New Event on `IJB721TiersHookStore`
 
@@ -215,6 +223,8 @@ The `votingUnits` (`uint32`) field was replaced by `splitPercent` (`uint32`) in 
 ### 6.1 `JB721TiersHook._processPayment` — Split Distribution
 
 After minting NFTs and updating pay credits, v6 checks `context.hookMetadata` and `context.forwardedAmount.value`. If both are non-zero, it calls `JB721TiersHookLib.distributeAll(...)` to distribute the forwarded funds to tier split recipients. This is the core of the tier splits flow.
+
+Split distribution is fault-tolerant: each individual split payout is executed via `this.executeSplitPayout()` wrapped in try/catch (mirroring `JBMultiTerminal.executePayout`). If any split recipient reverts, the revert is caught, a `SplitPayoutReverted` event is emitted, and the failed split's funds remain in `leftoverAmount` (which routes to the project's balance via `addToBalance`). Other splits in the same tier and subsequent tiers are unaffected.
 
 ### 6.2 `JB721TiersHook.adjustTiers` — Delegated to Library
 

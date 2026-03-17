@@ -1,31 +1,49 @@
 # JBIpfsDecoder
-[Git Source](https://github.com/Bananapus/nana-721-hook/blob/e813fb5b7d17cd3d18023137d70a7b2f3911ad99/src/libraries/JBIpfsDecoder.sol)
+[Git Source](https://github.com/Bananapus/nana-721-hook-v6/blob/2d965352774f2f9c4a660a86beafc9f8172805e3/src/libraries/JBIpfsDecoder.sol)
+
+**Title:**
+JBIpfsDecoder
 
 Utilities to decode an IPFS hash.
 
-*This is fairly gas intensive due to multiple nested loops. Onchain IPFS hash decoding is not advised –
-storing them as a string *might* be more efficient for that use-case.*
+This is fairly gas intensive due to multiple nested loops. Onchain IPFS hash decoding is not advised –
+storing them as a string *might* be more efficient for that use-case.
 
 
 ## State Variables
 ### ALPHABET
 Just a kind reminder to our readers.
 
-*Used in `base58ToString`*
+Used in `base58ToString`
 
 
 ```solidity
-bytes internal constant ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+bytes internal constant ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 ```
 
 
 ## Functions
 ### decode
 
+Decode an IPFS hash from a bytes32 and concatenate it with a base URI.
+
 
 ```solidity
 function decode(string memory baseUri, bytes32 hexString) internal pure returns (string memory);
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`baseUri`|`string`|The base URI to prepend to the decoded IPFS hash.|
+|`hexString`|`bytes32`|The encoded IPFS hash to decode.|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`string`|The full URI with the base URI and decoded IPFS hash.|
+
 
 ### _toBase58
 

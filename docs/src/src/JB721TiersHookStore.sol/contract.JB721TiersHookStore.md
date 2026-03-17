@@ -1,8 +1,11 @@
 # JB721TiersHookStore
-[Git Source](https://github.com/Bananapus/nana-721-hook/blob/e813fb5b7d17cd3d18023137d70a7b2f3911ad99/src/JB721TiersHookStore.sol)
+[Git Source](https://github.com/Bananapus/nana-721-hook-v6/blob/2d965352774f2f9c4a660a86beafc9f8172805e3/src/JB721TiersHookStore.sol)
 
 **Inherits:**
 [IJB721TiersHookStore](/src/interfaces/IJB721TiersHookStore.sol/interface.IJB721TiersHookStore.md)
+
+**Title:**
+JB721TiersHookStore
 
 This contract stores and manages data for many `IJB721TiersHook`s and their NFTs.
 
@@ -11,47 +14,47 @@ This contract stores and manages data for many `IJB721TiersHook`s and their NFTs
 ### _ONE_BILLION
 Just a kind reminder to our readers.
 
-*Used in 721 token ID generation.*
+Used in 721 token ID generation.
 
 
 ```solidity
-uint256 private constant _ONE_BILLION = 1_000_000_000;
+uint256 private constant _ONE_BILLION = 1_000_000_000
 ```
 
 
 ### defaultReserveBeneficiaryOf
 Returns the default reserve beneficiary for the provided 721 contract.
 
-*If a tier has a reserve beneficiary set, it will override this value.*
+If a tier has a reserve beneficiary set, it will override this value.
 
 
 ```solidity
-mapping(address hook => address) public override defaultReserveBeneficiaryOf;
+mapping(address hook => address) public override defaultReserveBeneficiaryOf
 ```
 
 
 ### encodedIPFSUriOf
 Returns the encoded IPFS URI for the provided tier ID of the provided 721 contract.
 
-*Token URIs managed by this contract are stored in 32 bytes, based on stripped down IPFS hashes.*
+Token URIs managed by this contract are stored in 32 bytes, based on stripped down IPFS hashes.
 
 **Note:**
 returns: The encoded IPFS URI.
 
 
 ```solidity
-mapping(address hook => mapping(uint256 tierId => bytes32)) public override encodedIPFSUriOf;
+mapping(address hook => mapping(uint256 tierId => bytes32)) public override encodedIPFSUriOf
 ```
 
 
 ### maxTierIdOf
 Returns the largest tier ID currently used on the provided 721 contract.
 
-*This may not include the last tier ID if it has been removed.*
+This may not include the last tier ID if it has been removed.
 
 
 ```solidity
-mapping(address hook => uint256) public override maxTierIdOf;
+mapping(address hook => uint256) public override maxTierIdOf
 ```
 
 
@@ -61,7 +64,7 @@ contract.
 
 
 ```solidity
-mapping(address hook => mapping(uint256 tierId => uint256)) public override numberOfBurnedFor;
+mapping(address hook => mapping(uint256 tierId => uint256)) public override numberOfBurnedFor
 ```
 
 
@@ -71,7 +74,7 @@ contract.
 
 
 ```solidity
-mapping(address hook => mapping(uint256 tierId => uint256)) public override numberOfReservesMintedFor;
+mapping(address hook => mapping(uint256 tierId => uint256)) public override numberOfReservesMintedFor
 ```
 
 
@@ -81,7 +84,7 @@ ID.
 
 
 ```solidity
-mapping(address hook => mapping(address owner => mapping(uint256 tierId => uint256))) public override tierBalanceOf;
+mapping(address hook => mapping(address owner => mapping(uint256 tierId => uint256))) public override tierBalanceOf
 ```
 
 
@@ -91,7 +94,7 @@ Returns the custom token URI resolver which overrides the default token URI reso
 
 
 ```solidity
-mapping(address hook => IJB721TokenUriResolver) public override tokenUriResolverOf;
+mapping(address hook => IJB721TokenUriResolver) public override tokenUriResolverOf
 ```
 
 
@@ -103,32 +106,32 @@ returns: The flags.
 
 
 ```solidity
-mapping(address hook => JB721TiersHookFlags) internal _flagsOf;
+mapping(address hook => JB721TiersHookFlags) internal _flagsOf
 ```
 
 
 ### _lastTrackedSortedTierIdOf
 Return the ID of the last sorted tier from the provided 721 contract.
 
-*If not set, it is assumed the `maxTierIdOf` is the last sorted tier ID.*
+If not set, it is assumed the `maxTierIdOf` is the last sorted tier ID.
 
 
 ```solidity
-mapping(address hook => uint256) internal _lastTrackedSortedTierIdOf;
+mapping(address hook => uint256) internal _lastTrackedSortedTierIdOf
 ```
 
 
 ### _removedTiersBitmapWordOf
 Get the bitmap word at the provided depth from the provided 721 contract's tier removal bitmap.
 
-*See `JBBitmap` for more information.*
+See `JBBitmap` for more information.
 
 **Note:**
 returns: word The bitmap row's content.
 
 
 ```solidity
-mapping(address hook => mapping(uint256 depth => uint256 word)) internal _removedTiersBitmapWordOf;
+mapping(address hook => mapping(uint256 depth => uint256 word)) internal _removedTiersBitmapWordOf
 ```
 
 
@@ -141,7 +144,7 @@ returns: The address of the reserved token beneficiary.
 
 
 ```solidity
-mapping(address hook => mapping(uint256 tierId => address)) internal _reserveBeneficiaryOf;
+mapping(address hook => mapping(uint256 tierId => address)) internal _reserveBeneficiaryOf
 ```
 
 
@@ -150,7 +153,7 @@ Returns the ID of the first tier in the provided category on the provided 721 co
 
 
 ```solidity
-mapping(address hook => mapping(uint256 category => uint256)) internal _startingTierIdOfCategory;
+mapping(address hook => mapping(uint256 category => uint256)) internal _startingTierIdOfCategory
 ```
 
 
@@ -162,21 +165,35 @@ returns: The stored tier, as a `JBStored721Tier` struct.
 
 
 ```solidity
-mapping(address hook => mapping(uint256 tierId => JBStored721Tier)) internal _storedTierOf;
+mapping(address hook => mapping(uint256 tierId => JBStored721Tier)) internal _storedTierOf
 ```
 
 
 ### _tierIdAfter
 Returns the ID of the tier which comes after the provided tier ID (sorted by category).
 
-*If empty, assume the next tier ID should come after.*
+If empty, assume the next tier ID should come after.
 
 **Note:**
 returns: The following tier's ID.
 
 
 ```solidity
-mapping(address hook => mapping(uint256 tierId => uint256)) internal _tierIdAfter;
+mapping(address hook => mapping(uint256 tierId => uint256)) internal _tierIdAfter
+```
+
+
+### _tierVotingUnitsOf
+Returns the custom voting units for the provided tier ID on the provided hook.
+
+Only populated when `useVotingUnits` is true. When not set, voting power defaults to the tier's price.
+
+**Note:**
+returns: The voting units for the tier.
+
+
+```solidity
+mapping(address hook => mapping(uint256 tierId => uint32)) internal _tierVotingUnitsOf
 ```
 
 
@@ -251,7 +268,7 @@ function isTierRemoved(address hook, uint256 tierId) external view override retu
 
 Get the number of pending reserve NFTs for the provided tier ID of the provided 721 contract.
 
-*"Pending" means that the NFTs have been reserved, but have not been minted yet.*
+"Pending" means that the NFTs have been reserved, but have not been minted yet.
 
 
 ```solidity
@@ -269,29 +286,6 @@ function numberOfPendingReservesFor(address hook, uint256 tierId) external view 
 |Name|Type|Description|
 |----|----|-----------|
 |`<none>`|`uint256`|The number of pending reserved NFTs.|
-
-
-### tierOf
-
-Get the tier with the provided ID from the provided 721 contract.
-
-
-```solidity
-function tierOf(address hook, uint256 id, bool includeResolvedUri) public view override returns (JB721Tier memory);
-```
-**Parameters**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`hook`|`address`|The 721 contract to get the tier from.|
-|`id`|`uint256`|The ID of the tier to get.|
-|`includeResolvedUri`|`bool`|If set to `true`, if the contract has a token URI resolver, its content will be resolved and included.|
-
-**Returns**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`JB721Tier`|The tier.|
 
 
 ### tierOfTokenId
@@ -323,42 +317,6 @@ function tierOfTokenId(
 |Name|Type|Description|
 |----|----|-----------|
 |`<none>`|`JB721Tier`|The tier.|
-
-
-### tierVotingUnitsOf
-
-Returns the number of voting units an addresses has within the specified tier of the specified 721
-contract.
-
-*NFTs have a tier-specific number of voting units. If the tier does not have a custom number of voting
-units, the price is used.*
-
-
-```solidity
-function tierVotingUnitsOf(
-    address hook,
-    address account,
-    uint256 tierId
-)
-    external
-    view
-    virtual
-    override
-    returns (uint256);
-```
-**Parameters**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`hook`|`address`|The 721 contract that the tier belongs to.|
-|`account`|`address`|The address to get the voting units of within the tier.|
-|`tierId`|`uint256`|The ID of the tier to get voting units within.|
-
-**Returns**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`uint256`|The address' voting units within the tier.|
 
 
 ### tiersOf
@@ -396,6 +354,42 @@ function tiersOf(
 |`tiers`|`JB721Tier[]`|An array of active 721 tiers.|
 
 
+### tierVotingUnitsOf
+
+Returns the number of voting units an addresses has within the specified tier of the specified 721
+contract.
+
+NFTs have a tier-specific number of voting units. If the tier does not have a custom number of voting
+units, the price is used.
+
+
+```solidity
+function tierVotingUnitsOf(
+    address hook,
+    address account,
+    uint256 tierId
+)
+    external
+    view
+    virtual
+    override
+    returns (uint256);
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`hook`|`address`|The 721 contract that the tier belongs to.|
+|`account`|`address`|The address to get the voting units of within the tier.|
+|`tierId`|`uint256`|The ID of the tier to get voting units within.|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`uint256`|The address' voting units within the tier.|
+
+
 ### totalSupplyOf
 
 Get the number of NFTs which have been minted from the provided 721 contract (across all tiers).
@@ -422,8 +416,8 @@ function totalSupplyOf(address hook) external view override returns (uint256 sup
 Get the number of voting units the provided address has for the provided 721 contract (across all
 tiers).
 
-*NFTs have a tier-specific number of voting units. If the tier does not have a custom number of voting
-units, the price is used.*
+NFTs have a tier-specific number of voting units. If the tier does not have a custom number of voting
+units, the price is used.
 
 
 ```solidity
@@ -470,10 +464,10 @@ function balanceOf(address hook, address owner) public view override returns (ui
 
 The combined cash out weight of the NFTs with the provided token IDs.
 
-*Cash out weight is based on 721 price.*
+Cash out weight is based on 721 price.
 
-*Divide this result by the `totalCashOutWeight` to get the portion of funds that can be reclaimed by
-cashing out these NFTs.*
+Divide this result by the `totalCashOutWeight` to get the portion of funds that can be reclaimed by
+cashing out these NFTs.
 
 
 ```solidity
@@ -519,7 +513,7 @@ function reserveBeneficiaryOf(address hook, uint256 tierId) public view override
 
 The tier ID for the 721 with the provided token ID.
 
-*Tiers are 1-indexed from the `tiers` array, meaning the 0th element of the array is tier 1.*
+Tiers are 1-indexed from the `tiers` array, meaning the 0th element of the array is tier 1.
 
 
 ```solidity
@@ -536,6 +530,29 @@ function tierIdOfToken(uint256 tokenId) public pure override returns (uint256);
 |Name|Type|Description|
 |----|----|-----------|
 |`<none>`|`uint256`|The ID of the 721's tier.|
+
+
+### tierOf
+
+Get the tier with the provided ID from the provided 721 contract.
+
+
+```solidity
+function tierOf(address hook, uint256 id, bool includeResolvedUri) public view override returns (JB721Tier memory);
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`hook`|`address`|The 721 contract to get the tier from.|
+|`id`|`uint256`|The ID of the tier to get.|
+|`includeResolvedUri`|`bool`|If set to `true`, if the contract has a token URI resolver, its content will be resolved and included.|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`JB721Tier`|The tier.|
 
 
 ### totalCashOutWeight
@@ -607,7 +624,7 @@ function _generateTokenId(uint256 tierId, uint256 tokenNumber) internal pure ret
 
 Returns the tier corresponding to the stored tier provided.
 
-*Translate `JBStored721Tier` to `JB721Tier`.*
+Translate `JBStored721Tier` to `JB721Tier`.
 
 
 ```solidity
@@ -715,6 +732,15 @@ function _nextSortedTierIdOf(address hook, uint256 id, uint256 max) internal vie
 
 Get the number of pending reserve NFTs for the specified tier ID.
 
+The reserve frequency is immutable once a tier is created (set in `recordAddTiers`) and cannot be modified
+afterward. The pending reserve count is derived from the ratio of non-reserve mints to the reserve frequency,
+rounded up. This means each batch of `reserveFrequency` non-reserve mints entitles exactly one reserve mint,
+plus one additional reserve mint if there is any remainder. Because the reserve frequency is fixed per tier,
+the accounting remains consistent: the total available reserve mints always equals
+`ceil(numberOfNonReserveMints / reserveFrequency)`. If a project wishes to use a different reserve frequency,
+it must create a new tier — the existing tier's pending reserves will continue to be calculated using its
+original frequency. Removing a tier does not affect already-pending reserves; they can still be minted.
+
 
 ```solidity
 function _numberOfPendingReservesFor(
@@ -818,9 +844,17 @@ function cleanTiers(address hook) external override;
 
 Record newly added tiers.
 
+WARNING: If any tier in `tiersToAdd` has `useReserveBeneficiaryAsDefault` set to `true`, its
+`reserveBeneficiary` will overwrite the hook's global `defaultReserveBeneficiaryOf`. This affects ALL existing
+tiers that do not have a tier-specific reserve beneficiary set via `_reserveBeneficiaryOf`. Callers should be
+aware of this side effect when using `adjustTiers` to add new tiers.
+
 
 ```solidity
-function recordAddTiers(JB721TierConfig[] calldata tiersToAdd) external override returns (uint256[] memory tierIds);
+function recordAddTiers(JB721TierConfig[] calldata tiersToAdd)
+    external
+    override
+    returns (uint256[] memory tierIds);
 ```
 **Parameters**
 
@@ -838,6 +872,10 @@ function recordAddTiers(JB721TierConfig[] calldata tiersToAdd) external override
 ### recordBurn
 
 Records 721 burns.
+
+This function trusts `msg.sender` (the hook contract) to only call it after actually burning the
+tokens. It does not verify ownership or existence of the token IDs — the hook is responsible for
+performing those checks before calling this function.
 
 
 ```solidity
@@ -902,7 +940,10 @@ Record reserve 721 minting for the provided tier ID on the provided 721 contract
 
 
 ```solidity
-function recordMintReservesFor(uint256 tierId, uint256 count) external override returns (uint256[] memory tokenIds);
+function recordMintReservesFor(uint256 tierId, uint256 count)
+    external
+    override
+    returns (uint256[] memory tokenIds);
 ```
 **Parameters**
 
@@ -921,6 +962,9 @@ function recordMintReservesFor(uint256 tierId, uint256 count) external override 
 ### recordRemoveTierIds
 
 Record tiers being removed.
+
+Removing a tier only marks it in a bitmap — it does not update the sorted tier linked list.
+Call `cleanTiers()` after removing tiers to update the sorting sequence and prevent stale tier iteration.
 
 
 ```solidity
@@ -1001,13 +1045,13 @@ function recordTransferForTier(uint256 tierId, address from, address to) externa
 ### JB721TiersHookStore_CantMintManually
 
 ```solidity
-error JB721TiersHookStore_CantMintManually();
+error JB721TiersHookStore_CantMintManually(uint256 tierId);
 ```
 
 ### JB721TiersHookStore_CantRemoveTier
 
 ```solidity
-error JB721TiersHookStore_CantRemoveTier();
+error JB721TiersHookStore_CantRemoveTier(uint256 tierId);
 ```
 
 ### JB721TiersHookStore_DiscountPercentExceedsBounds
@@ -1031,7 +1075,7 @@ error JB721TiersHookStore_InsufficientPendingReserves(uint256 count, uint256 num
 ### JB721TiersHookStore_InsufficientSupplyRemaining
 
 ```solidity
-error JB721TiersHookStore_InsufficientSupplyRemaining();
+error JB721TiersHookStore_InsufficientSupplyRemaining(uint256 tierId);
 ```
 
 ### JB721TiersHookStore_InvalidCategorySortOrder
@@ -1049,7 +1093,7 @@ error JB721TiersHookStore_InvalidQuantity(uint256 quantity, uint256 limit);
 ### JB721TiersHookStore_ManualMintingNotAllowed
 
 ```solidity
-error JB721TiersHookStore_ManualMintingNotAllowed();
+error JB721TiersHookStore_ManualMintingNotAllowed(uint256 tierId);
 ```
 
 ### JB721TiersHookStore_MaxTiersExceeded
@@ -1067,7 +1111,13 @@ error JB721TiersHookStore_PriceExceedsAmount(uint256 price, uint256 leftoverAmou
 ### JB721TiersHookStore_ReserveFrequencyNotAllowed
 
 ```solidity
-error JB721TiersHookStore_ReserveFrequencyNotAllowed();
+error JB721TiersHookStore_ReserveFrequencyNotAllowed(uint256 tierId);
+```
+
+### JB721TiersHookStore_SplitPercentExceedsBounds
+
+```solidity
+error JB721TiersHookStore_SplitPercentExceedsBounds(uint256 percent, uint256 limit);
 ```
 
 ### JB721TiersHookStore_TierRemoved
@@ -1079,18 +1129,18 @@ error JB721TiersHookStore_TierRemoved(uint256 tierId);
 ### JB721TiersHookStore_UnrecognizedTier
 
 ```solidity
-error JB721TiersHookStore_UnrecognizedTier();
+error JB721TiersHookStore_UnrecognizedTier(uint256 tierId);
 ```
 
 ### JB721TiersHookStore_VotingUnitsNotAllowed
 
 ```solidity
-error JB721TiersHookStore_VotingUnitsNotAllowed();
+error JB721TiersHookStore_VotingUnitsNotAllowed(uint256 tierId);
 ```
 
 ### JB721TiersHookStore_ZeroInitialSupply
 
 ```solidity
-error JB721TiersHookStore_ZeroInitialSupply();
+error JB721TiersHookStore_ZeroInitialSupply(uint256 tierId);
 ```
 
