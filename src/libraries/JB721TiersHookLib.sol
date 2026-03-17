@@ -29,6 +29,7 @@ library JB721TiersHookLib {
     // Events mirrored from IJB721TiersHook (emitted via DELEGATECALL from the hook's context).
     event AddTier(uint256 indexed tierId, JB721TierConfig tier, address caller);
     event RemoveTier(uint256 indexed tierId, address caller);
+    event SplitPayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
 
     /// @notice Handles the full tier adjustment logic: removes tiers, adds tiers, emits events, and sets splits.
     /// @dev Called via DELEGATECALL from the hook, so events are emitted from the hook's address.
@@ -449,7 +450,10 @@ library JB721TiersHookLib {
                 // On revert, ETH stays with the caller and we return false.
                 try split.hook.processSplitWith{value: amount}(context) {
                     return true;
-                } catch {
+                } catch (bytes memory reason) {
+                    emit SplitPayoutReverted({
+                        projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
+                    });
                     return false;
                 }
             } else {
@@ -459,7 +463,11 @@ library JB721TiersHookLib {
                 // cause the caller to skip subtracting this amount from leftoverAmount, leading
                 // to a double-spend when the leftover is later sent to the project's balance.
                 SafeERC20.safeTransfer({token: IERC20(token), to: address(split.hook), value: amount});
-                try split.hook.processSplitWith(context) {} catch {}
+                try split.hook.processSplitWith(context) {} catch (bytes memory reason) {
+                    emit SplitPayoutReverted({
+                        projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
+                    });
+                }
                 return true;
             }
         } else if (split.projectId != 0) {
@@ -480,7 +488,10 @@ library JB721TiersHookLib {
                         metadata: bytes("")
                     }) {
                         return true;
-                    } catch {
+                    } catch (bytes memory reason) {
+                        emit SplitPayoutReverted({
+                            projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
+                        });
                         return false;
                     }
                 } else {
@@ -495,9 +506,12 @@ library JB721TiersHookLib {
                         metadata: bytes("")
                     }) {
                         return true;
-                    } catch {
+                    } catch (bytes memory reason) {
                         // Reset approval on failure so tokens aren't left approved to the terminal.
                         SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
+                        emit SplitPayoutReverted({
+                            projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
+                        });
                         return false;
                     }
                 }
@@ -514,7 +528,10 @@ library JB721TiersHookLib {
                         metadata: bytes("")
                     }) {
                         return true;
-                    } catch {
+                    } catch (bytes memory reason) {
+                        emit SplitPayoutReverted({
+                            projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
+                        });
                         return false;
                     }
                 } else {
@@ -530,9 +547,12 @@ library JB721TiersHookLib {
                         metadata: bytes("")
                     }) {
                         return true;
-                    } catch {
+                    } catch (bytes memory reason) {
                         // Reset approval on failure so tokens aren't left approved to the terminal.
                         SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
+                        emit SplitPayoutReverted({
+                            projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
+                        });
                         return false;
                     }
                 }

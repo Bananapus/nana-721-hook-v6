@@ -3,7 +3,9 @@ pragma solidity 0.8.26;
 
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "../utils/UnitTestSetup.sol";
+import {IJB721TiersHook} from "../../src/interfaces/IJB721TiersHook.sol";
 import {IJB721TiersHookStore} from "../../src/interfaces/IJB721TiersHookStore.sol";
+import {JB721TiersHookStore} from "../../src/JB721TiersHookStore.sol";
 // forge-lint: disable-next-line(unused-import)
 import {JB721TiersHookLib} from "../../src/libraries/JB721TiersHookLib.sol";
 import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
@@ -457,6 +459,10 @@ contract Test_SplitDistributionBugs is UnitTestSetup {
             payerMetadata: payerMetadata
         });
 
+        // Expect the SplitPayoutReverted event (check only the indexed projectId topic).
+        vm.expectEmit(true, false, false, false);
+        emit IJB721TiersHook.SplitPayoutReverted(projectId, splits[0], 1 ether, "", mockTerminalAddress);
+
         vm.deal(mockTerminalAddress, 2 ether);
         vm.prank(mockTerminalAddress);
         // Should NOT revert — the try-catch catches the hook's revert.
@@ -518,6 +524,10 @@ contract Test_SplitDistributionBugs is UnitTestSetup {
         usdc.mint(mockTerminalAddress, 100e6);
         vm.prank(mockTerminalAddress);
         usdc.approve(address(testHook), 100e6);
+
+        // Expect the SplitPayoutReverted event (emitted even though tokens were transferred).
+        vm.expectEmit(true, false, false, false);
+        emit IJB721TiersHook.SplitPayoutReverted(projectId, splits[0], 100e6, "", mockTerminalAddress);
 
         vm.prank(mockTerminalAddress);
         testHook.afterPayRecordedWith(payContext);
@@ -671,10 +681,41 @@ contract Test_SplitDistributionBugs is UnitTestSetup {
             payerMetadata: payerMetadata
         });
 
+        // Expect the SplitPayoutReverted event.
+        vm.expectEmit(true, false, false, false);
+        emit IJB721TiersHook.SplitPayoutReverted(projectId, splits[0], 1 ether, "", mockTerminalAddress);
+
         vm.deal(mockTerminalAddress, 2 ether);
         vm.prank(mockTerminalAddress);
         // Should NOT revert — terminal failure is caught, funds go to project balance.
         testHook.afterPayRecordedWith{value: 1 ether}(payContext);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // splitPercent validation in store
+    // ──────────────────────────────────────────────────────────────────────
+
+    /// @notice Adding a tier with splitPercent > SPLITS_TOTAL_PERCENT should revert.
+    function test_recordAddTiers_splitPercentExceedsBounds_reverts() public {
+        ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
+        IJB721TiersHookStore hookStore = testHook.STORE();
+
+        JB721TierConfig[] memory tierConfigs = new JB721TierConfig[](1);
+        tierConfigs[0].price = 1 ether;
+        tierConfigs[0].initialSupply = uint32(100);
+        tierConfigs[0].category = uint24(1);
+        tierConfigs[0].encodedIPFSUri = bytes32(uint256(0x1234));
+        tierConfigs[0].splitPercent = JBConstants.SPLITS_TOTAL_PERCENT + 1; // Over the limit.
+
+        vm.prank(address(testHook));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721TiersHookStore.JB721TiersHookStore_SplitPercentExceedsBounds.selector,
+                JBConstants.SPLITS_TOTAL_PERCENT + 1,
+                JBConstants.SPLITS_TOTAL_PERCENT
+            )
+        );
+        hookStore.recordAddTiers(tierConfigs);
     }
 }
 
