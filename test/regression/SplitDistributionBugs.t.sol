@@ -610,11 +610,7 @@ contract Test_SplitDistributionBugs is UnitTestSetup {
         );
 
         // Make the terminal's pay() revert.
-        vm.mockCallRevert(
-            revertingTerminal,
-            abi.encodeWithSelector(IJBTerminal.pay.selector),
-            "terminal broken"
-        );
+        vm.mockCallRevert(revertingTerminal, abi.encodeWithSelector(IJBTerminal.pay.selector), "terminal broken");
 
         JBSplit[] memory splits = new JBSplit[](1);
         splits[0] = JBSplit({

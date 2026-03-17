@@ -463,7 +463,8 @@ library JB721TiersHookLib {
                 // cause the caller to skip subtracting this amount from leftoverAmount, leading
                 // to a double-spend when the leftover is later sent to the project's balance.
                 SafeERC20.safeTransfer({token: IERC20(token), to: address(split.hook), value: amount});
-                try split.hook.processSplitWith(context) {} catch (bytes memory reason) {
+                try split.hook.processSplitWith(context) {}
+                catch (bytes memory reason) {
                     emit SplitPayoutReverted({
                         projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
                     });
