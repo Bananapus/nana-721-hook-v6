@@ -160,7 +160,7 @@ groupId = uint256(uint160(hookAddress)) | (uint256(tierId) << 160)
 
 7. **`useReserveBeneficiaryAsDefault` overwrites the global default.** Adding a tier with this flag silently redirects reserve mints for ALL existing tiers that rely on the default beneficiary.
 
-8. **No `ReentrancyGuard`.** The hook relies on state-before-interaction ordering. All `STORE.record*` calls and `_mint()` calls happen before any untrusted external calls (split distribution).
+8. **No `ReentrancyGuard`.** The hook relies on state-before-interaction ordering and try-catch wrapping. All `STORE.record*` calls and `_mint()` calls happen before any untrusted external calls (split distribution). All external calls in `_sendPayoutToSplit` are wrapped in try-catch so a reverting recipient cannot block payments.
 
 9. **`_mint()` is used, not `_safeMint()`.** The `onERC721Received` callback is NOT triggered during minting. This prevents mint-time DoS but means contracts that expect the callback won't detect incoming NFTs.
 
@@ -182,13 +182,19 @@ The split distribution path in `JB721TiersHookLib.distributeAll()` is the larges
 - External calls to arbitrary terminals (`terminal.pay()`, `terminal.addToBalanceOf()`)
 - External calls to arbitrary beneficiary addresses (`.call{value}`)
 - ERC-20 token transfers and approvals before external calls
-- No `ReentrancyGuard` -- relies on state ordering
+- No `ReentrancyGuard` -- relies on state ordering and try-catch wrapping
+
+All external calls in `_sendPayoutToSplit` are wrapped in try-catch so a single reverting recipient cannot brick all payments to the project. Behavior differs by token type:
+- **Native token (ETH):** Split hooks, terminal calls, and beneficiary sends are wrapped in try-catch. On revert, ETH stays with the caller and the function returns `false`, routing the amount to the project's balance via `_addToBalance`.
+- **ERC-20 split hooks:** Tokens are transferred via `safeTransfer` before the hook callback. The callback is wrapped in try-catch, but the function always returns `true` regardless of callback success — because the tokens have already left the contract, returning `false` would cause double-spend accounting in the leftover calculation.
+- **ERC-20 terminal calls:** `forceApprove` is called before the terminal call. On failure, the approval is reset to zero to prevent dangling approvals, and the function returns `false`.
 
 Verify that:
 - State is fully settled before any external call in the distribution loop
 - A reentering call through `terminal.pay()` cannot corrupt hook state
 - `leftoverAmount` accounting is correct when `_sendPayoutToSplit` returns false
 - ERC-20 `forceApprove` followed by external call cannot be exploited (approval not consumed -> leftover approval)
+- The ERC-20 split hook path correctly returns `true` after `safeTransfer` regardless of callback outcome (prevents double-spend via leftover miscounting)
 
 ### 2. Discount / Cash Out Weight Interaction
 
@@ -300,12 +306,12 @@ forge test --gas-report
 
 ### Notable Coverage Gaps
 
-1. No reentrancy test for split distribution `.call{value}` or `terminal.pay()` path.
+1. ~~No reentrancy test for split distribution `.call{value}` or `terminal.pay()` path.~~ Mitigated: all external calls in `_sendPayoutToSplit` are now wrapped in try-catch. `TestAuditGaps_Reentrancy` confirms reentrancy is blocked by terminal check.
 2. No gas limit test for operations with hundreds of tiers.
 3. No test for malicious/reverting token URI resolver.
 4. No test for `initialize()` front-running on deterministic clones.
 5. No fuzz test for discount percent edge cases with very small prices.
-6. No test for cross-terminal reentry through split `terminal.pay()` callback.
+6. ~~No test for cross-terminal reentry through split `terminal.pay()` callback.~~ Mitigated: terminal calls are wrapped in try-catch; hook state is fully settled before distribution begins.
 
 ## How to Report Findings
 

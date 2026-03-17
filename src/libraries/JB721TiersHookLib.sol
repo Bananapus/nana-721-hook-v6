@@ -453,8 +453,11 @@ library JB721TiersHookLib {
                     return false;
                 }
             } else {
-                // Transfer tokens first, then call the hook.
-                // If the hook reverts after receiving tokens, return true (tokens were sent).
+                // ERC20: transfer tokens first, then call the hook callback.
+                // We must return true regardless of whether the callback reverts because the
+                // tokens have already left this contract via safeTransfer. Returning false would
+                // cause the caller to skip subtracting this amount from leftoverAmount, leading
+                // to a double-spend when the leftover is later sent to the project's balance.
                 SafeERC20.safeTransfer({token: IERC20(token), to: address(split.hook), value: amount});
                 try split.hook.processSplitWith(context) {} catch {}
                 return true;
