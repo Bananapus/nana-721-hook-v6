@@ -583,20 +583,7 @@ library JB721TiersHookLib {
         // slither-disable-next-line calls-loop
         IJBTerminal terminal = directory.primaryTerminalOf({projectId: projectId, token: token});
         if (address(terminal) == address(0)) return;
-        _terminalAddToBalance({
-            terminal: terminal, projectId: projectId, token: token, amount: amount, isNativeToken: isNativeToken
-        });
-    }
 
-    function _terminalAddToBalance(
-        IJBTerminal terminal,
-        uint256 projectId,
-        address token,
-        uint256 amount,
-        bool isNativeToken
-    )
-        private
-    {
         if (isNativeToken) {
             // slither-disable-next-line arbitrary-send-eth,calls-loop
             terminal.addToBalanceOf{value: amount}({
@@ -615,42 +602,6 @@ library JB721TiersHookLib {
                 token: token,
                 amount: amount,
                 shouldReturnHeldFees: false,
-                memo: "",
-                metadata: bytes("")
-            });
-        }
-    }
-
-    function _terminalPay(
-        IJBTerminal terminal,
-        uint256 projectId,
-        address token,
-        uint256 amount,
-        address beneficiary,
-        bool isNativeToken
-    )
-        private
-    {
-        if (isNativeToken) {
-            // slither-disable-next-line arbitrary-send-eth,unused-return,calls-loop
-            terminal.pay{value: amount}({
-                projectId: projectId,
-                token: token,
-                amount: amount,
-                beneficiary: beneficiary,
-                minReturnedTokens: 0,
-                memo: "",
-                metadata: bytes("")
-            });
-        } else {
-            SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: amount});
-            // slither-disable-next-line unused-return,calls-loop
-            terminal.pay({
-                projectId: projectId,
-                token: token,
-                amount: amount,
-                beneficiary: beneficiary,
-                minReturnedTokens: 0,
                 memo: "",
                 metadata: bytes("")
             });

@@ -58,15 +58,6 @@ interface IJB721TiersHook is IJB721Hook {
     /// @param caller The address that called the function.
     event RemoveTier(uint256 indexed tierId, address caller);
 
-    /// @notice Emitted when a split payout reverts during distribution. The failed split's funds route to the
-    /// project's balance.
-    /// @param projectId The project ID the split belongs to.
-    /// @param split The split that reverted.
-    /// @param amount The amount that was being paid out.
-    /// @param reason The revert reason bytes.
-    /// @param caller The address that called the function.
-    event SplitPayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
-
     /// @notice Emitted when the collection name is set.
     /// @param name The new collection name.
     /// @param caller The address that called the function.
@@ -103,6 +94,15 @@ interface IJB721TiersHook is IJB721Hook {
     /// @param resolver The new token URI resolver.
     /// @param caller The address that called the function.
     event SetTokenUriResolver(IJB721TokenUriResolver indexed resolver, address caller);
+
+    /// @notice Emitted when a split payout reverts during distribution. The failed split's funds route to the
+    /// project's balance.
+    /// @param projectId The project ID the split belongs to.
+    /// @param split The split that reverted.
+    /// @param amount The amount that was being paid out.
+    /// @param reason The revert reason bytes.
+    /// @param caller The address that called the function.
+    event SplitPayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
 
     /// @notice Emitted when pay credits are used by an account.
     /// @param amount The amount of credits used.
