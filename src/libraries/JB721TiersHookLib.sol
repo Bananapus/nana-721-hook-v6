@@ -383,7 +383,6 @@ library JB721TiersHookLib {
         // slither-disable-next-line calls-loop
         JBSplit[] memory tierSplits = splitsContract.splitsOf({projectId: projectId, rulesetId: 0, groupId: groupId});
 
-        bool isNativeToken = token == JBConstants.NATIVE_TOKEN;
         uint256 leftoverPercentage = JBConstants.SPLITS_TOTAL_PERCENT;
         uint256 leftoverAmount = amount;
 
@@ -391,32 +390,17 @@ library JB721TiersHookLib {
             uint256 payoutAmount =
                 mulDiv({x: leftoverAmount, y: tierSplits[j].percent, denominator: leftoverPercentage});
             if (payoutAmount != 0) {
-                // Try the payout via an external self-call so try/catch can wrap it.
-                // Since this library runs via DELEGATECALL, `address(this)` is the hook.
-                // slither-disable-next-line reentrancy-events
-                try IJB721TiersHook(address(this)).executeSplitPayout{value: isNativeToken ? payoutAmount : 0}({
-                    split: tierSplits[j],
-                    token: token,
-                    amount: payoutAmount,
-                    projectId: projectId,
-                    groupId: groupId,
-                    decimals: decimals
-                }) returns (
-                    bool sent
-                ) {
-                    if (sent) {
-                        unchecked {
-                            leftoverAmount -= payoutAmount;
-                        }
-                    }
-                } catch (bytes memory reason) {
-                    emit SplitPayoutReverted({
-                        projectId: projectId,
+                if (_trySplitPayout({
                         split: tierSplits[j],
+                        token: token,
                         amount: payoutAmount,
-                        reason: reason,
-                        caller: msg.sender
-                    });
+                        projectId: projectId,
+                        groupId: groupId,
+                        decimals: decimals
+                    })) {
+                    unchecked {
+                        leftoverAmount -= payoutAmount;
+                    }
                 }
             }
             unchecked {
@@ -430,19 +414,15 @@ library JB721TiersHookLib {
                 projectId: projectId,
                 token: token,
                 amount: leftoverAmount,
-                isNativeToken: isNativeToken
+                isNativeToken: token == JBConstants.NATIVE_TOKEN
             });
         }
     }
 
-    /// @notice Sends a payout to a split recipient.
-    /// @dev Split hook, terminal, and ERC-20 beneficiary calls propagate reverts. A single reverting split recipient
-    /// will block distribution for that tier. This is consistent with nana-core-v6's split payout behavior.
-    /// The DELEGATECALL context prevents wrapping these in try-catch — tier authors must ensure recipients don't
-    /// revert. @return sent Whether the funds were actually sent. Returns false if the split has no valid recipient
-    /// (no hook, no projectId, and no beneficiary), so the caller can route the funds elsewhere.
-    function _sendPayoutToSplit(
-        IJBDirectory directory,
+    /// @notice Attempts a single split payout via an external self-call wrapped in try/catch.
+    /// @dev Since this library runs via DELEGATECALL, `address(this)` is the hook contract.
+    /// @return sent Whether the payout succeeded and funds were transferred.
+    function _trySplitPayout(
         JBSplit memory split,
         address token,
         uint256 amount,
@@ -453,57 +433,18 @@ library JB721TiersHookLib {
         private
         returns (bool sent)
     {
-        bool isNativeToken = token == JBConstants.NATIVE_TOKEN;
-
-        // If the split has a hook, send the funds there.
-        if (split.hook != IJBSplitHook(address(0))) {
-            JBSplitHookContext memory context = JBSplitHookContext({
-                token: token, amount: amount, decimals: decimals, projectId: projectId, groupId: groupId, split: split
+        // slither-disable-next-line reentrancy-events
+        try IJB721TiersHook(address(this)).executeSplitPayout{value: token == JBConstants.NATIVE_TOKEN ? amount : 0}({
+            split: split, token: token, amount: amount, projectId: projectId, groupId: groupId, decimals: decimals
+        }) returns (
+            bool result
+        ) {
+            sent = result;
+        } catch (bytes memory reason) {
+            emit SplitPayoutReverted({
+                projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
             });
-
-            if (isNativeToken) {
-                split.hook.processSplitWith{value: amount}(context);
-            } else {
-                SafeERC20.safeTransfer({token: IERC20(token), to: address(split.hook), value: amount});
-                split.hook.processSplitWith(context);
-            }
-            return true;
-        } else if (split.projectId != 0) {
-            // slither-disable-next-line calls-loop
-            IJBTerminal terminal = directory.primaryTerminalOf({projectId: split.projectId, token: token});
-            if (address(terminal) == address(0)) return false;
-
-            if (split.preferAddToBalance) {
-                _terminalAddToBalance({
-                    terminal: terminal,
-                    projectId: split.projectId,
-                    token: token,
-                    amount: amount,
-                    isNativeToken: isNativeToken
-                });
-            } else {
-                _terminalPay({
-                    terminal: terminal,
-                    projectId: split.projectId,
-                    token: token,
-                    amount: amount,
-                    beneficiary: split.beneficiary,
-                    isNativeToken: isNativeToken
-                });
-            }
-            return true;
-        } else if (split.beneficiary != address(0)) {
-            if (isNativeToken) {
-                // slither-disable-next-line arbitrary-send-eth,calls-loop
-                (bool success,) = split.beneficiary.call{value: amount}("");
-                if (!success) return false;
-            } else {
-                SafeERC20.safeTransfer({token: IERC20(token), to: split.beneficiary, value: amount});
-            }
-            return true;
         }
-        // No projectId and no beneficiary — return false so the funds go to the project's balance.
-        return false;
     }
 
     /// @dev If no primary terminal exists for the token, funds remain in the hook's balance rather than being
@@ -552,42 +493,6 @@ library JB721TiersHookLib {
                 token: token,
                 amount: amount,
                 shouldReturnHeldFees: false,
-                memo: "",
-                metadata: bytes("")
-            });
-        }
-    }
-
-    function _terminalPay(
-        IJBTerminal terminal,
-        uint256 projectId,
-        address token,
-        uint256 amount,
-        address beneficiary,
-        bool isNativeToken
-    )
-        private
-    {
-        if (isNativeToken) {
-            // slither-disable-next-line arbitrary-send-eth,unused-return,calls-loop
-            terminal.pay{value: amount}({
-                projectId: projectId,
-                token: token,
-                amount: amount,
-                beneficiary: beneficiary,
-                minReturnedTokens: 0,
-                memo: "",
-                metadata: bytes("")
-            });
-        } else {
-            SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: amount});
-            // slither-disable-next-line unused-return,calls-loop
-            terminal.pay({
-                projectId: projectId,
-                token: token,
-                amount: amount,
-                beneficiary: beneficiary,
-                minReturnedTokens: 0,
                 memo: "",
                 metadata: bytes("")
             });
