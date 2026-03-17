@@ -246,6 +246,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         override
     {
         // Stop re-initialization by ensuring a projectId is provided and doesn't already exist.
+        // Note: the implementation contract can be initialized by anyone, but this is harmless since each
+        // proxy (clone) gets its own storage. The implementation's state is never used by proxies.
         if (PROJECT_ID != 0) revert JB721TiersHook_AlreadyInitialized(PROJECT_ID);
 
         // Make sure a projectId is provided.
@@ -480,6 +482,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             emit SetContractUri({uri: contractUri, caller: _msgSender()});
         }
 
+        // Uses address(this) as a sentinel value meaning "no change" — since the hook itself is never a valid
+        // resolver, passing it signals the caller wants to skip updating the resolver. Passing address(0) clears it.
         if (tokenUriResolver != IJB721TokenUriResolver(address(this))) {
             // Store the new URI resolver.
             // slither-disable-next-line reentrancy-events

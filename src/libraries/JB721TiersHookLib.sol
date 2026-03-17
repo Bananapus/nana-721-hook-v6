@@ -422,6 +422,9 @@ library JB721TiersHookLib {
     }
 
     /// @notice Sends a payout to a split recipient.
+    /// @dev Split hook, terminal, and ERC-20 beneficiary calls propagate reverts. A single reverting split recipient
+    /// will block distribution for that tier. This is consistent with nana-core-v6's split payout behavior.
+    /// The DELEGATECALL context prevents wrapping these in try-catch — tier authors must ensure recipients don't revert.
     /// @return sent Whether the funds were actually sent. Returns false if the split has no valid recipient
     /// (no hook, no projectId, and no beneficiary), so the caller can route the funds elsewhere.
     function _sendPayoutToSplit(
@@ -489,6 +492,8 @@ library JB721TiersHookLib {
         return false;
     }
 
+    /// @dev If no primary terminal exists for the token, funds remain in the hook's balance rather than being forwarded.
+    /// They are not lost — they stay in the terminal that originally received them.
     function _addToBalance(
         IJBDirectory directory,
         uint256 projectId,

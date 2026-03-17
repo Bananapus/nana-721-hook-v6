@@ -3,6 +3,8 @@ pragma solidity 0.8.26;
 
 import {mulDiv} from "@prb/math/src/Common.sol";
 
+import {JBConstants} from "@bananapus/core-v6/src/libraries/JBConstants.sol";
+
 import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "./interfaces/IJB721TokenUriResolver.sol";
 import {JB721Constants} from "./libraries/JB721Constants.sol";
@@ -35,6 +37,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     error JB721TiersHookStore_MaxTiersExceeded(uint256 numberOfTiers, uint256 limit);
     error JB721TiersHookStore_PriceExceedsAmount(uint256 price, uint256 leftoverAmount);
     error JB721TiersHookStore_ReserveFrequencyNotAllowed(uint256 tierId);
+    error JB721TiersHookStore_SplitPercentExceedsBounds(uint256 percent, uint256 limit);
     error JB721TiersHookStore_TierRemoved(uint256 tierId);
     error JB721TiersHookStore_UnrecognizedTier(uint256 tierId);
     error JB721TiersHookStore_VotingUnitsNotAllowed(uint256 tierId);
@@ -857,6 +860,13 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             if (tierToAdd.discountPercent > JB721Constants.DISCOUNT_DENOMINATOR) {
                 revert JB721TiersHookStore_DiscountPercentExceedsBounds(
                     tierToAdd.discountPercent, JB721Constants.DISCOUNT_DENOMINATOR
+                );
+            }
+
+            // Make sure the split percent is within the bound.
+            if (tierToAdd.splitPercent > JBConstants.SPLITS_TOTAL_PERCENT) {
+                revert JB721TiersHookStore_SplitPercentExceedsBounds(
+                    tierToAdd.splitPercent, JBConstants.SPLITS_TOTAL_PERCENT
                 );
             }
 
