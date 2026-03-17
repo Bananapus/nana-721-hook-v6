@@ -5,6 +5,8 @@ import {IJBPrices} from "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
 import {IJBRulesets} from "@bananapus/core-v6/src/interfaces/IJBRulesets.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 
+import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
+
 import {IJB721Hook} from "./IJB721Hook.sol";
 import {IJB721TiersHookStore} from "./IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "./IJB721TokenUriResolver.sol";
@@ -56,6 +58,14 @@ interface IJB721TiersHook is IJB721Hook {
     /// @param tierId The ID of the tier that was removed.
     /// @param caller The address that called the function.
     event RemoveTier(uint256 indexed tierId, address caller);
+
+    /// @notice Emitted when a split payout reverts. The funds stay in the project's balance.
+    /// @param projectId The project ID the split belongs to.
+    /// @param split The split that reverted.
+    /// @param amount The amount that was being paid out.
+    /// @param reason The revert reason bytes.
+    /// @param caller The address that called the function.
+    event SplitPayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
 
     /// @notice Emitted when the collection name is set.
     /// @param name The new collection name.
@@ -146,6 +156,28 @@ interface IJB721TiersHook is IJB721Hook {
     /// @param tiersToAdd The tiers to add, as an array of `JB721TierConfig` structs.
     /// @param tierIdsToRemove The tiers to remove, as an array of tier IDs.
     function adjustTiers(JB721TierConfig[] calldata tiersToAdd, uint256[] calldata tierIdsToRemove) external;
+
+    /// @notice Execute a single split payout. Called by the library via `this.executeSplitPayout()` so that
+    /// try/catch can wrap the external call.
+    /// @dev May only be called by this contract itself (i.e., the library running via DELEGATECALL).
+    /// @param split The split to pay.
+    /// @param token The token being paid out.
+    /// @param amount The amount to pay out.
+    /// @param projectId The project ID the split belongs to.
+    /// @param groupId The split group ID.
+    /// @param decimals The token decimals.
+    /// @return sent Whether the funds were actually sent.
+    function executeSplitPayout(
+        JBSplit calldata split,
+        address token,
+        uint256 amount,
+        uint256 projectId,
+        uint256 groupId,
+        uint256 decimals
+    )
+        external
+        payable
+        returns (bool sent);
 
     /// @notice Initializes a cloned copy of the original `JB721TiersHook` contract.
     /// @param projectId The ID of the project this hook is associated with.

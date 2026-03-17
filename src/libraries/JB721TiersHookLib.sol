@@ -3,11 +3,9 @@ pragma solidity 0.8.26;
 
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 import {IJBPrices} from "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
-import {IJBSplitHook} from "@bananapus/core-v6/src/interfaces/IJBSplitHook.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 import {IJBTerminal} from "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
 import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
-import {JBSplitHookContext} from "@bananapus/core-v6/src/structs/JBSplitHookContext.sol";
 import {JBConstants} from "@bananapus/core-v6/src/libraries/JBConstants.sol";
 import {JBMetadataResolver} from "@bananapus/core-v6/src/libraries/JBMetadataResolver.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -16,6 +14,7 @@ import {mulDiv} from "@prb/math/src/Common.sol";
 
 import {JBSplitGroup} from "@bananapus/core-v6/src/structs/JBSplitGroup.sol";
 
+import {IJB721TiersHook} from "../interfaces/IJB721TiersHook.sol";
 import {IJB721TiersHookStore} from "../interfaces/IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "../interfaces/IJB721TokenUriResolver.sol";
 import {JB721Tier} from "../structs/JB721Tier.sol";
@@ -29,6 +28,7 @@ library JB721TiersHookLib {
     // Events mirrored from IJB721TiersHook (emitted via DELEGATECALL from the hook's context).
     event AddTier(uint256 indexed tierId, JB721TierConfig tier, address caller);
     event RemoveTier(uint256 indexed tierId, address caller);
+    event SplitPayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
 
     /// @notice Handles the full tier adjustment logic: removes tiers, adds tiers, emits events, and sets splits.
     /// @dev Called via DELEGATECALL from the hook, so events are emitted from the hook's address.
@@ -366,6 +366,9 @@ library JB721TiersHookLib {
     }
 
     /// @notice Distributes funds for a single tier's split group.
+    /// @dev Uses this.executeSplitPayout() + try/catch so that a single reverting split recipient does not block
+    /// distribution for the entire tier. Failed splits' funds stay in leftoverAmount and route to the project's
+    /// balance.
     function _distributeSingleSplit(
         IJBDirectory directory,
         IJBSplits splitsContract,
@@ -388,21 +391,32 @@ library JB721TiersHookLib {
             uint256 payoutAmount =
                 mulDiv({x: leftoverAmount, y: tierSplits[j].percent, denominator: leftoverPercentage});
             if (payoutAmount != 0) {
-                // Only subtract from leftover if the split has a valid recipient.
-                // Splits with no projectId and no beneficiary are skipped — their share
-                // stays in leftoverAmount and is added to the project's balance below.
-                if (_sendPayoutToSplit({
-                        directory: directory,
-                        split: tierSplits[j],
-                        token: token,
-                        amount: payoutAmount,
-                        projectId: projectId,
-                        groupId: groupId,
-                        decimals: decimals
-                    })) {
-                    unchecked {
-                        leftoverAmount -= payoutAmount;
+                // Try the payout via an external self-call so try/catch can wrap it.
+                // Since this library runs via DELEGATECALL, `address(this)` is the hook.
+                // slither-disable-next-line reentrancy-events
+                try IJB721TiersHook(address(this)).executeSplitPayout{value: isNativeToken ? payoutAmount : 0}({
+                    split: tierSplits[j],
+                    token: token,
+                    amount: payoutAmount,
+                    projectId: projectId,
+                    groupId: groupId,
+                    decimals: decimals
+                }) returns (
+                    bool sent
+                ) {
+                    if (sent) {
+                        unchecked {
+                            leftoverAmount -= payoutAmount;
+                        }
                     }
+                } catch (bytes memory reason) {
+                    emit SplitPayoutReverted({
+                        projectId: projectId,
+                        split: tierSplits[j],
+                        amount: payoutAmount,
+                        reason: reason,
+                        caller: msg.sender
+                    });
                 }
             }
             unchecked {
@@ -424,8 +438,8 @@ library JB721TiersHookLib {
     /// @notice Sends a payout to a split recipient.
     /// @dev Split hook, terminal, and ERC-20 beneficiary calls propagate reverts. A single reverting split recipient
     /// will block distribution for that tier. This is consistent with nana-core-v6's split payout behavior.
-    /// The DELEGATECALL context prevents wrapping these in try-catch — tier authors must ensure recipients don't revert.
-    /// @return sent Whether the funds were actually sent. Returns false if the split has no valid recipient
+    /// The DELEGATECALL context prevents wrapping these in try-catch — tier authors must ensure recipients don't
+    /// revert. @return sent Whether the funds were actually sent. Returns false if the split has no valid recipient
     /// (no hook, no projectId, and no beneficiary), so the caller can route the funds elsewhere.
     function _sendPayoutToSplit(
         IJBDirectory directory,
@@ -492,8 +506,8 @@ library JB721TiersHookLib {
         return false;
     }
 
-    /// @dev If no primary terminal exists for the token, funds remain in the hook's balance rather than being forwarded.
-    /// They are not lost — they stay in the terminal that originally received them.
+    /// @dev If no primary terminal exists for the token, funds remain in the hook's balance rather than being
+    /// forwarded. They are not lost — they stay in the terminal that originally received them.
     function _addToBalance(
         IJBDirectory directory,
         uint256 projectId,

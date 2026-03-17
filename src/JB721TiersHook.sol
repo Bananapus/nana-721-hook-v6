@@ -6,16 +6,23 @@ import {IJBPermissions} from "@bananapus/core-v6/src/interfaces/IJBPermissions.s
 import {IJBPrices} from "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
 import {IJBRulesetDataHook} from "@bananapus/core-v6/src/interfaces/IJBRulesetDataHook.sol";
 import {IJBRulesets} from "@bananapus/core-v6/src/interfaces/IJBRulesets.sol";
+import {IJBSplitHook} from "@bananapus/core-v6/src/interfaces/IJBSplitHook.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
+import {IJBTerminal} from "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
+import {JBConstants} from "@bananapus/core-v6/src/libraries/JBConstants.sol";
 import {JBMetadataResolver} from "@bananapus/core-v6/src/libraries/JBMetadataResolver.sol";
 import {JBRulesetMetadataResolver} from "@bananapus/core-v6/src/libraries/JBRulesetMetadataResolver.sol";
 import {JBAfterPayRecordedContext} from "@bananapus/core-v6/src/structs/JBAfterPayRecordedContext.sol";
 import {JBBeforePayRecordedContext} from "@bananapus/core-v6/src/structs/JBBeforePayRecordedContext.sol";
 import {JBPayHookSpecification} from "@bananapus/core-v6/src/structs/JBPayHookSpecification.sol";
 import {JBRuleset} from "@bananapus/core-v6/src/structs/JBRuleset.sol";
+import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
+import {JBSplitHookContext} from "@bananapus/core-v6/src/structs/JBSplitHookContext.sol";
 import {JBOwnable} from "@bananapus/ownable-v6/src/JBOwnable.sol";
 import {JBPermissionIds} from "@bananapus/permission-ids-v6/src/JBPermissionIds.sol";
 import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {JB721Hook} from "./abstract/JB721Hook.sol";
@@ -352,6 +359,86 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             tiersToAdd: tiersToAdd,
             tierIdsToRemove: tierIdsToRemove
         });
+    }
+
+    /// @notice Execute a single split payout. Called by the library via `this.executeSplitPayout()` so that
+    /// try/catch can wrap the external call. If this reverts, all state changes inside (including token transfers)
+    /// roll back atomically, and the caller catches the failure.
+    /// @dev May only be called by this contract itself (i.e., the library running via DELEGATECALL calling back).
+    /// @param split The split to pay.
+    /// @param token The token being paid out.
+    /// @param amount The amount to pay out.
+    /// @param projectId The project ID the split belongs to.
+    /// @param groupId The split group ID.
+    /// @param decimals The token decimals.
+    /// @return sent Whether the funds were actually sent.
+    function executeSplitPayout(
+        JBSplit calldata split,
+        address token,
+        uint256 amount,
+        uint256 projectId,
+        uint256 groupId,
+        uint256 decimals
+    )
+        external
+        payable
+        override
+        returns (bool sent)
+    {
+        // NOTICE: May only be called by this contract itself.
+        require(msg.sender == address(this));
+
+        bool isNativeToken = token == JBConstants.NATIVE_TOKEN;
+
+        // If the split has a hook, send the funds there.
+        if (split.hook != IJBSplitHook(address(0))) {
+            JBSplitHookContext memory context = JBSplitHookContext({
+                token: token, amount: amount, decimals: decimals, projectId: projectId, groupId: groupId, split: split
+            });
+
+            if (isNativeToken) {
+                split.hook.processSplitWith{value: amount}(context);
+            } else {
+                SafeERC20.safeTransfer({token: IERC20(token), to: address(split.hook), value: amount});
+                split.hook.processSplitWith(context);
+            }
+            return true;
+        } else if (split.projectId != 0) {
+            // slither-disable-next-line calls-loop
+            IJBTerminal terminal = DIRECTORY.primaryTerminalOf({projectId: split.projectId, token: token});
+            if (address(terminal) == address(0)) return false;
+
+            if (split.preferAddToBalance) {
+                _terminalAddToBalance({
+                    terminal: terminal,
+                    projectId: split.projectId,
+                    token: token,
+                    amount: amount,
+                    isNativeToken: isNativeToken
+                });
+            } else {
+                _terminalPay({
+                    terminal: terminal,
+                    projectId: split.projectId,
+                    token: token,
+                    amount: amount,
+                    beneficiary: split.beneficiary,
+                    isNativeToken: isNativeToken
+                });
+            }
+            return true;
+        } else if (split.beneficiary != address(0)) {
+            if (isNativeToken) {
+                // slither-disable-next-line arbitrary-send-eth,calls-loop
+                (bool success,) = split.beneficiary.call{value: amount}("");
+                if (!success) return false;
+            } else {
+                SafeERC20.safeTransfer({token: IERC20(token), to: split.beneficiary, value: amount});
+            }
+            return true;
+        }
+        // No projectId and no beneficiary — return false so the funds go to the project's balance.
+        return false;
     }
 
     /// @notice Manually mint NFTs from the provided tiers .
@@ -752,6 +839,75 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // Record the discount percent for the tier.
         // slither-disable-next-line calls-loop
         STORE.recordSetDiscountPercentOf({tierId: tierId, discountPercent: discountPercent});
+    }
+
+    function _terminalAddToBalance(
+        IJBTerminal terminal,
+        uint256 projectId,
+        address token,
+        uint256 amount,
+        bool isNativeToken
+    )
+        internal
+    {
+        if (isNativeToken) {
+            // slither-disable-next-line arbitrary-send-eth,calls-loop
+            terminal.addToBalanceOf{value: amount}({
+                projectId: projectId,
+                token: token,
+                amount: amount,
+                shouldReturnHeldFees: false,
+                memo: "",
+                metadata: bytes("")
+            });
+        } else {
+            SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: amount});
+            // slither-disable-next-line calls-loop
+            terminal.addToBalanceOf({
+                projectId: projectId,
+                token: token,
+                amount: amount,
+                shouldReturnHeldFees: false,
+                memo: "",
+                metadata: bytes("")
+            });
+        }
+    }
+
+    function _terminalPay(
+        IJBTerminal terminal,
+        uint256 projectId,
+        address token,
+        uint256 amount,
+        address beneficiary,
+        bool isNativeToken
+    )
+        internal
+    {
+        if (isNativeToken) {
+            // slither-disable-next-line arbitrary-send-eth,unused-return,calls-loop
+            terminal.pay{value: amount}({
+                projectId: projectId,
+                token: token,
+                amount: amount,
+                beneficiary: beneficiary,
+                minReturnedTokens: 0,
+                memo: "",
+                metadata: bytes("")
+            });
+        } else {
+            SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: amount});
+            // slither-disable-next-line unused-return,calls-loop
+            terminal.pay({
+                projectId: projectId,
+                token: token,
+                amount: amount,
+                beneficiary: beneficiary,
+                minReturnedTokens: 0,
+                memo: "",
+                metadata: bytes("")
+            });
+        }
     }
 
     /// @notice Before transferring an NFT, register its first owner (if necessary).
