@@ -418,13 +418,35 @@ library JB721TiersHookLib {
         }
 
         if (leftoverAmount != 0) {
-            _addToBalance({
-                directory: directory,
-                projectId: projectId,
-                token: token,
-                amount: leftoverAmount,
-                isNativeToken: isNativeToken
-            });
+            // slither-disable-next-line calls-loop
+            IJBTerminal terminal = directory.primaryTerminalOf({projectId: projectId, token: token});
+            if (address(terminal) != address(0)) {
+                if (isNativeToken) {
+                    // slither-disable-next-line arbitrary-send-eth,calls-loop
+                    try terminal.addToBalanceOf{value: leftoverAmount}({
+                        projectId: projectId,
+                        token: token,
+                        amount: leftoverAmount,
+                        shouldReturnHeldFees: false,
+                        memo: "",
+                        metadata: bytes("")
+                    }) {} catch {}
+                } else {
+                    SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: leftoverAmount});
+                    // slither-disable-next-line calls-loop
+                    try terminal.addToBalanceOf({
+                        projectId: projectId,
+                        token: token,
+                        amount: leftoverAmount,
+                        shouldReturnHeldFees: false,
+                        memo: "",
+                        metadata: bytes("")
+                    }) {} catch {
+                        // Reset approval on failure.
+                        SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
+                    }
+                }
+            }
         }
     }
 
@@ -576,46 +598,6 @@ library JB721TiersHookLib {
         }
         // No projectId and no beneficiary — return false so the funds go to the project's balance.
         return false;
-    }
-
-    function _addToBalance(
-        IJBDirectory directory,
-        uint256 projectId,
-        address token,
-        uint256 amount,
-        bool isNativeToken
-    )
-        private
-    {
-        // slither-disable-next-line calls-loop
-        IJBTerminal terminal = directory.primaryTerminalOf({projectId: projectId, token: token});
-        if (address(terminal) == address(0)) return;
-
-        if (isNativeToken) {
-            // slither-disable-next-line arbitrary-send-eth,calls-loop
-            try terminal.addToBalanceOf{value: amount}({
-                projectId: projectId,
-                token: token,
-                amount: amount,
-                shouldReturnHeldFees: false,
-                memo: "",
-                metadata: bytes("")
-            }) {} catch {}
-        } else {
-            SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: amount});
-            // slither-disable-next-line calls-loop
-            try terminal.addToBalanceOf({
-                projectId: projectId,
-                token: token,
-                amount: amount,
-                shouldReturnHeldFees: false,
-                memo: "",
-                metadata: bytes("")
-            }) {} catch {
-                // Reset approval on failure.
-                SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
-            }
-        }
     }
 
     /// @notice Resolves the token URI for a given NFT token ID.
