@@ -11,6 +11,7 @@ import {IJBSplitHook} from "@bananapus/core-v6/src/interfaces/IJBSplitHook.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 import {IJBTerminal} from "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
+import {IJB721TiersHook} from "../../src/interfaces/IJB721TiersHook.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -171,9 +172,14 @@ contract Test_BrokenTerminalDoesNotDos is UnitTestSetup {
         });
 
         vm.deal(mockTerminalAddress, 2 ether);
+
+        // Expect AddToBalanceReverted event when the broken terminal reverts.
+        vm.expectEmit(true, false, false, false);
+        emit IJB721TiersHook.AddToBalanceReverted(projectId, JBConstants.NATIVE_TOKEN, 1 ether, "");
+
         vm.prank(mockTerminalAddress);
         // Before the fix, this would revert with "terminal broken".
-        // With the try-catch, it succeeds and the ETH stays in the hook contract.
+        // With the try-catch, it succeeds, emits the event, and the ETH stays in the hook contract.
         testHook.afterPayRecordedWith{value: 1 ether}(payContext);
 
         // The ETH should remain in the hook contract since the terminal call failed.
@@ -214,9 +220,13 @@ contract Test_BrokenTerminalDoesNotDos is UnitTestSetup {
 
         address brokenTerminal = makeAddr("brokenTerminal");
 
+        // Expect AddToBalanceReverted event when the broken terminal reverts.
+        vm.expectEmit(true, false, false, false);
+        emit IJB721TiersHook.AddToBalanceReverted(projectId, address(usdc), 100e6, "");
+
         vm.prank(mockTerminalAddress);
         // Before the fix, this would revert with "terminal broken".
-        // With the try-catch, it succeeds.
+        // With the try-catch, it succeeds and emits the event.
         testHook.afterPayRecordedWith(payContext);
 
         // Tokens should remain in the hook (terminal call failed).
