@@ -195,6 +195,12 @@ library JB721TiersHookLib {
             JB721Tier memory tier = store.tierOf({hook: hook, id: tierIdsToMint[i], includeResolvedUri: false});
             if (tier.splitPercent != 0) {
                 // Apply discount to tier price to match the discounted price that recordMint charges.
+                // Note on discount semantics: `discountPercent` uses a denominator of 200 (JB721Constants
+                // .DISCOUNT_DENOMINATOR), so a value of 200 represents a 100% discount (free mint). Even with a
+                // 100% discount, the ORIGINAL tier price (`tier.price`) is used for the cashout weight calculation
+                // in `cashOutWeightOf`. This means free/discounted mints still carry their full cashout weight
+                // value. Project owners should be aware that discounted mints dilute the cashout pool at full
+                // weight while contributing less (or no) payment to the treasury.
                 uint256 effectivePrice = tier.price;
                 if (tier.discountPercent > 0) {
                     effectivePrice -= mulDiv({
