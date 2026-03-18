@@ -593,25 +593,28 @@ library JB721TiersHookLib {
 
         if (isNativeToken) {
             // slither-disable-next-line arbitrary-send-eth,calls-loop
-            terminal.addToBalanceOf{value: amount}({
+            try terminal.addToBalanceOf{value: amount}({
                 projectId: projectId,
                 token: token,
                 amount: amount,
                 shouldReturnHeldFees: false,
                 memo: "",
                 metadata: bytes("")
-            });
+            }) {} catch {}
         } else {
             SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: amount});
             // slither-disable-next-line calls-loop
-            terminal.addToBalanceOf({
+            try terminal.addToBalanceOf({
                 projectId: projectId,
                 token: token,
                 amount: amount,
                 shouldReturnHeldFees: false,
                 memo: "",
                 metadata: bytes("")
-            });
+            }) {} catch {
+                // Reset approval on failure.
+                SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
+            }
         }
     }
 
