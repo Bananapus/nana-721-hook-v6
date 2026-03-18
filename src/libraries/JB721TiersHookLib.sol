@@ -27,6 +27,7 @@ import {JBIpfsDecoder} from "./JBIpfsDecoder.sol";
 /// @dev Handles tier adjustments, split calculations, price normalization, and split fund distribution.
 library JB721TiersHookLib {
     // Events mirrored from IJB721TiersHook (emitted via DELEGATECALL from the hook's context).
+    event AddToBalanceReverted(uint256 indexed projectId, address token, uint256 amount, bytes reason);
     event AddTier(uint256 indexed tierId, JB721TierConfig tier, address caller);
     event RemoveTier(uint256 indexed tierId, address caller);
     event SplitPayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
@@ -430,7 +431,9 @@ library JB721TiersHookLib {
                         shouldReturnHeldFees: false,
                         memo: "",
                         metadata: bytes("")
-                    }) {} catch {}
+                    }) {} catch (bytes memory reason) {
+                        emit AddToBalanceReverted(projectId, token, leftoverAmount, reason);
+                    }
                 } else {
                     SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: leftoverAmount});
                     // slither-disable-next-line calls-loop
@@ -441,9 +444,10 @@ library JB721TiersHookLib {
                         shouldReturnHeldFees: false,
                         memo: "",
                         metadata: bytes("")
-                    }) {} catch {
+                    }) {} catch (bytes memory reason) {
                         // Reset approval on failure.
                         SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
+                        emit AddToBalanceReverted(projectId, token, leftoverAmount, reason);
                     }
                 }
             }
