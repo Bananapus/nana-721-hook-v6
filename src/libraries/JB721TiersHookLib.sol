@@ -431,7 +431,8 @@ library JB721TiersHookLib {
                         shouldReturnHeldFees: false,
                         memo: "",
                         metadata: bytes("")
-                    }) {} catch (bytes memory reason) {
+                    }) {}
+                    catch (bytes memory reason) {
                         emit AddToBalanceReverted(projectId, token, leftoverAmount, reason);
                     }
                 } else {
@@ -444,7 +445,8 @@ library JB721TiersHookLib {
                         shouldReturnHeldFees: false,
                         memo: "",
                         metadata: bytes("")
-                    }) {} catch (bytes memory reason) {
+                    }) {}
+                    catch (bytes memory reason) {
                         // Reset approval on failure.
                         SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
                         emit AddToBalanceReverted(projectId, token, leftoverAmount, reason);

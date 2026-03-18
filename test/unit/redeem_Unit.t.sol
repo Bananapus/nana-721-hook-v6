@@ -67,6 +67,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
                 }),
                 useTotalSurplus: true,
                 cashOutTaxRate: CASH_OUT_TAX_RATE,
+                beneficiaryIsFeeless: false,
                 metadata: hookMetadata
             })
         );
@@ -130,6 +131,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
                 }),
                 useTotalSurplus: true,
                 cashOutTaxRate: cashOutTaxRate,
+                beneficiaryIsFeeless: false,
                 metadata: abi.encode(bytes32(0), type(IJB721TiersHook).interfaceId, tokenList)
             })
         );
@@ -200,6 +202,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
             }),
             useTotalSurplus: true,
             cashOutTaxRate: JBConstants.MAX_CASH_OUT_TAX_RATE,
+            beneficiaryIsFeeless: false,
             metadata: hookMetadata
         });
 
@@ -231,6 +234,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
                 }),
                 useTotalSurplus: true,
                 cashOutTaxRate: 100,
+                beneficiaryIsFeeless: false,
                 metadata: new bytes(0)
             })
         );

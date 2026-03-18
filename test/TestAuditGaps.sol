@@ -9,7 +9,6 @@ import {JBSplitHookContext} from "@bananapus/core-v6/src/structs/JBSplitHookCont
 import {IJBSplitHook} from "@bananapus/core-v6/src/interfaces/IJBSplitHook.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
-import {IJBTerminal} from "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 // =====================================================================
@@ -446,6 +445,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
                 reserveFrequency: 0,
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[i % 10],
+                // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1), // Ascending categories
                 discountPercent: 0,
                 allowOwnerMint: false,
@@ -497,6 +497,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
                 reserveFrequency: 0,
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[i % 10],
+                // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1),
                 discountPercent: 0,
                 allowOwnerMint: false,
@@ -550,6 +551,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
                 reserveFrequency: 0,
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[i % 10],
+                // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1),
                 discountPercent: 0,
                 allowOwnerMint: false,
@@ -577,6 +579,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
         uint16[] memory tierIdsToMint = new uint16[](10);
         uint256 totalCost;
         for (uint256 i; i < 10; i++) {
+            // forge-lint: disable-next-line(unsafe-typecast)
             tierIdsToMint[i] = uint16(i + 1);
             totalCost += (i + 1) * 1e15;
         }
@@ -647,6 +650,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
                 reserveFrequency: 0,
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[i % 10],
+                // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1),
                 discountPercent: 0,
                 allowOwnerMint: false,
@@ -694,6 +698,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
                 reserveFrequency: 0,
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[i % 10],
+                // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1),
                 discountPercent: 0,
                 allowOwnerMint: false,
@@ -753,6 +758,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
                 reserveFrequency: 0,
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[i % 10],
+                // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1),
                 discountPercent: 0,
                 allowOwnerMint: false,
@@ -823,6 +829,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
                 reserveFrequency: 0,
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[i % 10],
+                // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1),
                 discountPercent: 0,
                 allowOwnerMint: false,
@@ -849,6 +856,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
         uint16[] memory tierIdsToMint = new uint16[](50);
         uint256 totalCost;
         for (uint256 i; i < 50; i++) {
+            // forge-lint: disable-next-line(unsafe-typecast)
             tierIdsToMint[i] = uint16(i + 1);
             totalCost += (i + 1) * 1e15;
         }
