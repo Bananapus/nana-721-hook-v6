@@ -595,7 +595,7 @@ contract Test_SplitHookDistribution is UnitTestSetup {
         testHook.afterPayRecordedWith{value: 1 ether}(payContext);
 
         // Verify split struct was passed through correctly.
-        (uint32 pct, uint64 pid, address payable ben, bool pref, uint48 lock, IJBSplitHook hk) = splitHook.lastSplit();
+        (, uint64 pid, address payable ben, bool pref,, IJBSplitHook hk) = splitHook.lastSplit();
         assertEq(pid, 42);
         assertEq(ben, bob);
         assertEq(pref, true);

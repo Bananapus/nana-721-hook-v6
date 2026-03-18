@@ -13,12 +13,9 @@ import "../../src/structs/JBQueueRulesetsConfig.sol";
 import {IJBController} from "@bananapus/core-v6/src/interfaces/IJBController.sol";
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 import {IJBPermissions} from "@bananapus/core-v6/src/interfaces/IJBPermissions.sol";
-import {IJBProjects} from "@bananapus/core-v6/src/interfaces/IJBProjects.sol";
-import {JBRulesetConfig} from "@bananapus/core-v6/src/structs/JBRulesetConfig.sol";
 import {JBTerminalConfig} from "@bananapus/core-v6/src/structs/JBTerminalConfig.sol";
 import {JBAccountingContext} from "@bananapus/core-v6/src/structs/JBAccountingContext.sol";
 import {JBConstants} from "@bananapus/core-v6/src/libraries/JBConstants.sol";
-import {JBPermissionIds} from "@bananapus/permission-ids-v6/src/JBPermissionIds.sol";
 
 /// @notice A mock projects contract that returns configurable owner and count.
 contract MockProjects {
@@ -45,6 +42,8 @@ contract MockController {
     uint256 public lastRulesetConfigCount;
     bool public launchRulesetsForCalled;
     bool public queueRulesetsOfCalled;
+
+    receive() external payable {}
 
     // The fallback accepts any call and returns uint256(42) as the ruleset ID.
     fallback() external payable {
@@ -92,9 +91,7 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
         vm.mockCall(mockJBDirectory, abi.encodeWithSelector(IJBDirectory.PROJECTS.selector), abi.encode(mockJBProjects));
 
         // Mock all permission checks to return true.
-        vm.mockCall(
-            mockJBPermissions, abi.encodeWithSelector(IJBPermissions.hasPermission.selector), abi.encode(true)
-        );
+        vm.mockCall(mockJBPermissions, abi.encodeWithSelector(IJBPermissions.hasPermission.selector), abi.encode(true));
 
         // Deploy the mock controller.
         mockCtrl = new MockController();
@@ -181,14 +178,14 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
         JBTerminalConfig[] memory terminalConfigs = new JBTerminalConfig[](1);
         JBAccountingContext[] memory accountingContexts = new JBAccountingContext[](1);
         accountingContexts[0] = JBAccountingContext({
-            currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
-            decimals: 18,
-            token: JBConstants.NATIVE_TOKEN
+            currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18, token: JBConstants.NATIVE_TOKEN
         });
-        terminalConfigs[0] =
-            JBTerminalConfig({terminal: IJBTerminal(mockTerminalAddress), accountingContextsToAccept: accountingContexts});
+        terminalConfigs[0] = JBTerminalConfig({
+            terminal: IJBTerminal(mockTerminalAddress), accountingContextsToAccept: accountingContexts
+        });
 
         launchConfig = JBLaunchRulesetsConfig({
+            // forge-lint: disable-next-line(unsafe-typecast)
             projectId: uint56(testProjectId),
             rulesetConfigurations: rulesetConfigs,
             terminalConfigurations: terminalConfigs,
@@ -207,6 +204,7 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
         (hookConfig, launchConfig) = _buildLaunchRulesetsConfigs();
 
         queueConfig = JBQueueRulesetsConfig({
+            // forge-lint: disable-next-line(unsafe-typecast)
             projectId: uint56(testProjectId),
             rulesetConfigurations: launchConfig.rulesetConfigurations,
             memo: "queue rulesets"
@@ -253,17 +251,15 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
         bytes32 salt = bytes32(uint256(0xdead));
 
         vm.prank(owner);
-        (, IJB721TiersHook hook1) = deployer.launchRulesetsFor(
-            testProjectId, hookConfig, launchConfig, IJBController(address(mockCtrl)), salt
-        );
+        (, IJB721TiersHook hook1) =
+            deployer.launchRulesetsFor(testProjectId, hookConfig, launchConfig, IJBController(address(mockCtrl)), salt);
 
         // Deploy a second hook with a different salt to verify addresses differ.
         bytes32 salt2 = bytes32(uint256(0xbeef));
 
         vm.prank(owner);
-        (, IJB721TiersHook hook2) = deployer.launchRulesetsFor(
-            testProjectId, hookConfig, launchConfig, IJBController(address(mockCtrl)), salt2
-        );
+        (, IJB721TiersHook hook2) =
+            deployer.launchRulesetsFor(testProjectId, hookConfig, launchConfig, IJBController(address(mockCtrl)), salt2);
 
         assertTrue(address(hook1) != address(hook2), "Different salts should produce different hook addresses");
     }
@@ -274,9 +270,7 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
             _buildLaunchRulesetsConfigs();
 
         // Override: mock permissions to deny.
-        vm.mockCall(
-            mockJBPermissions, abi.encodeWithSelector(IJBPermissions.hasPermission.selector), abi.encode(false)
-        );
+        vm.mockCall(mockJBPermissions, abi.encodeWithSelector(IJBPermissions.hasPermission.selector), abi.encode(false));
 
         address unauthorized = makeAddr("unauthorized");
         vm.prank(unauthorized);
@@ -337,16 +331,12 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
             _buildQueueRulesetsConfigs();
 
         // Override: mock permissions to deny.
-        vm.mockCall(
-            mockJBPermissions, abi.encodeWithSelector(IJBPermissions.hasPermission.selector), abi.encode(false)
-        );
+        vm.mockCall(mockJBPermissions, abi.encodeWithSelector(IJBPermissions.hasPermission.selector), abi.encode(false));
 
         address unauthorized = makeAddr("unauthorized");
         vm.prank(unauthorized);
         vm.expectRevert();
-        deployer.queueRulesetsOf(
-            testProjectId, hookConfig, queueConfig, IJBController(address(mockCtrl)), bytes32(0)
-        );
+        deployer.queueRulesetsOf(testProjectId, hookConfig, queueConfig, IJBController(address(mockCtrl)), bytes32(0));
     }
 
     /// @notice queueRulesetsOf with a zero salt uses non-deterministic deployment.

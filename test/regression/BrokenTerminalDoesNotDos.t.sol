@@ -13,7 +13,6 @@ import {IJBTerminal} from "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 import {IJB721TiersHook} from "../../src/interfaces/IJB721TiersHook.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @notice Regression tests: a broken project terminal in _addToBalance should not DOS payments.
 contract Test_BrokenTerminalDoesNotDos is UnitTestSetup {
@@ -234,9 +233,7 @@ contract Test_BrokenTerminalDoesNotDos is UnitTestSetup {
 
         // Approval to the broken terminal should have been reset to 0.
         assertEq(
-            usdc.allowance(address(testHook), brokenTerminal),
-            0,
-            "Approval to broken terminal should be reset to 0"
+            usdc.allowance(address(testHook), brokenTerminal), 0, "Approval to broken terminal should be reset to 0"
         );
     }
 
