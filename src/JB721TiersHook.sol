@@ -435,9 +435,11 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @dev Only this contract's owner or an operator with the `SET_721_METADATA` permission can set the metadata.
     /// @param name The new collection name. Send empty to leave unchanged.
     /// @param symbol The new collection symbol. Send empty to leave unchanged.
-    /// @param baseUri The new base URI.
-    /// @param contractUri The new contract URI.
-    /// @param tokenUriResolver The new URI resolver.
+    /// @param baseUri The new base URI. Send empty to leave unchanged.
+    /// @param contractUri The new contract URI. Send empty to leave unchanged.
+    /// @param tokenUriResolver The new URI resolver. Pass `IJB721TokenUriResolver(address(this))` as a sentinel value
+    /// to leave unchanged. `address(this)` is used instead of `address(0)` because `address(0)` is a valid value that
+    /// clears the resolver.
     /// @param encodedIPFSUriTierId The ID of the tier to set the encoded IPFS URI of.
     /// @param encodedIPFSUri The encoded IPFS URI to set.
     function setMetadata(
@@ -480,6 +482,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             emit SetContractUri({uri: contractUri, caller: _msgSender()});
         }
 
+        // `address(this)` is the sentinel value meaning "leave unchanged" (since `address(0)` clears the resolver).
         if (tokenUriResolver != IJB721TokenUriResolver(address(this))) {
             // Store the new URI resolver.
             // slither-disable-next-line reentrancy-events

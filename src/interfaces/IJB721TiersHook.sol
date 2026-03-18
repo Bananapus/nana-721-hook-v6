@@ -205,9 +205,11 @@ interface IJB721TiersHook is IJB721Hook {
     /// @notice Update this hook's metadata properties.
     /// @param name The new collection name. Send empty to leave unchanged.
     /// @param symbol The new collection symbol. Send empty to leave unchanged.
-    /// @param baseUri The new base URI.
-    /// @param contractUri The new contract URI.
-    /// @param tokenUriResolver The new URI resolver.
+    /// @param baseUri The new base URI. Send empty to leave unchanged.
+    /// @param contractUri The new contract URI. Send empty to leave unchanged.
+    /// @param tokenUriResolver The new URI resolver. Pass `IJB721TokenUriResolver(address(this))` as a sentinel value
+    /// to leave unchanged. `address(this)` is used instead of `address(0)` because `address(0)` is a valid value that
+    /// clears the resolver.
     /// @param encodedIPFSUriTierId The ID of the tier to set the encoded IPFS URI of.
     /// @param encodedIPFSUri The encoded IPFS URI to set.
     function setMetadata(
