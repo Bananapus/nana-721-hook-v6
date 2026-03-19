@@ -445,8 +445,9 @@ contract ERC20CashOutFork is Test {
             splits: new JBSplit[](0)
         });
 
-        // 0% cashout tax rate so bonding curve returns full surplus (easier fee verification).
-        (uint256 projectId,) = _launchUSDCProject(tierConfigs, 0);
+        // Use nonzero cashOutTaxRate so the protocol fee (2.5%) is charged on cashouts.
+        // With a sole holder (cashOutCount == totalSupply), bonding curve still returns full surplus.
+        (uint256 projectId,) = _launchUSDCProject(tierConfigs, 1);
 
         // Pay 200 USDC to mint 1 NFT.
         uint16[] memory tierIds = new uint16[](1);
