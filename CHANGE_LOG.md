@@ -113,15 +113,27 @@ The ERC721 collection `name` and `symbol` can now be changed after initializatio
 | `_setName(string memory)` | Updates the token collection name |
 | `_setSymbol(string memory)` | Updates the token collection symbol |
 
-### 2.3 `beforePayRecordedWith` Override in `JB721TiersHook`
+### 2.3 `split.hook` Support in Tier Distribution
+
+Tier split payouts now support the `split.hook` field (`IJBSplitHook`). The distribution priority follows the same order as `JBMultiTerminal`: hook > projectId > beneficiary. In v5, tier splits did not exist. In v6, this ensures full parity with core split behavior.
+
+### 2.4 DOS Protection on Split Distribution
+
+All external calls during tier split distribution (split hooks, terminal `pay`/`addToBalanceOf`, and leftover distribution) are wrapped in try-catch. A reverting split recipient or terminal cannot brick payments to the project. On failure, funds are returned to the project balance and a `SplitPayoutReverted` or `AddToBalanceReverted` event is emitted with the revert reason. For ERC-20 split hook failures, tokens are transferred first and the hook callback is best-effort; for ERC-20 terminal failures, the approval is reset to zero.
+
+### 2.5 `splitPercent` Bounds Validation
+
+`JB721TiersHookStore.recordAddTiers` now validates that each tier's `splitPercent` does not exceed `JBConstants.SPLITS_TOTAL_PERCENT`. If it does, it reverts with `JB721TiersHookStore_SplitPercentExceedsBounds(uint256 percent, uint256 limit)`.
+
+### 2.6 `beforePayRecordedWith` Override in `JB721TiersHook`
 
 v6 overrides `beforePayRecordedWith` in `JB721TiersHook` (not just the base `JB721Hook`). The override calculates per-tier split amounts and adjusts the minting weight so the terminal only mints project tokens for the portion of the payment that actually enters the project. It also sets the `JBPayHookSpecification.amount` to the total split amount so the terminal forwards those funds to the hook for distribution.
 
-### 2.4 Pricing Decimals Validation
+### 2.7 Pricing Decimals Validation
 
 `initialize(...)` now reverts with `JB721TiersHook_InvalidPricingDecimals` if `tiersConfig.decimals > 18`.
 
-### 2.5 `allowSetCustomToken` Pass-Through
+### 2.8 `allowSetCustomToken` Pass-Through
 
 The `JBPayDataHookRulesetMetadata` struct gained an `allowSetCustomToken` field. In v5, the project deployer hardcoded this to `false`. In v6, it passes through the value from the config.
 
@@ -133,8 +145,10 @@ The `JBPayDataHookRulesetMetadata` struct gained an `allowSetCustomToken` field.
 
 | Event | Signature | Description |
 |-------|-----------|-------------|
+| `AddToBalanceReverted` | `AddToBalanceReverted(uint256 indexed projectId, address token, uint256 amount, bytes reason)` | Emitted when leftover distribution's `addToBalanceOf` call fails. Funds remain in the hook contract. |
 | `SetName` | `SetName(string indexed name, address caller)` | Emitted when the collection name is changed |
 | `SetSymbol` | `SetSymbol(string indexed symbol, address caller)` | Emitted when the collection symbol is changed |
+| `SplitPayoutReverted` | `SplitPayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller)` | Emitted when a split payout reverts during distribution. The failed split's funds route to the project balance. |
 
 ### 3.2 New Event on `IJB721TiersHookStore`
 
@@ -144,7 +158,7 @@ The `JBPayDataHookRulesetMetadata` struct gained an `allowSetCustomToken` field.
 
 ### 3.3 Events Unchanged
 
-All other events (`AddPayCredits`, `AddTier`, `Mint`, `MintReservedNft`, `RemoveTier`, `SetBaseUri`, `SetContractUri`, `SetDiscountPercent`, `SetEncodedIPFSUri`, `SetTokenUriResolver`, `UsePayCredits`, `CleanTiers`, `HookDeployed`) remain identical.
+All other events (`AddPayCredits`, `AddTier`, `Mint`, `MintReservedNft`, `RemoveTier`, `SetBaseUri`, `SetContractUri`, `SetDiscountPercent`, `SetEncodedIPFSUri`, `SetTokenUriResolver`, `UsePayCredits`, `CleanTiers`, `HookDeployed`) remain unchanged.
 
 ---
 
@@ -157,11 +171,17 @@ All other events (`AddPayCredits`, `AddTier`, `Mint`, `MintReservedNft`, `Remove
 | `JB721TiersHook_CurrencyMismatch` | `(uint256 paymentCurrency, uint256 tierCurrency)` | Reserved for currency mismatch detection |
 | `JB721TiersHook_InvalidPricingDecimals` | `(uint256 decimals)` | Reverts when `tiersConfig.decimals > 18` during initialization |
 
-### 4.2 Store Errors with Added `tierId` Parameter
+### 4.2 New Error on `JB721TiersHookStore`
+
+| Error | Signature | Description |
+|-------|-----------|-------------|
+| `JB721TiersHookStore_SplitPercentExceedsBounds` | `(uint256 percent, uint256 limit)` | Reverts when a tier's `splitPercent` exceeds `JBConstants.SPLITS_TOTAL_PERCENT` during `recordAddTiers` |
+
+### 4.3 Store Errors with Added `tierId` Parameter
 
 See Section 1.7 above. Eight store errors gained a `tierId` parameter for improved debuggability.
 
-### 4.3 Errors Unchanged
+### 4.4 Errors Unchanged
 
 All other errors (`JB721Hook_InvalidPay`, `JB721Hook_InvalidCashOut`, `JB721Hook_UnauthorizedToken`, `JB721Hook_UnexpectedTokenCashedOut`, `JB721TiersHook_AlreadyInitialized`, `JB721TiersHook_NoProjectId`, `JB721TiersHook_Overspending`, `JB721TiersHook_MintReserveNftsPaused`, `JB721TiersHook_TierTransfersPaused`) remain unchanged.
 
@@ -240,15 +260,31 @@ In v5, `_packedPricingContext` packed three values: currency (bits 0-31), decima
 
 v5 reverted if `msg.value != 0` in `afterPayRecordedWith`. v6 removes this check because the hook now accepts forwarded native token payments for tier split distribution.
 
-### 6.8 `JB721TiersHookStore.recordAddTiers` — Stores `splitPercent`
+### 6.8 `JB721TiersHookLib._sendPayoutToSplit` — `split.hook` Priority
+
+Split payouts follow the same priority order as `JBMultiTerminal`: if `split.hook` is set, funds are sent to the hook via `processSplitWith`; otherwise if `split.projectId` is set, funds go to the project's primary terminal; otherwise funds go to `split.beneficiary`. For ERC-20 payments to hooks, tokens are transferred first and the hook callback is best-effort (failure does not revert).
+
+### 6.9 `JB721TiersHookLib` — Try-Catch on All External Calls
+
+All external calls during split distribution (split hooks, terminal `pay`, terminal `addToBalanceOf`, and leftover `addToBalanceOf`) are wrapped in try-catch. On failure: native token calls return false (funds stay in the hook), ERC-20 terminal call approvals are reset to zero, and `SplitPayoutReverted` or `AddToBalanceReverted` events are emitted with the revert reason.
+
+### 6.10 `JB721TiersHookLib.calculateSplitAmounts` — Discount Applied Before Splits
+
+Split amounts are calculated on the discount-adjusted (effective) tier price rather than the base price. This ensures the split amount matches the actual price the minter pays when a tier discount is active.
+
+### 6.11 `JB721TiersHookStore.recordAddTiers` — Validates `splitPercent`
+
+`recordAddTiers` now reverts with `JB721TiersHookStore_SplitPercentExceedsBounds` if a tier's `splitPercent` exceeds `JBConstants.SPLITS_TOTAL_PERCENT`.
+
+### 6.12 `JB721TiersHookStore.recordAddTiers` — Stores `splitPercent`
 
 The store now stores `splitPercent` in the `JBStored721Tier` packed struct (replacing the `votingUnits` field in storage). The `votingUnits` value continues to be stored in the `_tierVotingUnitsOf` mapping.
 
-### 6.9 `JB721TiersHookStore.recordAddTiers` — Emits `SetDefaultReserveBeneficiary`
+### 6.13 `JB721TiersHookStore.recordAddTiers` — Emits `SetDefaultReserveBeneficiary`
 
 When a tier config has `useReserveBeneficiaryAsDefault` set and the beneficiary differs from the current default, v6 emits the new `SetDefaultReserveBeneficiary` event.
 
-### 6.10 `JB721TiersHookProjectDeployer` — `allowSetCustomToken` Pass-Through
+### 6.14 `JB721TiersHookProjectDeployer` — `allowSetCustomToken` Pass-Through
 
 In v5, the project deployer hardcoded `allowSetCustomToken: false` when constructing `JBRulesetMetadata`. In v6, it passes through `payDataRulesetConfig.metadata.allowSetCustomToken`.
 
@@ -261,7 +297,7 @@ In v5, the project deployer hardcoded `allowSetCustomToken: false` when construc
 | v5 | v6 | Notes |
 |----|----|-------|
 | `IJB721Hook` | `IJB721Hook` | Unchanged (import path updated) |
-| `IJB721TiersHook` | `IJB721TiersHook` | `pricingContext()` return changed; `setMetadata()` signature changed; added `PRICES()`, `SPLITS()`, `SetName`, `SetSymbol` |
+| `IJB721TiersHook` | `IJB721TiersHook` | `pricingContext()` return changed; `setMetadata()` signature changed; added `PRICES()`, `SPLITS()`, `SetName`, `SetSymbol`, `SplitPayoutReverted`, `AddToBalanceReverted` |
 | `IJB721TiersHookDeployer` | `IJB721TiersHookDeployer` | Unchanged |
 | `IJB721TiersHookProjectDeployer` | `IJB721TiersHookProjectDeployer` | Unchanged |
 | `IJB721TiersHookStore` | `IJB721TiersHookStore` | Added `SetDefaultReserveBeneficiary` event; NatSpec added |
@@ -274,7 +310,7 @@ In v5, the project deployer hardcoded `allowSetCustomToken: false` when construc
 | `JB721TiersHook` | `JB721TiersHook` | Constructor gains `prices` and `splits`; tier splits system; code extracted to library |
 | `JB721TiersHookDeployer` | `JB721TiersHookDeployer` | Unchanged (import paths updated) |
 | `JB721TiersHookProjectDeployer` | `JB721TiersHookProjectDeployer` | `allowSetCustomToken` pass-through |
-| `JB721TiersHookStore` | `JB721TiersHookStore` | `splitPercent` storage; error params added; `SetDefaultReserveBeneficiary` event |
+| `JB721TiersHookStore` | `JB721TiersHookStore` | `splitPercent` storage and validation; error params added; `SplitPercentExceedsBounds` error; `SetDefaultReserveBeneficiary` event |
 | `JB721Hook` (abstract) | `JB721Hook` (abstract) | `cashOutWeightOf`/`totalCashOutWeight` signatures simplified; `msg.value` check removed from `afterPayRecordedWith` |
 | `ERC721` (abstract) | `ERC721` (abstract) | Added `_setName()` and `_setSymbol()` |
 
