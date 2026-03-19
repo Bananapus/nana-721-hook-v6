@@ -2,6 +2,10 @@
 
 Every user-facing operation in the tiered 721 hook system, with exact entry points, parameters, state changes, events, and edge cases.
 
+These journeys describe functional behavior, not a promise that the theoretical `uint16.max` tier ceiling is a
+production-ready catalog size. Several important reads and cash-out calculations scale with `maxTierId`, so large-tier
+deployments should be evaluated against the repo's documented operating envelope before launch.
+
 ---
 
 ## 1. Pay and Receive NFTs

@@ -219,7 +219,8 @@ Each pay/cash out hook can then execute custom behavior based on the custom data
 
 ### Mechanism
 
-A project using a 721 tiers hook can specify any number of NFT tiers (up to 65,535 total).
+A project using a 721 tiers hook can specify a large number of NFT tiers in theory (up to 65,535 total), but the
+practical operating envelope is much smaller because several important paths still scale with `maxTierId`.
 
 - NFT tiers can be removed by the project owner as long as they are not locked (`cannotBeRemoved`). After removing tiers, call `cleanTiers()` on the store to optimize tier iteration.
 - NFT tiers can be added by the project owner as long as they respect the hook's `flags`. Tiers must be sorted by category in ascending order — the store reverts with `JB721TiersHookStore_InvalidCategorySortOrder` if not. The flags specify if newly added tiers can have votes (voting units), if new tiers can have non-zero reserve frequencies, if new tiers can allow on-demand minting by the project's owner, and if overspending is allowed.
@@ -246,6 +247,21 @@ Additional notes:
 - If enabled by the project owner, holders can burn their NFTs to reclaim funds from the project. These cash outs are proportional to the NFTs price, relative to the combined price of all the NFTs (including pending reserves in the denominator).
 - NFT cash outs can be enabled by setting `useDataHookForCashOut` to `true` in the project's `JBRulesetMetadata`. If NFT cash outs are enabled, project token cash outs are disabled -- attempting to cash out fungible tokens when the data hook is active will revert.
 - Per-tier voting units can be configured: either custom voting units or the tier's price as the default. Voting power is computed per-address across all tiers.
+
+### Supported Operating Envelope
+
+The current implementation is best suited to curated catalogs, not effectively unbounded consumer storefronts.
+
+- Treat roughly `<= 100` active tiers as the comfortable operating envelope for projects that expect frequent
+  `balanceOf`, governance reads, or NFT cash outs.
+- Treat `100-200` tiers as an advanced configuration that should be used only with deliberate gas budgeting and
+  frontend/operator awareness.
+- Above that range, the on-chain reads and cash-out accounting are still functionally correct, but several important
+  paths become increasingly expensive because they iterate the tier set.
+
+The test suite proves survivability at `100` and `200` tiers, and also proves that `balanceOf` and
+`totalCashOutWeight` become materially more expensive at `100` tiers than at `10` tiers. That evidence should be read
+as a scope boundary, not as encouragement to target the `uint16.max` theoretical tier ceiling in production.
 - The hook declares support for ERC-2981 (royalties) via `supportsInterface`, but does not implement the `royaltyInfo` function. This is intended for future extension.
 
 ### Setup

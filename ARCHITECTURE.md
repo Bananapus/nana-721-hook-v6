@@ -4,6 +4,10 @@
 
 NFT tier system for Juicebox V6. Allows projects to attach tiered NFT minting to payments and use NFTs as cash-out hooks. Supports on-chain and off-chain metadata, category-based sorting, and configurable pricing with discounts.
 
+The design permits a high theoretical tier ceiling, but several important reads and cash-out calculations still scale
+with `maxTierId`. In practice, this should be treated as a curated-catalog hook with an explicit operating envelope,
+not as a guarantee that very large catalogs are comfortable to run on-chain.
+
 ## Contract Map
 
 ```
