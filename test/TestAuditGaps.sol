@@ -922,9 +922,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
         uint256 gasFor100 = _measureTotalCashOutWeightGas({tierCount: 100, mintedCount: 10});
 
         assertGt(
-            gasFor100,
-            gasFor10 * 4,
-            "100-tier totalCashOutWeight should be materially more expensive than 10 tiers"
+            gasFor100, gasFor10 * 4, "100-tier totalCashOutWeight should be materially more expensive than 10 tiers"
         );
         emit log_named_uint("Gas used for totalCashOutWeight (10 tiers)", gasFor10);
         emit log_named_uint("Gas used for totalCashOutWeight (100 tiers)", gasFor100);
@@ -945,13 +943,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
         gasUsed = gasBefore - gasleft();
     }
 
-    function _measureTotalCashOutWeightGas(
-        uint256 tierCount,
-        uint256 mintedCount
-    )
-        internal
-        returns (uint256 gasUsed)
-    {
+    function _measureTotalCashOutWeightGas(uint256 tierCount, uint256 mintedCount) internal returns (uint256 gasUsed) {
         defaultTierConfig.initialSupply = 10;
         defaultTierConfig.reserveFrequency = 0;
 
