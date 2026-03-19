@@ -33,6 +33,10 @@
 
 - **`totalCashOutWeight` iterates ALL tier IDs** (1 to `maxTierIdOf`), including removed tiers with minted NFTs. Called during every `beforeCashOutRecordedWith`. At ~2-3k gas per tier, 500+ tiers approaches block gas limits. Could block all NFT cash-outs if an attacker with `ADJUST_721_TIERS` permission adds thousands of tiers.
 - **`balanceOf`, `votingUnitsOf`, `totalSupplyOf` iterate all tiers.** Same pattern: loop from `maxTierIdOf` down to 1. These are view functions but called by governance contracts.
+- **Theoretical max is not the supported operating envelope.** The store permits up to 65,535 tiers, but the practical
+  comfort zone is far lower. The test suite demonstrates survivability at 100 to 200 tiers and also demonstrates that
+  `balanceOf` and `totalCashOutWeight` become materially more expensive at 100 tiers than at 10 tiers. Treat large
+  catalogs as an explicit gas-budgeting exercise, not as a default deployment shape.
 - **`tiersOf` traverses removed tiers.** Removed tiers are skipped via bitmap but still traversed in the linked list. `cleanTiers()` must be called separately to compact. `cleanTiers()` is permissionless and idempotent.
 - **Minting from many tiers in one payment.** `recordMint` loops per tier ID: storage read (stored tier + bitmap check) per iteration. 50 tiers in one payment ~5-7M gas (tested, fits in 30M block). 100+ tiers in a single mint is feasible but consumes most of the block.
 - **`recordAddTiers` sort-insertion cost.** Adding a low-category tier to a hook with many existing higher-category tiers iterates the entire sorted list to find the insertion point. O(n) per added tier.

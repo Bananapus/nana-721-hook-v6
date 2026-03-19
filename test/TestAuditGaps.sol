@@ -424,6 +424,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
 
     /// @dev The block gas limit on mainnet is 30M. We use a generous limit for safety.
     uint256 constant BLOCK_GAS_LIMIT = 30_000_000;
+    uint256 constant OPERATING_ENVELOPE_SOFT_LIMIT = 200;
 
     // ---------------------------------------------------------------
     // Test 1: Add 100 tiers in a single adjustTiers call
@@ -899,5 +900,140 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
         assertTrue(gasUsed < BLOCK_GAS_LIMIT, "Minting from 50 tiers should fit within block gas limit");
 
         emit log_named_uint("Gas used to mint from 50 tiers in single payment", gasUsed);
+    }
+
+    /// @notice The expensive read paths scale with tier count, not just with the beneficiary's holdings.
+    /// This test exists to prove that a 100-tier catalog is materially more expensive than a 10-tier catalog even
+    /// when the queried user owns zero NFTs.
+    function test_operatingEnvelope_balanceOf_100tiersIsMateriallyMoreExpensiveThan10tiers() public {
+        uint256 gasFor10 = _measureBalanceOfGas({tierCount: 10});
+        uint256 gasFor100 = _measureBalanceOfGas({tierCount: 100});
+
+        assertGt(gasFor100, gasFor10 * 4, "100-tier balanceOf should be materially more expensive than 10 tiers");
+        emit log_named_uint("Gas used for balanceOf (10 tiers)", gasFor10);
+        emit log_named_uint("Gas used for balanceOf (100 tiers)", gasFor100);
+    }
+
+    /// @notice Cash-out accounting also scales with the catalog size because totalCashOutWeight walks the tier set.
+    /// We use a ratio check instead of an absolute snapshot so the test stays stable across compiler changes while
+    /// still proving the production-scale cost increase.
+    function test_operatingEnvelope_totalCashOutWeight_100tiersIsMateriallyMoreExpensiveThan10tiers() public {
+        uint256 gasFor10 = _measureTotalCashOutWeightGas({tierCount: 10, mintedCount: 10});
+        uint256 gasFor100 = _measureTotalCashOutWeightGas({tierCount: 100, mintedCount: 10});
+
+        assertGt(
+            gasFor100, gasFor10 * 4, "100-tier totalCashOutWeight should be materially more expensive than 10 tiers"
+        );
+        emit log_named_uint("Gas used for totalCashOutWeight (10 tiers)", gasFor10);
+        emit log_named_uint("Gas used for totalCashOutWeight (100 tiers)", gasFor100);
+    }
+
+    function _measureBalanceOfGas(uint256 tierCount) internal returns (uint256 gasUsed) {
+        defaultTierConfig.initialSupply = 10;
+        defaultTierConfig.reserveFrequency = 0;
+
+        ForTest_JB721TiersHook targetHook = _initializeForTestHook(0);
+        IJB721TiersHookStore hookStore = targetHook.STORE();
+
+        vm.prank(address(targetHook));
+        hookStore.recordAddTiers(_sequentialTierConfigs(tierCount, 1e15, 10));
+
+        uint256 gasBefore = gasleft();
+        hookStore.balanceOf(address(targetHook), beneficiary);
+        gasUsed = gasBefore - gasleft();
+    }
+
+    function _measureTotalCashOutWeightGas(uint256 tierCount, uint256 mintedCount) internal returns (uint256 gasUsed) {
+        defaultTierConfig.initialSupply = 10;
+        defaultTierConfig.reserveFrequency = 0;
+
+        ForTest_JB721TiersHook targetHook = _initializeForTestHook(0);
+        IJB721TiersHookStore hookStore = targetHook.STORE();
+
+        vm.prank(address(targetHook));
+        hookStore.recordAddTiers(_sequentialTierConfigs(tierCount, 1e15, 10));
+
+        mockAndExpect(
+            address(mockJBDirectory),
+            abi.encodeWithSelector(IJBDirectory.isTerminalOf.selector, projectId, mockTerminalAddress),
+            abi.encode(true)
+        );
+
+        uint16[] memory tierIdsToMint = new uint16[](mintedCount);
+        uint256 totalCost;
+        for (uint256 i; i < mintedCount; i++) {
+            tierIdsToMint[i] = uint16(i + 1);
+            totalCost += (i + 1) * 1e15;
+        }
+
+        bytes[] memory data = new bytes[](1);
+        data[0] = abi.encode(false, tierIdsToMint);
+        bytes4[] memory ids = new bytes4[](1);
+        ids[0] = metadataHelper.getId("pay", address(targetHook));
+        bytes memory payerMetadata = metadataHelper.createMetadata(ids, data);
+
+        JBAfterPayRecordedContext memory payContext = JBAfterPayRecordedContext({
+            payer: beneficiary,
+            projectId: projectId,
+            rulesetId: 0,
+            amount: JBTokenAmount({
+                token: JBConstants.NATIVE_TOKEN,
+                value: totalCost,
+                decimals: 18,
+                currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+            }),
+            forwardedAmount: JBTokenAmount({
+                token: JBConstants.NATIVE_TOKEN,
+                value: 0,
+                decimals: 18,
+                currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+            }),
+            weight: 10e18,
+            newlyIssuedTokenCount: 0,
+            beneficiary: beneficiary,
+            hookMetadata: bytes(""),
+            payerMetadata: payerMetadata
+        });
+
+        vm.prank(mockTerminalAddress);
+        targetHook.afterPayRecordedWith(payContext);
+
+        uint256 gasBefore = gasleft();
+        hookStore.totalCashOutWeight(address(targetHook));
+        gasUsed = gasBefore - gasleft();
+    }
+
+    function _sequentialTierConfigs(
+        uint256 tierCount,
+        uint104 priceStep,
+        uint32 initialSupply
+    )
+        internal
+        view
+        returns (JB721TierConfig[] memory newTiers)
+    {
+        require(tierCount <= OPERATING_ENVELOPE_SOFT_LIMIT, "test helper only sized for envelope coverage");
+
+        newTiers = new JB721TierConfig[](tierCount);
+        for (uint256 i; i < tierCount; i++) {
+            newTiers[i] = JB721TierConfig({
+                price: uint104((i + 1) * priceStep),
+                initialSupply: initialSupply,
+                votingUnits: 0,
+                reserveFrequency: 0,
+                reserveBeneficiary: reserveBeneficiary,
+                encodedIPFSUri: tokenUris[i % 10],
+                category: uint24(i + 1),
+                discountPercent: 0,
+                allowOwnerMint: false,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                cannotBeRemoved: false,
+                cannotIncreaseDiscountPercent: false,
+                useVotingUnits: false,
+                splitPercent: 0,
+                splits: new JBSplit[](0)
+            });
+        }
     }
 }
