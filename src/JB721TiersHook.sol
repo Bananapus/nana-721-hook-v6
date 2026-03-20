@@ -210,7 +210,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             issueTokensForSplits: STORE.flagsOf(address(this)).issueTokensForSplits
         });
 
-        hookSpecifications[0] = JBPayHookSpecification({hook: this, amount: totalSplitAmount, metadata: splitMetadata});
+        hookSpecifications[0] =
+            JBPayHookSpecification({hook: this, noop: false, amount: totalSplitAmount, metadata: splitMetadata});
     }
 
     /// @notice The combined cash out weight of the NFTs with the specified token IDs.

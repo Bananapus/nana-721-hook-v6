@@ -102,7 +102,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
 
         // Use this contract as the only cash out hook.
         hookSpecifications = new JBCashOutHookSpecification[](1);
-        hookSpecifications[0] = JBCashOutHookSpecification({hook: this, amount: 0, metadata: bytes("")});
+        hookSpecifications[0] = JBCashOutHookSpecification({hook: this, noop: false, amount: 0, metadata: bytes("")});
 
         uint256[] memory decodedTokenIds;
 
@@ -136,7 +136,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
         // Forward the received weight and use this contract as the only pay hook.
         weight = context.weight;
         hookSpecifications = new JBPayHookSpecification[](1);
-        hookSpecifications[0] = JBPayHookSpecification({hook: this, amount: 0, metadata: bytes("")});
+        hookSpecifications[0] = JBPayHookSpecification({hook: this, noop: false, amount: 0, metadata: bytes("")});
     }
 
     /// @notice Required by the IJBRulesetDataHook interfaces. Return false to not leak any permissions.
