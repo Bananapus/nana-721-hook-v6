@@ -815,20 +815,26 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         uint256 previousCategory;
 
         for (uint256 i; i < tiersToAdd.length; i++) {
-            JB721TierConfig calldata tierConfig = tiersToAdd[i];
             uint256 tierId = currentMaxTierIdOf + i + 1;
 
-            (startSortedTierId, previousTierId, previousCategory) = _recordAddedTier({
-                hook: hook,
-                tierConfig: tierConfig,
-                flags: flags,
-                tierId: tierId,
-                currentMaxTierIdOf: currentMaxTierIdOf,
-                currentLastSortedTierId: currentLastSortedTierId,
-                previousCategory: previousCategory,
-                previousTierId: previousTierId,
-                startSortedTierId: startSortedTierId
-            });
+            // Validate the tier config and write it to storage.
+            _validateAndStoreTier(hook, tiersToAdd[i], flags, tierId, previousCategory);
+
+            // Update the previous category for the next iteration.
+            previousCategory = tiersToAdd[i].category;
+
+            // Insert the new tier into the sort order if there are existing tiers.
+            if (startSortedTierId != 0) {
+                (startSortedTierId, previousTierId) = _insertAddedTierIntoSortOrder({
+                    hook: hook,
+                    tierId: tierId,
+                    tierCategory: tiersToAdd[i].category,
+                    currentMaxTierIdOf: currentMaxTierIdOf,
+                    currentLastSortedTierId: currentLastSortedTierId,
+                    previousTierId: previousTierId,
+                    startSortedTierId: startSortedTierId
+                });
+            }
 
             // Add the tier ID to the array being returned.
             tierIds[i] = tierId;
@@ -1154,19 +1160,21 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         }
     }
 
-    function _recordAddedTier(
+    /// @notice Validates a tier config and writes it to storage.
+    /// @dev Extracted from `_recordAddedTier` to reduce stack depth when the Yul optimizer inlines functions.
+    /// @param hook The 721 hook contract address.
+    /// @param tierConfig The tier configuration to validate and store.
+    /// @param flags The hook's flags that constrain what tiers can be added.
+    /// @param tierId The ID to assign to this tier.
+    /// @param previousCategory The category of the previously added tier (for sort order validation).
+    function _validateAndStoreTier(
         address hook,
         JB721TierConfig calldata tierConfig,
         JB721TiersHookFlags memory flags,
         uint256 tierId,
-        uint256 currentMaxTierIdOf,
-        uint256 currentLastSortedTierId,
-        uint256 previousCategory,
-        uint256 previousTierId,
-        uint256 startSortedTierId
+        uint256 previousCategory
     )
         internal
-        returns (uint256 updatedStartSortedTierId, uint256 updatedPreviousTierId, uint256 updatedPreviousCategory)
     {
         // Make sure the supply maximum is enforced. If it's greater than one billion, it would overflow into the next
         // tier.
@@ -1265,22 +1273,5 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         if (tierConfig.encodedIPFSUri != bytes32(0)) {
             encodedIPFSUriOf[hook][tierId] = tierConfig.encodedIPFSUri;
         }
-
-        updatedStartSortedTierId = startSortedTierId;
-        updatedPreviousTierId = previousTierId;
-
-        if (startSortedTierId != 0) {
-            (updatedStartSortedTierId, updatedPreviousTierId) = _insertAddedTierIntoSortOrder({
-                hook: hook,
-                tierId: tierId,
-                tierCategory: tierConfig.category,
-                currentMaxTierIdOf: currentMaxTierIdOf,
-                currentLastSortedTierId: currentLastSortedTierId,
-                previousTierId: previousTierId,
-                startSortedTierId: startSortedTierId
-            });
-        }
-
-        updatedPreviousCategory = tierConfig.category;
     }
 }
