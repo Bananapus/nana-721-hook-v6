@@ -4,6 +4,12 @@ This document describes all changes between `nana-721-hook` (v5) and `nana-721-h
 
 ---
 
+## 0. Interface Alignment
+
+- Updated the repo to use published `@bananapus/core-v6@0.0.20`.
+- Aligned `JBPayHookSpecification` and `JBCashOutHookSpecification` construction with the live 4-field core structs.
+- `JB721Hook` and `JB721TiersHook` now set `noop = false` explicitly on returned hook specifications.
+
 ## 1. Breaking Changes
 
 ### 1.1 `IJB721TiersHook` — Changed Function Signatures

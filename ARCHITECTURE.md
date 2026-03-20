@@ -34,6 +34,7 @@ User → JBMultiTerminal.pay(metadata)
     → calculateSplitAmounts(): per-tier split amounts (in tier pricing denomination)
     → convertSplitAmounts(): convert to payment token denomination (if currencies differ)
     → calculateWeight(): adjust weight down by split fraction
+    → return active pay-hook spec (`noop = false`) with forwarded split amount
   → JBTerminalStore records payment
   → afterPayRecordedWith()
     → Decode tier IDs from metadata
@@ -48,6 +49,7 @@ User → JBMultiTerminal.pay(metadata)
 ### NFT Cash Out
 ```
 Holder → JBMultiTerminal.cashOutTokensOf()
+  → beforeCashOutRecordedWith(): return active cash-out hook spec (`noop = false`)
   → JB721TiersHook.afterCashOutRecordedWith()
     → Burn specified NFT token IDs
     → Each NFT's cash-out weight contributes to reclaim amount

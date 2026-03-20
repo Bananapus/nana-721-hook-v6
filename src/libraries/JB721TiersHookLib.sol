@@ -65,10 +65,7 @@ library JB721TiersHookLib {
         if (tiersToAdd.length != 0) {
             uint256[] memory tierIdsAdded = store.recordAddTiers(tiersToAdd);
 
-            // slither-disable-next-line reentrancy-events
-            for (uint256 i; i < tiersToAdd.length; i++) {
-                emit AddTier({tierId: tierIdsAdded[i], tier: tiersToAdd[i], caller: caller});
-            }
+            _emitAddTierEventsFromCalldata({caller: caller, tierIdsAdded: tierIdsAdded, tiersToAdd: tiersToAdd});
 
             // Set split groups for tiers that have splits configured.
             _setSplitGroupsFor({
@@ -101,10 +98,7 @@ library JB721TiersHookLib {
     {
         uint256[] memory tierIdsAdded = store.recordAddTiers(tiersToAdd);
 
-        // slither-disable-next-line reentrancy-events
-        for (uint256 i; i < tiersToAdd.length; i++) {
-            emit AddTier({tierId: tierIdsAdded[i], tier: tiersToAdd[i], caller: caller});
-        }
+        _emitAddTierEventsFromMemory({caller: caller, tierIdsAdded: tierIdsAdded, tiersToAdd: tiersToAdd});
 
         // Set split groups for tiers that have splits configured.
         _setSplitGroupsFor({
@@ -328,6 +322,32 @@ library JB721TiersHookLib {
             }
         }
         splits.setSplitGroupsOf({projectId: projectId, rulesetId: 0, splitGroups: splitGroups});
+    }
+
+    function _emitAddTierEventsFromCalldata(
+        address caller,
+        uint256[] memory tierIdsAdded,
+        JB721TierConfig[] calldata tiersToAdd
+    )
+        private
+    {
+        // slither-disable-next-line reentrancy-events
+        for (uint256 i; i < tiersToAdd.length; i++) {
+            emit AddTier({tierId: tierIdsAdded[i], tier: tiersToAdd[i], caller: caller});
+        }
+    }
+
+    function _emitAddTierEventsFromMemory(
+        address caller,
+        uint256[] memory tierIdsAdded,
+        JB721TierConfig[] memory tiersToAdd
+    )
+        private
+    {
+        // slither-disable-next-line reentrancy-events
+        for (uint256 i; i < tiersToAdd.length; i++) {
+            emit AddTier({tierId: tierIdsAdded[i], tier: tiersToAdd[i], caller: caller});
+        }
     }
 
     /// @notice Pulls ERC-20 tokens from the terminal (if needed) and distributes forwarded funds to tier splits.

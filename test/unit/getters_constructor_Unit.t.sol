@@ -532,25 +532,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
 
         // Populate the tiers array with the default tier config.
         for (uint256 i; i < numberOfTiers; i++) {
-            tiers[i] = JB721TierConfig({
-                // forge-lint: disable-next-line(unsafe-typecast)
-                price: uint104(i * 10),
-                initialSupply: uint32(100),
-                votingUnits: uint16(0),
-                reserveFrequency: uint16(0),
-                reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[0],
-                category: uint24(100),
-                discountPercent: uint8(0),
-                allowOwnerMint: false,
-                useReserveBeneficiaryAsDefault: false,
-                transfersPausable: false,
-                useVotingUnits: true,
-                cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false,
-                splitPercent: 0,
-                splits: new JBSplit[](0)
-            });
+            tiers[i] = _tierConfigForZeroSupplyTest(i);
         }
 
         // Set the initial supply of the tier at `errorIndex` to 0. This should cause an error.
@@ -578,5 +560,27 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                 noNewTiersWithOwnerMinting: true
             })
         );
+    }
+
+    function _tierConfigForZeroSupplyTest(uint256 index) internal view returns (JB721TierConfig memory) {
+        return JB721TierConfig({
+            // forge-lint: disable-next-line(unsafe-typecast)
+            price: uint104(index * 10),
+            initialSupply: uint32(100),
+            votingUnits: uint16(0),
+            reserveFrequency: uint16(0),
+            reserveBeneficiary: reserveBeneficiary,
+            encodedIPFSUri: tokenUris[0],
+            category: uint24(100),
+            discountPercent: uint8(0),
+            allowOwnerMint: false,
+            useReserveBeneficiaryAsDefault: false,
+            transfersPausable: false,
+            useVotingUnits: true,
+            cannotBeRemoved: false,
+            cannotIncreaseDiscountPercent: false,
+            splitPercent: 0,
+            splits: new JBSplit[](0)
+        });
     }
 }

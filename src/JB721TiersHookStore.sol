@@ -232,6 +232,8 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         override
         returns (JB721Tier[] memory tiers)
     {
+        bool useCategories = categories.length != 0;
+
         // Keep a reference to the last tier ID.
         uint256 lastTierId = _lastSortedTierIdOf(hook);
 
@@ -258,11 +260,12 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             // Stop iterating if the size limit has been reached.
             if (numberOfIncludedTiers == size) break;
 
+            uint256 category = useCategories ? categories[i] : 0;
+
             // Get a reference to the ID of the tier being iterated upon, starting with the first tier ID if no starting
             // ID was specified.
-            uint256 currentSortedTierId = startingId != 0
-                ? startingId
-                : _firstSortedTierIdOf({hook: hook, category: categories.length == 0 ? 0 : categories[i]});
+            uint256 currentSortedTierId =
+                startingId != 0 ? startingId : _firstSortedTierIdOf({hook: hook, category: category});
 
             // Add the tiers from the category being iterated upon.
             while (currentSortedTierId != 0 && numberOfIncludedTiers < size) {
@@ -271,11 +274,11 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
                     // If categories were provided and the current tier's category is greater than category being added,
                     // break.
-                    if (categories.length != 0 && storedTier.category > categories[i]) {
+                    if (useCategories && storedTier.category > category) {
                         break;
                     }
                     // If a category is specified and matches, add the returned values.
-                    else if (categories.length == 0 || storedTier.category == categories[i]) {
+                    else if (!useCategories || storedTier.category == category) {
                         // Add the tier to the array being returned.
                         tiers[numberOfIncludedTiers++] = _getTierFrom({
                             hook: hook,
@@ -784,8 +787,10 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         override
         returns (uint256[] memory tierIds)
     {
+        address hook = msg.sender;
+
         // Keep a reference to the current greatest tier ID.
-        uint256 currentMaxTierIdOf = maxTierIdOf[msg.sender];
+        uint256 currentMaxTierIdOf = maxTierIdOf[hook];
 
         // Make sure the max number of tiers won't be exceeded.
         if (currentMaxTierIdOf + tiersToAdd.length > type(uint16).max) {
@@ -793,215 +798,44 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         }
 
         // Keep a reference to the current last sorted tier ID (sorted by category).
-        uint256 currentLastSortedTierId = _lastSortedTierIdOf(msg.sender);
+        uint256 currentLastSortedTierId = _lastSortedTierIdOf(hook);
 
         // Initialize an array for the new tier IDs to be returned.
         tierIds = new uint256[](tiersToAdd.length);
 
         // Keep a reference to the first sorted tier ID, to use when sorting new tiers if needed.
         // There's no need for sorting if there are no current tiers.
-        uint256 startSortedTierId = currentMaxTierIdOf == 0 ? 0 : _firstSortedTierIdOf({hook: msg.sender, category: 0});
+        uint256 startSortedTierId = currentMaxTierIdOf == 0 ? 0 : _firstSortedTierIdOf({hook: hook, category: 0});
 
         // Keep track of the previous tier's ID while iterating.
         uint256 previousTierId;
 
         // Keep a reference to the 721 contract's flags.
-        JB721TiersHookFlags memory flags = _flagsOf[msg.sender];
+        JB721TiersHookFlags memory flags = _flagsOf[hook];
+        uint256 previousCategory;
 
         for (uint256 i; i < tiersToAdd.length; i++) {
-            // Set the tier being iterated upon.
-            JB721TierConfig memory tierToAdd = tiersToAdd[i];
-
-            // Make sure the supply maximum is enforced. If it's greater than one billion, it would overflow into the
-            // next tier.
-            if (tierToAdd.initialSupply > _ONE_BILLION - 1) {
-                revert JB721TiersHookStore_InvalidQuantity(tierToAdd.initialSupply, _ONE_BILLION - 1);
-            }
-
-            // Keep a reference to the previous tier.
-            JB721TierConfig memory previousTier;
-
-            // Make sure the tier's category is greater than or equal to the previously added tier's category.
-            if (i != 0) {
-                // Set the reference to the previously added tier.
-                previousTier = tiersToAdd[i - 1];
-
-                // Revert if the category is not equal or greater than the previously added tier's category.
-                if (tierToAdd.category < previousTier.category) {
-                    revert JB721TiersHookStore_InvalidCategorySortOrder(tierToAdd.category, previousTier.category);
-                }
-            }
-
-            // Get a reference to the ID for the new tier.
+            JB721TierConfig calldata tierConfig = tiersToAdd[i];
             uint256 tierId = currentMaxTierIdOf + i + 1;
 
-            // Make sure the new tier doesn't have voting units if the 721 contract's flags don't allow it to.
-            if (
-                flags.noNewTiersWithVotes
-                    && ((tierToAdd.useVotingUnits && tierToAdd.votingUnits != 0)
-                        || (!tierToAdd.useVotingUnits && tierToAdd.price != 0))
-            ) {
-                revert JB721TiersHookStore_VotingUnitsNotAllowed(tierId);
-            }
-
-            // Make sure the new tier doesn't have a reserve frequency if the 721 contract's flags don't allow it to,
-            // OR if manual minting is allowed.
-            if ((flags.noNewTiersWithReserves || tierToAdd.allowOwnerMint) && tierToAdd.reserveFrequency != 0) {
-                revert JB721TiersHookStore_ReserveFrequencyNotAllowed(tierId);
-            }
-
-            // Make sure the new tier doesn't have owner minting enabled if the 721 contract's flags don't allow it to.
-            if (flags.noNewTiersWithOwnerMinting && tierToAdd.allowOwnerMint) {
-                revert JB721TiersHookStore_ManualMintingNotAllowed(tierId);
-            }
-
-            // Make sure the discount percent is within the bound.
-            if (tierToAdd.discountPercent > JB721Constants.DISCOUNT_DENOMINATOR) {
-                revert JB721TiersHookStore_DiscountPercentExceedsBounds(
-                    tierToAdd.discountPercent, JB721Constants.DISCOUNT_DENOMINATOR
-                );
-            }
-
-            // Make sure the split percent is within the bound.
-            if (tierToAdd.splitPercent > JBConstants.SPLITS_TOTAL_PERCENT) {
-                revert JB721TiersHookStore_SplitPercentExceedsBounds(
-                    tierToAdd.splitPercent, JBConstants.SPLITS_TOTAL_PERCENT
-                );
-            }
-
-            // Make sure the tier has a non-zero supply.
-            if (tierToAdd.initialSupply == 0) revert JB721TiersHookStore_ZeroInitialSupply(tierId);
-
-            // Store the tier with that ID.
-            _storedTierOf[msg.sender][tierId] = JBStored721Tier({
-                price: uint104(tierToAdd.price),
-                remainingSupply: uint32(tierToAdd.initialSupply),
-                initialSupply: uint32(tierToAdd.initialSupply),
-                splitPercent: uint32(tierToAdd.splitPercent),
-                reserveFrequency: uint16(tierToAdd.reserveFrequency),
-                category: uint24(tierToAdd.category),
-                discountPercent: uint8(tierToAdd.discountPercent),
-                packedBools: _packBools({
-                    allowOwnerMint: tierToAdd.allowOwnerMint,
-                    transfersPausable: tierToAdd.transfersPausable,
-                    useVotingUnits: tierToAdd.useVotingUnits,
-                    cannotBeRemoved: tierToAdd.cannotBeRemoved,
-                    cannotIncreaseDiscountPercent: tierToAdd.cannotIncreaseDiscountPercent
-                })
+            (startSortedTierId, previousTierId, previousCategory) = _recordAddedTier({
+                hook: hook,
+                tierConfig: tierConfig,
+                flags: flags,
+                tierId: tierId,
+                currentMaxTierIdOf: currentMaxTierIdOf,
+                currentLastSortedTierId: currentLastSortedTierId,
+                previousCategory: previousCategory,
+                previousTierId: previousTierId,
+                startSortedTierId: startSortedTierId
             });
-
-            // Store voting units in a separate mapping if custom voting units are used.
-            if (tierToAdd.useVotingUnits && tierToAdd.votingUnits != 0) {
-                _tierVotingUnitsOf[msg.sender][tierId] = uint32(tierToAdd.votingUnits);
-            }
-
-            // If this is the first tier in a new category, store it as the first tier in that category.
-            // The `_startingTierIdOfCategory` of the category "0" will always be the same as the `_tierIdAfter` the 0th
-            // tier.
-            if (previousTier.category != tierToAdd.category && tierToAdd.category != 0) {
-                _startingTierIdOfCategory[msg.sender][tierToAdd.category] = tierId;
-            }
-
-            // Set the reserve beneficiary if needed.
-            if (tierToAdd.reserveBeneficiary != address(0) && tierToAdd.reserveFrequency != 0) {
-                if (tierToAdd.useReserveBeneficiaryAsDefault) {
-                    // WARNING: This overwrites the global default for ALL tiers without a tier-specific beneficiary.
-                    if (defaultReserveBeneficiaryOf[msg.sender] != tierToAdd.reserveBeneficiary) {
-                        defaultReserveBeneficiaryOf[msg.sender] = tierToAdd.reserveBeneficiary;
-                        emit SetDefaultReserveBeneficiary({
-                            hook: msg.sender, newBeneficiary: tierToAdd.reserveBeneficiary, caller: msg.sender
-                        });
-                    }
-                } else {
-                    _reserveBeneficiaryOf[msg.sender][tierId] = tierToAdd.reserveBeneficiary;
-                }
-            }
-
-            // Set the `encodedIPFSUri` if needed.
-            if (tierToAdd.encodedIPFSUri != bytes32(0)) {
-                encodedIPFSUriOf[msg.sender][tierId] = tierToAdd.encodedIPFSUri;
-            }
-
-            if (startSortedTierId != 0) {
-                // Keep track of the sorted tier ID being iterated on.
-                uint256 currentSortedTierId = startSortedTierId;
-
-                // Keep a reference to the tier ID to iterate to next.
-                uint256 nextTierId;
-
-                // Make sure the tier is sorted correctly.
-                while (currentSortedTierId != 0) {
-                    // Set the next tier ID.
-                    nextTierId =
-                        _nextSortedTierIdOf({hook: msg.sender, id: currentSortedTierId, max: currentLastSortedTierId});
-
-                    // If the category is less than or equal to the sorted tier being iterated on,
-                    // AND the tier being iterated on isn't among those being added, store the order.
-                    if (
-                        tierToAdd.category <= _storedTierOf[msg.sender][currentSortedTierId].category
-                            && currentSortedTierId <= currentMaxTierIdOf
-                    ) {
-                        // If the tier ID being iterated on isn't the next tier ID, set the `_tierIdAfter` (next tier
-                        // ID).
-                        if (currentSortedTierId != tierId + 1) {
-                            _tierIdAfter[msg.sender][tierId] = currentSortedTierId;
-                        }
-
-                        // If this is the first tier being added, track it as the current last sorted tier ID (if it's
-                        // not already tracked).
-                        if (_lastTrackedSortedTierIdOf[msg.sender] != currentLastSortedTierId) {
-                            _lastTrackedSortedTierIdOf[msg.sender] = currentLastSortedTierId;
-                        }
-
-                        // If the previous tier's `_tierIdAfter` was set to something else, update it.
-                        if (previousTierId != tierId - 1 || _tierIdAfter[msg.sender][previousTierId] != 0) {
-                            // Set the the previous tier's `_tierIdAfter` to the tier being added, or 0 if the tier ID
-                            // is
-                            // incremented.
-                            _tierIdAfter[msg.sender][previousTierId] = previousTierId == tierId - 1 ? 0 : tierId;
-                        }
-
-                        // When the next tier is being added, start at the sorted tier just set.
-                        startSortedTierId = currentSortedTierId;
-
-                        // Use the current tier ID as the "previous tier ID" when the next tier is being added.
-                        previousTierId = tierId;
-
-                        // Set the current sorted tier ID to zero to break out of the loop (the tier has been sorted).
-                        currentSortedTierId = 0;
-                    }
-                    // If the tier being iterated on is the last tier, add the new tier after it.
-                    else if (nextTierId == 0 || nextTierId > currentMaxTierIdOf) {
-                        if (tierId != currentSortedTierId + 1) {
-                            _tierIdAfter[msg.sender][currentSortedTierId] = tierId;
-                        }
-
-                        // For the next tier being added, start at this current tier ID.
-                        startSortedTierId = tierId;
-
-                        // Break out.
-                        currentSortedTierId = 0;
-
-                        // If there's currently a last sorted tier ID tracked, override it.
-                        if (_lastTrackedSortedTierIdOf[msg.sender] != 0) _lastTrackedSortedTierIdOf[msg.sender] = 0;
-                    }
-                    // Move on to the next tier ID.
-                    else {
-                        // Set the previous tier ID to be the current tier ID.
-                        previousTierId = currentSortedTierId;
-
-                        // Go to the next tier ID.
-                        currentSortedTierId = nextTierId;
-                    }
-                }
-            }
 
             // Add the tier ID to the array being returned.
             tierIds[i] = tierId;
         }
 
         // Update the maximum tier ID to include the new tiers.
-        maxTierIdOf[msg.sender] = currentMaxTierIdOf + tiersToAdd.length;
+        maxTierIdOf[hook] = currentMaxTierIdOf + tiersToAdd.length;
     }
 
     /// @notice Records 721 burns.
@@ -1236,5 +1070,217 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                 ++tierBalanceOf[msg.sender][to][tierId];
             }
         }
+    }
+
+    function _insertAddedTierIntoSortOrder(
+        address hook,
+        uint256 tierId,
+        uint256 tierCategory,
+        uint256 currentMaxTierIdOf,
+        uint256 currentLastSortedTierId,
+        uint256 previousTierId,
+        uint256 startSortedTierId
+    )
+        internal
+        returns (uint256 updatedStartSortedTierId, uint256 updatedPreviousTierId)
+    {
+        updatedStartSortedTierId = startSortedTierId;
+        updatedPreviousTierId = previousTierId;
+
+        // Keep track of the sorted tier ID being iterated on.
+        uint256 currentSortedTierId = startSortedTierId;
+
+        // Keep a reference to the tier ID to iterate to next.
+        uint256 nextTierId;
+
+        // Make sure the tier is sorted correctly.
+        while (currentSortedTierId != 0) {
+            // Set the next tier ID.
+            nextTierId = _nextSortedTierIdOf({hook: hook, id: currentSortedTierId, max: currentLastSortedTierId});
+
+            // If the category is less than or equal to the sorted tier being iterated on,
+            // AND the tier being iterated on isn't among those being added, store the order.
+            if (
+                tierCategory <= _storedTierOf[hook][currentSortedTierId].category
+                    && currentSortedTierId <= currentMaxTierIdOf
+            ) {
+                // If the tier ID being iterated on isn't the next tier ID, set the `_tierIdAfter` (next tier ID).
+                if (currentSortedTierId != tierId + 1) {
+                    _tierIdAfter[hook][tierId] = currentSortedTierId;
+                }
+
+                // If this is the first tier being added, track it as the current last sorted tier ID (if it's
+                // not already tracked).
+                if (_lastTrackedSortedTierIdOf[hook] != currentLastSortedTierId) {
+                    _lastTrackedSortedTierIdOf[hook] = currentLastSortedTierId;
+                }
+
+                // If the previous tier's `_tierIdAfter` was set to something else, update it.
+                if (updatedPreviousTierId != tierId - 1 || _tierIdAfter[hook][updatedPreviousTierId] != 0) {
+                    // Set the the previous tier's `_tierIdAfter` to the tier being added, or 0 if the tier ID is
+                    // incremented.
+                    _tierIdAfter[hook][updatedPreviousTierId] = updatedPreviousTierId == tierId - 1 ? 0 : tierId;
+                }
+
+                // When the next tier is being added, start at the sorted tier just set.
+                updatedStartSortedTierId = currentSortedTierId;
+
+                // Use the current tier ID as the "previous tier ID" when the next tier is being added.
+                updatedPreviousTierId = tierId;
+
+                break;
+            }
+
+            // If the tier being iterated on is the last tier, add the new tier after it.
+            if (nextTierId == 0 || nextTierId > currentMaxTierIdOf) {
+                if (tierId != currentSortedTierId + 1) {
+                    _tierIdAfter[hook][currentSortedTierId] = tierId;
+                }
+
+                // For the next tier being added, start at this current tier ID.
+                updatedStartSortedTierId = tierId;
+
+                // If there's currently a last sorted tier ID tracked, override it.
+                if (_lastTrackedSortedTierIdOf[hook] != 0) _lastTrackedSortedTierIdOf[hook] = 0;
+
+                return (updatedStartSortedTierId, updatedPreviousTierId);
+            }
+
+            // Set the previous tier ID to be the current tier ID.
+            updatedPreviousTierId = currentSortedTierId;
+
+            // Go to the next tier ID.
+            currentSortedTierId = nextTierId;
+        }
+    }
+
+    function _recordAddedTier(
+        address hook,
+        JB721TierConfig calldata tierConfig,
+        JB721TiersHookFlags memory flags,
+        uint256 tierId,
+        uint256 currentMaxTierIdOf,
+        uint256 currentLastSortedTierId,
+        uint256 previousCategory,
+        uint256 previousTierId,
+        uint256 startSortedTierId
+    )
+        internal
+        returns (uint256 updatedStartSortedTierId, uint256 updatedPreviousTierId, uint256 updatedPreviousCategory)
+    {
+        // Make sure the supply maximum is enforced. If it's greater than one billion, it would overflow into the next
+        // tier.
+        if (tierConfig.initialSupply > _ONE_BILLION - 1) {
+            revert JB721TiersHookStore_InvalidQuantity(tierConfig.initialSupply, _ONE_BILLION - 1);
+        }
+
+        // Make sure the tier's category is greater than or equal to the previously added tier's category.
+        if (tierConfig.category < previousCategory) {
+            revert JB721TiersHookStore_InvalidCategorySortOrder(tierConfig.category, previousCategory);
+        }
+
+        // Make sure the new tier doesn't have voting units if the 721 contract's flags don't allow it to.
+        if (
+            flags.noNewTiersWithVotes
+                && ((tierConfig.useVotingUnits && tierConfig.votingUnits != 0)
+                    || (!tierConfig.useVotingUnits && tierConfig.price != 0))
+        ) {
+            revert JB721TiersHookStore_VotingUnitsNotAllowed(tierId);
+        }
+
+        // Make sure the new tier doesn't have a reserve frequency if the 721 contract's flags don't allow it to,
+        // OR if manual minting is allowed.
+        if ((flags.noNewTiersWithReserves || tierConfig.allowOwnerMint) && tierConfig.reserveFrequency != 0) {
+            revert JB721TiersHookStore_ReserveFrequencyNotAllowed(tierId);
+        }
+
+        // Make sure the new tier doesn't have owner minting enabled if the 721 contract's flags don't allow it to.
+        if (flags.noNewTiersWithOwnerMinting && tierConfig.allowOwnerMint) {
+            revert JB721TiersHookStore_ManualMintingNotAllowed(tierId);
+        }
+
+        // Make sure the discount percent is within the bound.
+        if (tierConfig.discountPercent > JB721Constants.DISCOUNT_DENOMINATOR) {
+            revert JB721TiersHookStore_DiscountPercentExceedsBounds(
+                tierConfig.discountPercent, JB721Constants.DISCOUNT_DENOMINATOR
+            );
+        }
+
+        // Make sure the split percent is within the bound.
+        if (tierConfig.splitPercent > JBConstants.SPLITS_TOTAL_PERCENT) {
+            revert JB721TiersHookStore_SplitPercentExceedsBounds(
+                tierConfig.splitPercent, JBConstants.SPLITS_TOTAL_PERCENT
+            );
+        }
+
+        // Make sure the tier has a non-zero supply.
+        if (tierConfig.initialSupply == 0) revert JB721TiersHookStore_ZeroInitialSupply(tierId);
+
+        // Store the tier with that ID.
+        _storedTierOf[hook][tierId] = JBStored721Tier({
+            price: uint104(tierConfig.price),
+            remainingSupply: uint32(tierConfig.initialSupply),
+            initialSupply: uint32(tierConfig.initialSupply),
+            splitPercent: uint32(tierConfig.splitPercent),
+            reserveFrequency: uint16(tierConfig.reserveFrequency),
+            category: uint24(tierConfig.category),
+            discountPercent: uint8(tierConfig.discountPercent),
+            packedBools: _packBools({
+                allowOwnerMint: tierConfig.allowOwnerMint,
+                transfersPausable: tierConfig.transfersPausable,
+                useVotingUnits: tierConfig.useVotingUnits,
+                cannotBeRemoved: tierConfig.cannotBeRemoved,
+                cannotIncreaseDiscountPercent: tierConfig.cannotIncreaseDiscountPercent
+            })
+        });
+
+        // Store voting units in a separate mapping if custom voting units are used.
+        if (tierConfig.useVotingUnits && tierConfig.votingUnits != 0) {
+            _tierVotingUnitsOf[hook][tierId] = uint32(tierConfig.votingUnits);
+        }
+
+        // If this is the first tier in a new category, store it as the first tier in that category.
+        // The `_startingTierIdOfCategory` of the category "0" will always be the same as the `_tierIdAfter` the 0th
+        // tier.
+        if (previousCategory != tierConfig.category && tierConfig.category != 0) {
+            _startingTierIdOfCategory[hook][tierConfig.category] = tierId;
+        }
+
+        // Set the reserve beneficiary if needed.
+        if (tierConfig.reserveBeneficiary != address(0) && tierConfig.reserveFrequency != 0) {
+            if (tierConfig.useReserveBeneficiaryAsDefault) {
+                // WARNING: This overwrites the global default for ALL tiers without a tier-specific beneficiary.
+                if (defaultReserveBeneficiaryOf[hook] != tierConfig.reserveBeneficiary) {
+                    defaultReserveBeneficiaryOf[hook] = tierConfig.reserveBeneficiary;
+                    emit SetDefaultReserveBeneficiary({
+                        hook: hook, newBeneficiary: tierConfig.reserveBeneficiary, caller: hook
+                    });
+                }
+            } else {
+                _reserveBeneficiaryOf[hook][tierId] = tierConfig.reserveBeneficiary;
+            }
+        }
+
+        // Set the `encodedIPFSUri` if needed.
+        if (tierConfig.encodedIPFSUri != bytes32(0)) {
+            encodedIPFSUriOf[hook][tierId] = tierConfig.encodedIPFSUri;
+        }
+
+        updatedStartSortedTierId = startSortedTierId;
+        updatedPreviousTierId = previousTierId;
+
+        if (startSortedTierId != 0) {
+            (updatedStartSortedTierId, updatedPreviousTierId) = _insertAddedTierIntoSortOrder({
+                hook: hook,
+                tierId: tierId,
+                tierCategory: tierConfig.category,
+                currentMaxTierIdOf: currentMaxTierIdOf,
+                currentLastSortedTierId: currentLastSortedTierId,
+                previousTierId: previousTierId,
+                startSortedTierId: startSortedTierId
+            });
+        }
+
+        updatedPreviousCategory = tierConfig.category;
     }
 }

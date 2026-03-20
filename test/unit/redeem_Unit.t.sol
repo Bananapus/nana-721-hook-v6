@@ -45,30 +45,10 @@ contract Test_cashOut_Unit is UnitTestSetup {
         }
 
         // Build the metadata with the tiers to cash out.
-        bytes[] memory data = new bytes[](1);
-        data[0] = abi.encode(tokenList);
-
-        // Pass the hook ID.
-        bytes4[] memory ids = new bytes4[](1);
-        ids[0] = metadataHelper.getId("cashOut", address(hookOrigin));
-
-        // Generate the metadata.
-        bytes memory hookMetadata = metadataHelper.createMetadata(ids, data);
+        bytes memory hookMetadata = _cashOutMetadataFor(address(hookOrigin), tokenList);
         (uint256 cashOutTaxRate,,, JBCashOutHookSpecification[] memory returnedHook) = hook.beforeCashOutRecordedWith(
-            JBBeforeCashOutRecordedContext({
-                terminal: address(0),
-                holder: beneficiary,
-                projectId: projectId,
-                rulesetId: 0,
-                cashOutCount: 0,
-                totalSupply: 0,
-                surplus: JBTokenAmount({
-                    token: address(0), value: SURPLUS, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
-                }),
-                useTotalSurplus: true,
-                cashOutTaxRate: CASH_OUT_TAX_RATE,
-                beneficiaryIsFeeless: false,
-                metadata: hookMetadata
+            _beforeCashOutContext({
+                holder: beneficiary, surplusValue: SURPLUS, taxRate: CASH_OUT_TAX_RATE, metadata: hookMetadata
             })
         );
 
@@ -180,29 +160,12 @@ contract Test_cashOut_Unit is UnitTestSetup {
         }
 
         // Build the metadata with the tiers to cash out.
-        bytes[] memory data = new bytes[](1);
-        data[0] = abi.encode(tokenList);
+        bytes memory hookMetadata = _cashOutMetadataFor(address(hookOrigin), tokenList);
 
-        // Pass the hook ID.
-        bytes4[] memory ids = new bytes4[](1);
-        ids[0] = metadataHelper.getId("cashOut", address(hookOrigin));
-
-        // Generate the metadata.
-        bytes memory hookMetadata = metadataHelper.createMetadata(ids, data);
-
-        JBBeforeCashOutRecordedContext memory beforeCashOutContext = JBBeforeCashOutRecordedContext({
-            terminal: address(0),
+        JBBeforeCashOutRecordedContext memory beforeCashOutContext = _beforeCashOutContext({
             holder: beneficiary,
-            projectId: projectId,
-            rulesetId: 0,
-            cashOutCount: 0,
-            totalSupply: 0,
-            surplus: JBTokenAmount({
-                token: address(0), value: SURPLUS, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
-            }),
-            useTotalSurplus: true,
-            cashOutTaxRate: JBConstants.MAX_CASH_OUT_TAX_RATE,
-            beneficiaryIsFeeless: false,
+            surplusValue: SURPLUS,
+            taxRate: JBConstants.MAX_CASH_OUT_TAX_RATE,
             metadata: hookMetadata
         });
 
@@ -256,50 +219,17 @@ contract Test_cashOut_Unit is UnitTestSetup {
         uint256[] memory tokenList = new uint256[](numberOfNfts);
 
         bytes memory hookMetadata;
-        bytes[] memory data;
-        bytes4[] memory ids;
 
         for (uint256 i; i < numberOfNfts; i++) {
             uint16[] memory tierIdsToMint = new uint16[](1);
             tierIdsToMint[0] = 1;
 
-            // Build the metadata using the tiers to mint and the overspending flag.
-            data = new bytes[](1);
-            data[0] = abi.encode(false, tierIdsToMint);
-
-            // Pass the hook ID.
-            ids = new bytes4[](1);
-            ids[0] = metadataHelper.getId("pay", address(hook));
-
-            // Generate the metadata.
-            hookMetadata = metadataHelper.createMetadata(ids, data);
+            hookMetadata = _payMetadataFor(address(hook), tierIdsToMint);
 
             // Mint the NFTs. Otherwise, the voting balance is not incremented,
             // which leads to an underflow upon cash out.
             vm.prank(mockTerminalAddress);
-            JBAfterPayRecordedContext memory afterPayContext = JBAfterPayRecordedContext({
-                payer: beneficiary,
-                projectId: projectId,
-                rulesetId: 0,
-                amount: JBTokenAmount({
-                    token: JBConstants.NATIVE_TOKEN,
-                    value: 10,
-                    decimals: 18,
-                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
-                }),
-                forwardedAmount: JBTokenAmount({
-                    token: JBConstants.NATIVE_TOKEN,
-                    value: 0,
-                    decimals: 18,
-                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
-                }), // 0
-                // Forward to the hook.
-                weight: 10 ** 18,
-                newlyIssuedTokenCount: 0,
-                beneficiary: beneficiary,
-                hookMetadata: new bytes(0),
-                payerMetadata: hookMetadata
-            });
+            JBAfterPayRecordedContext memory afterPayContext = _afterPayContext({payerMetadata: hookMetadata});
 
             hook.afterPayRecordedWith(afterPayContext);
 
@@ -310,33 +240,12 @@ contract Test_cashOut_Unit is UnitTestSetup {
         }
 
         // Build the metadata with the tiers to cash out.
-        data = new bytes[](1);
-        data[0] = abi.encode(tokenList);
-
-        // Pass the hook ID.
-        ids = new bytes4[](1);
-        ids[0] = metadataHelper.getId("cashOut", address(hook));
-
-        // Generate the metadata.
-        hookMetadata = metadataHelper.createMetadata(ids, data);
+        hookMetadata = _cashOutMetadataFor(address(hook), tokenList);
 
         vm.prank(mockTerminalAddress);
         hook.afterCashOutRecordedWith(
-            JBAfterCashOutRecordedContext({
-                holder: beneficiary,
-                projectId: projectId,
-                rulesetId: 1,
-                cashOutCount: 0,
-                reclaimedAmount: JBTokenAmount({
-                    token: address(0), value: 0, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
-                }),
-                forwardedAmount: JBTokenAmount({
-                    token: address(0), value: 0, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
-                }), // 0, forwarded to the hook.
-                cashOutTaxRate: 5000,
-                beneficiary: payable(beneficiary),
-                hookMetadata: bytes(""),
-                cashOutMetadata: hookMetadata
+            _afterCashOutContext({
+                holder: beneficiary, beneficiaryToReceive: payable(beneficiary), metadata: hookMetadata
             })
         );
 
@@ -431,15 +340,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
         tokenList[0] = tokenId;
 
         // Build the metadata with the tiers to cash out.
-        bytes[] memory data = new bytes[](1);
-        data[0] = abi.encode(tokenList);
-
-        // Pass the hook ID.
-        bytes4[] memory ids = new bytes4[](1);
-        ids[0] = metadataHelper.getId("cashOut", address(hook));
-
-        // Generate the metadata.
-        bytes memory hookMetadata = metadataHelper.createMetadata(ids, data);
+        bytes memory hookMetadata = _cashOutMetadataFor(address(hook), tokenList);
 
         // Mock the directory call.
         mockAndExpect(
@@ -452,22 +353,112 @@ contract Test_cashOut_Unit is UnitTestSetup {
 
         vm.prank(mockTerminalAddress);
         hook.afterCashOutRecordedWith(
-            JBAfterCashOutRecordedContext({
-                holder: wrongHolder,
-                projectId: projectId,
-                rulesetId: 1,
-                cashOutCount: 0,
-                reclaimedAmount: JBTokenAmount({
-                    token: address(0), value: 0, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
-                }),
-                forwardedAmount: JBTokenAmount({
-                    token: address(0), value: 0, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
-                }), // 0, forwarded to the hook.
-                cashOutTaxRate: 5000,
-                beneficiary: payable(wrongHolder),
-                hookMetadata: bytes(""),
-                cashOutMetadata: hookMetadata
+            _afterCashOutContext({
+                holder: wrongHolder, beneficiaryToReceive: payable(wrongHolder), metadata: hookMetadata
             })
         );
+    }
+
+    function _afterCashOutContext(
+        address holder,
+        address payable beneficiaryToReceive,
+        bytes memory metadata
+    )
+        internal
+        view
+        returns (JBAfterCashOutRecordedContext memory)
+    {
+        return JBAfterCashOutRecordedContext({
+            holder: holder,
+            projectId: projectId,
+            rulesetId: 1,
+            cashOutCount: 0,
+            reclaimedAmount: _nativeTokenAmount(0),
+            forwardedAmount: _nativeTokenAmount(0),
+            cashOutTaxRate: 5000,
+            beneficiary: beneficiaryToReceive,
+            hookMetadata: bytes(""),
+            cashOutMetadata: metadata
+        });
+    }
+
+    function _afterPayContext(bytes memory payerMetadata) internal view returns (JBAfterPayRecordedContext memory) {
+        return JBAfterPayRecordedContext({
+            payer: beneficiary,
+            projectId: projectId,
+            rulesetId: 0,
+            amount: _nativeTokenAmount(10),
+            forwardedAmount: _nativeTokenAmount(0),
+            weight: 10 ** 18,
+            newlyIssuedTokenCount: 0,
+            beneficiary: beneficiary,
+            hookMetadata: new bytes(0),
+            payerMetadata: payerMetadata
+        });
+    }
+
+    function _beforeCashOutContext(
+        address holder,
+        uint256 surplusValue,
+        uint256 taxRate,
+        bytes memory metadata
+    )
+        internal
+        view
+        returns (JBBeforeCashOutRecordedContext memory)
+    {
+        return JBBeforeCashOutRecordedContext({
+            terminal: address(0),
+            holder: holder,
+            projectId: projectId,
+            rulesetId: 0,
+            cashOutCount: 0,
+            totalSupply: 0,
+            surplus: _nativeTokenAmount(surplusValue),
+            useTotalSurplus: true,
+            cashOutTaxRate: taxRate,
+            beneficiaryIsFeeless: false,
+            metadata: metadata
+        });
+    }
+
+    function _cashOutMetadataFor(
+        address metadataTarget,
+        uint256[] memory tokenList
+    )
+        internal
+        view
+        returns (bytes memory)
+    {
+        bytes[] memory data = new bytes[](1);
+        data[0] = abi.encode(tokenList);
+
+        bytes4[] memory ids = new bytes4[](1);
+        ids[0] = metadataHelper.getId("cashOut", metadataTarget);
+
+        return metadataHelper.createMetadata(ids, data);
+    }
+
+    function _nativeTokenAmount(uint256 value) internal pure returns (JBTokenAmount memory) {
+        return JBTokenAmount({
+            token: address(0), value: value, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+        });
+    }
+
+    function _payMetadataFor(
+        address metadataTarget,
+        uint16[] memory tierIdsToMint
+    )
+        internal
+        view
+        returns (bytes memory)
+    {
+        bytes[] memory data = new bytes[](1);
+        data[0] = abi.encode(false, tierIdsToMint);
+
+        bytes4[] memory ids = new bytes4[](1);
+        ids[0] = metadataHelper.getId("pay", metadataTarget);
+
+        return metadataHelper.createMetadata(ids, data);
     }
 }

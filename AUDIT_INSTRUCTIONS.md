@@ -17,7 +17,7 @@ Four contracts, one library:
 | `JB721TiersHookLib` (library) | ~607 | Extracted logic for EIP-170 compliance. Tier adjustments, split amount calculation, price normalization, weight adjustment, split fund distribution, token URI resolution. Called via DELEGATECALL from the hook. |
 
 Supporting:
-- `JB721Hook` (abstract, ~270 lines) -- Base ERC-721 with `beforePayRecordedWith`, `beforeCashOutRecordedWith`, `afterPayRecordedWith`, `afterCashOutRecordedWith`. Terminal authorization checks.
+- `JB721Hook` (abstract, ~270 lines) -- Base ERC-721 with `beforePayRecordedWith`, `beforeCashOutRecordedWith`, `afterPayRecordedWith`, `afterCashOutRecordedWith`. Terminal authorization checks. On core `0.0.20+`, returned pay/cash-out specs include `noop`, and this repo uses active specs (`noop = false`).
 - `ERC721` (abstract) -- Minimal ERC-721 with initializable name/symbol.
 
 ## Key Flows
@@ -30,7 +30,7 @@ Terminal.pay(metadata with tier IDs)
      -> JB721TiersHookLib.calculateSplitAmounts() -- per-tier split amounts from tier prices
      -> JB721TiersHookLib.convertSplitAmounts()   -- currency conversion if pricing != payment currency
      -> JB721TiersHookLib.calculateWeight()        -- reduce weight by split fraction
-     -> returns (weight, hookSpecifications[0] = {this, totalSplitAmount, splitMetadata})
+     -> returns (weight, hookSpecifications[0] = {this, noop: false, totalSplitAmount, splitMetadata})
 
   -- Terminal records payment in JBTerminalStore with adjusted weight --
   -- Terminal mints project tokens --

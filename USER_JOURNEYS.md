@@ -14,6 +14,8 @@ A user pays a Juicebox project and receives tiered NFTs based on the amount paid
 
 **Entry point**: `JBMultiTerminal.pay()` (external). The hook is invoked as both a data hook (`beforePayRecordedWith`) and a pay hook (`afterPayRecordedWith`).
 
+The returned pay-hook spec is active (`noop = false`), so the terminal will call `afterPayRecordedWith`.
+
 **Parameters** (encoded in payment metadata via `JBMetadataResolver`):
 - `bool allowOverspending` -- whether leftover funds after minting should be stored as credits (true) or revert (false). The hook-level `preventOverspending` flag can override this.
 - `uint16[] tierIdsToMint` -- which tier IDs to mint, in order. The same tier can appear multiple times.
@@ -52,6 +54,8 @@ A user pays a Juicebox project and receives tiered NFTs based on the amount paid
 An NFT holder burns their NFTs to reclaim funds from the project's surplus, proportional to the NFTs' cash-out weight relative to the total cash-out weight.
 
 **Entry point**: `JBMultiTerminal.cashOutTokensOf()` (external). The hook is invoked as both a data hook (`beforeCashOutRecordedWith`) and a cash out hook (`afterCashOutRecordedWith`).
+
+The returned cash-out-hook spec is active (`noop = false`), so the terminal will call `afterCashOutRecordedWith`.
 
 **Parameters** (encoded in cash-out metadata via `JBMetadataResolver`):
 - `uint256[] tokenIds` -- the token IDs of the NFTs to burn.

@@ -5,6 +5,10 @@
 1. A pay hook for Juicebox projects to sell tiered NFTs (ERC-721s) with different prices and artwork.
 2. (Optionally) a cash out hook which allows holders to burn their NFTs to reclaim funds from the project, in proportion to the NFT's price.
 
+With `@bananapus/core-v6@0.0.20`, the hook specifications returned from `beforePayRecordedWith` and
+`beforeCashOutRecordedWith` include the core `noop` flag. This repo returns active specs (`noop = false`) when it
+expects the terminal to call back into the hook.
+
 <details>
   <summary>Table of Contents</summary>
   <ol>
