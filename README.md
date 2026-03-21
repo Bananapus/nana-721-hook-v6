@@ -55,7 +55,7 @@ For projects using `forge` to manage dependencies (not recommended):
 forge install Bananapus/nana-721-hook
 ```
 
-If you're using `forge` to manage dependencies, add `@bananapus/721-hook/=lib/nana-721-hook/` to `remappings.txt`. You'll also need to install `nana-721-hook`'s dependencies and add similar remappings for them.
+If you're using `forge` to manage dependencies, you'll also need to install `nana-721-hook`'s dependencies. With `libs = ["node_modules", "lib"]` in `foundry.toml`, Foundry auto-resolves import paths — no `remappings.txt` needed.
 
 ### Develop
 
@@ -136,13 +136,7 @@ This example deploys `nana-721-hook` to the Sepolia testnet using the specified 
 
 To view test coverage, run `npm run coverage` to generate an LCOV test report. You can use an extension like [Coverage Gutters](https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters) to view coverage in your editor.
 
-If you're using Nomic Foundation's [Solidity](https://marketplace.visualstudio.com/items?itemName=NomicFoundation.hardhat-solidity) extension in VSCode, you may run into LSP errors because the extension cannot find dependencies outside of `lib`. You can often fix this by running:
-
-```bash
-forge remappings >> remappings.txt
-```
-
-This makes the extension aware of default remappings.
+If you're using Nomic Foundation's [Solidity](https://marketplace.visualstudio.com/items?itemName=NomicFoundation.hardhat-solidity) extension in VSCode, you may run into LSP errors because the extension cannot find dependencies outside of `lib`. You can often fix this by running `forge remappings > remappings.txt` to generate a remappings file for the extension. This file is gitignored and only needed for editor support.
 
 ## Repository Layout
 
