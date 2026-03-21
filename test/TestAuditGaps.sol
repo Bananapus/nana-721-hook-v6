@@ -447,6 +447,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[i % 10],
                 // forge-lint: disable-next-line(unsafe-typecast)
+                // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1), // Ascending categories
                 discountPercent: 0,
                 allowOwnerMint: false,
@@ -498,6 +499,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
                 reserveFrequency: 0,
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[i % 10],
+                // forge-lint: disable-next-line(unsafe-typecast)
                 // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1),
                 discountPercent: 0,
@@ -553,6 +555,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[i % 10],
                 // forge-lint: disable-next-line(unsafe-typecast)
+                // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1),
                 discountPercent: 0,
                 allowOwnerMint: false,
@@ -580,6 +583,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
         uint16[] memory tierIdsToMint = new uint16[](10);
         uint256 totalCost;
         for (uint256 i; i < 10; i++) {
+            // forge-lint: disable-next-line(unsafe-typecast)
             // forge-lint: disable-next-line(unsafe-typecast)
             tierIdsToMint[i] = uint16(i + 1);
             totalCost += (i + 1) * 1e15;
@@ -652,6 +656,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[i % 10],
                 // forge-lint: disable-next-line(unsafe-typecast)
+                // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1),
                 discountPercent: 0,
                 allowOwnerMint: false,
@@ -699,6 +704,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
                 reserveFrequency: 0,
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[i % 10],
+                // forge-lint: disable-next-line(unsafe-typecast)
                 // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1),
                 discountPercent: 0,
@@ -759,6 +765,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
                 reserveFrequency: 0,
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[i % 10],
+                // forge-lint: disable-next-line(unsafe-typecast)
                 // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1),
                 discountPercent: 0,
@@ -831,6 +838,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[i % 10],
                 // forge-lint: disable-next-line(unsafe-typecast)
+                // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1),
                 discountPercent: 0,
                 allowOwnerMint: false,
@@ -857,6 +865,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
         uint16[] memory tierIdsToMint = new uint16[](50);
         uint256 totalCost;
         for (uint256 i; i < 50; i++) {
+            // forge-lint: disable-next-line(unsafe-typecast)
             // forge-lint: disable-next-line(unsafe-typecast)
             tierIdsToMint[i] = uint16(i + 1);
             totalCost += (i + 1) * 1e15;
@@ -962,6 +971,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
         uint16[] memory tierIdsToMint = new uint16[](mintedCount);
         uint256 totalCost;
         for (uint256 i; i < mintedCount; i++) {
+            // forge-lint: disable-next-line(unsafe-typecast)
             tierIdsToMint[i] = uint16(i + 1);
             totalCost += (i + 1) * 1e15;
         }
@@ -1023,6 +1033,7 @@ contract TestAuditGaps_GasLimits is UnitTestSetup {
                 reserveFrequency: 0,
                 reserveBeneficiary: reserveBeneficiary,
                 encodedIPFSUri: tokenUris[i % 10],
+                // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1),
                 discountPercent: 0,
                 allowOwnerMint: false,

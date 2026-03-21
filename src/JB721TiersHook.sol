@@ -210,7 +210,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             issueTokensForSplits: STORE.flagsOf(address(this)).issueTokensForSplits
         });
 
-        hookSpecifications[0] = JBPayHookSpecification({hook: this, amount: totalSplitAmount, metadata: splitMetadata});
+        hookSpecifications[0] =
+            JBPayHookSpecification({hook: this, noop: false, amount: totalSplitAmount, metadata: splitMetadata});
     }
 
     /// @notice The combined cash out weight of the NFTs with the specified token IDs.
@@ -620,6 +621,84 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         }
     }
 
+    /// @notice Mint NFTs from the specified tiers and update the beneficiary's pay credits.
+    /// @param value The normalized payment value.
+    /// @param context Payment context provided by the terminal.
+    function _mintAndUpdateCredits(uint256 value, JBAfterPayRecordedContext calldata context) internal {
+        // Keep a reference to the number of NFT credits the beneficiary already has.
+        uint256 payCredits = payCreditsOf[context.beneficiary];
+
+        // Set the leftover amount as the initial value.
+        uint256 leftoverAmount = value;
+
+        // If the payer is the beneficiary, combine their NFT credits with the amount paid.
+        uint256 unusedPayCredits;
+        if (context.payer == context.beneficiary) {
+            leftoverAmount += payCredits;
+        } else {
+            // Otherwise, the payer's NFT credits won't be used, and we keep track of the unused credits.
+            unusedPayCredits = payCredits;
+        }
+
+        // Keep a reference to the boolean indicating whether paying more than the price of the NFTs being minted
+        // is allowed. Defaults to the collection's flag.
+        bool allowOverspending = !STORE.flagsOf(address(this)).preventOverspending;
+
+        // Resolve the metadata.
+        (bool found, bytes memory metadata) = JBMetadataResolver.getDataFor({
+            id: JBMetadataResolver.getId({purpose: "pay", target: METADATA_ID_TARGET}), metadata: context.payerMetadata
+        });
+
+        if (found) {
+            // Keep a reference to the IDs of the tier be to minted.
+            uint16[] memory tierIdsToMint;
+
+            // Keep a reference to the payer's flag indicating whether overspending is allowed.
+            bool payerAllowsOverspending;
+
+            // Decode the metadata.
+            (payerAllowsOverspending, tierIdsToMint) = abi.decode(metadata, (bool, uint16[]));
+
+            // Make sure overspending is allowed if requested.
+            if (allowOverspending && !payerAllowsOverspending) {
+                allowOverspending = false;
+            }
+
+            // Mint NFTs from the tiers as specified.
+            if (tierIdsToMint.length != 0) {
+                // slither-disable-next-line reentrancy-events,reentrancy-no-eth
+                leftoverAmount =
+                    _mintAll({amount: leftoverAmount, mintTierIds: tierIdsToMint, beneficiary: context.beneficiary});
+            }
+        }
+
+        // If overspending isn't allowed, revert.
+        if (leftoverAmount != 0 && !allowOverspending) revert JB721TiersHook_Overspending(leftoverAmount);
+
+        // Update NFT credits if they changed.
+        uint256 newPayCredits = leftoverAmount + unusedPayCredits;
+
+        if (newPayCredits != payCredits) {
+            if (newPayCredits > payCredits) {
+                emit AddPayCredits({
+                    amount: newPayCredits - payCredits,
+                    newTotalCredits: newPayCredits,
+                    account: context.beneficiary,
+                    caller: _msgSender()
+                });
+            } else {
+                emit UsePayCredits({
+                    amount: payCredits - newPayCredits,
+                    newTotalCredits: newPayCredits,
+                    account: context.beneficiary,
+                    caller: _msgSender()
+                });
+            }
+
+            payCreditsOf[context.beneficiary] = newPayCredits;
+        }
+    }
+
     /// @notice Process a payment, minting NFTs and updating credits as necessary.
     /// @dev Pay credits are tracked per beneficiary, not per payer. When the payer differs from the beneficiary,
     /// the payer's existing credits are NOT applied to the mint. Only the beneficiary's credits are combined with
@@ -627,97 +706,20 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @param context Payment context provided by the terminal after it has recorded the payment in the terminal store.
     function _processPayment(JBAfterPayRecordedContext calldata context) internal virtual override {
         // Normalize the payment value based on the pricing context.
+        bool valid;
         uint256 value;
-        {
-            bool valid;
-            (value, valid) = JB721TiersHookLib.normalizePaymentValue({
-                packedPricingContext: _packedPricingContext,
-                prices: PRICES,
-                projectId: PROJECT_ID,
-                amountValue: context.amount.value,
-                amountCurrency: context.amount.currency,
-                amountDecimals: context.amount.decimals
-            });
-            if (!valid) return;
-        }
+        (value, valid) = JB721TiersHookLib.normalizePaymentValue({
+            packedPricingContext: _packedPricingContext,
+            prices: PRICES,
+            projectId: PROJECT_ID,
+            amountValue: context.amount.value,
+            amountCurrency: context.amount.currency,
+            amountDecimals: context.amount.decimals
+        });
+        if (!valid) return;
 
-        // Scope block to free stack slots before the distributeAll call below.
-        {
-            // Keep a reference to the number of NFT credits the beneficiary already has.
-            uint256 payCredits = payCreditsOf[context.beneficiary];
-
-            // Set the leftover amount as the initial value.
-            uint256 leftoverAmount = value;
-
-            // If the payer is the beneficiary, combine their NFT credits with the amount paid.
-            uint256 unusedPayCredits;
-            if (context.payer == context.beneficiary) {
-                leftoverAmount += payCredits;
-            } else {
-                // Otherwise, the payer's NFT credits won't be used, and we keep track of the unused credits.
-                unusedPayCredits = payCredits;
-            }
-
-            // Keep a reference to the boolean indicating whether paying more than the price of the NFTs being minted
-            // is allowed. Defaults to the collection's flag.
-            bool allowOverspending = !STORE.flagsOf(address(this)).preventOverspending;
-
-            // Resolve the metadata.
-            (bool found, bytes memory metadata) = JBMetadataResolver.getDataFor({
-                id: JBMetadataResolver.getId({purpose: "pay", target: METADATA_ID_TARGET}),
-                metadata: context.payerMetadata
-            });
-
-            if (found) {
-                // Keep a reference to the IDs of the tier be to minted.
-                uint16[] memory tierIdsToMint;
-
-                // Keep a reference to the payer's flag indicating whether overspending is allowed.
-                bool payerAllowsOverspending;
-
-                // Decode the metadata.
-                (payerAllowsOverspending, tierIdsToMint) = abi.decode(metadata, (bool, uint16[]));
-
-                // Make sure overspending is allowed if requested.
-                if (allowOverspending && !payerAllowsOverspending) {
-                    allowOverspending = false;
-                }
-
-                // Mint NFTs from the tiers as specified.
-                if (tierIdsToMint.length != 0) {
-                    // slither-disable-next-line reentrancy-events,reentrancy-no-eth
-                    leftoverAmount = _mintAll({
-                        amount: leftoverAmount, mintTierIds: tierIdsToMint, beneficiary: context.beneficiary
-                    });
-                }
-            }
-
-            // If overspending isn't allowed, revert.
-            if (leftoverAmount != 0 && !allowOverspending) revert JB721TiersHook_Overspending(leftoverAmount);
-
-            // Update NFT credits if they changed.
-            uint256 newPayCredits = leftoverAmount + unusedPayCredits;
-
-            if (newPayCredits != payCredits) {
-                if (newPayCredits > payCredits) {
-                    emit AddPayCredits({
-                        amount: newPayCredits - payCredits,
-                        newTotalCredits: newPayCredits,
-                        account: context.beneficiary,
-                        caller: _msgSender()
-                    });
-                } else {
-                    emit UsePayCredits({
-                        amount: payCredits - newPayCredits,
-                        newTotalCredits: newPayCredits,
-                        account: context.beneficiary,
-                        caller: _msgSender()
-                    });
-                }
-
-                payCreditsOf[context.beneficiary] = newPayCredits;
-            }
-        }
+        // Mint NFTs from the specified tiers and update the beneficiary's pay credits.
+        _mintAndUpdateCredits({value: value, context: context});
 
         // Distribute any forwarded funds to tier split groups.
         if (context.hookMetadata.length != 0 && context.forwardedAmount.value != 0) {
