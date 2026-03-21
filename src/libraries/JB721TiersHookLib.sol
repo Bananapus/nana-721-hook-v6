@@ -175,14 +175,10 @@ library JB721TiersHookLib {
         view
         returns (uint256 totalSplitAmount, bytes memory hookMetadata)
     {
-        bytes memory data;
-        {
-            bool found;
-            (found, data) = JBMetadataResolver.getDataFor({
-                id: JBMetadataResolver.getId({purpose: "pay", target: metadataIdTarget}), metadata: metadata
-            });
-            if (!found) return (0, bytes(""));
-        }
+        (bool found, bytes memory data) = JBMetadataResolver.getDataFor({
+            id: JBMetadataResolver.getId({purpose: "pay", target: metadataIdTarget}), metadata: metadata
+        });
+        if (!found) return (0, bytes(""));
 
         (, uint16[] memory tierIdsToMint) = abi.decode(data, (bool, uint16[]));
         if (tierIdsToMint.length == 0) return (0, bytes(""));
