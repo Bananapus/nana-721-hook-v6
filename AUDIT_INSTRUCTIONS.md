@@ -270,6 +270,23 @@ These must hold. If you can break any, it's a finding:
 9. **Removal idempotency**: Removing an already-removed tier is a no-op (bitmap set is idempotent).
 10. **NFT supply cap**: Minted count per tier never exceeds `initialSupply` (same as invariant 1, but auditors should verify the `_ONE_BILLION - 1` cap prevents token ID overflow into the next tier).
 
+## Previous Audit Findings
+
+No prior formal audit with finding IDs has been conducted on this codebase. All risk analysis is internal. See [RISKS.md](./RISKS.md) for 19 known risks with test coverage mapping.
+
+## Anti-Patterns to Hunt
+
+| Pattern | Where to Look | Why It's Dangerous |
+|---------|--------------|-------------------|
+| DELEGATECALL from hook to library | `JB721TiersHook` → `JB721TiersHookLib` | Library executes in the hook's storage context. A subtle mismatch in storage layout assumptions could corrupt state. |
+| `safeTransfer` before callback | `_sendPayoutToSplit` ERC-20 path | Tokens leave the contract before the hook callback. The function returns `true` regardless of callback success to prevent double-spend in leftover accounting. |
+| `forceApprove` + external call | `_sendPayoutToSplit` terminal path | If the external call fails, the approval is reset to zero. But between `forceApprove` and the failure, the approval exists. Can an attacker exploit this window? |
+| `mulDiv` rounding in price normalization | `normalizePaymentValue`, `convertSplitAmounts` | Rounding through the conversion chain (normalize → calculate splits → convert back) can compound. Verify rounding favors the protocol. |
+| Bitmap-based removal with iteration by maxTierIdOf | `totalCashOutWeight`, `cleanTiers` | `totalCashOutWeight` iterates up to `maxTierIdOf`, not by sorted list. If many tiers are added and removed, gas cost grows unboundedly. |
+| Clone initialization guard | `JB721TiersHookDeployer` | `initialize()` is guarded by `PROJECT_ID != 0`, not OpenZeppelin's `Initializable`. Verify the implementation contract cannot be initialized. |
+| `_mint` instead of `_safeMint` | `JB721TiersHook` | No `onERC721Received` callback. Prevents mint-time DoS but contracts won't detect incoming NFTs. |
+| Token ID overflow at tier boundary | `_generateTokenId` | `tokenId = tierId * 1_000_000_000 + tokenNumber`. If `tokenNumber` reaches `_ONE_BILLION`, it overflows into the next tier's namespace. Supply cap enforcement (`_ONE_BILLION - 1`) prevents this -- verify the enforcement is complete. |
+
 ## Testing Setup
 
 ```bash
@@ -304,14 +321,12 @@ forge test --gas-report
 | Cross-currency | 1 | 9 tests for price feed behavior |
 | Supply edge cases | 1 | M6 -- 4 targeted tests |
 
-### Notable Coverage Gaps
+### Coverage Gaps
 
-1. ~~No reentrancy test for split distribution `.call{value}` or `terminal.pay()` path.~~ Mitigated: all external calls in `_sendPayoutToSplit` are now wrapped in try-catch. `TestAuditGaps_Reentrancy` confirms reentrancy is blocked by terminal check.
-2. No gas limit test for operations with hundreds of tiers.
-3. No test for malicious/reverting token URI resolver.
-4. No test for `initialize()` front-running on deterministic clones.
-5. No fuzz test for discount percent edge cases with very small prices.
-6. ~~No test for cross-terminal reentry through split `terminal.pay()` callback.~~ Mitigated: terminal calls are wrapped in try-catch; hook state is fully settled before distribution begins.
+1. No gas limit test for operations with hundreds of tiers.
+2. No test for malicious/reverting token URI resolver.
+3. No test for `initialize()` front-running on deterministic clones.
+4. No fuzz test for discount percent edge cases with very small prices.
 
 ## How to Report Findings
 
@@ -338,3 +353,11 @@ For each finding:
 - Is `DISCOUNT_DENOMINATOR = 200` surprising but correct? (It is.)
 - Does the store's `msg.sender`-keyed trust model handle the case? (The store trusts the hook.)
 - Is the economic attack profitable after the core protocol's 2.5% fee on cash outs?
+
+## Compiler and Version Info
+
+- **Solidity**: 0.8.26
+- **EVM target**: Cancun
+- **Optimizer**: via-IR, 200 runs
+- **Dependencies**: OpenZeppelin 5.x, Solady (LibClone), nana-core-v6
+- **Build**: `forge build` (Foundry)
