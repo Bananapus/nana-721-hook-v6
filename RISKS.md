@@ -20,6 +20,7 @@
 - **Currency mismatch silently skips minting.** If payment currency differs from tier pricing currency and `PRICES == address(0)`, `_processPayment` returns without minting or reverting. Funds enter the project balance, no NFTs issued, no credits created (the normalized value is 0).
 - **`splitPercent` reduces minting weight.** `beforePayRecordedWith` scales down the weight returned to the terminal by `(amountValue - totalSplitAmount) / amountValue`. Payers receive fewer fungible tokens for the split portion. `issueTokensForSplits` flag overrides this to give full weight.
 - **Reserved NFT minting is permissionless.** Anyone can call `mintPendingReservesFor` to mint pending reserves to the tier's beneficiary. Only gated by the `mintPendingReservesPaused` ruleset flag. Timing of reserve minting is not owner-controlled.
+- **Cross-reference: `PRICES == address(0)` behavior.** When `address(prices) == address(0)`, cross-currency payments skip minting silently (see Trust Assumptions section 1 and Accepted Behaviors section 8.3). This is the same address stored during `initialize()` — clones that omit the prices parameter get `address(0)` permanently.
 
 ## 3. Reentrancy Surface
 
@@ -79,3 +80,17 @@
 - **Cash out weight uses full price regardless of discount:** `cashOutWeightOf` for any token returns the tier's stored `price`, not the discounted purchase price.
 - **Discount monotonicity when locked:** If `cannotIncreaseDiscountPercent` is set, `discountPercent` can only decrease or stay the same.
 - **Flags are append-only restrictions:** `noNewTiersWithReserves`, `noNewTiersWithVotes`, `noNewTiersWithOwnerMinting` prevent future tiers from using those features but do not retroactively affect existing tiers.
+
+## 8. Accepted Behaviors
+
+### 8.1 Pending reserves inflate `totalCashOutWeight` denominator (by design)
+
+`totalCashOutWeight` includes `price * pendingReserves` for unminted reserve NFTs. This dilutes per-NFT reclaim value before reserves are actually minted. This is intentional: if pending reserves were excluded, a holder could front-run `mintPendingReservesFor` to cash out at an inflated per-NFT value, then the reserve mint would reduce the remaining holders' share. Including pending reserves in the denominator ensures that the reserve allocation is priced in at all times, preventing front-running. The trade-off is that minting reserves (via the permissionless `mintPendingReservesFor`) does not change individual cash-out values — the reserves are already accounted for.
+
+### 8.2 Cash-out weight uses full price regardless of discount (by design)
+
+`cashOutWeightOf` returns the tier's stored `price`, not the discounted purchase price. An NFT bought at 50% discount has the same cash-out weight as one bought at full price. This is intentional: the cash-out weight represents the NFT's share of the project's treasury, not the purchase price paid. Changing cash-out weight based on discount would require per-token storage of purchase price, adding significant gas cost. The discount mechanism is designed for promotional pricing, not for creating tiered cash-out classes.
+
+### 8.3 Currency mismatch silently skips minting (accepted degradation)
+
+If the payment currency differs from the tier pricing currency and `PRICES == address(0)`, `_processPayment` returns without minting NFTs or creating credits. Funds enter the project balance but no NFTs are issued. This is accepted because: (1) reverting would block all payments in the mismatched currency, (2) the project owner chose not to configure price feeds (by not setting `PRICES`), and (3) the funds are not lost — they increase the project's surplus and are reclaimable via cash-out. Projects that need cross-currency NFT minting must configure `JBPrices`.
