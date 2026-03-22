@@ -167,6 +167,7 @@ Each tier has configurable voting power:
 - **Removing tiers does not update the sorted list**: `recordRemoveTierIds` only marks tiers in the bitmap. Call `cleanTiers()` afterward to remove them from the iteration sequence.
 - `JB721TiersHookStore` is a **shared singleton** -- all hook instances on the same chain use the same store, keyed by `address(hook)`.
 - The `ERC721` abstract uses `_initialize(name, symbol)` instead of a constructor, making it clone-compatible. It also exposes `_setName()` and `_setSymbol()` for post-initialization updates. The standard `_owners` mapping is `internal` (not `private`).
+- **Noop hook specifications**: `JBPayHookSpecification` and `JBCashOutHookSpecification` each have a `bool noop` field. When the 721 hook is composed with another data hook (e.g., via `REVDeployer` or `JBOmnichainDeployer`), the outer data hook may return noop specs alongside the 721 hook's active specs. The 721 hook itself always returns active specs (`noop = false`) — it needs the callback to mint NFTs. Noop specs with `amount != 0` revert at the terminal store level.
 - **`hasMintPermissionFor` always returns `false`**: The hook never grants mint permission to any address. This is part of the `IJBRulesetDataHook` interface.
 - **Max tier count is 65,535** (`type(uint16).max`). Adding tiers beyond this limit reverts.
 - **Max initial supply per tier is 999,999,999** (`_ONE_BILLION - 1`). Exceeding this would cause token ID overflow into the next tier's ID space.
