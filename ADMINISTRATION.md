@@ -123,6 +123,16 @@ The following are set at deploy/initialization time and **cannot be changed afte
 | Per-tier `price` | `recordAddTiers()` | The base price (and cash-out weight) of NFTs in the tier |
 | Per-tier `category` | `recordAddTiers()` | The category grouping for sort order |
 
+## Clone Pattern
+
+`JB721TiersHook` is deployed as an implementation contract and then cloned via `LibClone.clone()` in `JB721TiersHookDeployer`. Each clone is a minimal proxy that delegates all calls to the implementation.
+
+**Admin implications:**
+- The implementation contract cannot be self-destructed or modified after deployment. Even if it could be, clones would break since they `delegatecall` to the implementation address.
+- Each clone has its own storage (including `PROJECT_ID`, ownership, and tier data). The implementation's storage is unused.
+- `METADATA_ID_TARGET` is set to the original implementation address, ensuring consistent metadata ID derivation across all clones.
+- The `initialize()` function uses a `PROJECT_ID == 0` guard (not OpenZeppelin `Initializable`) to prevent re-initialization. This is safe because `PROJECT_ID` is set during initialization and cannot return to zero.
+
 ## Ruleset-Level Pauses
 
 Two behaviors are controlled by the project's current ruleset metadata (packed into the 14-bit `metadata` field of `JBRulesetMetadata`), parsed by `JB721TiersRulesetMetadataResolver`:
