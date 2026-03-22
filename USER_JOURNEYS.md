@@ -136,7 +136,7 @@ The project owner adds new NFT tiers to the hook.
 - **Categories not sorted ascending**: Reverts with `JB721TiersHookStore_InvalidCategorySortOrder`.
 - **Exceeds 65,535 total tiers**: Reverts with `JB721TiersHookStore_MaxTiersExceeded`.
 - **`initialSupply == 0`**: Reverts with `JB721TiersHookStore_ZeroInitialSupply`.
-- **`noNewTiersWithVotes` flag set**: Reverts if tier has non-zero voting power.
+- **`noNewTiersWithVotes` flag set**: Reverts if the new tier would have any voting power. This means tiers with `useVotingUnits = true` and `votingUnits > 0` are rejected, AND tiers with `useVotingUnits = false` and `price > 0` are also rejected (since price is used as voting power by default when `useVotingUnits` is false).
 - **`noNewTiersWithReserves` flag set**: Reverts if tier has `reserveFrequency > 0`.
 - **`noNewTiersWithOwnerMinting` flag set**: Reverts if tier has `allowOwnerMint = true`.
 - **`allowOwnerMint` + `reserveFrequency > 0`**: Reverts with `JB721TiersHookStore_ReserveFrequencyNotAllowed`. Owner-mintable tiers cannot have reserves.
@@ -376,7 +376,7 @@ Launch a new Juicebox project with a 721 tiers hook attached, all in one transac
 
 Set a custom contract that resolves token URIs for all NFTs in the collection.
 
-**Entry point**: `JB721TiersHook.setMetadata(...)` (external). Pass `address(0)` as `tokenUriResolver` sentinel value `address(this)` to skip, or a real address to set.
+**Entry point**: `JB721TiersHook.setMetadata(...)` (external). The `tokenUriResolver` parameter is an optional contract that can override the default IPFS-based token URI generation. Pass a contract address to set a custom resolver, `address(0)` to clear it and revert to the default, or the sentinel value `address(this)` to leave it unchanged.
 
 **Who can call**: Hook owner, or an operator with `SET_721_METADATA` permission from the hook owner.
 
@@ -512,11 +512,11 @@ Configure how a percentage of a tier's effective price is distributed to split r
 
 **Parameters** (per `JBSplit`):
 - `bool preferAddToBalance` -- for project splits, use `addToBalanceOf` instead of `pay`.
-- `uint256 percent` -- percentage of the remaining amount (sequential, not parallel).
-- `uint256 projectId` -- target project (0 = no project split).
+- `uint32 percent` -- percentage of the remaining amount (sequential, not parallel).
+- `uint64 projectId` -- target project (0 = no project split).
 - `address beneficiary` -- direct recipient (if no hook and no projectId).
 - `IJBSplitHook hook` -- split hook contract (highest priority).
-- `bool lockedUntil` -- (from JBSplits, prevents modification until timestamp).
+- `uint48 lockedUntil` -- timestamp until which this split is locked and cannot be modified.
 
 **Events** (during split distribution on payment):
 - `SplitPayoutReverted(projectId, split, amount, reason, caller)` -- if an individual split recipient's payout reverts (funds become leftover, routed to project balance).
