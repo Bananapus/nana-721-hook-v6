@@ -4,6 +4,66 @@ You are auditing the Juicebox V6 tiered NFT hook system. This hook allows Juiceb
 
 Read [ARCHITECTURE.md](./ARCHITECTURE.md) first for data flow context. Read [RISKS.md](./RISKS.md) for 19 known risks with test coverage mapping. Then come back here.
 
+## Compiler and Version Info
+
+| Setting | Value |
+|---------|-------|
+| Solidity version | 0.8.26 |
+| EVM target | cancun |
+| Optimizer | enabled, 200 runs |
+| via-IR | not enabled |
+| Fuzz runs | 4,096 |
+| Invariant runs | 1,024 (depth 100) |
+
+Source: [`foundry.toml`](./foundry.toml)
+
+## Previous Audit Findings
+
+A Nemesis automated audit was conducted on 2026-03-17. Results are in [`.audit/findings/nemesis-verified.md`](./.audit/findings/nemesis-verified.md). Summary:
+
+| ID | Severity | Title | Status |
+|----|----------|-------|--------|
+| NM-001 | MEDIUM | Unprotected external calls in tier split distribution cascade to full payment revert | **Remediated** -- all external calls in `_sendPayoutToSplit` are now wrapped in try-catch |
+| NM-002 | LOW | `_addToBalance` silently drops funds when no primary terminal | Open |
+| NM-003 | LOW | Missing `splitPercent` bounds validation in `recordAddTiers` | Open |
+| NM-004 | LOW | Implementation contract initializable | Open (no fund risk) |
+| NM-005 | LOW | `setMetadata` uses non-standard sentinel for tokenUriResolver | Open (documented behavior) |
+
+No prior formal audit with finding IDs from an external security firm has been conducted. See [RISKS.md](./RISKS.md) for the project's own risk assessment.
+
+## Error Reference
+
+| Error | Contract | Trigger Condition |
+|-------|----------|-------------------|
+| `JB721TiersHookStore_CantMintManually(uint256 tierId)` | JB721TiersHookStore | `recordMint` called with `isManualMint=true` on a tier with `allowOwnerMint=false` |
+| `JB721TiersHookStore_CantRemoveTier(uint256 tierId)` | JB721TiersHookStore | `recordRemoveTierIds` called on a tier with `cannotBeRemoved=true` |
+| `JB721TiersHookStore_DiscountPercentExceedsBounds(uint256 percent, uint256 limit)` | JB721TiersHookStore | `recordSetDiscountPercentOf` or `recordAddTiers` with `discountPercent > DISCOUNT_DENOMINATOR (200)` |
+| `JB721TiersHookStore_DiscountPercentIncreaseNotAllowed(uint256 percent, uint256 storedPercent)` | JB721TiersHookStore | `recordSetDiscountPercentOf` increases discount on a tier with `cannotIncreaseDiscountPercent=true` |
+| `JB721TiersHookStore_InsufficientPendingReserves(uint256 count, uint256 numberOfPendingReserves)` | JB721TiersHookStore | `recordMintReservesFor` called with `count > pendingReserves` |
+| `JB721TiersHookStore_InsufficientSupplyRemaining(uint256 tierId)` | JB721TiersHookStore | `recordMint` when `remainingSupply < pendingReserves` after decrement |
+| `JB721TiersHookStore_InvalidCategorySortOrder(uint256 tierCategory, uint256 previousTierCategory)` | JB721TiersHookStore | `recordAddTiers` with tiers not in ascending category order |
+| `JB721TiersHookStore_InvalidQuantity(uint256 quantity, uint256 limit)` | JB721TiersHookStore | `recordAddTiers` with `initialSupply >= _ONE_BILLION` |
+| `JB721TiersHookStore_ManualMintingNotAllowed(uint256 tierId)` | JB721TiersHookStore | `recordMint` called as manual mint when `noNewTiersWithOwnerMinting` flag is set and tier allows it |
+| `JB721TiersHookStore_MaxTiersExceeded(uint256 numberOfTiers, uint256 limit)` | JB721TiersHookStore | `recordAddTiers` would push `maxTierIdOf` above `type(uint16).max` (65,535) |
+| `JB721TiersHookStore_PriceExceedsAmount(uint256 price, uint256 leftoverAmount)` | JB721TiersHookStore | `recordMint` when tier's (discounted) price exceeds remaining payment amount |
+| `JB721TiersHookStore_ReserveFrequencyNotAllowed(uint256 tierId)` | JB721TiersHookStore | `recordAddTiers` with `reserveFrequency > 0` when `noNewTiersWithReserves` flag is set |
+| `JB721TiersHookStore_SplitPercentExceedsBounds(uint256 percent, uint256 limit)` | JB721TiersHookStore | `recordAddTiers` with `splitPercent` exceeding bounds |
+| `JB721TiersHookStore_TierRemoved(uint256 tierId)` | JB721TiersHookStore | `recordMint` or `recordSetDiscountPercentOf` called on a removed tier |
+| `JB721TiersHookStore_UnrecognizedTier(uint256 tierId)` | JB721TiersHookStore | Any operation referencing a `tierId` that does not exist (> `maxTierIdOf` or never created) |
+| `JB721TiersHookStore_VotingUnitsNotAllowed(uint256 tierId)` | JB721TiersHookStore | `recordAddTiers` with `votingUnits > 0` when `noNewTiersWithVotes` flag is set |
+| `JB721TiersHookStore_ZeroInitialSupply(uint256 tierId)` | JB721TiersHookStore | `recordAddTiers` with `initialSupply == 0` |
+| `JB721TiersHook_AlreadyInitialized(uint256 projectId)` | JB721TiersHook | `initialize()` called on a hook that already has `PROJECT_ID != 0` |
+| `JB721TiersHook_CurrencyMismatch(uint256 paymentCurrency, uint256 tierCurrency)` | JB721TiersHook | Payment currency differs from tier pricing currency and no price feed is configured |
+| `JB721TiersHook_InvalidPricingDecimals(uint256 decimals)` | JB721TiersHook | `initialize()` with `pricingDecimals > 18` |
+| `JB721TiersHook_MintReserveNftsPaused()` | JB721TiersHook | `mintPendingReservesFor` called when `mintPendingReservesPaused` ruleset flag is active |
+| `JB721TiersHook_NoProjectId()` | JB721TiersHook | `initialize()` called with `projectId == 0` |
+| `JB721TiersHook_Overspending(uint256 leftoverAmount)` | JB721TiersHook | Payment has leftover after minting and `allowOverspending` metadata flag is false |
+| `JB721TiersHook_TierTransfersPaused()` | JB721TiersHook | NFT transfer attempted on a tier with `transfersPausable=true` when `transfersPaused` ruleset flag is active |
+| `JB721Hook_InvalidCashOut()` | JB721Hook | `afterCashOutRecordedWith` called by a non-terminal address |
+| `JB721Hook_InvalidPay()` | JB721Hook | `afterPayRecordedWith` called by a non-terminal address |
+| `JB721Hook_UnauthorizedToken(uint256 tokenId, address holder)` | JB721Hook | `afterCashOutRecordedWith` with a token ID not owned by the cash-out holder |
+| `JB721Hook_UnexpectedTokenCashedOut()` | JB721Hook | `beforeCashOutRecordedWith` called with `cashOutCount > 0` (fungible tokens cannot be cashed out through this hook) |
+
 ## Architecture
 
 Four contracts, one library:
@@ -270,6 +330,23 @@ These must hold. If you can break any, it's a finding:
 9. **Removal idempotency**: Removing an already-removed tier is a no-op (bitmap set is idempotent).
 10. **NFT supply cap**: Minted count per tier never exceeds `initialSupply` (same as invariant 1, but auditors should verify the `_ONE_BILLION - 1` cap prevents token ID overflow into the next tier).
 
+## Previous Audit Findings
+
+No prior formal audit with finding IDs has been conducted on this codebase. All risk analysis is internal. See [RISKS.md](./RISKS.md) for 19 known risks with test coverage mapping.
+
+## Anti-Patterns to Hunt
+
+| Pattern | Where to Look | Why It's Dangerous |
+|---------|--------------|-------------------|
+| DELEGATECALL from hook to library | `JB721TiersHook` → `JB721TiersHookLib` | Library executes in the hook's storage context. A subtle mismatch in storage layout assumptions could corrupt state. |
+| `safeTransfer` before callback | `_sendPayoutToSplit` ERC-20 path | Tokens leave the contract before the hook callback. The function returns `true` regardless of callback success to prevent double-spend in leftover accounting. |
+| `forceApprove` + external call | `_sendPayoutToSplit` terminal path | If the external call fails, the approval is reset to zero. But between `forceApprove` and the failure, the approval exists. Can an attacker exploit this window? |
+| `mulDiv` rounding in price normalization | `normalizePaymentValue`, `convertSplitAmounts` | Rounding through the conversion chain (normalize → calculate splits → convert back) can compound. Verify rounding favors the protocol. |
+| Bitmap-based removal with iteration by maxTierIdOf | `totalCashOutWeight`, `cleanTiers` | `totalCashOutWeight` iterates up to `maxTierIdOf`, not by sorted list. If many tiers are added and removed, gas cost grows unboundedly. |
+| Clone initialization guard | `JB721TiersHookDeployer` | `initialize()` is guarded by `PROJECT_ID != 0`, not OpenZeppelin's `Initializable`. Verify the implementation contract cannot be initialized. |
+| `_mint` instead of `_safeMint` | `JB721TiersHook` | No `onERC721Received` callback. Prevents mint-time DoS but contracts won't detect incoming NFTs. |
+| Token ID overflow at tier boundary | `_generateTokenId` | `tokenId = tierId * 1_000_000_000 + tokenNumber`. If `tokenNumber` reaches `_ONE_BILLION`, it overflows into the next tier's namespace. Supply cap enforcement (`_ONE_BILLION - 1`) prevents this -- verify the enforcement is complete. |
+
 ## Testing Setup
 
 ```bash
@@ -295,23 +372,20 @@ forge test --gas-report
 
 | Category | Files | Coverage |
 |----------|------:|---------|
-| Unit tests | 10 | adjustTier, deployer, getters/constructor, mintFor/mintReservesFor, pay, redeem, tierSplitRouting, splitHookDistribution, JBBitmap, JBIpfsDecoder |
+| Unit tests | 13 | adjustTier, deployer, getters/constructor, mintFor/mintReservesFor, pay, redeem, tierSplitRouting, splitHookDistribution, JBBitmap, JBIpfsDecoder, pay_CrossCurrency, JB721TiersRulesetMetadataResolver, TierSupplyReserveCheck |
 | Invariant tests | 2 + 2 handlers | TierLifecycleInvariant (6), TieredHookStoreInvariant (3) |
 | Attack tests | 1 | 10 adversarial scenarios |
-| Regression tests | 3 | L34, L35, L36 |
+| Regression tests | 6 | BrokenTerminalDoesNotDos, CacheTierLookup, ProjectDeployerRulesets, ReserveBeneficiaryOverwrite, SplitDistributionBugs, SplitNoBeneficiary |
 | E2E tests | 1 | Full lifecycle |
-| Fork tests | 1 | Live chain state |
-| Cross-currency | 1 | 9 tests for price feed behavior |
+| Fork tests | 3 | ERC20CashOutFork, ERC20TierSplitFork, IssueTokensForSplitsFork |
 | Supply edge cases | 1 | M6 -- 4 targeted tests |
 
-### Notable Coverage Gaps
+### Coverage Gaps
 
-1. ~~No reentrancy test for split distribution `.call{value}` or `terminal.pay()` path.~~ Mitigated: all external calls in `_sendPayoutToSplit` are now wrapped in try-catch. `TestAuditGaps_Reentrancy` confirms reentrancy is blocked by terminal check.
-2. No gas limit test for operations with hundreds of tiers.
-3. No test for malicious/reverting token URI resolver.
-4. No test for `initialize()` front-running on deterministic clones.
-5. No fuzz test for discount percent edge cases with very small prices.
-6. ~~No test for cross-terminal reentry through split `terminal.pay()` callback.~~ Mitigated: terminal calls are wrapped in try-catch; hook state is fully settled before distribution begins.
+1. No gas limit test for operations with hundreds of tiers.
+2. No test for malicious/reverting token URI resolver.
+3. No test for `initialize()` front-running on deterministic clones.
+4. No fuzz test for discount percent edge cases with very small prices.
 
 ## How to Report Findings
 
@@ -338,3 +412,11 @@ For each finding:
 - Is `DISCOUNT_DENOMINATOR = 200` surprising but correct? (It is.)
 - Does the store's `msg.sender`-keyed trust model handle the case? (The store trusts the hook.)
 - Is the economic attack profitable after the core protocol's 2.5% fee on cash outs?
+
+## Compiler and Version Info
+
+- **Solidity**: 0.8.26
+- **EVM target**: Cancun
+- **Optimizer**: via-IR, 200 runs
+- **Dependencies**: OpenZeppelin 5.x, Solady (LibClone), nana-core-v6
+- **Build**: `forge build` (Foundry)
