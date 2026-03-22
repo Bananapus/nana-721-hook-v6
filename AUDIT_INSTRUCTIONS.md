@@ -25,7 +25,7 @@ A Nemesis automated audit was conducted on 2026-03-17. Results are in [`.audit/f
 |----|----------|-------|--------|
 | NM-001 | MEDIUM | Unprotected external calls in tier split distribution cascade to full payment revert | **Remediated** -- all external calls in `_sendPayoutToSplit` are now wrapped in try-catch |
 | NM-002 | LOW | `_addToBalance` silently drops funds when no primary terminal | Open |
-| NM-003 | LOW | Missing `splitPercent` bounds validation in `recordAddTiers` | Open |
+| NM-003 | LOW | Missing `splitPercent` bounds validation in `recordAddTiers` | **Remediated** -- `SplitPercentExceedsBounds` check added at `JB721TiersHookStore.sol:866` |
 | NM-004 | LOW | Implementation contract initializable | Open (no fund risk) |
 | NM-005 | LOW | `setMetadata` uses non-standard sentinel for tokenUriResolver | Open (documented behavior) |
 
@@ -74,7 +74,7 @@ Four contracts, one library:
 | `JB721TiersHookStore` | ~1230 | All tier state. Keyed by `msg.sender` (the hook address). Manages tier CRUD, supply tracking, reserve accounting, bitmap-based removal, sorted linked list, transfer balance tracking, voting units, discount enforcement. |
 | `JB721TiersHookDeployer` | ~115 | Deploys hook clones (Solady `LibClone`). Optional deterministic addressing via salt. Atomic deploy + initialize + ownership transfer. Registers with `JBAddressRegistry`. |
 | `JB721TiersHookProjectDeployer` | ~420 | Convenience: launches a project + hook in one transaction. Converts `JBPayDataHookRulesetConfig` to `JBRulesetConfig` with `useDataHookForPay: true` hardcoded. Also supports `launchRulesetsFor` and `queueRulesetsOf`. |
-| `JB721TiersHookLib` (library) | ~607 | Extracted logic for EIP-170 compliance. Tier adjustments, split amount calculation, price normalization, weight adjustment, split fund distribution, token URI resolution. Called via DELEGATECALL from the hook. |
+| `JB721TiersHookLib` (library) | ~634 | Extracted logic for EIP-170 compliance. Tier adjustments, split amount calculation, price normalization, weight adjustment, split fund distribution, token URI resolution. Called via DELEGATECALL from the hook. |
 
 Supporting:
 - `JB721Hook` (abstract, ~270 lines) -- Base ERC-721 with `beforePayRecordedWith`, `beforeCashOutRecordedWith`, `afterPayRecordedWith`, `afterCashOutRecordedWith`. Terminal authorization checks.
@@ -330,10 +330,6 @@ These must hold. If you can break any, it's a finding:
 9. **Removal idempotency**: Removing an already-removed tier is a no-op (bitmap set is idempotent).
 10. **NFT supply cap**: Minted count per tier never exceeds `initialSupply` (same as invariant 1, but auditors should verify the `_ONE_BILLION - 1` cap prevents token ID overflow into the next tier).
 
-## Previous Audit Findings
-
-No prior formal audit with finding IDs has been conducted on this codebase. All risk analysis is internal. See [RISKS.md](./RISKS.md) for 19 known risks with test coverage mapping.
-
 ## Anti-Patterns to Hunt
 
 | Pattern | Where to Look | Why It's Dangerous |
@@ -379,6 +375,8 @@ forge test --gas-report
 | E2E tests | 1 | Full lifecycle |
 | Fork tests | 3 | ERC20CashOutFork, ERC20TierSplitFork, IssueTokensForSplitsFork |
 | Supply edge cases | 1 | M6 -- 4 targeted tests |
+| Reentrancy tests | 1 | TestSafeTransferReentrancy -- safeTransfer reentrancy scenarios |
+| Voting units tests | 1 | TestVotingUnitsLifecycle -- voting power through mint/burn/transfer |
 
 ### Coverage Gaps
 
@@ -413,10 +411,3 @@ For each finding:
 - Does the store's `msg.sender`-keyed trust model handle the case? (The store trusts the hook.)
 - Is the economic attack profitable after the core protocol's 2.5% fee on cash outs?
 
-## Compiler and Version Info
-
-- **Solidity**: 0.8.26
-- **EVM target**: Cancun
-- **Optimizer**: via-IR, 200 runs
-- **Dependencies**: OpenZeppelin 5.x, Solady (LibClone), nana-core-v6
-- **Build**: `forge build` (Foundry)
