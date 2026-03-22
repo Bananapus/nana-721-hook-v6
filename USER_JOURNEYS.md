@@ -14,6 +14,8 @@ A user pays a Juicebox project and receives tiered NFTs based on the amount paid
 
 **Entry point**: `JBMultiTerminal.pay()` (external). The hook is invoked as both a data hook (`beforePayRecordedWith`) and a pay hook (`afterPayRecordedWith`).
 
+**Who can call**: Anyone. The terminal's `pay()` is permissionless.
+
 **Parameters** (encoded in payment metadata via `JBMetadataResolver`):
 - `bool allowOverspending` -- whether leftover funds after minting should be stored as credits (true) or revert (false). The hook-level `preventOverspending` flag can override this.
 - `uint16[] tierIdsToMint` -- which tier IDs to mint, in order. The same tier can appear multiple times.
@@ -33,6 +35,8 @@ A user pays a Juicebox project and receives tiered NFTs based on the amount paid
 - `Mint(tokenId, tierId, beneficiary, totalAmountPaid, caller)` -- one per NFT minted.
 - `AddPayCredits(amount, newTotalCredits, account, caller)` -- if credits increased.
 - `UsePayCredits(amount, newTotalCredits, account, caller)` -- if credits decreased.
+- `SplitPayoutReverted(projectId, split, amount, reason, caller)` -- if a split recipient's payout reverts during distribution (funds route to project balance instead).
+- `AddToBalanceReverted(projectId, token, amount, reason)` -- if the `addToBalanceOf` call for leftover funds reverts after split distribution.
 
 **Edge cases**:
 - **No metadata or metadata not found**: No NFTs minted. If `preventOverspending` is false, the entire payment becomes credits for the beneficiary. If true, reverts.
@@ -52,6 +56,8 @@ A user pays a Juicebox project and receives tiered NFTs based on the amount paid
 An NFT holder burns their NFTs to reclaim funds from the project's surplus, proportional to the NFTs' cash-out weight relative to the total cash-out weight.
 
 **Entry point**: `JBMultiTerminal.cashOutTokensOf()` (external). The hook is invoked as both a data hook (`beforeCashOutRecordedWith`) and a cash out hook (`afterCashOutRecordedWith`).
+
+**Who can call**: The NFT holder, or an operator with `CASH_OUT_TOKENS` permission from the holder.
 
 **Parameters** (encoded in cash-out metadata via `JBMetadataResolver`):
 - `uint256[] tokenIds` -- the token IDs of the NFTs to burn.
@@ -92,7 +98,7 @@ The project owner adds new NFT tiers to the hook.
 
 **Entry point**: `JB721TiersHook.adjustTiers(JB721TierConfig[] calldata tiersToAdd, uint256[] calldata tierIdsToRemove)` (external).
 
-**Permission**: `ADJUST_721_TIERS` from the hook owner.
+**Who can call**: Hook owner, or an operator with `ADJUST_721_TIERS` permission from the hook owner.
 
 **Parameters** (per `JB721TierConfig`):
 - `uint104 price` -- tier price in the hook's pricing currency.
@@ -124,6 +130,7 @@ The project owner adds new NFT tiers to the hook.
 
 **Events**:
 - `AddTier(tierId, tierConfig, caller)` -- one per tier added.
+- `SetDefaultReserveBeneficiary(hook, newBeneficiary, caller)` -- if any tier has `useReserveBeneficiaryAsDefault = true` and changes the current default.
 
 **Edge cases**:
 - **Categories not sorted ascending**: Reverts with `JB721TiersHookStore_InvalidCategorySortOrder`.
@@ -143,7 +150,7 @@ The project owner removes tiers, preventing new mints but preserving existing NF
 
 **Entry point**: `JB721TiersHook.adjustTiers(JB721TierConfig[] calldata tiersToAdd, uint256[] calldata tierIdsToRemove)` (external). Pass an empty `tiersToAdd` array to only remove.
 
-**Permission**: `ADJUST_721_TIERS` from the hook owner.
+**Who can call**: Hook owner, or an operator with `ADJUST_721_TIERS` permission from the hook owner.
 
 **Parameters**:
 - `uint256[] tierIdsToRemove` -- IDs of tiers to remove.
@@ -171,6 +178,8 @@ Anyone can mint pending reserved NFTs for a tier. Reserves accumulate based on t
 **Entry point**: `JB721TiersHook.mintPendingReservesFor(uint256 tierId, uint256 count)` (public, permissionless).
 
 **Batch entry point**: `JB721TiersHook.mintPendingReservesFor(JB721TiersMintReservesConfig[] calldata reserveMintConfigs)` (external, permissionless).
+
+**Who can call**: Anyone. Both entry points are permissionless.
 
 **Parameters**:
 - `uint256 tierId` -- the tier to mint reserves from.
@@ -213,7 +222,7 @@ The project owner adjusts the discount on a tier's mint price. Does not affect c
 
 **Batch entry point**: `JB721TiersHook.setDiscountPercentsOf(JB721TiersSetDiscountPercentConfig[] calldata configs)` (external).
 
-**Permission**: `SET_721_DISCOUNT_PERCENT` from the hook owner.
+**Who can call**: Hook owner, or an operator with `SET_721_DISCOUNT_PERCENT` permission from the hook owner.
 
 **Parameters**:
 - `uint256 tierId` -- the tier to update.
@@ -240,7 +249,7 @@ The project owner directly mints NFTs from tiers that have `allowOwnerMint = tru
 
 **Entry point**: `JB721TiersHook.mintFor(uint16[] calldata tierIds, address beneficiary)` (external).
 
-**Permission**: `MINT_721` from the hook owner.
+**Who can call**: Hook owner, or an operator with `MINT_721` permission from the hook owner.
 
 **Parameters**:
 - `uint16[] tierIds` -- the tiers to mint from. One NFT per entry. Can repeat tiers.
@@ -270,7 +279,7 @@ A single call that both adds new tiers and removes existing tiers.
 
 **Entry point**: `JB721TiersHook.adjustTiers(JB721TierConfig[] calldata tiersToAdd, uint256[] calldata tierIdsToRemove)` (external).
 
-**Permission**: `ADJUST_721_TIERS` from the hook owner.
+**Who can call**: Hook owner, or an operator with `ADJUST_721_TIERS` permission from the hook owner.
 
 **Execution order**:
 1. Removals are processed first (bitmap marked).
@@ -288,6 +297,8 @@ See [Journey 3: Add Tiers](#3-add-tiers) and [Journey 4: Remove Tiers](#4-remove
 Deploy a 721 tiers hook for an existing project.
 
 **Entry point**: `JB721TiersHookDeployer.deployHookFor(uint256 projectId, JBDeploy721TiersHookConfig calldata deployTiersHookConfig, bytes32 salt)` (external).
+
+**Who can call**: Anyone. The deployer is permissionless. The caller becomes the initial hook owner.
 
 **Parameters**:
 - `uint256 projectId` -- the project to associate the hook with.
@@ -314,6 +325,7 @@ Deploy a 721 tiers hook for an existing project.
 **Events**:
 - `HookDeployed(projectId, newHook, caller)`.
 - `AddTier(tierId, tierConfig, caller)` -- one per initial tier.
+- `SetDefaultReserveBeneficiary(hook, newBeneficiary, caller)` -- if any initial tier has `useReserveBeneficiaryAsDefault = true`.
 
 **Edge cases**:
 - **Re-initialization**: Reverts with `JB721TiersHook_AlreadyInitialized` if `PROJECT_ID` is already set.
@@ -329,6 +341,8 @@ Deploy a 721 tiers hook for an existing project.
 Launch a new Juicebox project with a 721 tiers hook attached, all in one transaction.
 
 **Entry point**: `JB721TiersHookProjectDeployer.launchProjectFor(address owner, JBDeploy721TiersHookConfig calldata deployTiersHookConfig, JBLaunchProjectConfig calldata launchProjectConfig, IJBController controller, bytes32 salt)` (external).
+
+**Who can call**: Anyone. The deployer is permissionless. The `owner` parameter receives the project ERC-721.
 
 **Parameters**:
 - `address owner` -- receives the project ERC-721.
@@ -364,7 +378,7 @@ Set a custom contract that resolves token URIs for all NFTs in the collection.
 
 **Entry point**: `JB721TiersHook.setMetadata(...)` (external). Pass `address(0)` as `tokenUriResolver` sentinel value `address(this)` to skip, or a real address to set.
 
-**Permission**: `SET_721_METADATA` from the hook owner.
+**Who can call**: Hook owner, or an operator with `SET_721_METADATA` permission from the hook owner.
 
 **Parameters** (relevant subset):
 - `IJB721TokenUriResolver tokenUriResolver` -- the new resolver. Pass `IJB721TokenUriResolver(address(this))` to skip (no change). Pass `IJB721TokenUriResolver(address(0))` to clear.
@@ -392,6 +406,8 @@ Reorganize the sorted tier linked list to skip removed tiers. Improves iteration
 
 **Entry point**: `JB721TiersHookStore.cleanTiers(address hook)` (external, permissionless).
 
+**Who can call**: Anyone. This function is permissionless.
+
 **Parameters**:
 - `address hook` -- the hook contract whose tier list to clean.
 
@@ -414,7 +430,7 @@ Update the collection's name, symbol, base URI, contract URI, or per-tier IPFS U
 
 **Entry point**: `JB721TiersHook.setMetadata(string calldata name, string calldata symbol, string calldata baseUri, string calldata contractUri, IJB721TokenUriResolver tokenUriResolver, uint256 encodedIPFSUriTierId, bytes32 encodedIPFSUri)` (external).
 
-**Permission**: `SET_721_METADATA` from the hook owner.
+**Who can call**: Hook owner, or an operator with `SET_721_METADATA` permission from the hook owner.
 
 **Parameters**:
 - `string name` -- new collection name. Empty string = no change.
@@ -448,7 +464,7 @@ Transfer an NFT between addresses. Subject to per-tier and per-ruleset pause con
 
 **Entry point**: Standard ERC-721 `transferFrom(address from, address to, uint256 tokenId)` or `safeTransferFrom(...)`.
 
-**Permission**: Standard ERC-721 (owner, approved, or operator).
+**Who can call**: Standard ERC-721 (token owner, approved address, or approved-for-all operator).
 
 **State changes**:
 1. ERC-721 ownership updated.
@@ -480,6 +496,8 @@ Configure how a percentage of a tier's effective price is distributed to split r
 
 **Entry point**: Splits are set during tier creation via `adjustTiers` (see Journey 3). The `splits` field in `JB721TierConfig` defines the split recipients.
 
+**Who can call**: Splits are configured as part of `adjustTiers`, so the same permission applies: hook owner or an operator with `ADJUST_721_TIERS` permission. Split distribution during payment is automatic and permissionless.
+
 **Split group ID**: `uint256(uint160(hookAddress)) | (uint256(tierId) << 160)`. This is stored in `JBSplits` with `rulesetId = 0` (always active).
 
 **How it works during payment**:
@@ -499,6 +517,10 @@ Configure how a percentage of a tier's effective price is distributed to split r
 - `address beneficiary` -- direct recipient (if no hook and no projectId).
 - `IJBSplitHook hook` -- split hook contract (highest priority).
 - `bool lockedUntil` -- (from JBSplits, prevents modification until timestamp).
+
+**Events** (during split distribution on payment):
+- `SplitPayoutReverted(projectId, split, amount, reason, caller)` -- if an individual split recipient's payout reverts (funds become leftover, routed to project balance).
+- `AddToBalanceReverted(projectId, token, amount, reason)` -- if the `addToBalanceOf` call for leftover funds reverts after distribution.
 
 **Edge cases**:
 - **`splitPercent` > SPLITS_TOTAL_PERCENT**: Not validated in the hook. A `splitPercent` exceeding 1e9 would forward more than the tier's price, potentially exceeding the payment amount. However, `beforePayRecordedWith` computes the split amount from the tier price, not the payment amount, so the terminal would need to have received enough.
