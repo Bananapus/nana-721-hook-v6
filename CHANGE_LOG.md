@@ -2,6 +2,14 @@
 
 This document describes all changes between `nana-721-hook` (v5) and `nana-721-hook-v6` (v6).
 
+## Summary
+
+- **Tier splits system**: Each NFT tier can now route a percentage of payments to split recipients instead of the project treasury, with full DOS protection via try-catch on all external calls.
+- **`votingUnits` replaced by `splitPercent`** in packed tier storage — voting units moved to a separate mapping to free the storage slot for the more widely-needed split feature.
+- **New `JB721TiersHookLib` library**: Code extracted from the hook to stay within the EIP-170 contract size limit (24KB).
+- **Mutable collection metadata**: `name` and `symbol` can now be changed post-deployment via `setMetadata()`.
+- **Prices moved to constructor immutable**: `IJBPrices` is now a constructor parameter instead of being packed in tier config.
+
 ---
 
 ## 1. Breaking Changes
@@ -47,6 +55,8 @@ This document describes all changes between `nana-721-hook` (v5) and `nana-721-h
 | `votingUnits` (`uint32`) | Present | Removed | Replaced by `splitPercent` |
 | `splitPercent` (`uint32`) | Not present | Added | Percentage of tier price routed to splits |
 
+> **Why this change**: On-chain voting units were rarely used by projects, while per-tier payment splits were the most requested feature. Reusing the same `uint32` storage slot avoided expanding the packed struct and kept gas costs unchanged. Voting units are still available via the `_tierVotingUnitsOf` mapping.
+
 ### 1.7 Error Signature Changes (Store)
 
 Several store errors gained a `tierId` parameter for better debugging:
@@ -65,6 +75,10 @@ Several store errors gained a `tierId` parameter for better debugging:
 ### 1.8 Solidity Version Change
 
 All contracts upgraded from `pragma solidity 0.8.23` to `pragma solidity 0.8.26`.
+
+### 1.9 Cross-Repo Impact
+
+> The tier splits system affects `revnet-core-v6`, `croptop-core-v6`, and `nana-omnichain-deployers-v6`, which all deploy 721 hooks and must account for the new `splitPercent`/`splits` fields in `JB721TierConfig`. The `issueTokensForSplits` flag in `JB721TiersHookFlags` is force-set to `false` by `revnet-core-v6` to prevent dilution.
 
 ---
 
