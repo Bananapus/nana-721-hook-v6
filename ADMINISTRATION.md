@@ -6,7 +6,7 @@ Admin privileges and their scope in nana-721-hook-v6.
 
 ### Hook Owner (JBOwnable)
 
-- **Assigned by**: `initialize()` transfers ownership to the caller (line 285 of `JB721TiersHook.sol`). When deployed via `JB721TiersHookProjectDeployer.launchProjectFor()`, ownership is transferred to the project NFT (line 101 of `JB721TiersHookProjectDeployer.sol`), meaning the project owner controls the hook.
+- **Assigned by**: `initialize()` transfers ownership to the caller. When deployed via `JB721TiersHookProjectDeployer.launchProjectFor()`, ownership is transferred to the project NFT, meaning the project owner controls the hook.
 - **Scope**: Per-hook instance. Each cloned hook has its own independent owner.
 - **Inheritance**: `JBOwnable` supports both EOA ownership and project-based ownership (owner = holder of the project's ERC-721 NFT). When ownership is transferred to a project via `transferOwnershipToProject()`, whoever owns that project NFT becomes the hook's owner.
 
@@ -20,7 +20,7 @@ Admin privileges and their scope in nana-721-hook-v6.
 
 - **Assigned by**: The project's `JBDirectory` configuration.
 - **Scope**: Only a contract registered as a terminal for the hook's project in `JBDirectory` can call `afterPayRecordedWith()` and `afterCashOutRecordedWith()`.
-- **Verification**: `DIRECTORY.isTerminalOf(projectId, IJBTerminal(msg.sender))` is checked at lines 195-197 and 236-237 of `JB721Hook.sol`.
+- **Verification**: `DIRECTORY.isTerminalOf(projectId, IJBTerminal(msg.sender))` is checked in `JB721Hook.sol`.
 
 ### Store Callers (msg.sender Trust Model)
 
@@ -34,49 +34,49 @@ Admin privileges and their scope in nana-721-hook-v6.
 
 | Function | Permission ID | Checked Against | What It Does |
 |----------|--------------|-----------------|--------------|
-| `adjustTiers()` (line 322) | `ADJUST_721_TIERS` | `owner()` | Adds new tiers and/or soft-removes existing tiers. Sets tier split groups in JBSplits. |
-| `mintFor()` (line 338) | `MINT_721` | `owner()` | Manually mints NFTs from tiers that have `allowOwnerMint` enabled. Bypasses price checks (passes `type(uint256).max` as amount). |
-| `setDiscountPercentOf()` (line 389) | `SET_721_DISCOUNT_PERCENT` | `owner()` | Sets the discount percentage for a single tier. |
-| `setDiscountPercentsOf()` (line 399) | `SET_721_DISCOUNT_PERCENT` | `owner()` | Batch-sets discount percentages for multiple tiers. |
-| `setMetadata()` (line 430) | `SET_721_METADATA` | `owner()` | Updates collection name, symbol, baseURI, contractURI, tokenUriResolver, and/or per-tier encoded IPFS URIs. Empty strings leave values unchanged. |
-| `initialize()` (line 223) | None (one-time) | `PROJECT_ID == 0` check | Initializes a cloned hook. Can only be called once. Transfers ownership to caller on completion. |
+| `adjustTiers()` | `ADJUST_721_TIERS` | `owner()` | Adds new tiers and/or soft-removes existing tiers. Sets tier split groups in JBSplits. |
+| `mintFor()` | `MINT_721` | `owner()` | Manually mints NFTs from tiers that have `allowOwnerMint` enabled. Bypasses price checks (passes `type(uint256).max` as amount). |
+| `setDiscountPercentOf()` | `SET_721_DISCOUNT_PERCENT` | `owner()` | Sets the discount percentage for a single tier. |
+| `setDiscountPercentsOf()` | `SET_721_DISCOUNT_PERCENT` | `owner()` | Batch-sets discount percentages for multiple tiers. |
+| `setMetadata()` | `SET_721_METADATA` | `owner()` | Updates collection name, symbol, baseURI, contractURI, tokenUriResolver, and/or per-tier encoded IPFS URIs. Empty strings leave values unchanged. |
+| `initialize()` | None (one-time) | `PROJECT_ID == 0` check | Initializes a cloned hook. Can only be called once. Transfers ownership to caller on completion. |
 
 ### JB721TiersHookProjectDeployer
 
 | Function | Permission ID | Checked Against | What It Does |
 |----------|--------------|-----------------|--------------|
-| `launchProjectFor()` (line 74) | None | Anyone can call | Creates a new project with a 721 hook. Ownership goes to the specified `owner` address. |
-| `launchRulesetsFor()` (line 115) | `QUEUE_RULESETS` + `SET_TERMINALS` | Project NFT owner | Deploys a hook and launches rulesets for an existing project. |
-| `queueRulesetsOf()` (line 164) | `QUEUE_RULESETS` | Project NFT owner | Deploys a hook and queues rulesets for an existing project. |
+| `launchProjectFor()` | None | Anyone can call | Creates a new project with a 721 hook. Ownership goes to the specified `owner` address. |
+| `launchRulesetsFor()` | `QUEUE_RULESETS` + `SET_TERMINALS` | Project NFT owner | Deploys a hook and launches rulesets for an existing project. |
+| `queueRulesetsOf()` | `QUEUE_RULESETS` | Project NFT owner | Deploys a hook and queues rulesets for an existing project. |
 
 ### JB721TiersHookDeployer
 
 | Function | Permission ID | Checked Against | What It Does |
 |----------|--------------|-----------------|--------------|
-| `deployHookFor()` (line 68) | None | Anyone can call | Clones and initializes a new hook instance. Ownership starts with the deployer contract, then is transferred to `msg.sender`. |
+| `deployHookFor()` | None | Anyone can call | Clones and initializes a new hook instance. Ownership starts with the deployer contract, then is transferred to `msg.sender`. |
 
 ### JB721Hook (Abstract Base)
 
 | Function | Required Caller | What It Does |
 |----------|----------------|--------------|
-| `afterPayRecordedWith()` (line 231) | Project terminal | Processes payment, mints NFTs. Verifies caller via `DIRECTORY.isTerminalOf()`. |
-| `afterCashOutRecordedWith()` (line 183) | Project terminal | Burns NFTs on cash out. Verifies caller via `DIRECTORY.isTerminalOf()` and that `msg.value == 0`. |
+| `afterPayRecordedWith()` | Project terminal | Processes payment, mints NFTs. Verifies caller via `DIRECTORY.isTerminalOf()`. |
+| `afterCashOutRecordedWith()` | Project terminal | Burns NFTs on cash out. Verifies caller via `DIRECTORY.isTerminalOf()` and that `msg.value == 0`. |
 
 ### JB721TiersHookStore (No Access Control -- msg.sender Keyed)
 
 | Function | Caller | What It Does |
 |----------|--------|--------------|
-| `recordAddTiers()` (line 772) | Hook contract | Adds tiers to the caller's namespace. Category sort order enforced. |
-| `recordRemoveTierIds()` (line 1139) | Hook contract | Marks tiers as removed in bitmap. Respects `cannotBeRemoved` flag. |
-| `recordMint()` (line 1020) | Hook contract | Records mints, decrements supply, enforces price and reserve checks. |
-| `recordMintReservesFor()` (line 1103) | Hook contract | Mints reserved NFTs from a tier. |
-| `recordBurn()` (line 995) | Hook contract | Increments burn counter for token IDs. |
-| `recordFlags()` (line 1010) | Hook contract | Sets behavioral flags for the caller's hook. |
-| `recordSetTokenUriResolver()` (line 1193) | Hook contract | Sets the token URI resolver. |
-| `recordSetEncodedIPFSUriOf()` (line 1187) | Hook contract | Sets the encoded IPFS URI for a tier. |
-| `recordSetDiscountPercentOf()` (line 1161) | Hook contract | Updates a tier's discount percent. Enforces bounds and `cannotIncreaseDiscountPercent`. |
-| `recordTransferForTier()` (line 1201) | Hook contract | Updates per-tier balance tracking on transfer. |
-| `cleanTiers()` (line 726) | Anyone | Reorganizes the tier sorting linked list to skip removed tiers. Pure bookkeeping, no value at risk. |
+| `recordAddTiers()` | Hook contract | Adds tiers to the caller's namespace. Category sort order enforced. |
+| `recordRemoveTierIds()` | Hook contract | Marks tiers as removed in bitmap. Respects `cannotBeRemoved` flag. |
+| `recordMint()` | Hook contract | Records mints, decrements supply, enforces price and reserve checks. |
+| `recordMintReservesFor()` | Hook contract | Mints reserved NFTs from a tier. |
+| `recordBurn()` | Hook contract | Increments burn counter for token IDs. |
+| `recordFlags()` | Hook contract | Sets behavioral flags for the caller's hook. |
+| `recordSetTokenUriResolver()` | Hook contract | Sets the token URI resolver. |
+| `recordSetEncodedIPFSUriOf()` | Hook contract | Sets the encoded IPFS URI for a tier. |
+| `recordSetDiscountPercentOf()` | Hook contract | Updates a tier's discount percent. Enforces bounds and `cannotIncreaseDiscountPercent`. |
+| `recordTransferForTier()` | Hook contract | Updates per-tier balance tracking on transfer. |
+| `cleanTiers()` | Anyone | Reorganizes the tier sorting linked list to skip removed tiers. Pure bookkeeping, no value at risk. |
 
 ## Permission System
 
@@ -123,6 +123,16 @@ The following are set at deploy/initialization time and **cannot be changed afte
 | Per-tier `price` | `recordAddTiers()` | The base price (and cash-out weight) of NFTs in the tier |
 | Per-tier `category` | `recordAddTiers()` | The category grouping for sort order |
 
+## Clone Pattern
+
+`JB721TiersHook` is deployed as an implementation contract and then cloned via `LibClone.clone()` in `JB721TiersHookDeployer`. Each clone is a minimal proxy that delegates all calls to the implementation.
+
+**Admin implications:**
+- The implementation contract cannot be self-destructed or modified after deployment. Even if it could be, clones would break since they `delegatecall` to the implementation address.
+- Each clone has its own storage (including `PROJECT_ID`, ownership, and tier data). The implementation's storage is unused.
+- `METADATA_ID_TARGET` is set to the original implementation address, ensuring consistent metadata ID derivation across all clones.
+- The `initialize()` function uses a `PROJECT_ID == 0` guard (not OpenZeppelin `Initializable`) to prevent re-initialization. This is safe because `PROJECT_ID` is set during initialization and cannot return to zero.
+
 ## Ruleset-Level Pauses
 
 Two behaviors are controlled by the project's current ruleset metadata (packed into the 14-bit `metadata` field of `JBRulesetMetadata`), parsed by `JB721TiersRulesetMetadataResolver`:
@@ -142,10 +152,10 @@ What the hook owner **cannot** do:
 - **Cannot change tier prices after creation.** The `price` field in `JBStored721Tier` is set once in `recordAddTiers()` and never modified. Cash-out weight is always based on the original price.
 - **Cannot change reserve frequency after creation.** The `reserveFrequency` is immutable per tier.
 - **Cannot reduce a tier's initial supply.** Supply can only decrease through minting and burning.
-- **Cannot remove a tier marked `cannotBeRemoved`.** The store enforces this in `recordRemoveTierIds()` (line 1151).
-- **Cannot increase a tier's discount if `cannotIncreaseDiscountPercent` is set.** The store enforces this in `recordSetDiscountPercentOf()` (line 1176).
-- **Cannot mint from tiers without `allowOwnerMint`.** The `mintFor()` function passes `isOwnerMint: true` to the store, which checks the flag (line 1060).
-- **Cannot re-initialize a hook.** The `initialize()` function reverts if `PROJECT_ID != 0` (line 237).
+- **Cannot remove a tier marked `cannotBeRemoved`.** The store enforces this in `recordRemoveTierIds()`.
+- **Cannot increase a tier's discount if `cannotIncreaseDiscountPercent` is set.** The store enforces this in `recordSetDiscountPercentOf()`.
+- **Cannot mint from tiers without `allowOwnerMint`.** The `mintFor()` function passes `isOwnerMint: true` to the store, which checks the flag.
+- **Cannot re-initialize a hook.** The `initialize()` function reverts if `PROJECT_ID != 0`.
 - **Cannot change the pricing currency, decimals, or prices contract.** `PRICES` is immutable (set in constructor), and the currency/decimals in `_packedPricingContext` are set once during initialization.
 - **Cannot bypass the flag restrictions.** Once `noNewTiersWithReserves`, `noNewTiersWithVotes`, or `noNewTiersWithOwnerMinting` are set, all future tiers added via `adjustTiers()` must comply.
 - **Cannot mint more reserves than the formula allows.** Reserve mints are bounded by `ceil(nonReserveMints / reserveFrequency)`.
