@@ -20,7 +20,11 @@ src/
 │   ├── JB721Hook.sol                 — Base ERC-721 + pay/cashout hook integration
 │   └── ERC721.sol                    — Minimal ERC-721 implementation
 ├── libraries/
-│   └── JB721TiersHookLib.sol         — Split calculations, price normalization, weight math, fund distribution
+│   ├── JB721Constants.sol            — Global constants (DISCOUNT_DENOMINATOR)
+│   ├── JB721TiersHookLib.sol         — Split calculations, price normalization, weight math, fund distribution
+│   ├── JB721TiersRulesetMetadataResolver.sol — Bit-packed 721 ruleset metadata (transfer/reserve pause flags)
+│   ├── JBBitmap.sol                  — Bitmap utilities for tier removal tracking
+│   └── JBIpfsDecoder.sol             — IPFS CID encoding/decoding for token URIs
 ├── interfaces/                       — All interfaces (IJB721TiersHook, etc.)
 └── structs/                          — Tier config, mint context, cash-out structs
 ```
@@ -35,14 +39,15 @@ User → JBMultiTerminal.pay(metadata)
     → convertSplitAmounts(): convert to payment token denomination (if currencies differ)
     → calculateWeight(): adjust weight down by split fraction
   → JBTerminalStore records payment
-  → afterPayRecordedWith()
+  → afterPayRecordedWith() → _processPayment()
+    → Normalize payment value to tier pricing currency
     → Decode tier IDs from metadata
     → For each tier:
       → Validate: not removed, not paused, supply available
       → Check price (with optional discount, normalized to tier pricing currency)
       → Mint NFT to beneficiary
+    → Leftover amount stored as pay credits (revert if overspending not allowed)
     → Distribute split funds (priority: split.hook > split.projectId > split.beneficiary)
-    → Leftover amount optionally mints best-available tiers
 ```
 
 #### Split Amount and Price Normalization
@@ -71,8 +76,8 @@ Key behaviors:
 Holder → JBMultiTerminal.cashOutTokensOf()
   → JB721TiersHook.afterCashOutRecordedWith()
     → Burn specified NFT token IDs
-    → Each NFT's cash-out weight contributes to reclaim amount
-    → Weight = tier.price (per NFT; total denominator uses price * supply across all tiers)
+    → Each NFT's cash-out weight = tier.price (full price, ignoring discounts)
+    → Total cash-out weight (denominator) = sum of (tier.price * minted+pending) across all tiers
 ```
 
 ### Tier Management
@@ -81,6 +86,20 @@ Owner → JB721TiersHook.adjustTiers()
   → Add new tiers (must be sorted by category)
   → Remove existing tiers (flags, doesn't delete)
 ```
+
+## Design Decisions
+
+1. **Clone deployment**: `JB721TiersHookDeployer` uses `LibClone.clone()` (or `cloneDeterministic` with a salt) to deploy lightweight proxies of a reference `JB721TiersHook`, then calls `initialize()`. This keeps deployment gas low and ensures all hooks share identical bytecode.
+
+2. **Library extraction (EIP-170)**: `JB721TiersHookLib` is an external library called via DELEGATECALL. Split calculations, price normalization, fund distribution, and IPFS decoding are extracted there to keep the hook contract under the 24,576 byte EIP-170 size limit.
+
+3. **Category sorting**: Tiers added via `recordAddTiers` must be sorted by `category` (ascending). The store enforces this with `InvalidCategorySortOrder` and maintains a linked-list structure indexed by category for efficient iteration.
+
+4. **Cash-out weight uses full price**: `cashOutWeightOf` returns `tier.price` per NFT -- the original undiscounted price. Discounts are transient purchase incentives; an NFT's share of the cash-out pool is always based on its tier's original price. This prevents discount changes from retroactively altering the cash-out value of already-minted NFTs.
+
+5. **Discount denominator of 200**: `JB721Constants.DISCOUNT_DENOMINATOR = 200`, so `discountPercent=200` means 100% off (free mint). The `cannotIncreaseDiscountPercent` tier flag prevents the owner from raising the discount after deployment -- decreasing is always allowed.
+
+6. **Split fund distribution with try-catch**: All external calls during split distribution (to split hooks, terminals, and beneficiaries) are wrapped in try-catch. A reverting recipient does not brick payments for the entire project.
 
 ## Extension Points
 
