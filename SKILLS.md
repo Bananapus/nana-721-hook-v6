@@ -60,10 +60,10 @@ Tiered ERC-721 NFT hook for Juicebox V6 that mints NFTs when a project is paid a
 | `votingUnitsOf(hook, account)` | `JB721TiersHookStore` | Returns total voting units for an address across all tiers. |
 | `tierVotingUnitsOf(hook, account, tierId)` | `JB721TiersHookStore` | Returns voting units for an address within a specific tier. |
 | `calculateSplitAmounts(store, hook, metadataIdTarget, metadata)` | `JB721TiersHookLib` | Decodes tier IDs from metadata, computes per-tier split amounts from effective price and `splitPercent`. |
-| `convertSplitAmounts(totalSplitAmount, splitMetadata, packedPricingContext, projectId, amountCurrency, amountDecimals)` | `JB721TiersHookLib` | Converts split amounts from tier pricing denomination to payment token denomination via `JBPrices`. |
+| `convertSplitAmounts(totalSplitAmount, splitMetadata, packedPricingContext, prices, projectId, amountCurrency, amountDecimals)` | `JB721TiersHookLib` | Converts split amounts from tier pricing denomination to payment token denomination via `JBPrices`. |
 | `distributeAll(directory, splits, projectId, hookAddress, token, amount, decimals, encodedSplitData)` | `JB721TiersHookLib` | Distributes forwarded split funds to tier split recipients. Leftover goes to project balance via `addToBalance`. |
 | `adjustTiersFor(store, splits, projectId, hookAddress, caller, tiersToAdd, tierIdsToRemove)` | `JB721TiersHookLib` | Called via DELEGATECALL from `adjustTiers`. Removes tiers, adds tiers, emits events, registers splits. |
-| `normalizePaymentValue(packedPricingContext, projectId, amountValue, amountCurrency, amountDecimals)` | `JB721TiersHookLib` | Converts a payment value to the hook's pricing currency using `JBPrices`. |
+| `normalizePaymentValue(packedPricingContext, prices, projectId, amountValue, amountCurrency, amountDecimals)` | `JB721TiersHookLib` | Converts a payment value to the hook's pricing currency using `JBPrices`. |
 | `resolveTokenURI(store, hook, baseUri, tokenId)` | `JB721TiersHookLib` | Resolves token URI: checks for custom resolver first, otherwise decodes IPFS URI via `JBIpfsDecoder`. |
 
 ## Integration Points
