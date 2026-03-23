@@ -77,7 +77,8 @@ Holder → JBMultiTerminal.cashOutTokensOf()
   → JB721TiersHook.afterCashOutRecordedWith()
     → Burn specified NFT token IDs
     → Each NFT's cash-out weight = tier.price (full price, ignoring discounts)
-    → Total cash-out weight (denominator) = sum of (tier.price * minted+pending) across all tiers
+    → Total cash-out weight (denominator) = sum of (tier.price * (outstanding + pending)) across all tiers
+    →   where outstanding = minted - burned, pending = pending reserve mints
 ```
 
 ### Tier Management
@@ -86,20 +87,6 @@ Owner → JB721TiersHook.adjustTiers()
   → Add new tiers (must be sorted by category)
   → Remove existing tiers (flags, doesn't delete)
 ```
-
-## Design Decisions
-
-1. **Clone deployment**: `JB721TiersHookDeployer` uses `LibClone.clone()` (or `cloneDeterministic` with a salt) to deploy lightweight proxies of a reference `JB721TiersHook`, then calls `initialize()`. This keeps deployment gas low and ensures all hooks share identical bytecode.
-
-2. **Library extraction (EIP-170)**: `JB721TiersHookLib` is an external library called via DELEGATECALL. Split calculations, price normalization, fund distribution, and IPFS decoding are extracted there to keep the hook contract under the 24,576 byte EIP-170 size limit.
-
-3. **Category sorting**: Tiers added via `recordAddTiers` must be sorted by `category` (ascending). The store enforces this with `InvalidCategorySortOrder` and maintains a linked-list structure indexed by category for efficient iteration.
-
-4. **Cash-out weight uses full price**: `cashOutWeightOf` returns `tier.price` per NFT -- the original undiscounted price. Discounts are transient purchase incentives; an NFT's share of the cash-out pool is always based on its tier's original price. This prevents discount changes from retroactively altering the cash-out value of already-minted NFTs.
-
-5. **Discount denominator of 200**: `JB721Constants.DISCOUNT_DENOMINATOR = 200`, so `discountPercent=200` means 100% off (free mint). The `cannotIncreaseDiscountPercent` tier flag prevents the owner from raising the discount after deployment -- decreasing is always allowed.
-
-6. **Split fund distribution with try-catch**: All external calls during split distribution (to split hooks, terminals, and beneficiaries) are wrapped in try-catch. A reverting recipient does not brick payments for the entire project.
 
 ## Extension Points
 
@@ -117,11 +104,13 @@ Owner → JB721TiersHook.adjustTiers()
 
 3. **Category sorting instead of price sorting** — Tiers are stored in a linked list sorted by `category` (a uint24 grouping field), not by price. This lets projects organize NFTs into logical groups (e.g. membership tiers, collectibles, special editions) and query them by group. The `InvalidCategorySortOrder` error enforces that new tiers are added in non-decreasing category order.
 
-4. **Cash-out weight uses `initialSupply * price`** — The `totalCashOutWeight` denominator sums `price * (minted + pendingReserves)` across all tiers. Each individual NFT's weight is simply its tier's `price`. Using the original undiscounted price (rather than what was actually paid) ensures that cash-out values are stable and predictable: discounts are treated as transient purchase incentives, not permanent reductions in an NFT's share of the treasury.
+4. **Cash-out weight uses `initialSupply * price`** — The `totalCashOutWeight` denominator sums `price * (outstanding + pendingReserves)` across all tiers, where outstanding = minted minus burned. Each individual NFT's weight is simply its tier's `price`. Using the original undiscounted price (rather than what was actually paid) ensures that cash-out values are stable and predictable: discounts are treated as transient purchase incentives, not permanent reductions in an NFT's share of the treasury.
 
 5. **Library extraction for EIP-170 compliance** — `JB721TiersHookLib` contains split calculations, price normalization, fund distribution, tier adjustment logic, and IPFS URI decoding. These are called via `external` library functions (which deploy as a separate contract) or via `DELEGATECALL`. This pattern keeps the hook contract's deployed bytecode under the 24 KB limit while preserving the ability to emit events from the hook's address.
 
 6. **Discount denominator of 200** — The `discountPercent` field is a uint8 with a denominator of 200 (`JB721Constants.DISCOUNT_DENOMINATOR`). A value of 200 represents 100% discount (free mint), giving 0.5% granularity. The `cannotIncreaseDiscountPercent` flag on each tier lets project owners create promotional discounts that can be reduced but never increased beyond their initial level.
+
+7. **Split fund distribution with try-catch** — All external calls during split distribution (to split hooks, terminals, and beneficiaries) are wrapped in try-catch. A reverting recipient does not brick payments for the entire project.
 
 ## Dependencies
 - `@bananapus/core-v6` — Core protocol interfaces
