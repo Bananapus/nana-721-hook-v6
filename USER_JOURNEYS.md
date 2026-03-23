@@ -78,7 +78,7 @@ An NFT holder burns their NFTs to reclaim funds from the project's surplus, prop
 
 **Cash-out weight calculation**:
 - Per-NFT weight: `storedTier.price` (original price, NOT discounted).
-- Total weight: sum of `price * (mintedCount + pendingReserves)` across ALL tiers (including removed tiers).
+- Total weight: sum of `price * (outstandingCount + pendingReserves)` across ALL tiers (including removed tiers), where `outstandingCount = initialSupply - remainingSupply - numberOfBurned`. Burned tokens are excluded from the total weight, so burning NFTs reduces the denominator and increases the per-NFT reclaim for remaining holders.
 - Reclaim amount is computed by the terminal's bonding curve using `cashOutCount / totalSupply` as the ratio.
 
 **Events**:
@@ -136,11 +136,14 @@ The project owner adds new NFT tiers to the hook.
 - **Categories not sorted ascending**: Reverts with `JB721TiersHookStore_InvalidCategorySortOrder`.
 - **Exceeds 65,535 total tiers**: Reverts with `JB721TiersHookStore_MaxTiersExceeded`.
 - **`initialSupply == 0`**: Reverts with `JB721TiersHookStore_ZeroInitialSupply`.
-- **`noNewTiersWithVotes` flag set**: Reverts if the new tier would have any voting power. This means tiers with `useVotingUnits = true` and `votingUnits > 0` are rejected, AND tiers with `useVotingUnits = false` and `price > 0` are also rejected (since price is used as voting power by default when `useVotingUnits` is false).
-- **`noNewTiersWithReserves` flag set**: Reverts if tier has `reserveFrequency > 0`.
-- **`noNewTiersWithOwnerMinting` flag set**: Reverts if tier has `allowOwnerMint = true`.
+- **`initialSupply > 999,999,999`**: Reverts with `JB721TiersHookStore_InvalidQuantity`. Each tier's supply must fit within the token ID encoding scheme (`tierId * 1e9 + tokenNumber`).
+- **`discountPercent > 200`**: Reverts with `JB721TiersHookStore_DiscountPercentExceedsBounds`.
+- **`splitPercent > SPLITS_TOTAL_PERCENT`**: Reverts with `JB721TiersHookStore_SplitPercentExceedsBounds`.
+- **`noNewTiersWithVotes` flag set**: Reverts with `JB721TiersHookStore_VotingUnitsNotAllowed` if the new tier would have any voting power. This means tiers with `useVotingUnits = true` and `votingUnits > 0` are rejected, AND tiers with `useVotingUnits = false` and `price > 0` are also rejected (since price is used as voting power by default when `useVotingUnits` is false).
+- **`noNewTiersWithReserves` flag set**: Reverts with `JB721TiersHookStore_ReserveFrequencyNotAllowed` if tier has `reserveFrequency > 0`.
+- **`noNewTiersWithOwnerMinting` flag set**: Reverts with `JB721TiersHookStore_ManualMintingNotAllowed` if tier has `allowOwnerMint = true`.
 - **`allowOwnerMint` + `reserveFrequency > 0`**: Reverts with `JB721TiersHookStore_ReserveFrequencyNotAllowed`. Owner-mintable tiers cannot have reserves.
-- **`useReserveBeneficiaryAsDefault = true`**: Silently overwrites `defaultReserveBeneficiaryOf[hook]`, affecting all existing tiers that use the default.
+- **`useReserveBeneficiaryAsDefault = true`**: Only takes effect when both `reserveBeneficiary != address(0)` AND `reserveFrequency != 0`. When both conditions are met, silently overwrites `defaultReserveBeneficiaryOf[hook]`, affecting all existing tiers that use the default. If either condition is missing, the flag is silently ignored.
 
 ---
 
@@ -523,7 +526,7 @@ Configure how a percentage of a tier's effective price is distributed to split r
 - `AddToBalanceReverted(projectId, token, amount, reason)` -- if the `addToBalanceOf` call for leftover funds reverts after distribution.
 
 **Edge cases**:
-- **`splitPercent` > SPLITS_TOTAL_PERCENT**: Not validated in the hook. A `splitPercent` exceeding 1e9 would forward more than the tier's price, potentially exceeding the payment amount. However, `beforePayRecordedWith` computes the split amount from the tier price, not the payment amount, so the terminal would need to have received enough.
+- **`splitPercent` > SPLITS_TOTAL_PERCENT**: Validated at tier creation in `recordAddTiers`. Reverts with `JB721TiersHookStore_SplitPercentExceedsBounds` if `splitPercent` exceeds `JBConstants.SPLITS_TOTAL_PERCENT` (1e9).
 - **Weight adjustment**: When splits route funds away, `calculateWeight` reduces the mint weight so payers receive fewer project tokens proportional to the split fraction. This can be disabled with `issueTokensForSplits = true`.
 - **Cross-currency**: Split amounts are calculated in the pricing currency, then converted to the payment token denomination. Rounding occurs at each step.
 - **ERC-20 tokens**: The library pulls tokens from the terminal via `safeTransferFrom`, distributes them, and approves terminals for project splits via `forceApprove`.
