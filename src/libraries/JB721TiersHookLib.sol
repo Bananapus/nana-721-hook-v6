@@ -249,6 +249,8 @@ library JB721TiersHookLib {
         uint256 pricingCurrency = uint256(uint32(packedPricingContext));
         if (amountCurrency == pricingCurrency) return (totalSplitAmount, splitMetadata);
 
+        // No price oracle available to convert between currencies. Return 0 to skip the split rather than
+        // forwarding an unconverted amount denominated in the wrong currency, which would over- or under-pay.
         if (address(prices) == address(0)) return (0, splitMetadata);
 
         // forge-lint: disable-next-line(unsafe-typecast)
