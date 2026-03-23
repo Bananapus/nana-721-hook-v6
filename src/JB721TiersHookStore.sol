@@ -26,6 +26,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
     error JB721TiersHookStore_CantMintManually(uint256 tierId);
     error JB721TiersHookStore_CantRemoveTier(uint256 tierId);
+    error JB721TiersHookStore_DeadlockedReserve();
     error JB721TiersHookStore_DiscountPercentExceedsBounds(uint256 percent, uint256 limit);
     error JB721TiersHookStore_DiscountPercentIncreaseNotAllowed(uint256 percent, uint256 storedPercent);
     error JB721TiersHookStore_InsufficientPendingReserves(uint256 count, uint256 numberOfPendingReserves);
@@ -871,6 +872,12 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
             // Make sure the tier has a non-zero supply.
             if (tierToAdd.initialSupply == 0) revert JB721TiersHookStore_ZeroInitialSupply(tierId);
+
+            // A tier with initialSupply == 1 and reserveFrequency > 0 deadlocks: the single mint is reserved,
+            // leaving zero available for paid mints, but reserves only mint after a paid mint triggers them.
+            if (tierToAdd.initialSupply == 1 && tierToAdd.reserveFrequency > 0) {
+                revert JB721TiersHookStore_DeadlockedReserve();
+            }
 
             // Store the tier with that ID.
             _storedTierOf[msg.sender][tierId] = JBStored721Tier({

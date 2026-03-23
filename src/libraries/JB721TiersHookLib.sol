@@ -249,7 +249,7 @@ library JB721TiersHookLib {
         uint256 pricingCurrency = uint256(uint32(packedPricingContext));
         if (amountCurrency == pricingCurrency) return (totalSplitAmount, splitMetadata);
 
-        if (address(prices) == address(0)) return (totalSplitAmount, splitMetadata);
+        if (address(prices) == address(0)) return (0, splitMetadata);
 
         // forge-lint: disable-next-line(unsafe-typecast)
         uint256 pricingDecimals = uint256(uint8(packedPricingContext >> 32));
@@ -370,6 +370,12 @@ library JB721TiersHookLib {
     }
 
     /// @notice Distributes funds for a single tier's split group.
+    /// @dev Edge case: if both `_sendPayoutToSplit` returns false (reverting hook/terminal/beneficiary) AND the
+    /// subsequent `addToBalanceOf` call also reverts for the leftover amount, native ETH will remain stranded in the
+    /// hook contract with no recovery path. This requires two independent external call failures for the same split
+    /// payout and is a pre-existing documented edge case. ERC-20 tokens are not affected because failed
+    /// `addToBalanceOf` calls reset the approval, and the tokens remain in the hook contract where they can be
+    /// recovered by the project owner.
     function _distributeSingleSplit(
         IJBDirectory directory,
         IJBSplits splitsContract,
@@ -594,7 +600,14 @@ library JB721TiersHookLib {
                 (bool success,) = split.beneficiary.call{value: amount}("");
                 if (!success) return false;
             } else {
-                SafeERC20.safeTransfer({token: IERC20(token), to: split.beneficiary, value: amount});
+                // Wrap in try-catch for consistency with other external calls in this function.
+                // If the transfer reverts (e.g. blocklisted recipient), return false so the
+                // funds are routed to the project's balance instead of bricking all payments.
+                try IERC20(token).transfer(split.beneficiary, amount) returns (bool success) {
+                    if (!success) return false;
+                } catch {
+                    return false;
+                }
             }
             return true;
         }
