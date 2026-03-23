@@ -395,7 +395,7 @@ Set a custom contract that resolves token URIs for all NFTs in the collection.
 **Behavior**:
 - When set, `tokenURI(tokenId)` calls `resolver.tokenUriOf(nft, tokenId)` instead of using IPFS URIs.
 - When cleared (set to `address(0)`), falls back to IPFS-based URIs via `JBIpfsDecoder`.
-- The sentinel value for "skip" is `address(this)` (the hook's own address), checked at line 483.
+- The sentinel value for "skip" is `address(this)` (the hook's own address), checked in `tokenURI()`.
 
 **Edge cases**:
 - **Malicious resolver**: Could revert (blocking metadata reads for marketplaces) or return misleading URIs. Cannot affect funds.
