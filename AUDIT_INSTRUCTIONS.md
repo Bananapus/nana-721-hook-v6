@@ -23,7 +23,7 @@ A Nemesis automated audit was conducted on 2026-03-17. Results are in [`.audit/f
 
 | ID | Severity | Title | Status |
 |----|----------|-------|--------|
-| NM-001 | MEDIUM | Unprotected external calls in tier split distribution cascade to full payment revert | **Remediated** -- all external calls in `_sendPayoutToSplit` are now wrapped in try-catch |
+| NM-001 | MEDIUM | Unprotected external calls in tier split distribution cascade to full payment revert | **Remediated** -- hook callbacks, terminal calls, and native-token sends in `_sendPayoutToSplit` are now wrapped in try-catch; ERC-20 beneficiary `safeTransfer` remains unwrapped (reverts only if the token itself reverts) |
 | NM-002 | LOW | `_addToBalance` silently drops funds when no primary terminal | Open |
 | NM-003 | LOW | Missing `splitPercent` bounds validation in `recordAddTiers` | **Remediated** -- `SplitPercentExceedsBounds` check added at `JB721TiersHookStore.sol:866` |
 | NM-004 | LOW | Implementation contract initializable | Open (no fund risk) |
