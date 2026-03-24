@@ -376,8 +376,8 @@ library JB721TiersHookLib {
     /// subsequent `addToBalanceOf` call also reverts for the leftover amount, native ETH will remain stranded in the
     /// hook contract with no recovery path. This requires two independent external call failures for the same split
     /// payout and is a pre-existing documented edge case. ERC-20 tokens are not affected because failed
-    /// `addToBalanceOf` calls reset the approval, and the tokens remain in the hook contract where they can be
-    /// recovered by the project owner.
+    /// `addToBalanceOf` calls reset the approval. ERC-20 tokens remain in the hook contract. There is no built-in
+    /// recovery mechanism.
     function _distributeSingleSplit(
         IJBDirectory directory,
         IJBSplits splitsContract,
@@ -602,14 +602,13 @@ library JB721TiersHookLib {
                 (bool success,) = split.beneficiary.call{value: amount}("");
                 if (!success) return false;
             } else {
-                // Wrap in try-catch for consistency with other external calls in this function.
-                // If the transfer reverts (e.g. blocklisted recipient), return false so the
-                // funds are routed to the project's balance instead of bricking all payments.
-                try IERC20(token).transfer(split.beneficiary, amount) returns (bool success) {
-                    if (!success) return false;
-                } catch {
-                    return false;
-                }
+                // Use a low-level call to handle non-standard ERC-20 tokens (e.g. USDT) that
+                // do not return a bool on transfer. If the call reverts or returns false, return
+                // false so the funds are routed to the project's balance instead of bricking all
+                // payments.
+                (bool callSuccess, bytes memory returndata) =
+                    address(token).call(abi.encodeCall(IERC20.transfer, (split.beneficiary, amount)));
+                if (!callSuccess || (returndata.length != 0 && !abi.decode(returndata, (bool)))) return false;
             }
             return true;
         }

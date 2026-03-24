@@ -18,6 +18,7 @@ import {JBPermissionIds} from "@bananapus/permission-ids-v6/src/JBPermissionIds.
 import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {ERC721} from "./abstract/ERC721.sol";
 import {JB721Hook} from "./abstract/JB721Hook.sol";
 import {IJB721TiersHook} from "./interfaces/IJB721TiersHook.sol";
 import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
@@ -48,6 +49,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     error JB721TiersHook_NoProjectId();
     error JB721TiersHook_Overspending(uint256 leftoverAmount);
     error JB721TiersHook_TierTransfersPaused();
+    error JB721TiersHook_ZeroAddress();
 
     //*********************************************************************//
     // --------------- public immutable stored properties ---------------- //
@@ -166,6 +168,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @param owner The address to check the balance of.
     /// @return balance The number of NFTs the address owns across this hook's tiers.
     function balanceOf(address owner) public view override returns (uint256 balance) {
+        // Revert if the owner is the zero address.
+        if (owner == address(0)) revert JB721TiersHook_ZeroAddress();
         return STORE.balanceOf({hook: address(this), owner: owner});
     }
 
@@ -249,6 +253,10 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // Stop re-initialization by ensuring a projectId is provided and doesn't already exist.
         if (PROJECT_ID != 0) revert JB721TiersHook_AlreadyInitialized(PROJECT_ID);
 
+        // Prevent the implementation contract itself from being initialized.
+        // Use ERC721.name() to bypass the local `name` parameter shadowing the inherited function.
+        if (bytes(ERC721.name()).length != 0) revert JB721TiersHook_AlreadyInitialized(0);
+
         // Make sure a projectId is provided.
         if (projectId == 0) revert JB721TiersHook_NoProjectId();
 
@@ -315,6 +323,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @return The token URI from the `tokenUriResolver` if it is set. If it isn't set, the token URI for the NFT's
     /// tier.
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
+        // Revert if the token does not exist (no owner).
+        if (_ownerOf(tokenId) == address(0)) revert ERC721NonexistentToken(tokenId);
         return JB721TiersHookLib.resolveTokenURI(STORE, address(this), baseURI, tokenId);
     }
 

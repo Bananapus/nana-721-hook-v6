@@ -14,7 +14,6 @@ import {JBBeforePayRecordedContext} from "@bananapus/core-v6/src/structs/JBBefor
 import {JBCashOutHookSpecification} from "@bananapus/core-v6/src/structs/JBCashOutHookSpecification.sol";
 import {JBPayHookSpecification} from "@bananapus/core-v6/src/structs/JBPayHookSpecification.sol";
 import {JBRuleset} from "@bananapus/core-v6/src/structs/JBRuleset.sol";
-import {IERC2981} from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 import {IJB721Hook} from "../interfaces/IJB721Hook.sol";
@@ -160,10 +159,11 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     /// @notice Indicates if this contract adheres to the specified interface.
     /// @dev See {IERC165-supportsInterface}.
     /// @param interfaceId The ID of the interface to check for adherence to.
+    // ERC-2981 royalty support was removed — no royaltyInfo implementation exists.
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721, IERC165) returns (bool) {
         return interfaceId == type(IJB721Hook).interfaceId || interfaceId == type(IJBRulesetDataHook).interfaceId
             || interfaceId == type(IJBPayHook).interfaceId || interfaceId == type(IJBCashOutHook).interfaceId
-            || interfaceId == type(IERC2981).interfaceId || super.supportsInterface(interfaceId);
+            || super.supportsInterface(interfaceId);
     }
 
     /// @notice Calculates the cumulative cash out weight of all NFT token IDs.

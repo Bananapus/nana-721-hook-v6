@@ -193,6 +193,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
     }
 
     function test_balanceOf_returnsCompleteBalance(uint256 numberOfTiers, address holder) public {
+        vm.assume(holder != address(0));
         numberOfTiers = bound(numberOfTiers, 0, 30);
 
         ForTest_JB721TiersHook hook = _initializeForTestHook(numberOfTiers);
@@ -330,6 +331,8 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         // Check: for each tier, does the tier's token URI match the theoretic hash?
         for (uint256 i = 1; i <= 10; i++) {
             uint256 tokenId = _generateTokenId(i, 1);
+            // Set an owner so the token existence check passes.
+            hook.ForTest_setOwnerOf(tokenId, beneficiary);
             assertEq(hook.tokenURI(tokenId), string(abi.encodePacked(baseUri, theoreticHashes[i - 1])));
         }
     }
