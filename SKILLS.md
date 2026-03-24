@@ -39,7 +39,7 @@ Tiered ERC-721 NFT hook for Juicebox V6 that mints NFTs when a project is paid a
 | `pricingContext()` | `JB721TiersHook` | Unpacks and returns currency and decimals from the packed `_packedPricingContext`. |
 | `balanceOf(owner)` | `JB721TiersHook` | Overrides ERC-721 `balanceOf` to delegate to `STORE.balanceOf`, which sums across all tiers. |
 | `hasMintPermissionFor(...)` | `JB721Hook` | Always returns `false`. Required by `IJBRulesetDataHook`. |
-| `supportsInterface(interfaceId)` | `JB721TiersHook` | Returns `true` for `IJB721TiersHook`, `IJBRulesetDataHook`, `IJBPayHook`, `IJBCashOutHook`, `IERC2981`, `IERC721`, `IERC721Metadata`, `IERC165`. |
+| `supportsInterface(interfaceId)` | `JB721TiersHook` | Returns `true` for `IJB721TiersHook`, `IJBRulesetDataHook`, `IJBPayHook`, `IJBCashOutHook`, `IERC721`, `IERC721Metadata`, `IERC165`. ERC-2981 support was removed. |
 | `deployHookFor(projectId, config, salt)` | `JB721TiersHookDeployer` | Clones the hook implementation, initializes it, transfers ownership to caller, registers in address registry. |
 | `launchProjectFor(owner, deployConfig, launchConfig, controller, salt)` | `JB721TiersHookProjectDeployer` | Creates project via controller, deploys hook, wires as data hook, transfers hook ownership to project. |
 | `launchRulesetsFor(projectId, deployConfig, launchRulesetsConfig, controller, salt)` | `JB721TiersHookProjectDeployer` | Deploys a hook for an existing project and launches rulesets. Requires `QUEUE_RULESETS` and `SET_TERMINALS`. |
@@ -74,7 +74,7 @@ Tiered ERC-721 NFT hook for Juicebox V6 that mints NFTs when a project is paid a
 | `@bananapus/ownable-v6` | `JBOwnable` | Project-based ownership for the hook (ownership can be transferred to a project NFT) |
 | `@bananapus/permission-ids-v6` | `JBPermissionIds` | Permission IDs: `ADJUST_721_TIERS`, `MINT_721`, `SET_721_METADATA`, `SET_721_DISCOUNT_PERCENT`, `QUEUE_RULESETS`, `SET_TERMINALS` |
 | `@bananapus/address-registry-v6` | `IJBAddressRegistry` | Registering deployed hook clones |
-| `@openzeppelin/contracts` | `ERC2771Context`, `IERC165`, `IERC2981`, `IERC721`, `SafeERC20` | Meta-transactions (trusted forwarder), interface detection, royalty standard declaration, safe ERC-20 transfers for split distribution |
+| `@openzeppelin/contracts` | `ERC2771Context`, `IERC165`, `IERC721`, `SafeERC20` | Meta-transactions (trusted forwarder), interface detection, safe ERC-20 transfers for split distribution |
 | `@prb/math` | `mulDiv` | Safe fixed-point multiplication/division for price normalization and discount/split calculation |
 | `solady` | `LibClone` | Minimal proxy (clone) deployment for hooks |
 
@@ -174,7 +174,7 @@ Each tier has configurable voting power:
 - `setMetadata` uses `address(this)` as the sentinel for "no change" on `tokenUriResolver` (not `address(0)`). Passing `address(0)` will clear the resolver.
 - `JBPayDataHookRulesetConfig` hardcodes `useDataHookForPay: true` when wiring rulesets through the project deployer. All other metadata fields are passed through.
 - The `_update` override in `JB721TiersHook` checks `tier.transfersPausable` and consults the current ruleset's metadata for `transfersPaused`. Transfers to `address(0)` (burns) are never blocked.
-- **IERC2981 declared but not implemented**: `supportsInterface` returns `true` for `IERC2981`, but no `royaltyInfo` function is implemented. Callers querying `royaltyInfo` will get a revert. This appears intentional -- the interface is declared for future extension or to signal capability to marketplaces that may override behavior.
+- **ERC-2981 not supported**: ERC-2981 royalty support was removed. `supportsInterface` returns `false` for `IERC2981`, and no `royaltyInfo` function exists.
 - **Tier splits**: Each tier can route a percentage of its mint price to configured split recipients. `splitPercent` is out of `JBConstants.SPLITS_TOTAL_PERCENT` (1,000,000,000). Split group IDs are `uint256(uint160(hookAddress)) | (uint256(tierId) << 160)`.
 - **`useReserveBeneficiaryAsDefault` overwrites globally**: Adding a tier with `useReserveBeneficiaryAsDefault: true` silently overwrites `defaultReserveBeneficiaryOf` for ALL existing tiers that lack a tier-specific beneficiary. A `SetDefaultReserveBeneficiary` event is emitted when the default changes.
 - **Removing tiers does not update the sorted list**: `recordRemoveTierIds` only marks tiers in the bitmap. Call `cleanTiers()` afterward to remove them from the iteration sequence.
