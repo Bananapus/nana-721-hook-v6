@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.26;
+pragma solidity 0.8.28;
 
 // Import the shared unit test setup which deploys a hook clone with 10 tiers.
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../utils/UnitTestSetup.sol";
 
 // Import IERC2981 to compute its interface ID for the supportsInterface test.

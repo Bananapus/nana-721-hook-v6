@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.26;
+pragma solidity 0.8.28;
 
+// forge-lint: disable-next-line(unaliased-plain-import)
 import "../utils/UnitTestSetup.sol";
 import {IJB721TokenUriResolver} from "../../src/interfaces/IJB721TokenUriResolver.sol";
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
