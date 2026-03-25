@@ -146,7 +146,7 @@ Key settings from `foundry.toml`:
 
 | Setting | Value |
 | --- | --- |
-| Solidity compiler | 0.8.26 |
+| Solidity compiler | ^0.8.26 |
 | EVM target | cancun |
 | Optimizer runs | 200 |
 | Fuzz runs | 4,096 |
