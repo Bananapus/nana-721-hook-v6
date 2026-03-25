@@ -74,7 +74,7 @@ Several store errors gained a `tierId` parameter for better debugging:
 
 ### 1.8 Solidity Version Change
 
-All contracts upgraded from `pragma solidity 0.8.23` to `pragma solidity 0.8.26`.
+All contracts upgraded from `pragma solidity 0.8.23` to `pragma solidity ^0.8.26`.
 
 ### 1.9 Cross-Repo Impact
 

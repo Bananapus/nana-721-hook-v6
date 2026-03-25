@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.26;
+pragma solidity ^0.8.26;
 
 // Import the shared unit test setup which deploys a hook clone with 10 tiers.
 import "../utils/UnitTestSetup.sol";

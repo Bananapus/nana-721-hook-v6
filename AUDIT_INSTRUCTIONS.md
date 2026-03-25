@@ -8,7 +8,7 @@ Read [ARCHITECTURE.md](./ARCHITECTURE.md) first for data flow context. Read [RIS
 
 | Setting | Value |
 |---------|-------|
-| Solidity version | 0.8.26 |
+| Solidity version | ^0.8.26 |
 | EVM target | cancun |
 | Optimizer | enabled, 200 runs |
 | via-IR | not enabled |
