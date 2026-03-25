@@ -253,10 +253,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // Stop re-initialization by ensuring a projectId is provided and doesn't already exist.
         if (PROJECT_ID != 0) revert JB721TiersHook_AlreadyInitialized(PROJECT_ID);
 
-        // Prevent the implementation contract itself from being initialized.
-        // Use ERC721.name() to bypass the local `name` parameter shadowing the inherited function.
-        if (bytes(ERC721.name()).length != 0) revert JB721TiersHook_AlreadyInitialized(0);
-
         // Make sure a projectId is provided.
         if (projectId == 0) revert JB721TiersHook_NoProjectId();
 
