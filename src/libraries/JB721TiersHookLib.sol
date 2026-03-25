@@ -602,10 +602,10 @@ library JB721TiersHookLib {
                 (bool success,) = split.beneficiary.call{value: amount}("");
                 if (!success) return false;
             } else {
-                // Use a low-level call to handle non-standard ERC-20 tokens (e.g. USDT) that
-                // do not return a bool on transfer. If the call reverts or returns false, return
-                // false so the funds are routed to the project's balance instead of bricking all
-                // payments.
+                // Use the same low-level call + returndata check as SafeERC20.safeTransfer, but return
+                // false on failure instead of reverting. This handles non-standard tokens (e.g. USDT)
+                // that return void, while routing failed transfers to the project's balance instead
+                // of bricking all payments.
                 (bool callSuccess, bytes memory returndata) =
                     address(token).call(abi.encodeCall(IERC20.transfer, (split.beneficiary, amount)));
                 if (!callSuccess || (returndata.length != 0 && !abi.decode(returndata, (bool)))) return false;
