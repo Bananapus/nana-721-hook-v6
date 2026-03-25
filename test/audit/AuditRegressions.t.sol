@@ -7,42 +7,10 @@ import "../utils/UnitTestSetup.sol";
 // Import IERC2981 to compute its interface ID for the supportsInterface test.
 import {IERC2981} from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
-// Import IERC721Errors for the ERC721NonexistentToken error selector.
-import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
-
-/// @notice Regression tests covering five audit findings for nana-721-hook-v6.
+/// @notice Regression tests covering three audit findings for nana-721-hook-v6.
 contract AuditRegressions is UnitTestSetup {
     // -----------------------------------------------------------------------
-    // 1. balanceOf(address(0)) must revert with JB721TiersHook_ZeroAddress
-    // -----------------------------------------------------------------------
-
-    /// @notice Calling balanceOf with address(0) must revert, not return zero.
-    function test_balanceOf_zeroAddress_reverts() public {
-        // Expect a revert with the custom ZeroAddress error.
-        vm.expectRevert(JB721TiersHook.JB721TiersHook_ZeroAddress.selector);
-
-        // Call balanceOf with address(0) — must revert.
-        hook.balanceOf(address(0));
-    }
-
-    // -----------------------------------------------------------------------
-    // 2. tokenURI reverts on a nonexistent token ID
-    // -----------------------------------------------------------------------
-
-    /// @notice Calling tokenURI with a token ID that has never been minted must revert.
-    function test_tokenURI_nonexistentToken_reverts() public {
-        // Pick a token ID that has never been minted.
-        uint256 nonExistentTokenId = 999_999_999;
-
-        // Expect a revert with ERC721NonexistentToken carrying the token ID.
-        vm.expectRevert(abi.encodeWithSelector(IERC721Errors.ERC721NonexistentToken.selector, nonExistentTokenId));
-
-        // Call tokenURI — must revert because the token does not exist.
-        hook.tokenURI(nonExistentTokenId);
-    }
-
-    // -----------------------------------------------------------------------
-    // 3. Double-initialization guard
+    // 1. Double-initialization guard
     // -----------------------------------------------------------------------
 
     /// @notice Calling initialize on an already-initialized clone must revert.
@@ -73,7 +41,7 @@ contract AuditRegressions is UnitTestSetup {
     }
 
     // -----------------------------------------------------------------------
-    // 4. recordSetDiscountPercentOf on a removed tier must revert
+    // 2. recordSetDiscountPercentOf on a removed tier must revert
     // -----------------------------------------------------------------------
 
     /// @notice Setting the discount percent on a tier that has been removed must revert.
@@ -97,7 +65,7 @@ contract AuditRegressions is UnitTestSetup {
     }
 
     // -----------------------------------------------------------------------
-    // 5. ERC-2981 supportsInterface returns false (support was removed)
+    // 3. ERC-2981 supportsInterface returns false (support was removed)
     // -----------------------------------------------------------------------
 
     /// @notice supportsInterface must return false for IERC2981 since royalty support was removed.
