@@ -74,10 +74,12 @@ contract CodexNemesis_CrossCurrencySplitNoPrices is UnitTestSetup {
             })
         );
 
-        assertEq(weight, 5e18, "beforePay still reduces mint weight for the split portion");
+        // When PRICES is address(0) and currencies differ, convertSplitAmounts returns 0
+        // to avoid forwarding an unconverted amount in the wrong currency denomination.
+        // This means weight is NOT reduced (full weight) and no funds are forwarded.
+        assertEq(weight, 10e18, "weight unchanged when split conversion fails due to missing prices");
         assertEq(hookSpecifications.length, 1, "one pay hook spec");
-        assertEq(hookSpecifications[0].amount, 0.5 ether, "split amount is forwarded despite missing prices");
-        assertGt(hookSpecifications[0].metadata.length, 0, "split metadata is populated");
+        assertEq(hookSpecifications[0].amount, 0, "split amount is zero when prices unavailable for conversion");
 
         mockAndExpect(
             address(mockJBDirectory),
@@ -112,8 +114,8 @@ contract CodexNemesis_CrossCurrencySplitNoPrices is UnitTestSetup {
         vm.prank(mockTerminalAddress);
         crossHook.afterPayRecordedWith{value: hookSpecifications[0].amount}(payContext);
 
-        assertEq(crossHook.balanceOf(beneficiary), 0, "payment still skips minting");
-        assertEq(crossHook.payCreditsOf(beneficiary), 0, "payment still skips crediting");
-        assertEq(address(crossHook).balance, hookSpecifications[0].amount, "forwarded native funds remain trapped");
+        assertEq(crossHook.balanceOf(beneficiary), 0, "no NFTs minted (currency mismatch, no prices)");
+        assertEq(crossHook.payCreditsOf(beneficiary), 0, "no credits accrued (currency mismatch, no prices)");
+        assertEq(address(crossHook).balance, 0, "no funds forwarded to hook when split conversion returns zero");
     }
 }

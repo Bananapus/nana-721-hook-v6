@@ -1188,6 +1188,10 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @param tierId The ID of the tier to record a discount for.
     /// @param discountPercent The new discount percent being applied.
     function recordSetDiscountPercentOf(uint256 tierId, uint256 discountPercent) external override {
+        // Make sure the tier hasn't been removed.
+        JBBitmapWord memory bitmapWord = _removedTiersBitmapWordOf[msg.sender].readId(tierId);
+        if (bitmapWord.isTierIdRemoved(tierId)) revert JB721TiersHookStore_TierRemoved(tierId);
+
         // Make sure the discount percent is within the bound.
         if (discountPercent > JB721Constants.DISCOUNT_DENOMINATOR) {
             revert JB721TiersHookStore_DiscountPercentExceedsBounds(
