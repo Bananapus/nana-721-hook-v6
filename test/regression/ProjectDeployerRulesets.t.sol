@@ -138,7 +138,6 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
             tiersConfig: JB721InitTiersConfig({
                 tiers: tierConfigs, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18
             }),
-            reserveBeneficiary: reserveBeneficiary,
             flags: JB721TiersHookFlags({
                 preventOverspending: false,
                 issueTokensForSplits: false,

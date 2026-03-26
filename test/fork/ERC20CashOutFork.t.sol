@@ -249,7 +249,6 @@ contract ERC20CashOutFork is Test {
             tokenUriResolver: IJB721TokenUriResolver(address(0)),
             contractUri: "ipfs://contract",
             tiersConfig: JB721InitTiersConfig({tiers: tierConfigs, currency: currency, decimals: 6}),
-            reserveBeneficiary: reserveBeneficiary,
             flags: JB721TiersHookFlags({
                 preventOverspending: false,
                 issueTokensForSplits: false,

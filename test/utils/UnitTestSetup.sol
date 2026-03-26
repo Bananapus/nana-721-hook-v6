@@ -255,7 +255,6 @@ contract UnitTestSetup is Test {
             tiersConfig: JB721InitTiersConfig({
                 tiers: tiers, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18
             }),
-            reserveBeneficiary: address(0),
             flags: JB721TiersHookFlags({
                 preventOverspending: false,
                 issueTokensForSplits: false,
@@ -728,7 +727,6 @@ contract UnitTestSetup is Test {
             tiersConfig: JB721InitTiersConfig({
                 tiers: tierConfigs, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18
             }),
-            reserveBeneficiary: reserveBeneficiary,
             flags: JB721TiersHookFlags({
                 preventOverspending: false,
                 issueTokensForSplits: false,

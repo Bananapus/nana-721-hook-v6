@@ -226,7 +226,6 @@ contract ERC20TierSplitFork is Test {
             tokenUriResolver: IJB721TokenUriResolver(address(0)),
             contractUri: "ipfs://contract",
             tiersConfig: JB721InitTiersConfig({tiers: tierConfigs, currency: currency, decimals: tokenDecimals}),
-            reserveBeneficiary: reserveBeneficiary,
             flags: JB721TiersHookFlags({
                 preventOverspending: false,
                 issueTokensForSplits: false,
@@ -300,7 +299,6 @@ contract ERC20TierSplitFork is Test {
             tiersConfig: JB721InitTiersConfig({
                 tiers: tierConfigs, currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18
             }),
-            reserveBeneficiary: reserveBeneficiary,
             flags: JB721TiersHookFlags({
                 preventOverspending: false,
                 issueTokensForSplits: false,

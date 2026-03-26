@@ -29,7 +29,6 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
             tokenUriResolver: IJB721TokenUriResolver(mockTokenUriResolver),
             contractUri: contractUri,
             tiersConfig: JB721InitTiersConfig({tiers: tiers, currency: currency, decimals: decimals}),
-            reserveBeneficiary: address(0),
             flags: JB721TiersHookFlags({
                 preventOverspending: false,
                 issueTokensForSplits: false,
