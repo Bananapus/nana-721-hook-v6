@@ -246,7 +246,6 @@ contract IssueTokensForSplitsFork is Test {
                 currency: uint32(uint160(NATIVE_TOKEN)),
                 decimals: 18
             }),
-            reserveBeneficiary: reserveBeneficiary,
             flags: JB721TiersHookFlags({
                 preventOverspending: false,
                 issueTokensForSplits: issueTokensForSplits,

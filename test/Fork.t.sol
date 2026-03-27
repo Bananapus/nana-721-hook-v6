@@ -272,7 +272,6 @@ contract Fork_721Hook_Test is Test {
                 currency: uint32(uint160(NATIVE_TOKEN)),
                 decimals: 18
             }),
-            reserveBeneficiary: reserveBeneficiary,
             flags: flags
         });
 

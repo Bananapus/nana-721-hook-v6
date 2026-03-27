@@ -315,7 +315,6 @@ Deploy a 721 tiers hook for an existing project.
     - `JB721TierConfig[] tiers` -- initial tiers (sorted by category).
     - `uint32 currency` -- pricing currency (`uint32(uint160(tokenAddress))` for concrete, or abstract like 1=ETH, 2=USD).
     - `uint8 decimals` -- pricing decimals (must be <= 18).
-  - `address reserveBeneficiary` -- (unused in current initialize; set via tier configs).
   - `JB721TiersHookFlags flags` -- collection-level behavior flags.
 - `bytes32 salt` -- for deterministic deployment (bytes32(0) for non-deterministic).
 

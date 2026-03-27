@@ -11,7 +11,6 @@ import {IJB721TokenUriResolver} from "../interfaces/IJB721TokenUriResolver.sol";
 /// @custom:member tokenUriResolver The contract responsible for resolving the URI for each NFT.
 /// @custom:member contractUri The URI where this contract's metadata can be found.
 /// @custom:member tiersConfig The NFT tiers and pricing config to launch the hook with.
-/// @custom:member reserveBeneficiary The default reserved beneficiary for all tiers.
 /// @custom:member flags A set of boolean options to configure the hook with.
 // forge-lint: disable-next-line(pascal-case-struct)
 struct JBDeploy721TiersHookConfig {
@@ -21,6 +20,5 @@ struct JBDeploy721TiersHookConfig {
     IJB721TokenUriResolver tokenUriResolver;
     string contractUri;
     JB721InitTiersConfig tiersConfig;
-    address reserveBeneficiary;
     JB721TiersHookFlags flags;
 }

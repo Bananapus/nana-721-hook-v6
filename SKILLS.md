@@ -86,7 +86,7 @@ Tiered ERC-721 NFT hook for Juicebox V6 that mints NFTs when a project is paid a
 | `JB721Tier` | `uint32 id`, `uint104 price`, `uint32 remainingSupply`, `uint32 initialSupply`, `uint104 votingUnits`, `uint16 reserveFrequency`, `address reserveBeneficiary`, `bytes32 encodedIPFSUri`, `uint24 category`, `uint8 discountPercent`, `bool allowOwnerMint`, `bool transfersPausable`, `bool cannotBeRemoved`, `bool cannotIncreaseDiscountPercent`, `uint32 splitPercent`, `string resolvedUri` | Return type from `tierOf`, `tiersOf`, `tierOfTokenId` |
 | `JBStored721Tier` | `uint104 price`, `uint32 remainingSupply`, `uint32 initialSupply`, `uint32 splitPercent`, `uint24 category`, `uint8 discountPercent`, `uint16 reserveFrequency`, `uint8 packedBools` (allowOwnerMint, transfersPausable, useVotingUnits, cannotBeRemoved, cannotIncreaseDiscountPercent) | Internal storage in `JB721TiersHookStore`. Voting units stored separately in `_tierVotingUnitsOf` when `useVotingUnits` is true. |
 | `JB721InitTiersConfig` | `JB721TierConfig[] tiers`, `uint32 currency`, `uint8 decimals` | `initialize` -- defines tiers and pricing context. The prices contract is an immutable on the hook, not passed per-config. |
-| `JBDeploy721TiersHookConfig` | `string name`, `string symbol`, `string baseUri`, `IJB721TokenUriResolver tokenUriResolver`, `string contractUri`, `JB721InitTiersConfig tiersConfig`, `address reserveBeneficiary`, `JB721TiersHookFlags flags` | `deployHookFor`, `launchProjectFor` |
+| `JBDeploy721TiersHookConfig` | `string name`, `string symbol`, `string baseUri`, `IJB721TokenUriResolver tokenUriResolver`, `string contractUri`, `JB721InitTiersConfig tiersConfig`, `JB721TiersHookFlags flags` | `deployHookFor`, `launchProjectFor` |
 | `JB721TiersHookFlags` | `bool noNewTiersWithReserves`, `bool noNewTiersWithVotes`, `bool noNewTiersWithOwnerMinting`, `bool preventOverspending`, `bool issueTokensForSplits` | `initialize`, `recordFlags` |
 | `JB721TiersRulesetMetadata` | `bool pauseTransfers`, `bool pauseMintPendingReserves` | Packed into `JBRulesetMetadata.metadata` per-ruleset (bit 0 = pauseTransfers, bit 1 = pauseMintPendingReserves) |
 | `JBPayDataHookRulesetConfig` | `uint48 mustStartAtOrAfter`, `uint32 duration`, `uint112 weight`, `uint32 weightCutPercent`, `IJBRulesetApprovalHook approvalHook`, `JBPayDataHookRulesetMetadata metadata`, `JBSplitGroup[] splitGroups`, `JBFundAccessLimitGroup[] fundAccessLimitGroups` | `JB721TiersHookProjectDeployer` -- wraps core ruleset config with `useDataHookForPay: true` hardcoded |
@@ -292,7 +292,6 @@ tiers[0] = JB721TierConfig({
             currency: 1,        // ETH
             decimals: 18
         }),
-        reserveBeneficiary: address(0),
         flags: JB721TiersHookFlags({
             noNewTiersWithReserves: false,
             noNewTiersWithVotes: false,
