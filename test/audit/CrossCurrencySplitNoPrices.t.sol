@@ -11,7 +11,7 @@ import {IJBRulesets} from "@bananapus/core-v6/src/interfaces/IJBRulesets.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 import {JBBeforePayRecordedContext} from "@bananapus/core-v6/src/structs/JBBeforePayRecordedContext.sol";
 
-contract CodexNemesis_CrossCurrencySplitNoPrices is UnitTestSetup {
+contract CrossCurrencySplitNoPrices is UnitTestSetup {
     function test_crossCurrencySplit_withoutPrices_locksForwardedNativeFunds() public {
         JB721TiersHook noPricesOrigin = new JB721TiersHook(
             IJBDirectory(mockJBDirectory),
