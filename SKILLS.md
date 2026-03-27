@@ -145,8 +145,10 @@ Each tier has configurable voting power:
   - Computes `mulDiv(effectivePrice, splitPercent, SPLITS_TOTAL_PERCENT)` per tier.
   - Returns the total to be forwarded to the hook.
   - If the payment currency differs from the tier pricing currency, `convertSplitAmounts` converts amounts to the payment token denomination via `JBPrices`.
+  - **Pay credits cap**: `totalSplitAmount` is capped at `context.amount.value` before weight calculation and before being returned in the hook specification. Pay credits fund NFT minting (virtual -- they reduce the price threshold in `recordMint`), but splits require real tokens to distribute. Without this cap, a payer with sufficient pay credits but insufficient actual payment value would cause the terminal to attempt forwarding more tokens than were actually received, reverting the transaction. This means the project receiving the NFT payment must have received the full amount including what would have gone to splits -- split recipients are paid from the project's balance, not directly from the payer's contribution.
   - Weight is adjusted down proportionally (`weight = mulDiv(weight, amount - totalSplitAmount, amount)`) unless the `issueTokensForSplits` flag is set, in which case the full `context.weight` is returned.
 - In `afterPayRecordedWith`, `distributeAll` distributes forwarded funds to each tier's split group recipients. Leftover after all splits goes back to the project's balance via `addToBalance`.
+- **Leftover accounting in `_distributeSingleSplit`**: `leftoverAmount` is always decremented **before** the send attempt. If `_sendPayoutToSplit` returns `false` (i.e., the send reverted or had no valid recipient), the amount is added **back** to `leftoverAmount` so it routes to the project's balance with the remaining leftover. This "decrement-first, restore-on-failure" pattern prevents a failed split from inflating subsequent split recipients' shares (since `leftoverPercentage` still decreases regardless of success).
 - Split recipients follow the same priority chain as `JBMultiTerminal`: `split.hook` > `split.projectId` > `split.beneficiary`:
   - **Split hooks**: receive a `JBSplitHookContext` struct (`token`, `amount`, `decimals`, `projectId`, `groupId`, full `split`). Native tokens forwarded via `{value: amount}`; ERC-20s transferred via `SafeERC20.safeTransfer` before calling `processSplitWith`.
   - **Project splits**: route via `terminal.pay` or `terminal.addToBalance`.
@@ -154,7 +156,7 @@ Each tier has configurable voting power:
   - **Empty splits** (no hook, no project ID, no beneficiary): skipped -- their share stays in the leftover and routes to the project's balance via `addToBalanceOf`, preventing a misconfigured split from bricking the payout distribution.
 - All external calls in `_sendPayoutToSplit` are wrapped in try-catch to prevent a single reverting recipient from bricking all payments to the project:
   - **Native token hooks**: a revert returns `false` (ETH stays in the contract and routes to the project balance).
-  - **ERC-20 hooks**: tokens are transferred via `safeTransfer` before the callback; the function always returns `true` regardless of callback outcome because the tokens have already left -- returning `false` would cause double-spend accounting in the leftover calculation.
+  - **ERC-20 hooks**: tokens are transferred via `safeTransfer` before the callback; the function always returns `true` regardless of callback outcome because the tokens have already left this contract. Since leftoverAmount was already decremented before the send, returning `true` is required to prevent the caller from adding the amount back -- which would create a double-spend (tokens sent to the hook AND counted toward leftover routed to the project).
   - **ERC-20 terminal calls** (`pay`/`addToBalanceOf`): approval is reset to zero on failure to prevent dangling approvals.
 
 ## Gotchas

@@ -400,10 +400,13 @@ library JB721TiersHookLib {
             uint256 payoutAmount =
                 mulDiv({x: leftoverAmount, y: tierSplits[j].percent, denominator: leftoverPercentage});
             if (payoutAmount != 0) {
-                // Only subtract from leftover if the split has a valid recipient.
-                // Splits with no projectId and no beneficiary are skipped — their share
-                // stays in leftoverAmount and is added to the project's balance below.
-                if (_sendPayoutToSplit({
+                // Always subtract from leftover to prevent failed splits from inflating later recipients'
+                // shares. Failed amounts stay in the contract and are routed to the project's balance with
+                // the leftover below.
+                unchecked {
+                    leftoverAmount -= payoutAmount;
+                }
+                if (!_sendPayoutToSplit({
                         directory: directory,
                         split: tierSplits[j],
                         token: token,
@@ -412,8 +415,10 @@ library JB721TiersHookLib {
                         groupId: groupId,
                         decimals: decimals
                     })) {
+                    // The payout failed — the funds are still in this contract. Add back to leftover so they
+                    // route to the project's balance after the loop.
                     unchecked {
-                        leftoverAmount -= payoutAmount;
+                        leftoverAmount += payoutAmount;
                     }
                 }
             }

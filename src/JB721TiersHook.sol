@@ -202,6 +202,16 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             });
         }
 
+        // Cap the split amount at the actual payment value. Pay credits fund NFT minting (virtual), but splits
+        // require real tokens to distribute. Without this cap, a user with sufficient pay credits but insufficient
+        // ETH would revert because the terminal can't forward more than what was actually paid.
+        // This requires the project receiving the NFT payment to have received the full amount including what
+        // would have gone to splits — the split recipients get paid from the project's balance, not directly
+        // from the payer's contribution.
+        if (totalSplitAmount > context.amount.value) {
+            totalSplitAmount = context.amount.value;
+        }
+
         // Adjust weight so the terminal mints tokens only for the amount that actually enters the project.
         weight = JB721TiersHookLib.calculateWeight({
             contextWeight: context.weight,
