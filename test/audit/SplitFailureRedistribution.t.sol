@@ -8,7 +8,7 @@ import {IJBSplitHook} from "@bananapus/core-v6/src/interfaces/IJBSplitHook.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 
-contract CodexNemesis_SplitFailureRedistribution is UnitTestSetup {
+contract SplitFailureRedistribution is UnitTestSetup {
     address internal alice = makeAddr("alice");
     address internal bob = makeAddr("bob");
 
