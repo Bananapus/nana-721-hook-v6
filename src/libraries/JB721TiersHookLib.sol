@@ -26,6 +26,7 @@ import {JBIpfsDecoder} from "./JBIpfsDecoder.sol";
 /// @notice External library for JB721TiersHook operations extracted to stay within the EIP-170 contract size limit.
 /// @dev Handles tier adjustments, split calculations, price normalization, and split fund distribution.
 library JB721TiersHookLib {
+    error JB721TiersHookLib_NoTerminalForLeftover(uint256 projectId, address token, uint256 leftoverAmount);
     // Events mirrored from IJB721TiersHook (emitted via DELEGATECALL from the hook's context).
     event AddToBalanceReverted(uint256 indexed projectId, address token, uint256 amount, bytes reason);
     event AddTier(uint256 indexed tierId, JB721TierConfig tier, address caller);
@@ -430,36 +431,38 @@ library JB721TiersHookLib {
         if (leftoverAmount != 0) {
             // slither-disable-next-line calls-loop
             IJBTerminal terminal = directory.primaryTerminalOf({projectId: projectId, token: token});
-            if (address(terminal) != address(0)) {
-                if (isNativeToken) {
-                    // slither-disable-next-line arbitrary-send-eth,calls-loop
-                    try terminal.addToBalanceOf{value: leftoverAmount}({
-                        projectId: projectId,
-                        token: token,
-                        amount: leftoverAmount,
-                        shouldReturnHeldFees: false,
-                        memo: "",
-                        metadata: bytes("")
-                    }) {}
-                    catch (bytes memory reason) {
-                        emit AddToBalanceReverted(projectId, token, leftoverAmount, reason);
-                    }
-                } else {
-                    SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: leftoverAmount});
-                    // slither-disable-next-line calls-loop
-                    try terminal.addToBalanceOf({
-                        projectId: projectId,
-                        token: token,
-                        amount: leftoverAmount,
-                        shouldReturnHeldFees: false,
-                        memo: "",
-                        metadata: bytes("")
-                    }) {}
-                    catch (bytes memory reason) {
-                        // Reset approval on failure.
-                        SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
-                        emit AddToBalanceReverted(projectId, token, leftoverAmount, reason);
-                    }
+            // Revert if there are leftover funds but no terminal to route them to.
+            if (address(terminal) == address(0)) {
+                revert JB721TiersHookLib_NoTerminalForLeftover(projectId, token, leftoverAmount);
+            }
+            if (isNativeToken) {
+                // slither-disable-next-line arbitrary-send-eth,calls-loop
+                try terminal.addToBalanceOf{value: leftoverAmount}({
+                    projectId: projectId,
+                    token: token,
+                    amount: leftoverAmount,
+                    shouldReturnHeldFees: false,
+                    memo: "",
+                    metadata: bytes("")
+                }) {}
+                catch (bytes memory reason) {
+                    emit AddToBalanceReverted(projectId, token, leftoverAmount, reason);
+                }
+            } else {
+                SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: leftoverAmount});
+                // slither-disable-next-line calls-loop
+                try terminal.addToBalanceOf({
+                    projectId: projectId,
+                    token: token,
+                    amount: leftoverAmount,
+                    shouldReturnHeldFees: false,
+                    memo: "",
+                    metadata: bytes("")
+                }) {}
+                catch (bytes memory reason) {
+                    // Reset approval on failure.
+                    SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
+                    emit AddToBalanceReverted(projectId, token, leftoverAmount, reason);
                 }
             }
         }

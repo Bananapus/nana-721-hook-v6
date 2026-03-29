@@ -330,11 +330,11 @@ Deploy a 721 tiers hook for an existing project.
 - `SetDefaultReserveBeneficiary(hook, newBeneficiary, caller)` -- if any initial tier has `useReserveBeneficiaryAsDefault = true`.
 
 **Edge cases**:
-- **Re-initialization**: Reverts with `JB721TiersHook_AlreadyInitialized` if `PROJECT_ID` is already set.
+- **Re-initialization**: Reverts with `JB721TiersHook_AlreadyInitialized` if `_initialized` is already true.
 - **`projectId == 0`**: Reverts with `JB721TiersHook_NoProjectId`.
 - **`decimals > 18`**: Reverts with `JB721TiersHook_InvalidPricingDecimals`.
 - **Deterministic salt collision**: Reverts at the EVM level (CREATE2 collision).
-- **Implementation contract**: The original `HOOK` has `PROJECT_ID == 0`, so anyone could call `initialize` on it. However, since it is the implementation (not a clone), this would just set state on the implementation which has no operational significance -- clones do not read the implementation's storage.
+- **Implementation contract**: The implementation contract's constructor sets `_initialized = true`, so no one can call `initialize` on it.
 
 ---
 
