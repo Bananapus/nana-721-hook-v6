@@ -90,7 +90,8 @@ contract ForTest_JB721TiersHook is JB721TiersHook {
             _trustedForwarder
         )
     {
-        // Disable the safety check to not allow initializing the original contract
+        // Reset the _initialized flag set by the parent constructor so this test contract can initialize itself.
+        _initialized = false;
         JB721TiersHook.initialize(
             config.projectId,
             config.name,

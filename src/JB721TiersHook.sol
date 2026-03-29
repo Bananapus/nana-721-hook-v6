@@ -72,7 +72,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
     /// @notice Whether this contract has been initialized. Used to prevent re-initialization of both the
     /// implementation contract itself and its clones.
-    bool private _initialized;
+    /// @dev Internal (not private) so test harnesses that extend this contract can reset it in their constructors.
+    bool internal _initialized;
 
     //*********************************************************************//
     // ---------------------- public stored properties ------------------- //
