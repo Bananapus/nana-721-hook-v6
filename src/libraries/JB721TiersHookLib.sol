@@ -222,55 +222,6 @@ library JB721TiersHookLib {
         }
     }
 
-    /// @notice Converts split amounts from tier pricing denomination to payment token denomination.
-    /// @dev Called after `calculateSplitAmounts` when the payment currency differs from the tier pricing currency.
-    /// @param totalSplitAmount The total split amount in tier pricing denomination.
-    /// @param splitMetadata The encoded per-tier breakdown (tierIds, amounts) from calculateSplitAmounts.
-    /// @param packedPricingContext The packed pricing context (currency, decimals).
-    /// @param prices The prices contract used for currency conversion.
-    /// @param projectId The project ID.
-    /// @param amountCurrency The payment amount currency.
-    /// @param amountDecimals The payment amount decimals.
-    /// @return convertedTotal The total split amount converted to payment token denomination.
-    /// @return convertedMetadata The re-encoded per-tier breakdown with converted amounts.
-    function convertSplitAmounts(
-        uint256 totalSplitAmount,
-        bytes memory splitMetadata,
-        uint256 packedPricingContext,
-        IJBPrices prices,
-        uint256 projectId,
-        uint256 amountCurrency,
-        uint256 amountDecimals
-    )
-        external
-        view
-        returns (uint256 convertedTotal, bytes memory convertedMetadata)
-    {
-        // forge-lint: disable-next-line(unsafe-typecast)
-        uint256 pricingCurrency = uint256(uint32(packedPricingContext));
-        if (amountCurrency == pricingCurrency) return (totalSplitAmount, splitMetadata);
-
-        // No price oracle available to convert between currencies. Return 0 to skip the split rather than
-        // forwarding an unconverted amount denominated in the wrong currency, which would over- or under-pay.
-        if (address(prices) == address(0)) return (0, splitMetadata);
-
-        // forge-lint: disable-next-line(unsafe-typecast)
-        uint256 pricingDecimals = uint256(uint8(packedPricingContext >> 32));
-        uint256 ratio = prices.pricePerUnitOf({
-            projectId: projectId,
-            pricingCurrency: amountCurrency,
-            unitCurrency: pricingCurrency,
-            decimals: amountDecimals
-        });
-
-        (uint16[] memory tierIds, uint256[] memory amounts) = abi.decode(splitMetadata, (uint16[], uint256[]));
-        for (uint256 i; i < amounts.length; i++) {
-            amounts[i] = mulDiv({x: amounts[i], y: ratio, denominator: 10 ** pricingDecimals});
-            convertedTotal += amounts[i];
-        }
-        convertedMetadata = abi.encode(tierIds, amounts);
-    }
-
     /// @notice Calculates the weight for token minting after accounting for tier split amounts.
     /// @dev Extracted from the hook to keep mulDiv's bytecode out of the hook (EIP-170 compliance).
     /// @param contextWeight The original weight from the payment context.
@@ -302,17 +253,19 @@ library JB721TiersHookLib {
         }
     }
 
-    /// @notice Converts split amounts from tier pricing to payment denomination (if needed) and caps at payment value.
-    /// @dev Combines currency conversion and cap logic into a single external call to reduce hook bytecode (EIP-170).
+    /// @notice Converts split amounts from tier pricing to payment denomination (if currencies differ), then caps
+    /// the total at the actual payment value — proportionally reducing per-tier amounts when the cap applies.
+    /// @dev Combines currency conversion and cap into one external call to keep hook bytecode under EIP-170.
     /// @param totalSplitAmount The total split amount in tier pricing denomination.
     /// @param splitMetadata The encoded per-tier breakdown (tierIds, amounts).
-    /// @param packedPricingContext The packed pricing context (currency, decimals).
+    /// @param packedPricingContext The packed pricing context (currency in bits 0-31, decimals in bits 32-39).
     /// @param prices The prices contract used for currency conversion.
     /// @param projectId The project ID.
     /// @param amountCurrency The payment amount currency.
     /// @param amountDecimals The payment amount decimals.
     /// @param amountValue The actual payment value (used as the cap).
-    /// @return The (converted and capped) total and metadata.
+    /// @return convertedTotal The total split amount after conversion and capping.
+    /// @return convertedMetadata The re-encoded per-tier breakdown with adjusted amounts.
     function convertAndCapSplitAmounts(
         uint256 totalSplitAmount,
         bytes memory splitMetadata,
@@ -325,15 +278,21 @@ library JB721TiersHookLib {
     )
         external
         view
-        returns (uint256, bytes memory)
+        returns (uint256 convertedTotal, bytes memory convertedMetadata)
     {
-        // --- Convert currencies if needed ---
+        // Start from the input values; conversion and capping modify them in-place below.
+        convertedTotal = totalSplitAmount;
+        convertedMetadata = splitMetadata;
+
+        // Convert each per-tier amount from the tier pricing currency to the payment currency.
         // forge-lint: disable-next-line(unsafe-typecast)
         if (amountCurrency != uint256(uint32(packedPricingContext))) {
-            // No price oracle — return 0 to skip the split rather than forwarding an unconverted amount.
-            if (address(prices) == address(0)) return (0, splitMetadata);
+            // No price oracle available — return 0 to skip the split rather than forwarding an unconverted
+            // amount denominated in the wrong currency, which would over- or under-pay.
+            if (address(prices) == address(0)) return (0, convertedMetadata);
 
             {
+                // Get the price ratio: how many payment-currency units per one tier-pricing-currency unit.
                 // forge-lint: disable-next-line(unsafe-typecast)
                 uint256 ratio = prices.pricePerUnitOf({
                     projectId: projectId,
@@ -342,34 +301,46 @@ library JB721TiersHookLib {
                     unitCurrency: uint256(uint32(packedPricingContext)),
                     decimals: amountDecimals
                 });
+
+                // The denominator scales each amount from tier-pricing decimals to payment-token decimals.
                 // forge-lint: disable-next-line(unsafe-typecast)
                 uint256 denom = 10 ** uint256(uint8(packedPricingContext >> 32));
 
+                // Decode per-tier breakdown so each amount can be converted individually.
                 (uint16[] memory tierIds, uint256[] memory amounts) =
-                    abi.decode(splitMetadata, (uint16[], uint256[]));
-                totalSplitAmount = 0;
+                    abi.decode(convertedMetadata, (uint16[], uint256[]));
+
+                // Re-accumulate the total from converted amounts to avoid rounding drift.
+                convertedTotal = 0;
                 for (uint256 i; i < amounts.length; i++) {
+                    // Convert this tier's amount: amount * ratio / 10^pricingDecimals.
                     amounts[i] = mulDiv({x: amounts[i], y: ratio, denominator: denom});
-                    totalSplitAmount += amounts[i];
+                    convertedTotal += amounts[i];
                 }
-                splitMetadata = abi.encode(tierIds, amounts);
+
+                // Re-encode with the converted amounts.
+                convertedMetadata = abi.encode(tierIds, amounts);
             }
         }
 
-        // --- Cap at payment value ---
-        if (totalSplitAmount > amountValue) {
-            if (splitMetadata.length != 0) {
+        // Cap the total at the actual payment value. Pay credits fund NFT minting (virtual), but splits
+        // require real tokens to distribute. Without this cap, a user with sufficient pay credits but
+        // insufficient ETH would revert because the terminal can't forward more than what was actually paid.
+        if (convertedTotal > amountValue) {
+            // Proportionally reduce each per-tier amount to stay in sync with the capped total.
+            if (convertedMetadata.length != 0) {
                 (uint16[] memory tierIds, uint256[] memory amounts) =
-                    abi.decode(splitMetadata, (uint16[], uint256[]));
+                    abi.decode(convertedMetadata, (uint16[], uint256[]));
                 for (uint256 i; i < amounts.length; i++) {
-                    amounts[i] = mulDiv(amounts[i], amountValue, totalSplitAmount);
+                    // Scale down: amount * amountValue / originalTotal.
+                    amounts[i] = mulDiv({x: amounts[i], y: amountValue, denominator: convertedTotal});
                 }
-                splitMetadata = abi.encode(tierIds, amounts);
+                convertedMetadata = abi.encode(tierIds, amounts);
             }
-            totalSplitAmount = amountValue;
-        }
 
-        return (totalSplitAmount, splitMetadata);
+            // Clamp the total to the payment value.
+            convertedTotal = amountValue;
+        }
     }
 
     /// @notice Sets split groups in JBSplits for tiers that have splits configured.

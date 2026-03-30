@@ -463,7 +463,7 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
             metadata: pMeta
         });
 
-        // convertSplitAmounts calls pricePerUnitOf → reverts.
+        // convertAndCapSplitAmounts calls pricePerUnitOf → reverts.
         vm.expectRevert();
         crossHook.beforePayRecordedWith(context);
 
