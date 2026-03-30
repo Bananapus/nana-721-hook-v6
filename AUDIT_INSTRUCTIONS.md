@@ -19,17 +19,17 @@ Source: [`foundry.toml`](./foundry.toml)
 
 ## Previous Audit Findings
 
-A Nemesis automated audit was conducted on 2026-03-17. Results are in [`.audit/findings/nemesis-verified.md`](./.audit/findings/nemesis-verified.md). Summary:
+An automated audit was conducted on 2026-03-17. Summary:
 
-| ID | Severity | Title | Status |
-|----|----------|-------|--------|
-| NM-001 | MEDIUM | Unprotected external calls in tier split distribution cascade to full payment revert | **Remediated** -- hook callbacks, terminal calls, and native-token sends in `_sendPayoutToSplit` are now wrapped in try-catch; ERC-20 beneficiary `safeTransfer` remains unwrapped (reverts only if the token itself reverts) |
-| NM-002 | LOW | `_addToBalance` silently drops funds when no primary terminal | Open |
-| NM-003 | LOW | Missing `splitPercent` bounds validation in `recordAddTiers` | **Remediated** -- `SplitPercentExceedsBounds` check added at `JB721TiersHookStore.sol:866` |
-| NM-004 | LOW | Implementation contract initializable | Open (no fund risk) |
-| NM-005 | LOW | `setMetadata` uses non-standard sentinel for tokenUriResolver | Open (documented behavior) |
+| Severity | Title | Status |
+|----------|-------|--------|
+| MEDIUM | Unprotected external calls in tier split distribution cascade to full payment revert | **Remediated** -- hook callbacks, terminal calls, and native-token sends in `_sendPayoutToSplit` are now wrapped in try-catch; ERC-20 beneficiary `safeTransfer` remains unwrapped (reverts only if the token itself reverts) |
+| LOW | `_addToBalance` silently drops funds when no primary terminal | **Remediated** -- reverts when `primaryTerminalOf` returns `address(0)` and there are leftover funds |
+| LOW | Missing `splitPercent` bounds validation in `recordAddTiers` | **Remediated** -- `SplitPercentExceedsBounds` check added at `JB721TiersHookStore.sol:866` |
+| LOW | Implementation contract initializable | **Remediated** -- constructor now sets `_initialized = true` on the implementation |
+| LOW | `setMetadata` uses non-standard sentinel for tokenUriResolver | Open (documented behavior) |
 
-No prior formal audit with finding IDs from an external security firm has been conducted. See [RISKS.md](./RISKS.md) for the project's own risk assessment.
+See [RISKS.md](./RISKS.md) for the project's own risk assessment.
 
 ## Error Reference
 
@@ -52,7 +52,7 @@ No prior formal audit with finding IDs from an external security firm has been c
 | `JB721TiersHookStore_UnrecognizedTier(uint256 tierId)` | JB721TiersHookStore | Any operation referencing a `tierId` that does not exist (> `maxTierIdOf` or never created) |
 | `JB721TiersHookStore_VotingUnitsNotAllowed(uint256 tierId)` | JB721TiersHookStore | `recordAddTiers` with `votingUnits > 0` when `noNewTiersWithVotes` flag is set |
 | `JB721TiersHookStore_ZeroInitialSupply(uint256 tierId)` | JB721TiersHookStore | `recordAddTiers` with `initialSupply == 0` |
-| `JB721TiersHook_AlreadyInitialized(uint256 projectId)` | JB721TiersHook | `initialize()` called on a hook that already has `PROJECT_ID != 0` |
+| `JB721TiersHook_AlreadyInitialized(uint256 projectId)` | JB721TiersHook | `initialize()` called on a hook where `_initialized` is already true |
 | `JB721TiersHook_CurrencyMismatch(uint256 paymentCurrency, uint256 tierCurrency)` | JB721TiersHook | Payment currency differs from tier pricing currency and no price feed is configured |
 | `JB721TiersHook_InvalidPricingDecimals(uint256 decimals)` | JB721TiersHook | `initialize()` with `pricingDecimals > 18` |
 | `JB721TiersHook_MintReserveNftsPaused()` | JB721TiersHook | `mintPendingReservesFor` called when `mintPendingReservesPaused` ruleset flag is active |
@@ -295,11 +295,11 @@ Verify that:
 ### 5. Initialization and Clone Security
 
 `JB721TiersHookDeployer` creates minimal proxy clones:
-- `initialize()` is guarded by `PROJECT_ID != 0` (not `Initializable`)
+- `initialize()` is guarded by an `_initialized` bool flag
 - Ownership is transferred to `_msgSender()` inside `initialize`, then to the deployer caller in `deployHookFor`
 
 Verify that:
-- The implementation contract (HOOK) cannot be initialized (its `PROJECT_ID` is 0 by default -- can someone call initialize on it?)
+- The implementation contract's constructor sets `_initialized = true`, preventing initialization.
 - Deterministic salt derivation (`keccak256(abi.encode(_msgSender(), salt))`) prevents cross-deployer address collision
 - Front-running `deployHookFor` cannot hijack ownership
 
@@ -339,7 +339,7 @@ These must hold. If you can break any, it's a finding:
 | `forceApprove` + external call | `_sendPayoutToSplit` terminal path | If the external call fails, the approval is reset to zero. But between `forceApprove` and the failure, the approval exists. Can an attacker exploit this window? |
 | `mulDiv` rounding in price normalization | `normalizePaymentValue`, `convertSplitAmounts` | Rounding through the conversion chain (normalize → calculate splits → convert back) can compound. Verify rounding favors the protocol. |
 | Bitmap-based removal with iteration by maxTierIdOf | `totalCashOutWeight`, `cleanTiers` | `totalCashOutWeight` iterates up to `maxTierIdOf`, not by sorted list. If many tiers are added and removed, gas cost grows unboundedly. |
-| Clone initialization guard | `JB721TiersHookDeployer` | `initialize()` is guarded by `PROJECT_ID != 0`, not OpenZeppelin's `Initializable`. Verify the implementation contract cannot be initialized. |
+| Clone initialization guard | `JB721TiersHookDeployer` | `initialize()` is guarded by an `_initialized` bool flag. The implementation contract's constructor sets `_initialized = true`. Verify clones cannot be re-initialized. |
 | `_mint` instead of `_safeMint` | `JB721TiersHook` | No `onERC721Received` callback. Prevents mint-time DoS but contracts won't detect incoming NFTs. |
 | Token ID overflow at tier boundary | `_generateTokenId` | `tokenId = tierId * 1_000_000_000 + tokenNumber`. If `tokenNumber` reaches `_ONE_BILLION`, it overflows into the next tier's namespace. Supply cap enforcement (`_ONE_BILLION - 1`) prevents this -- verify the enforcement is complete. |
 

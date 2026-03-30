@@ -66,6 +66,15 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     IJBSplits public immutable override SPLITS;
 
     //*********************************************************************//
+    // --------------------- private stored properties ------------------ //
+    //*********************************************************************//
+
+    /// @notice Whether this contract has been initialized. Used to prevent re-initialization of both the
+    /// implementation contract itself and its clones.
+    /// @dev Internal (not private) so test harnesses that extend this contract can reset it in their constructors.
+    bool internal _initialized;
+
+    //*********************************************************************//
     // ---------------------- public stored properties ------------------- //
     //*********************************************************************//
 
@@ -123,6 +132,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         RULESETS = rulesets;
         STORE = store;
         SPLITS = splits;
+
+        // Prevent the implementation contract from being initialized.
+        _initialized = true;
     }
 
     //*********************************************************************//
@@ -189,27 +201,19 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             store: STORE, hook: address(this), metadataIdTarget: METADATA_ID_TARGET, metadata: context.metadata
         });
 
-        // Convert split amounts from tier pricing to payment token denomination if currencies differ.
+        // Convert split amounts from tier pricing to payment token denomination (if currencies differ)
+        // and cap at the actual payment value so the terminal never forwards more than was paid.
         if (totalSplitAmount != 0) {
-            (totalSplitAmount, splitMetadata) = JB721TiersHookLib.convertSplitAmounts({
+            (totalSplitAmount, splitMetadata) = JB721TiersHookLib.convertAndCapSplitAmounts({
                 totalSplitAmount: totalSplitAmount,
                 splitMetadata: splitMetadata,
                 packedPricingContext: _packedPricingContext,
                 prices: PRICES,
                 projectId: context.projectId,
                 amountCurrency: context.amount.currency,
-                amountDecimals: context.amount.decimals
+                amountDecimals: context.amount.decimals,
+                amountValue: context.amount.value
             });
-        }
-
-        // Cap the split amount at the actual payment value. Pay credits fund NFT minting (virtual), but splits
-        // require real tokens to distribute. Without this cap, a user with sufficient pay credits but insufficient
-        // ETH would revert because the terminal can't forward more than what was actually paid.
-        // This requires the project receiving the NFT payment to have received the full amount including what
-        // would have gone to splits — the split recipients get paid from the project's balance, not directly
-        // from the payer's contribution.
-        if (totalSplitAmount > context.amount.value) {
-            totalSplitAmount = context.amount.value;
         }
 
         // Adjust weight so the terminal mints tokens only for the amount that actually enters the project.
@@ -217,7 +221,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             contextWeight: context.weight,
             amountValue: context.amount.value,
             totalSplitAmount: totalSplitAmount,
-            issueTokensForSplits: STORE.flagsOf(address(this)).issueTokensForSplits
+            store: STORE,
+            hook: address(this)
         });
 
         hookSpecifications[0] =
@@ -256,8 +261,10 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         public
         override
     {
-        // Stop re-initialization by ensuring a projectId is provided and doesn't already exist.
-        if (PROJECT_ID != 0) revert JB721TiersHook_AlreadyInitialized(PROJECT_ID);
+        // Stop re-initialization. This protects both the implementation contract (initialized in constructor)
+        // and clones (initialized via this function).
+        if (_initialized) revert JB721TiersHook_AlreadyInitialized(PROJECT_ID);
+        _initialized = true;
 
         // Make sure a projectId is provided.
         if (projectId == 0) revert JB721TiersHook_NoProjectId();

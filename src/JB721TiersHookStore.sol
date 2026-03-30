@@ -749,7 +749,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
         // Make the sorted array.
         while (currentSortedTierId != 0) {
-            // If the current tier ID being iterated on isn't an increment of the previous one,
+            // Check if the current tier has been removed.
             if (!_isTierRemovedWithRefresh({hook: hook, tierId: currentSortedTierId, bitmapWord: bitmapWord})) {
                 // Update its `_tierIdAfter` if needed.
                 if (currentSortedTierId != previousSortedTierId + 1) {
@@ -763,8 +763,22 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                     _tierIdAfter[hook][previousSortedTierId] = 0;
                 }
 
+                // If this tier's category has a stale `_startingTierIdOfCategory` (reset to 0 because the
+                // previous starting tier was removed), set this tier as the new starting tier for its category.
+                uint256 tierCategory = _storedTierOf[hook][currentSortedTierId].category;
+                if (tierCategory != 0 && _startingTierIdOfCategory[hook][tierCategory] == 0) {
+                    _startingTierIdOfCategory[hook][tierCategory] = currentSortedTierId;
+                }
+
                 // Iterate by setting the previous tier ID for the next loop to the current tier ID.
                 previousSortedTierId = currentSortedTierId;
+            } else {
+                // The tier was removed. If it was the `_startingTierIdOfCategory` for its category, reset the
+                // pointer so the next non-removed tier in the same category can claim it.
+                uint256 removedCategory = _storedTierOf[hook][currentSortedTierId].category;
+                if (removedCategory != 0 && _startingTierIdOfCategory[hook][removedCategory] == currentSortedTierId) {
+                    _startingTierIdOfCategory[hook][removedCategory] = 0;
+                }
             }
             // Iterate by updating the current sorted tier ID to the next sorted tier ID.
             currentSortedTierId = _nextSortedTierIdOf({hook: hook, id: currentSortedTierId, max: lastSortedTierId});

@@ -39,7 +39,7 @@ Admin privileges and their scope in nana-721-hook-v6.
 | `setDiscountPercentOf()` | `SET_721_DISCOUNT_PERCENT` | `owner()` | Sets the discount percentage for a single tier. |
 | `setDiscountPercentsOf()` | `SET_721_DISCOUNT_PERCENT` | `owner()` | Batch-sets discount percentages for multiple tiers. |
 | `setMetadata()` | `SET_721_METADATA` | `owner()` | Updates collection name, symbol, baseURI, contractURI, tokenUriResolver, and/or per-tier encoded IPFS URIs. Empty strings leave values unchanged. |
-| `initialize()` | None (one-time) | `PROJECT_ID == 0` check | Initializes a cloned hook. Can only be called once. Transfers ownership to caller on completion. |
+| `initialize()` | None (one-time) | `_initialized` flag check | Initializes a cloned hook. Can only be called once. Transfers ownership to caller on completion. |
 
 ### JB721TiersHookProjectDeployer
 
@@ -131,7 +131,7 @@ The following are set at deploy/initialization time and **cannot be changed afte
 - The implementation contract cannot be self-destructed or modified after deployment. Even if it could be, clones would break since they `delegatecall` to the implementation address.
 - Each clone has its own storage (including `PROJECT_ID`, ownership, and tier data). The implementation's storage is unused.
 - `METADATA_ID_TARGET` is set to the original implementation address, ensuring consistent metadata ID derivation across all clones.
-- The `initialize()` function uses a `PROJECT_ID == 0` guard (not OpenZeppelin `Initializable`) to prevent re-initialization. This is safe because `PROJECT_ID` is set during initialization and cannot return to zero.
+- The `initialize()` function uses an `_initialized` bool flag to prevent re-initialization. The implementation contract's constructor sets `_initialized = true`, blocking direct initialization. Clones start with `_initialized = false` and set it to `true` during `initialize()`.
 
 ## Ruleset-Level Pauses
 
@@ -155,7 +155,7 @@ What the hook owner **cannot** do:
 - **Cannot remove a tier marked `cannotBeRemoved`.** The store enforces this in `recordRemoveTierIds()`.
 - **Cannot increase a tier's discount if `cannotIncreaseDiscountPercent` is set.** The store enforces this in `recordSetDiscountPercentOf()`.
 - **Cannot mint from tiers without `allowOwnerMint`.** The `mintFor()` function passes `isOwnerMint: true` to the store, which checks the flag.
-- **Cannot re-initialize a hook.** The `initialize()` function reverts if `PROJECT_ID != 0`.
+- **Cannot re-initialize a hook.** The `initialize()` function reverts if `_initialized` is already true.
 - **Cannot change the pricing currency, decimals, or prices contract.** `PRICES` is immutable (set in constructor), and the currency/decimals in `_packedPricingContext` are set once during initialization.
 - **Cannot bypass the flag restrictions.** Once `noNewTiersWithReserves`, `noNewTiersWithVotes`, or `noNewTiersWithOwnerMinting` are set, all future tiers added via `adjustTiers()` must comply.
 - **Cannot mint more reserves than the formula allows.** Reserve mints are bounded by `ceil(nonReserveMints / reserveFrequency)`.

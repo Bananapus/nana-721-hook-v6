@@ -75,7 +75,7 @@ contract CrossCurrencySplitNoPrices is UnitTestSetup {
             })
         );
 
-        // When PRICES is address(0) and currencies differ, convertSplitAmounts returns 0
+        // When PRICES is address(0) and currencies differ, convertAndCapSplitAmounts returns 0
         // to avoid forwarding an unconverted amount in the wrong currency denomination.
         // This means weight is NOT reduced (full weight) and no funds are forwarded.
         assertEq(weight, 10e18, "weight unchanged when split conversion fails due to missing prices");

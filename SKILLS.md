@@ -199,7 +199,7 @@ Each tier has configurable voting power:
 | `JB721Hook_InvalidPay()` | `JB721Hook` | `afterPayRecordedWith` caller is not a project terminal. |
 | `JB721Hook_UnauthorizedToken(tokenId, holder)` | `JB721Hook` | Cash out attempts to burn a token not owned by `context.holder`. |
 | `JB721Hook_UnexpectedTokenCashedOut()` | `JB721Hook` | `beforeCashOutRecordedWith` called with `cashOutCount > 0` (fungible tokens mixed with NFT cash out). |
-| `JB721TiersHook_AlreadyInitialized(projectId)` | `JB721TiersHook` | `initialize` called on a hook that already has a `PROJECT_ID`. |
+| `JB721TiersHook_AlreadyInitialized(projectId)` | `JB721TiersHook` | `initialize` called on a hook where `_initialized` is already true. |
 | `JB721TiersHook_CurrencyMismatch(paymentCurrency, tierCurrency)` | `JB721TiersHook` | Payment currency differs from tier pricing currency and no `PRICES` contract is configured for conversion. |
 | `JB721TiersHook_InvalidPricingDecimals(decimals)` | `JB721TiersHook` | `initialize` called with `decimals > 18`. |
 | `JB721TiersHook_MintReserveNftsPaused()` | `JB721TiersHook` | `mintPendingReservesFor` called while `pauseMintPendingReserves` is set in the current ruleset metadata. |
