@@ -18,7 +18,6 @@ import {JBPermissionIds} from "@bananapus/permission-ids-v6/src/JBPermissionIds.
 import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import {mulDiv} from "@prb/math/src/Common.sol";
 import {JB721Hook} from "./abstract/JB721Hook.sol";
 import {IJB721TiersHook} from "./interfaces/IJB721TiersHook.sol";
 import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
@@ -202,36 +201,19 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             store: STORE, hook: address(this), metadataIdTarget: METADATA_ID_TARGET, metadata: context.metadata
         });
 
-        // Convert split amounts from tier pricing to payment token denomination if currencies differ.
+        // Convert split amounts from tier pricing to payment token denomination (if currencies differ)
+        // and cap at the actual payment value so the terminal never forwards more than was paid.
         if (totalSplitAmount != 0) {
-            (totalSplitAmount, splitMetadata) = JB721TiersHookLib.convertSplitAmounts({
+            (totalSplitAmount, splitMetadata) = JB721TiersHookLib.convertAndCapSplitAmounts({
                 totalSplitAmount: totalSplitAmount,
                 splitMetadata: splitMetadata,
                 packedPricingContext: _packedPricingContext,
                 prices: PRICES,
                 projectId: context.projectId,
                 amountCurrency: context.amount.currency,
-                amountDecimals: context.amount.decimals
+                amountDecimals: context.amount.decimals,
+                amountValue: context.amount.value
             });
-        }
-
-        // Cap the split amount at the actual payment value. Pay credits fund NFT minting (virtual), but splits
-        // require real tokens to distribute. Without this cap, a user with sufficient pay credits but insufficient
-        // ETH would revert because the terminal can't forward more than what was actually paid.
-        // This requires the project receiving the NFT payment to have received the full amount including what
-        // would have gone to splits — the split recipients get paid from the project's balance, not directly
-        // from the payer's contribution.
-        if (totalSplitAmount > context.amount.value) {
-            uint256 originalTotal = totalSplitAmount;
-            totalSplitAmount = context.amount.value;
-            // Proportionally reduce per-tier split amounts to stay in sync with the capped total.
-            if (splitMetadata.length != 0) {
-                (uint16[] memory tierIds, uint256[] memory amounts) = abi.decode(splitMetadata, (uint16[], uint256[]));
-                for (uint256 i; i < amounts.length; i++) {
-                    amounts[i] = mulDiv(amounts[i], context.amount.value, originalTotal);
-                }
-                splitMetadata = abi.encode(tierIds, amounts);
-            }
         }
 
         // Adjust weight so the terminal mints tokens only for the amount that actually enters the project.
@@ -239,7 +221,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             contextWeight: context.weight,
             amountValue: context.amount.value,
             totalSplitAmount: totalSplitAmount,
-            issueTokensForSplits: STORE.flagsOf(address(this)).issueTokensForSplits
+            store: STORE,
+            hook: address(this)
         });
 
         hookSpecifications[0] =

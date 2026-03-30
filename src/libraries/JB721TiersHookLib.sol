@@ -276,19 +276,21 @@ library JB721TiersHookLib {
     /// @param contextWeight The original weight from the payment context.
     /// @param amountValue The payment amount value.
     /// @param totalSplitAmount The total amount routed to tier splits.
-    /// @param issueTokensForSplits Whether to issue tokens for the full payment regardless of splits.
+    /// @param store The 721 tiers hook store (to read flags).
+    /// @param hook The hook address.
     /// @return weight The adjusted weight for token minting.
     function calculateWeight(
         uint256 contextWeight,
         uint256 amountValue,
         uint256 totalSplitAmount,
-        bool issueTokensForSplits
+        IJB721TiersHookStore store,
+        address hook
     )
         external
-        pure
+        view
         returns (uint256 weight)
     {
-        if (totalSplitAmount == 0 || issueTokensForSplits) {
+        if (totalSplitAmount == 0 || store.flagsOf(hook).issueTokensForSplits) {
             // No splits, or hook configured to give full token credit regardless — full weight.
             weight = contextWeight;
         } else if (amountValue > totalSplitAmount) {
@@ -298,6 +300,76 @@ library JB721TiersHookLib {
             // Splits consume the entire payment — no tokens should be minted.
             weight = 0;
         }
+    }
+
+    /// @notice Converts split amounts from tier pricing to payment denomination (if needed) and caps at payment value.
+    /// @dev Combines currency conversion and cap logic into a single external call to reduce hook bytecode (EIP-170).
+    /// @param totalSplitAmount The total split amount in tier pricing denomination.
+    /// @param splitMetadata The encoded per-tier breakdown (tierIds, amounts).
+    /// @param packedPricingContext The packed pricing context (currency, decimals).
+    /// @param prices The prices contract used for currency conversion.
+    /// @param projectId The project ID.
+    /// @param amountCurrency The payment amount currency.
+    /// @param amountDecimals The payment amount decimals.
+    /// @param amountValue The actual payment value (used as the cap).
+    /// @return The (converted and capped) total and metadata.
+    function convertAndCapSplitAmounts(
+        uint256 totalSplitAmount,
+        bytes memory splitMetadata,
+        uint256 packedPricingContext,
+        IJBPrices prices,
+        uint256 projectId,
+        uint256 amountCurrency,
+        uint256 amountDecimals,
+        uint256 amountValue
+    )
+        external
+        view
+        returns (uint256, bytes memory)
+    {
+        // --- Convert currencies if needed ---
+        // forge-lint: disable-next-line(unsafe-typecast)
+        if (amountCurrency != uint256(uint32(packedPricingContext))) {
+            // No price oracle — return 0 to skip the split rather than forwarding an unconverted amount.
+            if (address(prices) == address(0)) return (0, splitMetadata);
+
+            {
+                // forge-lint: disable-next-line(unsafe-typecast)
+                uint256 ratio = prices.pricePerUnitOf({
+                    projectId: projectId,
+                    pricingCurrency: amountCurrency,
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    unitCurrency: uint256(uint32(packedPricingContext)),
+                    decimals: amountDecimals
+                });
+                // forge-lint: disable-next-line(unsafe-typecast)
+                uint256 denom = 10 ** uint256(uint8(packedPricingContext >> 32));
+
+                (uint16[] memory tierIds, uint256[] memory amounts) =
+                    abi.decode(splitMetadata, (uint16[], uint256[]));
+                totalSplitAmount = 0;
+                for (uint256 i; i < amounts.length; i++) {
+                    amounts[i] = mulDiv({x: amounts[i], y: ratio, denominator: denom});
+                    totalSplitAmount += amounts[i];
+                }
+                splitMetadata = abi.encode(tierIds, amounts);
+            }
+        }
+
+        // --- Cap at payment value ---
+        if (totalSplitAmount > amountValue) {
+            if (splitMetadata.length != 0) {
+                (uint16[] memory tierIds, uint256[] memory amounts) =
+                    abi.decode(splitMetadata, (uint16[], uint256[]));
+                for (uint256 i; i < amounts.length; i++) {
+                    amounts[i] = mulDiv(amounts[i], amountValue, totalSplitAmount);
+                }
+                splitMetadata = abi.encode(tierIds, amounts);
+            }
+            totalSplitAmount = amountValue;
+        }
+
+        return (totalSplitAmount, splitMetadata);
     }
 
     /// @notice Sets split groups in JBSplits for tiers that have splits configured.
