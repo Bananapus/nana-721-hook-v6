@@ -520,8 +520,8 @@ contract UnitTestSetup is Test {
                 useReserveBeneficiaryAsDefault: tierConfig.useReserveBeneficiaryAsDefault,
                 transfersPausable: tierConfig.transfersPausable,
                 useVotingUnits: tierConfig.useVotingUnits,
-                cannotBeRemoved: tierConfig.cannotBeRemoved,
-                cannotIncreaseDiscountPercent: tierConfig.cannotIncreaseDiscountPercent,
+                cantBeRemoved: tierConfig.cantBeRemoved,
+                cantIncreaseDiscountPercent: tierConfig.cantIncreaseDiscountPercent,
                 cantBuyWithCredits: tierConfig.cantBuyWithCredits,
                 splitPercent: tierConfig.splitPercent,
                 splits: new JBSplit[](0)
@@ -541,8 +541,8 @@ contract UnitTestSetup is Test {
                 discountPercent: tierConfigs[i].discountPercent,
                 allowOwnerMint: tierConfigs[i].allowOwnerMint,
                 transfersPausable: tierConfigs[i].transfersPausable,
-                cannotBeRemoved: tierConfigs[i].cannotBeRemoved,
-                cannotIncreaseDiscountPercent: tierConfigs[i].cannotIncreaseDiscountPercent,
+                cantBeRemoved: tierConfigs[i].cantBeRemoved,
+                cantIncreaseDiscountPercent: tierConfigs[i].cantIncreaseDiscountPercent,
                 cantBuyWithCredits: tierConfigs[i].cantBuyWithCredits,
                 splitPercent: tierConfigs[i].splitPercent,
                 resolvedUri: defaultTierConfig.encodedIPFSUri == bytes32(0)
@@ -714,8 +714,8 @@ contract UnitTestSetup is Test {
                 useReserveBeneficiaryAsDefault: false,
                 transfersPausable: false,
                 useVotingUnits: true,
-                cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
                 cantBuyWithCredits: false,
                 splitPercent: 0,
                 splits: new JBSplit[](0)

@@ -24,7 +24,7 @@ import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 /// @custom:member transfersPausable A boolean indicating whether transfers for NFTs in tier can be paused.
 /// @custom:member useVotingUnits A boolean indicating whether the `votingUnits` should be used to calculate voting
 /// power. If `useVotingUnits` is false, voting power is based on the tier's price.
-/// @custom:member cannotBeRemoved If the tier cannot be removed once added.
+/// @custom:member cantBeRemoved If the tier cannot be removed once added.
 /// @custom:member cannotIncreaseDiscount If the tier cannot have its discount increased.
 /// @custom:member cantBuyWithCredits If true, this tier cannot be purchased using accumulated pay credits. Only fresh
 /// payment value counts toward this tier's price.
@@ -47,8 +47,8 @@ struct JB721TierConfig {
     bool useReserveBeneficiaryAsDefault;
     bool transfersPausable;
     bool useVotingUnits;
-    bool cannotBeRemoved;
-    bool cannotIncreaseDiscountPercent;
+    bool cantBeRemoved;
+    bool cantIncreaseDiscountPercent;
     bool cantBuyWithCredits;
     uint32 splitPercent;
     JBSplit[] splits;

@@ -362,8 +362,8 @@ contract Fork_721Hook_Test is Test {
                 useReserveBeneficiaryAsDefault: false,
                 transfersPausable: false,
                 useVotingUnits: false,
-                cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
                 cantBuyWithCredits: false,
                 splitPercent: 0,
                 splits: new JBSplit[](0)
@@ -793,8 +793,8 @@ contract Fork_721Hook_Test is Test {
             useReserveBeneficiaryAsDefault: false,
             transfersPausable: false,
             useVotingUnits: false,
-            cannotBeRemoved: false,
-            cannotIncreaseDiscountPercent: false,
+            cantBeRemoved: false,
+            cantIncreaseDiscountPercent: false,
             cantBuyWithCredits: false,
             splitPercent: 0,
             splits: new JBSplit[](0)
@@ -826,8 +826,8 @@ contract Fork_721Hook_Test is Test {
             useReserveBeneficiaryAsDefault: false,
             transfersPausable: false,
             useVotingUnits: false,
-            cannotBeRemoved: false,
-            cannotIncreaseDiscountPercent: false,
+            cantBeRemoved: false,
+            cantIncreaseDiscountPercent: false,
             cantBuyWithCredits: false,
             splitPercent: 0,
             splits: new JBSplit[](0)
@@ -838,10 +838,10 @@ contract Fork_721Hook_Test is Test {
         IJB721TiersHook(hook).adjustTiers(newTiers, new uint256[](0));
     }
 
-    /// @notice cannotBeRemoved: removing an immutable tier should revert.
-    function test_fork_cannotBeRemoved_reverts() public {
+    /// @notice cantBeRemoved: removing an immutable tier should revert.
+    function test_fork_cantBeRemoved_reverts() public {
         JB721TierConfig[] memory tierConfigs = _makeStandardTiers(1, 10, false);
-        tierConfigs[0].cannotBeRemoved = true;
+        tierConfigs[0].cantBeRemoved = true;
         JB721TiersHookFlags memory flags = _defaultFlags();
         (, address hook) = _launchProject(tierConfigs, flags, 5000, true, 0x00);
 
@@ -902,11 +902,11 @@ contract Fork_721Hook_Test is Test {
         assertEq(IERC721(hook).balanceOf(beneficiary), 1, "NFT minted for free");
     }
 
-    /// @notice cannotIncreaseDiscountPercent: setting higher discount reverts.
+    /// @notice cantIncreaseDiscountPercent: setting higher discount reverts.
     function test_fork_cannotIncreaseDiscount() public {
         JB721TierConfig[] memory tierConfigs = _makeStandardTiers(1, 10, false);
         tierConfigs[0].discountPercent = 50;
-        tierConfigs[0].cannotIncreaseDiscountPercent = true;
+        tierConfigs[0].cantIncreaseDiscountPercent = true;
         JB721TiersHookFlags memory flags = _defaultFlags();
         (, address hook) = _launchProject(tierConfigs, flags, 5000, true, 0x00);
 
@@ -1134,8 +1134,8 @@ contract Fork_721Hook_Test is Test {
             useReserveBeneficiaryAsDefault: false,
             transfersPausable: false,
             useVotingUnits: false,
-            cannotBeRemoved: false,
-            cannotIncreaseDiscountPercent: false,
+            cantBeRemoved: false,
+            cantIncreaseDiscountPercent: false,
             cantBuyWithCredits: false,
             splitPercent: 0,
             splits: new JBSplit[](0)
@@ -1528,8 +1528,8 @@ contract Fork_721Hook_Test is Test {
             useReserveBeneficiaryAsDefault: false,
             transfersPausable: false,
             useVotingUnits: false,
-            cannotBeRemoved: false,
-            cannotIncreaseDiscountPercent: false,
+            cantBeRemoved: false,
+            cantIncreaseDiscountPercent: false,
             cantBuyWithCredits: false,
             splitPercent: 0,
             splits: new JBSplit[](0)
@@ -1775,8 +1775,8 @@ contract Fork_721Hook_Test is Test {
                 useReserveBeneficiaryAsDefault: false,
                 transfersPausable: false,
                 useVotingUnits: false,
-                cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
                 cantBuyWithCredits: false,
                 splitPercent: 0,
                 splits: new JBSplit[](0)
@@ -2051,8 +2051,8 @@ contract Fork_721Hook_Test is Test {
             useReserveBeneficiaryAsDefault: false,
             transfersPausable: false,
             useVotingUnits: false,
-            cannotBeRemoved: false,
-            cannotIncreaseDiscountPercent: false,
+            cantBeRemoved: false,
+            cantIncreaseDiscountPercent: false,
             cantBuyWithCredits: false,
             splitPercent: splitPct,
             splits: splits
