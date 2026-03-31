@@ -129,7 +129,7 @@ contract TierLifecycleHandler is Test {
         tierIds[0] = uint16(tierId);
 
         vm.prank(hookAddress);
-        try store.recordMint(tierPrice, tierIds, false) returns (uint256[] memory tokenIds, uint256) {
+        try store.recordMint(tierPrice, tierIds, false) returns (uint256[] memory tokenIds, uint256, uint256) {
             // Track minted tokens
             for (uint256 i = 0; i < tokenIds.length; i++) {
                 _actorTokenIds[actor].push(tokenIds[i]);
@@ -195,6 +195,7 @@ contract TierLifecycleHandler is Test {
             useVotingUnits: false,
             cannotBeRemoved: false,
             cannotIncreaseDiscountPercent: false,
+            cantBuyWithCredits: false,
             splitPercent: 0,
             splits: new JBSplit[](0)
         });
@@ -268,7 +269,7 @@ contract TierLifecycleHandler is Test {
         tierIds[0] = uint16(tierId);
 
         vm.prank(hookAddress);
-        try store.recordMint(0, tierIds, true) returns (uint256[] memory tokenIds, uint256) {
+        try store.recordMint(0, tierIds, true) returns (uint256[] memory tokenIds, uint256, uint256) {
             address actor = _getActor(seed);
             for (uint256 i = 0; i < tokenIds.length; i++) {
                 _actorTokenIds[actor].push(tokenIds[i]);

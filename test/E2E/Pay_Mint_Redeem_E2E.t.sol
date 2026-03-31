@@ -802,6 +802,7 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
                 useVotingUnits: false,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false,
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -894,6 +895,7 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
             useVotingUnits: false,
             cannotBeRemoved: false,
             cannotIncreaseDiscountPercent: false,
+            cantBuyWithCredits: false,
             splitPercent: 0,
             splits: new JBSplit[](0)
         });

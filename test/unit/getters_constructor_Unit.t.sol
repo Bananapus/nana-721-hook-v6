@@ -46,16 +46,17 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         assertEq(decimals2, uint256(decimals));
     }
 
-    function test_bools_doesPackingAndUnpackingWork(bool a, bool b, bool c, bool d, bool e) public {
+    function test_bools_doesPackingAndUnpackingWork(bool a, bool b, bool c, bool d, bool e, bool f) public {
         ForTest_JB721TiersHookStore store = new ForTest_JB721TiersHookStore();
-        uint8 packed = store.ForTest_packBools(a, b, c, d, e);
-        (bool a2, bool b2, bool c2, bool d2, bool e2) = store.ForTest_unpackBools(packed);
+        uint8 packed = store.ForTest_packBools(a, b, c, d, e, f);
+        (bool a2, bool b2, bool c2, bool d2, bool e2, bool f2) = store.ForTest_unpackBools(packed);
         // Check: do the packed values match the unpacked values?
         assertEq(a, a2);
         assertEq(b, b2);
         assertEq(c, c2);
         assertEq(d, d2);
         assertEq(e, e2);
+        assertEq(f, f2);
     }
 
     function test_tiersOf_returnsAllTiersWithResolver(uint256 numberOfTiers) public {
@@ -154,6 +155,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                     transfersPausable: false,
                     cannotBeRemoved: false,
                     cannotIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false,
                     splitPercent: 0,
                     resolvedUri: ""
                 })
@@ -181,7 +183,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                         reserveFrequency: uint16(0),
                         category: uint24(100),
                         discountPercent: uint8(0),
-                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false),
+                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false, false),
                         splitPercent: 0
                     })
                 );
@@ -238,7 +240,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                         reserveFrequency: uint16(reserveFrequency),
                         category: uint24(100),
                         discountPercent: uint8(0),
-                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false),
+                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false, false),
                         splitPercent: 0
                     })
                 );
@@ -280,7 +282,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                     reserveFrequency: uint16(100),
                     category: uint24(100),
                     discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false),
+                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false, false),
                     splitPercent: 0
                 })
             );
@@ -441,7 +443,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                         reserveFrequency: uint16(0),
                         category: uint24(100),
                         discountPercent: uint8(0),
-                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false),
+                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false, false),
                         splitPercent: 0
                     })
                 );
@@ -550,6 +552,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                 useVotingUnits: true,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false,
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });

@@ -522,6 +522,7 @@ contract UnitTestSetup is Test {
                 useVotingUnits: tierConfig.useVotingUnits,
                 cannotBeRemoved: tierConfig.cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfig.cannotIncreaseDiscountPercent,
+                cantBuyWithCredits: tierConfig.cantBuyWithCredits,
                 splitPercent: tierConfig.splitPercent,
                 splits: new JBSplit[](0)
             });
@@ -542,6 +543,7 @@ contract UnitTestSetup is Test {
                 transfersPausable: tierConfigs[i].transfersPausable,
                 cannotBeRemoved: tierConfigs[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigs[i].cannotIncreaseDiscountPercent,
+                cantBuyWithCredits: tierConfigs[i].cantBuyWithCredits,
                 splitPercent: tierConfigs[i].splitPercent,
                 resolvedUri: defaultTierConfig.encodedIPFSUri == bytes32(0)
                     ? ""
@@ -714,6 +716,7 @@ contract UnitTestSetup is Test {
                 useVotingUnits: true,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false,
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
