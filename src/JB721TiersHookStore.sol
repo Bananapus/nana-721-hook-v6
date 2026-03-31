@@ -1084,9 +1084,6 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         // Initialize a `JBBitmapWord` for checking whether tiers have been removed.
         JBBitmapWord memory bitmapWord;
 
-        // Track total cost of tiers that can't be bought with credits (order-independent check).
-        uint256 restrictedCost;
-
         for (uint256 i; i < numberOfTiers; i++) {
             // Set the tier ID being iterated on.
             uint256 tierId = tierIds[i];
