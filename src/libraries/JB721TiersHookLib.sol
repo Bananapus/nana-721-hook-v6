@@ -214,7 +214,7 @@ library JB721TiersHookLib {
         }
 
         if (splitTierCount != 0) {
-            assembly {
+            assembly ("memory-safe") {
                 mstore(splitTierIds, splitTierCount)
                 mstore(splitAmounts, splitTierCount)
             }
