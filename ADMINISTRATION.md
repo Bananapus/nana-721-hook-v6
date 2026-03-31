@@ -62,7 +62,7 @@ Admin privileges and their scope in nana-721-hook-v6.
 | Function | Permission ID | Checked Against | What It Does |
 |----------|--------------|-----------------|--------------|
 | `adjustTiers()` | `ADJUST_721_TIERS` | `owner()` | Adds new tiers and/or soft-removes existing tiers. Sets tier split groups in JBSplits. |
-| `mintFor()` | `MINT_721` | `owner()` | Manually mints NFTs from tiers that have `allowOwnerMint` enabled. Bypasses price checks (passes `type(uint256).max` as amount). |
+| `mintFor()` | `MINT_721` | `owner()` | Manually mints NFTs from tiers that have `flags.allowOwnerMint` enabled. Bypasses price checks (passes `type(uint256).max` as amount). |
 | `setDiscountPercentOf()` | `SET_721_DISCOUNT_PERCENT` | `owner()` | Sets the discount percentage for a single tier. |
 | `setDiscountPercentsOf()` | `SET_721_DISCOUNT_PERCENT` | `owner()` | Batch-sets discount percentages for multiple tiers. |
 | `setMetadata()` | `SET_721_METADATA` | `owner()` | Updates collection name, symbol, baseURI, contractURI, tokenUriResolver, and/or per-tier encoded IPFS URIs. Empty strings leave values unchanged. |
@@ -94,14 +94,14 @@ Admin privileges and their scope in nana-721-hook-v6.
 | Function | Caller | What It Does |
 |----------|--------|--------------|
 | `recordAddTiers()` | Hook contract | Adds tiers to the caller's namespace. Category sort order enforced. |
-| `recordRemoveTierIds()` | Hook contract | Marks tiers as removed in bitmap. Respects `cannotBeRemoved` flag. |
+| `recordRemoveTierIds()` | Hook contract | Marks tiers as removed in bitmap. Respects `flags.cantBeRemoved` flag. |
 | `recordMint()` | Hook contract | Records mints, decrements supply, enforces price and reserve checks. |
 | `recordMintReservesFor()` | Hook contract | Mints reserved NFTs from a tier. |
 | `recordBurn()` | Hook contract | Increments burn counter for token IDs. |
 | `recordFlags()` | Hook contract | Sets behavioral flags for the caller's hook. |
 | `recordSetTokenUriResolver()` | Hook contract | Sets the token URI resolver. |
 | `recordSetEncodedIPFSUriOf()` | Hook contract | Sets the encoded IPFS URI for a tier. |
-| `recordSetDiscountPercentOf()` | Hook contract | Updates a tier's discount percent. Enforces bounds and `cannotIncreaseDiscountPercent`. |
+| `recordSetDiscountPercentOf()` | Hook contract | Updates a tier's discount percent. Enforces bounds and `flags.cantIncreaseDiscountPercent`. |
 | `recordTransferForTier()` | Hook contract | Updates per-tier balance tracking on transfer. |
 | `cleanTiers()` | Anyone | Reorganizes the tier sorting linked list to skip removed tiers. Pure bookkeeping, no value at risk. |
 
@@ -143,8 +143,8 @@ The following are set at deploy/initialization time and **cannot be changed afte
 | `PROJECT_ID` | `initialize()` | Which project this hook belongs to |
 | Pricing context (currency, decimals) | `initialize()` | Packed into `_packedPricingContext` -- the token denomination for tier prices |
 | `JB721TiersHookFlags` | `initialize()` | `noNewTiersWithReserves`, `noNewTiersWithVotes`, `noNewTiersWithOwnerMinting`, `preventOverspending`, `issueTokensForSplits` |
-| Per-tier `cannotBeRemoved` | `recordAddTiers()` | Whether a tier can be soft-removed |
-| Per-tier `cannotIncreaseDiscountPercent` | `recordAddTiers()` | Whether a tier's discount can be increased |
+| Per-tier `flags.cantBeRemoved` | `recordAddTiers()` | Whether a tier can be soft-removed |
+| Per-tier `flags.cantIncreaseDiscountPercent` | `recordAddTiers()` | Whether a tier's discount can be increased |
 | Per-tier `reserveFrequency` | `recordAddTiers()` | How often reserve NFTs accrue |
 | Per-tier `initialSupply` | `recordAddTiers()` | Maximum number of NFTs mintable from the tier |
 | Per-tier `price` | `recordAddTiers()` | The base price (and cash-out weight) of NFTs in the tier |
@@ -166,7 +166,7 @@ Two behaviors are controlled by the project's current ruleset metadata (packed i
 
 | Bit | Flag | Effect |
 |-----|------|--------|
-| 0 | `transfersPaused` | When set, NFT transfers are blocked for tiers that have `transfersPausable` enabled |
+| 0 | `transfersPaused` | When set, NFT transfers are blocked for tiers that have `flags.transfersPausable` enabled |
 | 1 | `mintPendingReservesPaused` | When set, `mintPendingReservesFor()` reverts |
 
 These can change each ruleset cycle, giving the project owner temporary control over these behaviors without modifying the hook itself.
@@ -179,9 +179,9 @@ What the hook owner **cannot** do:
 - **Cannot change tier prices after creation.** The `price` field in `JBStored721Tier` is set once in `recordAddTiers()` and never modified. Cash-out weight is always based on the original price.
 - **Cannot change reserve frequency after creation.** The `reserveFrequency` is immutable per tier.
 - **Cannot reduce a tier's initial supply.** Supply can only decrease through minting and burning.
-- **Cannot remove a tier marked `cannotBeRemoved`.** The store enforces this in `recordRemoveTierIds()`.
-- **Cannot increase a tier's discount if `cannotIncreaseDiscountPercent` is set.** The store enforces this in `recordSetDiscountPercentOf()`.
-- **Cannot mint from tiers without `allowOwnerMint`.** The `mintFor()` function passes `isOwnerMint: true` to the store, which checks the flag.
+- **Cannot remove a tier marked `flags.cantBeRemoved`.** The store enforces this in `recordRemoveTierIds()`.
+- **Cannot increase a tier's discount if `flags.cantIncreaseDiscountPercent` is set.** The store enforces this in `recordSetDiscountPercentOf()`.
+- **Cannot mint from tiers without `flags.allowOwnerMint`.** The `mintFor()` function passes `isOwnerMint: true` to the store, which checks the flag.
 - **Cannot re-initialize a hook.** The `initialize()` function reverts if `_initialized` is already true.
 - **Cannot change the pricing currency, decimals, or prices contract.** `PRICES` is immutable (set in constructor), and the currency/decimals in `_packedPricingContext` are set once during initialization.
 - **Cannot bypass the flag restrictions.** Once `noNewTiersWithReserves`, `noNewTiersWithVotes`, or `noNewTiersWithOwnerMinting` are set, all future tiers added via `adjustTiers()` must comply.
