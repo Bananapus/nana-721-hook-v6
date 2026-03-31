@@ -1151,7 +1151,6 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                 revert JB721TiersHookStore_InsufficientSupplyRemaining(tierId);
             }
         }
-
     }
 
     /// @notice Record reserve 721 minting for the provided tier ID on the provided 721 contract.
