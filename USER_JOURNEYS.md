@@ -47,7 +47,7 @@ A user pays a Juicebox project and receives tiered NFTs based on the amount paid
 - **Last slot is reserved**: If minting would leave `remainingSupply < pendingReserves`, reverts with `JB721TiersHookStore_InsufficientSupplyRemaining`.
 - **Cross-currency payment with no price feed**: `normalizePaymentValue` returns `(0, false)`. The hook returns without minting or reverting. The payment is still processed by the terminal.
 - **Discounted tier**: Effective price is `price - mulDiv(price, discountPercent, 200)`. A `discountPercent` of 200 makes it free.
-- **Split distribution**: If a split recipient's `.call{value}` fails, the funds stay in `leftoverAmount` and are added to the project's balance.
+- **Split distribution**: If a split recipient's payout reverts, the failed amount is accumulated separately and added to the project's balance after the loop. Later split recipients receive only their proportional share, not the failed recipient's share.
 
 ---
 

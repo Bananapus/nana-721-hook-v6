@@ -105,7 +105,7 @@ Contains functions extracted from `JB721TiersHook` to stay within the EIP-170 co
 | `recordAddTiersFor(...)` | Records new tiers and sets their split groups (used during initialization) |
 | `normalizePaymentValue(...)` | Normalizes payment value based on pricing context |
 | `calculateSplitAmounts(...)` | Calculates per-tier split amounts for a pay event |
-| `convertSplitAmounts(...)` | Converts split amounts between currencies |
+| `convertAndCapSplitAmounts(...)` | Converts split amounts between currencies, capped at payment value |
 | `calculateWeight(...)` | Adjusts minting weight to account for split amounts |
 | `distributeAll(...)` | Pulls tokens and distributes forwarded funds to tier split recipients |
 | `resolveTokenURI(...)` | Resolves the token URI (moved IPFS decoding out of hook) |
@@ -133,7 +133,7 @@ Tier split payouts now support the `split.hook` field (`IJBSplitHook`). The dist
 
 ### 2.4 DOS Protection on Split Distribution
 
-All external calls during tier split distribution (split hooks, terminal `pay`/`addToBalanceOf`, and leftover distribution) are wrapped in try-catch. A reverting split recipient or terminal cannot brick payments to the project. On failure, funds are returned to the project balance and a `SplitPayoutReverted` or `AddToBalanceReverted` event is emitted with the revert reason. For ERC-20 split hook failures, tokens are transferred first and the hook callback is best-effort; for ERC-20 terminal failures, the approval is reset to zero.
+All external calls during tier split distribution (split hooks, terminal `pay`/`addToBalanceOf`, and leftover distribution) are wrapped in try-catch. A reverting split recipient or terminal cannot brick payments to the project. On failure, the failed amount is accumulated separately and routed to the project balance after the distribution loop completes. This proportional redistribution ensures that later split recipients receive only their configured share, not an inflated share from the failed recipient's funds. A `SplitPayoutReverted` or `AddToBalanceReverted` event is emitted with the revert reason. For ERC-20 split hook failures, tokens are transferred first and the hook callback is best-effort; for ERC-20 terminal failures, the approval is reset to zero.
 
 ### 2.5 `splitPercent` Bounds Validation
 
@@ -280,7 +280,7 @@ Split payouts follow the same priority order as `JBMultiTerminal`: if `split.hoo
 
 ### 6.9 `JB721TiersHookLib` — Try-Catch on All External Calls
 
-All external calls during split distribution (split hooks, terminal `pay`, terminal `addToBalanceOf`, and leftover `addToBalanceOf`) are wrapped in try-catch. On failure: native token calls return false (funds stay in the hook), ERC-20 terminal call approvals are reset to zero, and `SplitPayoutReverted` or `AddToBalanceReverted` events are emitted with the revert reason.
+All external calls during split distribution (split hooks, terminal `pay`, terminal `addToBalanceOf`, and leftover `addToBalanceOf`) are wrapped in try-catch. On failure: the failed amount is accumulated separately and routed to the project balance after the distribution loop, ensuring proportional (not equal) redistribution among remaining recipients. Native token calls return false (funds stay in the hook), ERC-20 terminal call approvals are reset to zero, and `SplitPayoutReverted` or `AddToBalanceReverted` events are emitted with the revert reason.
 
 ### 6.10 `JB721TiersHookLib.calculateSplitAmounts` — Discount Applied Before Splits
 
