@@ -663,11 +663,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
                 // Record the mints.
                 // slither-disable-next-line reentrancy-events,reentrancy-no-eth
-                (tokenIds, leftoverAmount, restrictedCost) = STORE.recordMint({
-                    amount: leftoverAmount,
-                    tierIds: tierIdsToMint,
-                    isOwnerMint: false
-                });
+                (tokenIds, leftoverAmount, restrictedCost) =
+                    STORE.recordMint({amount: leftoverAmount, tierIds: tierIdsToMint, isOwnerMint: false});
 
                 // Enforce `cantBuyWithCredits`: restricted tiers must be fully covered by fresh payment (not credits).
                 if (restrictedCost > value) revert JB721TiersHook_CantBuyWithCredits();

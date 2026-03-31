@@ -222,15 +222,14 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
         pure
         returns (uint8)
     {
-        return
-            _packBools(
-                allowOwnerMint,
-                transfersPausable,
-                useVotingUnits,
-                cannotBeRemoved,
-                cannotIncreaseDiscountPercent,
-                cantBuyWithCredits
-            );
+        return _packBools(
+            allowOwnerMint,
+            transfersPausable,
+            useVotingUnits,
+            cannotBeRemoved,
+            cannotIncreaseDiscountPercent,
+            cantBuyWithCredits
+        );
     }
 
     // forge-lint: disable-next-line(mixed-case-function)
