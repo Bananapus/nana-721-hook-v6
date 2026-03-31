@@ -123,6 +123,7 @@ contract CodexPayCreditsBypassTierSplits is UnitTestSetup {
             transfersPausable: false,
             cannotBeRemoved: false,
             cannotIncreaseDiscountPercent: false,
+            cantBuyWithCredits: false,
             useVotingUnits: false,
             splitPercent: 1_000_000_000,
             splits: new JBSplit[](0)

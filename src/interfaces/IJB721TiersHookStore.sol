@@ -193,13 +193,14 @@ interface IJB721TiersHookStore {
     /// @param isOwnerMint Whether this is a direct owner mint.
     /// @return tokenIds The token IDs of the NFTs which were minted.
     /// @return leftoverAmount The amount remaining after minting.
+    /// @return restrictedCost Total cost of tiers with `cantBuyWithCredits` set.
     function recordMint(
         uint256 amount,
         uint16[] calldata tierIds,
         bool isOwnerMint
     )
         external
-        returns (uint256[] memory tokenIds, uint256 leftoverAmount);
+        returns (uint256[] memory tokenIds, uint256 leftoverAmount, uint256 restrictedCost);
 
     /// @notice Record reserve 721 minting for the provided tier ID.
     /// @param tierId The ID of the tier to mint reserves from.

@@ -551,6 +551,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: true,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false,
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -570,6 +571,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: tierConfigs[i].transfersPausable,
                 cannotBeRemoved: tierConfigs[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigs[i].cannotIncreaseDiscountPercent,
+                cantBuyWithCredits: tierConfigs[i].cantBuyWithCredits,
                 splitPercent: 0,
                 resolvedUri: ""
             });
@@ -684,6 +686,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: true,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false,
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -703,6 +706,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: tierConfigs[i].transfersPausable,
                 cannotBeRemoved: tierConfigs[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigs[i].cannotIncreaseDiscountPercent,
+                cantBuyWithCredits: tierConfigs[i].cantBuyWithCredits,
                 splitPercent: 0,
                 resolvedUri: ""
             });
@@ -753,6 +757,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                     useVotingUnits: true,
                     cannotBeRemoved: false,
                     cannotIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false,
                     splitPercent: 0,
                     splits: new JBSplit[](0)
                 });
@@ -772,6 +777,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                     transfersPausable: tierConfigsRemaining[arrayIndex].transfersPausable,
                     cannotBeRemoved: tierConfigsRemaining[arrayIndex].cannotBeRemoved,
                     cannotIncreaseDiscountPercent: tierConfigsRemaining[arrayIndex].cannotIncreaseDiscountPercent,
+                    cantBuyWithCredits: tierConfigsRemaining[arrayIndex].cantBuyWithCredits,
                     splitPercent: 0,
                     resolvedUri: ""
                 });
@@ -804,6 +810,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: true,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false,
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -822,6 +829,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: tierConfigsToAdd[i].transfersPausable,
                 cannotBeRemoved: tierConfigsToAdd[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigsToAdd[i].cannotIncreaseDiscountPercent,
+                cantBuyWithCredits: tierConfigsToAdd[i].cantBuyWithCredits,
                 splitPercent: 0,
                 resolvedUri: ""
             });
@@ -880,6 +888,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: true,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false,
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -899,6 +908,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: tierConfigs[i].transfersPausable,
                 cannotBeRemoved: tierConfigs[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigs[i].cannotIncreaseDiscountPercent,
+                cantBuyWithCredits: tierConfigs[i].cantBuyWithCredits,
                 splitPercent: 0,
                 resolvedUri: ""
             });
@@ -948,6 +958,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: true,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false,
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -966,6 +977,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: tierConfigsToAdd[i].transfersPausable,
                 cannotBeRemoved: tierConfigsToAdd[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigsToAdd[i].cannotIncreaseDiscountPercent,
+                cantBuyWithCredits: tierConfigsToAdd[i].cantBuyWithCredits,
                 splitPercent: 0,
                 resolvedUri: ""
             });
@@ -1008,6 +1020,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: true,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false,
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -1027,6 +1040,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: tierConfigs[i].transfersPausable,
                 cannotBeRemoved: tierConfigs[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigs[i].cannotIncreaseDiscountPercent,
+                cantBuyWithCredits: tierConfigs[i].cantBuyWithCredits,
                 splitPercent: 0,
                 resolvedUri: ""
             });
@@ -1075,6 +1089,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: true,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false,
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -1093,6 +1108,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: tierConfigsToAdd[i].transfersPausable,
                 cannotBeRemoved: tierConfigsToAdd[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigsToAdd[i].cannotIncreaseDiscountPercent,
+                cantBuyWithCredits: tierConfigsToAdd[i].cantBuyWithCredits,
                 splitPercent: 0,
                 resolvedUri: ""
             });
@@ -1130,6 +1146,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             useVotingUnits: true,
             cannotBeRemoved: true,
             cannotIncreaseDiscountPercent: false,
+            cantBuyWithCredits: false,
             splitPercent: 0,
             splits: new JBSplit[](0)
         });
@@ -1148,6 +1165,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             useVotingUnits: true,
             cannotBeRemoved: false,
             cannotIncreaseDiscountPercent: false,
+            cantBuyWithCredits: false,
             splitPercent: 0,
             splits: new JBSplit[](0)
         });
@@ -1204,6 +1222,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: true,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false,
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -1223,6 +1242,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: tierConfigs[i].transfersPausable,
                 cannotBeRemoved: tierConfigs[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigs[i].cannotIncreaseDiscountPercent,
+                cantBuyWithCredits: tierConfigs[i].cantBuyWithCredits,
                 splitPercent: 0,
                 resolvedUri: ""
             });
@@ -1270,6 +1290,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: false,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false,
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -1288,6 +1309,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: tierConfigsToAdd[i].transfersPausable,
                 cannotBeRemoved: tierConfigsToAdd[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigsToAdd[i].cannotIncreaseDiscountPercent,
+                cantBuyWithCredits: tierConfigsToAdd[i].cantBuyWithCredits,
                 splitPercent: 0,
                 resolvedUri: ""
             });
@@ -1332,6 +1354,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 cannotBeRemoved: false,
                 useVotingUnits: true,
                 cannotIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false,
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -1375,6 +1398,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: false,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false,
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -1424,6 +1448,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: false, // <-- If false, voting power is based on tier price
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false,
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -1467,6 +1492,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: true,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false,
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -1516,6 +1542,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: true, // <-- If false, voting power is based on tier price
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false,
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -1591,6 +1618,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 useVotingUnits: false,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false,
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -1610,6 +1638,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 transfersPausable: tierConfigs[i].transfersPausable,
                 cannotBeRemoved: tierConfigs[i].cannotBeRemoved,
                 cannotIncreaseDiscountPercent: tierConfigs[i].cannotIncreaseDiscountPercent,
+                cantBuyWithCredits: tierConfigs[i].cantBuyWithCredits,
                 splitPercent: 0,
                 resolvedUri: ""
             });
@@ -1720,6 +1749,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             useVotingUnits: true,
             cannotBeRemoved: true,
             cannotIncreaseDiscountPercent: true,
+            cantBuyWithCredits: false,
             splitPercent: 0,
             splits: new JBSplit[](0)
         });
@@ -1775,6 +1805,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             useVotingUnits: true,
             cannotBeRemoved: true,
             cannotIncreaseDiscountPercent: true,
+            cantBuyWithCredits: false,
             splitPercent: 0,
             splits: new JBSplit[](0)
         });
@@ -1793,6 +1824,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             useVotingUnits: true,
             cannotBeRemoved: true,
             cannotIncreaseDiscountPercent: false,
+            cantBuyWithCredits: false,
             splitPercent: 0,
             splits: new JBSplit[](0)
         });

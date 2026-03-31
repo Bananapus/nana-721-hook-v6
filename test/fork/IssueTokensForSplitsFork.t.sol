@@ -355,6 +355,7 @@ contract IssueTokensForSplitsFork is Test {
             useVotingUnits: false,
             cannotBeRemoved: false,
             cannotIncreaseDiscountPercent: false,
+            cantBuyWithCredits: false,
             splitPercent: splitPercent,
             splits: splits
         });
