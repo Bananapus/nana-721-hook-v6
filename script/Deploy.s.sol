@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-// forge-lint: disable-next-line(unaliased-plain-import)
-import "@bananapus/core-v6/script/helpers/CoreDeploymentLib.sol";
-// forge-lint: disable-next-line(unaliased-plain-import)
-import "@bananapus/address-registry-v6/script/helpers/AddressRegistryDeploymentLib.sol";
+import {CoreDeployment, CoreDeploymentLib} from "@bananapus/core-v6/script/helpers/CoreDeploymentLib.sol";
+import {
+    AddressRegistryDeployment,
+    AddressRegistryDeploymentLib
+} from "@bananapus/address-registry-v6/script/helpers/AddressRegistryDeploymentLib.sol";
 
 import {Sphinx} from "@sphinx-labs/contracts/contracts/foundry/SphinxPlugin.sol";
 import {Script} from "forge-std/Script.sol";

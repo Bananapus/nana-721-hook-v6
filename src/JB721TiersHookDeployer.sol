@@ -29,7 +29,7 @@ contract JB721TiersHookDeployer is ERC2771Context, IJB721TiersHookDeployer {
     IJB721TiersHookStore public immutable STORE;
 
     //*********************************************************************//
-    // ----------------------- internal properties ----------------------- //
+    // -------------------- internal stored properties ------------------- //
     //*********************************************************************//
 
     /// @notice This contract's current nonce, used for the Juicebox address registry.

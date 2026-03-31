@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.28;
 
 /// @notice Global constants used across 721 hook contracts.
 library JB721Constants {

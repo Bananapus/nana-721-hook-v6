@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity 0.8.28;
 
 /// @title JBIpfsDecoder
 /// @notice Utilities to decode an IPFS hash.
