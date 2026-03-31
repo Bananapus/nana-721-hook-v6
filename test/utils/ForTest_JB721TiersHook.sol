@@ -43,7 +43,8 @@ interface IJB721TiersHookStore_ForTest is IJB721TiersHookStore {
         bool transfersPausable,
         bool useVotingUnits,
         bool cannotBeRemoved,
-        bool cannotIncreaseDiscountPercent
+        bool cannotIncreaseDiscountPercent,
+        bool cantBuyWithCredits
     )
         external
         returns (uint8);
@@ -144,7 +145,7 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
             storedTier = _storedTierOf[nft][currentSortIndex];
 
             // Unpack stored tier.
-            (bool allowOwnerMint, bool transfersPausable,,,) = _unpackBools(storedTier.packedBools);
+            (bool allowOwnerMint, bool transfersPausable,,,,) = _unpackBools(storedTier.packedBools);
 
             // Add the tier to the array being returned.
             tiers[numberOfIncludedTiers++] = JB721Tier({
@@ -163,6 +164,7 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
                 transfersPausable: transfersPausable,
                 cannotBeRemoved: false,
                 cannotIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false,
                 splitPercent: storedTier.splitPercent,
                 resolvedUri: ""
             });
@@ -213,7 +215,8 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
         bool transfersPausable,
         bool useVotingUnits,
         bool cannotBeRemoved,
-        bool cannotIncreaseDiscountPercent
+        bool cannotIncreaseDiscountPercent,
+        bool cantBuyWithCredits
     )
         public
         pure
@@ -221,12 +224,17 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
     {
         return
             _packBools(
-                allowOwnerMint, transfersPausable, useVotingUnits, cannotBeRemoved, cannotIncreaseDiscountPercent
+                allowOwnerMint,
+                transfersPausable,
+                useVotingUnits,
+                cannotBeRemoved,
+                cannotIncreaseDiscountPercent,
+                cantBuyWithCredits
             );
     }
 
     // forge-lint: disable-next-line(mixed-case-function)
-    function ForTest_unpackBools(uint8 packed) public pure returns (bool, bool, bool, bool, bool) {
+    function ForTest_unpackBools(uint8 packed) public pure returns (bool, bool, bool, bool, bool, bool) {
         return _unpackBools(packed);
     }
 }

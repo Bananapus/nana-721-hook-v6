@@ -65,6 +65,7 @@ contract TierStoreHandler is CommonBase, StdCheats, StdUtils {
             useVotingUnits: false,
             cannotBeRemoved: false,
             cannotIncreaseDiscountPercent: false,
+            cantBuyWithCredits: false,
             splitPercent: 0,
             splits: new JBSplit[](0)
         });
@@ -122,7 +123,7 @@ contract TierStoreHandler is CommonBase, StdCheats, StdUtils {
 
     /// @dev External wrapper for calldata.
     function _doMint(uint256 amount, uint16[] calldata tierIds) external returns (uint256[] memory tokenIds) {
-        (tokenIds,) = STORE.recordMint(amount, tierIds, true);
+        (tokenIds,,) = STORE.recordMint(amount, tierIds, true);
     }
 
     /// @notice Burn a minted token.

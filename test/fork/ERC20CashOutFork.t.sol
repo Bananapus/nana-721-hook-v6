@@ -355,6 +355,7 @@ contract ERC20CashOutFork is Test {
             useVotingUnits: false,
             cannotBeRemoved: false,
             cannotIncreaseDiscountPercent: false,
+            cantBuyWithCredits: false,
             splitPercent: 0,
             splits: new JBSplit[](0)
         });
@@ -440,6 +441,7 @@ contract ERC20CashOutFork is Test {
             useVotingUnits: false,
             cannotBeRemoved: false,
             cannotIncreaseDiscountPercent: false,
+            cantBuyWithCredits: false,
             splitPercent: 0,
             splits: new JBSplit[](0)
         });
@@ -526,6 +528,7 @@ contract ERC20CashOutFork is Test {
             useVotingUnits: false,
             cannotBeRemoved: false,
             cannotIncreaseDiscountPercent: false,
+            cantBuyWithCredits: false,
             splitPercent: 0,
             splits: new JBSplit[](0)
         });
@@ -545,6 +548,7 @@ contract ERC20CashOutFork is Test {
             useVotingUnits: false,
             cannotBeRemoved: false,
             cannotIncreaseDiscountPercent: false,
+            cantBuyWithCredits: false,
             splitPercent: 0,
             splits: new JBSplit[](0)
         });

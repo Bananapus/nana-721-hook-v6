@@ -408,6 +408,7 @@ contract ERC20TierSplitFork is Test {
             useVotingUnits: false,
             cannotBeRemoved: false,
             cannotIncreaseDiscountPercent: false,
+            cantBuyWithCredits: false,
             splitPercent: 300_000_000, // 30%
             splits: splits
         });
@@ -477,6 +478,7 @@ contract ERC20TierSplitFork is Test {
             useVotingUnits: false,
             cannotBeRemoved: false,
             cannotIncreaseDiscountPercent: false,
+            cantBuyWithCredits: false,
             splitPercent: 300_000_000, // 30%
             splits: splits
         });
@@ -544,6 +546,7 @@ contract ERC20TierSplitFork is Test {
             useVotingUnits: false,
             cannotBeRemoved: false,
             cannotIncreaseDiscountPercent: false,
+            cantBuyWithCredits: false,
             splitPercent: 500_000_000, // 50%
             splits: splits
         });

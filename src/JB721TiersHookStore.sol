@@ -331,7 +331,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         JBStored721Tier memory storedTier = _storedTierOf[hook][tierId];
 
         // Check if voting units should be used. Price will be used otherwise.
-        (,, bool useVotingUnits,,) = _unpackBools(storedTier.packedBools);
+        (,, bool useVotingUnits,,,) = _unpackBools(storedTier.packedBools);
 
         // Return the address' voting units within the tier.
         return balance * (useVotingUnits ? _tierVotingUnitsOf[hook][tierId] : storedTier.price);
@@ -376,7 +376,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             JBStored721Tier memory storedTier = _storedTierOf[hook][i];
 
             // Parse the flags.
-            (,, bool useVotingUnits,,) = _unpackBools(storedTier.packedBools);
+            (,, bool useVotingUnits,,,) = _unpackBools(storedTier.packedBools);
 
             // Add the voting units for the address' balance in this tier.
             // Use custom voting units if set. Otherwise, use the tier's price.
@@ -532,13 +532,8 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         // Get a reference to the reserve beneficiary.
         address reserveBeneficiary = reserveBeneficiaryOf({hook: hook, tierId: tierId});
 
-        (
-            bool allowOwnerMint,
-            bool transfersPausable,
-            bool useVotingUnits,
-            bool cannotBeRemoved,
-            bool cannotIncreaseDiscountPercent
-        ) = _unpackBools(storedTier.packedBools);
+        // Cache packed bools to avoid stack-too-deep from destructuring all 6 bools.
+        uint8 packed = storedTier.packedBools;
 
         // slither-disable-next-line calls-loop
         return JB721Tier({
@@ -547,17 +542,18 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             price: storedTier.price,
             remainingSupply: storedTier.remainingSupply,
             initialSupply: storedTier.initialSupply,
-            votingUnits: useVotingUnits ? _tierVotingUnitsOf[hook][tierId] : storedTier.price,
+            votingUnits: (packed & 0x4 != 0) ? _tierVotingUnitsOf[hook][tierId] : storedTier.price,
             // No reserve frequency if there is no reserve beneficiary.
             reserveFrequency: reserveBeneficiary == address(0) ? 0 : storedTier.reserveFrequency,
             reserveBeneficiary: reserveBeneficiary,
             encodedIPFSUri: encodedIPFSUriOf[hook][tierId],
             category: storedTier.category,
             discountPercent: storedTier.discountPercent,
-            allowOwnerMint: allowOwnerMint,
-            transfersPausable: transfersPausable,
-            cannotBeRemoved: cannotBeRemoved,
-            cannotIncreaseDiscountPercent: cannotIncreaseDiscountPercent,
+            allowOwnerMint: (packed & 0x1 != 0),
+            transfersPausable: (packed & 0x2 != 0),
+            cannotBeRemoved: (packed & 0x8 != 0),
+            cannotIncreaseDiscountPercent: (packed & 0x10 != 0),
+            cantBuyWithCredits: (packed & 0x20 != 0),
             splitPercent: storedTier.splitPercent,
             resolvedUri: !includeResolvedUri || tokenUriResolverOf[hook] == IJB721TokenUriResolver(address(0))
                 ? ""
@@ -680,13 +676,15 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @param useVotingUnits Whether or not custom voting unit amounts are allowed in new tiers.
     /// @param cannotBeRemoved Whether or not attempts to remove the tier will revert.
     /// @param cannotIncreaseDiscountPercent Whether or not attempts to increase the discount percent will revert.
+    /// @param cantBuyWithCredits Whether or not the tier cannot be purchased using accumulated pay credits.
     /// @return packed The packed bools.
     function _packBools(
         bool allowOwnerMint,
         bool transfersPausable,
         bool useVotingUnits,
         bool cannotBeRemoved,
-        bool cannotIncreaseDiscountPercent
+        bool cannotIncreaseDiscountPercent,
+        bool cantBuyWithCredits
     )
         internal
         pure
@@ -698,16 +696,18 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             packed := or(shl(0x2, useVotingUnits), packed)
             packed := or(shl(0x3, cannotBeRemoved), packed)
             packed := or(shl(0x4, cannotIncreaseDiscountPercent), packed)
+            packed := or(shl(0x5, cantBuyWithCredits), packed)
         }
     }
 
-    /// @notice Unpack five bools from a single uint8.
+    /// @notice Unpack six bools from a single uint8.
     /// @param packed The packed bools.
     /// @param allowOwnerMint Whether or not owner minting is allowed in new tiers.
     /// @param transfersPausable Whether or not 721 transfers can be paused.
     /// @param useVotingUnits Whether or not custom voting unit amounts are allowed in new tiers.
     /// @param cannotBeRemoved Whether or not the tier can be removed once added.
     /// @param cannotIncreaseDiscountPercent Whether or not the discount percent cannot be increased.
+    /// @param cantBuyWithCredits Whether or not the tier cannot be purchased using accumulated pay credits.
     function _unpackBools(uint8 packed)
         internal
         pure
@@ -716,7 +716,8 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             bool transfersPausable,
             bool useVotingUnits,
             bool cannotBeRemoved,
-            bool cannotIncreaseDiscountPercent
+            bool cannotIncreaseDiscountPercent,
+            bool cantBuyWithCredits
         )
     {
         assembly {
@@ -725,6 +726,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             useVotingUnits := iszero(iszero(and(0x4, packed)))
             cannotBeRemoved := iszero(iszero(and(0x8, packed)))
             cannotIncreaseDiscountPercent := iszero(iszero(and(0x10, packed)))
+            cantBuyWithCredits := iszero(iszero(and(0x20, packed)))
         }
     }
 
@@ -907,7 +909,8 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                     transfersPausable: tierToAdd.transfersPausable,
                     useVotingUnits: tierToAdd.useVotingUnits,
                     cannotBeRemoved: tierToAdd.cannotBeRemoved,
-                    cannotIncreaseDiscountPercent: tierToAdd.cannotIncreaseDiscountPercent
+                    cannotIncreaseDiscountPercent: tierToAdd.cannotIncreaseDiscountPercent,
+                    cantBuyWithCredits: tierToAdd.cantBuyWithCredits
                 })
             });
 
@@ -1055,6 +1058,8 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @param isOwnerMint A flag indicating whether this function is being directly called by the 721 contract's owner.
     /// @return tokenIds The token IDs of the NFTs which were minted.
     /// @return leftoverAmount The `amount` remaining after minting.
+    /// @return restrictedCost Total cost of tiers with `cantBuyWithCredits` set. The caller can use this to enforce
+    /// credit restrictions.
     function recordMint(
         uint256 amount,
         uint16[] calldata tierIds,
@@ -1062,7 +1067,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     )
         external
         override
-        returns (uint256[] memory tokenIds, uint256 leftoverAmount)
+        returns (uint256[] memory tokenIds, uint256 leftoverAmount, uint256 restrictedCost)
     {
         // Set the leftover amount as the initial amount.
         leftoverAmount = amount;
@@ -1079,6 +1084,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         // Initialize a `JBBitmapWord` for checking whether tiers have been removed.
         JBBitmapWord memory bitmapWord;
 
+        // Track total cost of tiers that can't be bought with credits (order-independent check).
+        uint256 restrictedCost;
+
         for (uint256 i; i < numberOfTiers; i++) {
             // Set the tier ID being iterated on.
             uint256 tierId = tierIds[i];
@@ -1092,7 +1100,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             storedTier = _storedTierOf[msg.sender][tierId];
 
             // Parse the flags.
-            (bool allowOwnerMint,,,,) = _unpackBools(storedTier.packedBools);
+            (bool allowOwnerMint,,,,, bool cantBuyWithCredits) = _unpackBools(storedTier.packedBools);
 
             // If this is an owner mint, make sure owner minting is allowed.
             if (isOwnerMint && !allowOwnerMint) revert JB721TiersHookStore_CantMintManually(tierId);
@@ -1112,6 +1120,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                     x: price, y: storedTier.discountPercent, denominator: JB721Constants.DISCOUNT_DENOMINATOR
                 });
             }
+
+            // Accumulate cost of credit-restricted tiers.
+            if (cantBuyWithCredits) restrictedCost += price;
 
             // Make sure the `amount` is greater than or equal to the tier's price.
             if (price > leftoverAmount) revert JB721TiersHookStore_PriceExceedsAmount(price, leftoverAmount);
@@ -1188,7 +1199,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             JBStored721Tier storage storedTier = _storedTierOf[msg.sender][tierId];
 
             // Parse the flags.
-            (,,, bool cannotBeRemoved,) = _unpackBools(storedTier.packedBools);
+            (,,, bool cannotBeRemoved,,) = _unpackBools(storedTier.packedBools);
 
             // Make sure the tier can be removed.
             if (cannotBeRemoved) revert JB721TiersHookStore_CantRemoveTier(tierId);
@@ -1217,7 +1228,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         JBStored721Tier storage storedTier = _storedTierOf[msg.sender][tierId];
 
         // Parse the flags.
-        (,,,, bool cannotIncreaseDiscountPercent) = _unpackBools(storedTier.packedBools);
+        (,,,, bool cannotIncreaseDiscountPercent,) = _unpackBools(storedTier.packedBools);
 
         // Make sure that increasing the discount is allowed for the tier.
         if (discountPercent > storedTier.discountPercent && cannotIncreaseDiscountPercent) {

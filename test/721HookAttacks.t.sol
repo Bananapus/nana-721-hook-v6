@@ -86,6 +86,7 @@ contract NFTHookAttacks is UnitTestSetup {
             transfersPausable: false,
             cannotBeRemoved: false,
             cannotIncreaseDiscountPercent: false,
+            cantBuyWithCredits: false,
             useVotingUnits: false,
             splitPercent: 0,
             splits: new JBSplit[](0)
@@ -373,6 +374,7 @@ contract NFTHookAttacks is UnitTestSetup {
             transfersPausable: false,
             cannotBeRemoved: false,
             cannotIncreaseDiscountPercent: false,
+            cantBuyWithCredits: false,
             useVotingUnits: false,
             splitPercent: 0,
             splits: new JBSplit[](0)
