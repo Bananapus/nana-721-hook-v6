@@ -36,7 +36,7 @@ src/
 User → JBMultiTerminal.pay(metadata)
   → beforePayRecordedWith()
     → calculateSplitAmounts(): per-tier split amounts (in tier pricing denomination)
-    → convertSplitAmounts(): convert to payment token denomination (if currencies differ)
+    → convertAndCapSplitAmounts(): convert to payment token denomination (if currencies differ)
     → calculateWeight(): adjust weight down by split fraction
   → JBTerminalStore records payment
   → afterPayRecordedWith() → _processPayment()
@@ -56,7 +56,7 @@ Tiers can be priced in a different currency than the payment token (e.g. tiers p
 
 1. **`calculateSplitAmounts`** — For each tier the payer wants to mint, looks up its `splitPercent` (the fraction of the tier price that should be routed to the tier's split group rather than into the project treasury). Computes `effectivePrice * splitPercent / SPLITS_TOTAL_PERCENT` for each tier, where `effectivePrice` accounts for any active discount. Returns the total and a per-tier breakdown, all denominated in the **tier pricing currency**.
 
-2. **`convertSplitAmounts`** — If the payment currency differs from the tier pricing currency, converts every per-tier split amount (and the total) into the **payment token denomination** using `JBPrices`. This is necessary because the terminal will subtract the split amount from the payment value, so both must be in the same unit.
+2. **`convertAndCapSplitAmounts`** — If the payment currency differs from the tier pricing currency, converts every per-tier split amount (and the total) into the **payment token denomination** using `JBPrices`, and caps the total at the actual payment value. This is necessary because the terminal will subtract the split amount from the payment value, so both must be in the same unit.
 
 After conversion, `calculateWeight` scales the terminal's minting weight down by the fraction of the payment that was routed to splits (unless the `issueTokensForSplits` flag is set, in which case the full weight is preserved).
 
@@ -110,7 +110,7 @@ Owner → JB721TiersHook.adjustTiers()
 
 6. **Discount denominator of 200** — The `discountPercent` field is a uint8 with a denominator of 200 (`JB721Constants.DISCOUNT_DENOMINATOR`). A value of 200 represents 100% discount (free mint), giving 0.5% granularity. The `cannotIncreaseDiscountPercent` flag on each tier lets project owners create promotional discounts that can be reduced but never increased beyond their initial level.
 
-7. **Split fund distribution with try-catch** — All external calls during split distribution (to split hooks, terminals, and beneficiaries) are wrapped in try-catch. A reverting recipient does not brick payments for the entire project.
+7. **Split fund distribution with try-catch** — All external calls during split distribution (to split hooks, terminals, and beneficiaries) are wrapped in try-catch. A reverting recipient does not brick payments for the entire project. Failed amounts are accumulated separately during the loop and routed to the project balance afterward, ensuring proportional redistribution -- later recipients receive only their configured share, not an inflated share from earlier failures.
 
 ## Dependencies
 - `@bananapus/core-v6` — Core protocol interfaces
