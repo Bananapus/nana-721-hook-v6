@@ -439,17 +439,18 @@ library JB721TiersHookLib {
         bool isNativeToken = token == JBConstants.NATIVE_TOKEN;
         uint256 leftoverPercentage = JBConstants.SPLITS_TOTAL_PERCENT;
         uint256 leftoverAmount = amount;
+        amount = 0;
 
         for (uint256 j; j < tierSplits.length; j++) {
             uint256 payoutAmount =
                 mulDiv({x: leftoverAmount, y: tierSplits[j].percent, denominator: leftoverPercentage});
             if (payoutAmount != 0) {
-                // Always subtract from leftover to prevent failed splits from inflating later recipients'
-                // shares. Failed amounts stay in the contract and are routed to the project's balance with
-                // the leftover below.
                 unchecked {
                     leftoverAmount -= payoutAmount;
                 }
+                // On failure, don't re-add to leftoverAmount — this prevents inflating later recipients.
+                // Failed amounts accumulate as the gap between `amount` and `leftoverAmount + total sent`.
+                // After the loop, we re-add leftoverPercentage-based residual naturally.
                 if (!_sendPayoutToSplit({
                         directory: directory,
                         split: tierSplits[j],
@@ -459,10 +460,10 @@ library JB721TiersHookLib {
                         groupId: groupId,
                         decimals: decimals
                     })) {
-                    // The payout failed — the funds are still in this contract. Add back to leftover so they
-                    // route to the project's balance after the loop.
+                    // Payout failed — route to project balance by returning to leftover after the loop.
+                    // We add back to `amount` (parameter, no longer used for its original purpose).
                     unchecked {
-                        leftoverAmount += payoutAmount;
+                        amount += payoutAmount;
                     }
                 }
             }
@@ -470,6 +471,9 @@ library JB721TiersHookLib {
                 leftoverPercentage -= tierSplits[j].percent;
             }
         }
+
+        // Route failed payout amounts to the project's balance.
+        leftoverAmount += amount;
 
         if (leftoverAmount != 0) {
             // slither-disable-next-line calls-loop

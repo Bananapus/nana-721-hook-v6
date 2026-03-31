@@ -7,12 +7,13 @@ import {IJB721TiersHookStore} from "../../src/interfaces/IJB721TiersHookStore.so
 import {IJBSplitHook} from "@bananapus/core-v6/src/interfaces/IJBSplitHook.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
+import {IJBTerminal} from "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
 
 contract SplitFailureRedistribution is UnitTestSetup {
     address internal alice = makeAddr("alice");
     address internal bob = makeAddr("bob");
 
-    function test_failedEarlierSplit_overpaysLaterSplit() public {
+    function test_failedEarlierSplit_doesNotOverpayLaterSplit() public {
         ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
         IJB721TiersHookStore hookStore = testHook.STORE();
 
@@ -83,16 +84,35 @@ contract SplitFailureRedistribution is UnitTestSetup {
             payerMetadata: payerMetadata
         });
 
+        // Mock primaryTerminalOf so the leftover (failed split amount) can be routed to the project balance.
+        address projectTerminal = makeAddr("projectTerminal");
+        vm.etch(projectTerminal, new bytes(0x69));
+        mockAndExpect(
+            address(mockJBDirectory),
+            abi.encodeWithSelector(IJBDirectory.primaryTerminalOf.selector, projectId, JBConstants.NATIVE_TOKEN),
+            abi.encode(projectTerminal)
+        );
+        // Mock addToBalanceOf on the terminal so the leftover deposit succeeds.
+        vm.mockCall(
+            projectTerminal,
+            abi.encodeWithSelector(
+                IJBTerminal.addToBalanceOf.selector, projectId, JBConstants.NATIVE_TOKEN, 0.5 ether, false, "", ""
+            ),
+            ""
+        );
+
         uint256 bobBalanceBefore = bob.balance;
 
         vm.deal(mockTerminalAddress, 1 ether);
         vm.prank(mockTerminalAddress);
         testHook.afterPayRecordedWith{value: 1 ether}(payContext);
 
+        // With the fix, Bob only receives his fair 50% share. The failed split's 0.5 ether
+        // is routed to the project's balance via addToBalanceOf on the primary terminal.
         assertEq(
             bob.balance - bobBalanceBefore,
-            1 ether,
-            "later split receives the failed split's share instead of only its own allocation"
+            0.5 ether,
+            "later split should only receive its own allocation, not the failed split's share"
         );
     }
 
