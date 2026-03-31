@@ -2,6 +2,33 @@
 
 Admin privileges and their scope in nana-721-hook-v6.
 
+## At A Glance
+
+| Item | Details |
+|------|---------|
+| Scope | Per-project NFT administration for tier configuration, metadata, discounts, owner mints, and hook deployment. |
+| Operators | The resolved hook owner via `JBOwnable`, project-scoped delegates through `JBPermissions`, terminals, and the deployer/store contracts. |
+| Highest-risk actions | Adjusting tiers after launch, changing metadata or discounts that affect sale behavior, and deploying or initializing the wrong hook clone. |
+| Recovery posture | Clone-level mistakes are usually fixed by deploying a new hook and moving future rulesets to it; immutable constructor references cannot be changed in place. |
+
+## Routine Operations
+
+- Grant only the specific 721 permission IDs a project operator needs instead of handing out broad owner-equivalent access.
+- Use tier adjustments, metadata updates, owner mints, and discount changes with awareness of the project's current sale state and ruleset flags.
+- Treat deployer and clone initialization steps as setup-only actions; verify ownership, pricing, and store references before publishing a hook address to users.
+- When cash-out behavior or pay-hook composition changes, coordinate that with the project's ruleset configuration rather than assuming the hook can pause itself.
+
+## One-Way Or High-Risk Actions
+
+- Clone initialization is one-time, and immutable constructor references on the implementation cannot be changed afterward.
+- Hook ownership transfers change who can exercise every `onlyOwner` surface; accidental ownership moves are high-impact.
+- Tier and pricing changes can have user-facing economic effects immediately even when they are technically reversible for future sales.
+
+## Recovery Notes
+
+- If a hook is initialized with the wrong immutable dependencies or ownership model, deploy a new hook and migrate future project rulesets to it.
+- If a project-specific configuration goes bad, prefer moving the project to a replacement hook over trying to retrofit behavior the hook was not designed to support.
+
 ## Roles
 
 ### Hook Owner (JBOwnable)
@@ -46,8 +73,8 @@ Admin privileges and their scope in nana-721-hook-v6.
 | Function | Permission ID | Checked Against | What It Does |
 |----------|--------------|-----------------|--------------|
 | `launchProjectFor()` | None | Anyone can call | Creates a new project with a 721 hook. Ownership goes to the specified `owner` address. |
-| `launchRulesetsFor()` | `QUEUE_RULESETS` + `SET_TERMINALS` | Project NFT owner | Deploys a hook and launches rulesets for an existing project. |
-| `queueRulesetsOf()` | `QUEUE_RULESETS` | Project NFT owner | Deploys a hook and queues rulesets for an existing project. |
+| `launchRulesetsFor()` | `QUEUE_RULESETS` + `SET_TERMINALS` | Project NFT owner or delegate | Deploys a hook and launches rulesets for an existing project. |
+| `queueRulesetsOf()` | `QUEUE_RULESETS` | Project NFT owner or delegate | Deploys a hook and queues rulesets for an existing project. |
 
 ### JB721TiersHookDeployer
 

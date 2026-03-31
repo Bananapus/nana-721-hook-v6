@@ -1,4 +1,21 @@
-# RISKS.md -- nana-721-hook-v6
+# Juicebox 721 Hook Risk Register
+
+This file focuses on the tiered-NFT accounting, reserve-mint, and cash-out risks in the shared 721 hook used across multiple higher-level products.
+
+## How to use this file
+
+- Read `Priority risks` first; they summarize the shared 721-hook risks with the widest blast radius.
+- Use the detailed sections below for reentrancy, gas, tier accounting, and integration reasoning.
+- Treat `Invariants to Verify` as required regression coverage for any hook or store change.
+
+## Priority risks
+
+| Priority | Risk | Why it matters | Primary controls |
+|----------|------|----------------|------------------|
+| P0 | Shared store corruption or accounting drift | `JB721TiersHookStore` is reused across products; a tier-accounting bug can affect Defifa, Croptop, Banny, revnets, and standalone hooks simultaneously. | Heavy store testing, invariant coverage, and cautious upgrades or deployments. |
+| P1 | Gas and iteration ceilings around tier state | Tier operations can iterate over reserves, pricing state, and cash-out weights; poorly bounded use can become a liveness issue. | Explicit gas tests, tier-count limits, and section 4 DoS analysis. |
+| P1 | Cash-out and reserve math mismatch | Fair redemption depends on tier supply, pending reserves, and pricing state staying aligned. | Detailed invariants, fuzzing, and integration tests with downstream consumers. |
+
 
 ## 1. Trust Assumptions
 
@@ -7,7 +24,7 @@
 - **Category sort order is enforced only at insertion.** `recordAddTiers` reverts `InvalidCategorySortOrder` if tiers are not ascending by category. The sorted linked list (`_tierIdAfter`) depends on this invariant across all `adjustTiers` calls. Direct store callers could corrupt the list.
 - **`useReserveBeneficiaryAsDefault` has global side effects.** Setting this on ANY new tier overwrites `defaultReserveBeneficiaryOf` for ALL existing tiers that lack a tier-specific `_reserveBeneficiaryOf` entry. Documented but dangerous when calling `adjustTiers` on hooks with existing tiers.
 - **Clone initialization is one-shot, atomic.** `initialize()` guards via an `_initialized` bool flag. The implementation contract's constructor sets `_initialized = true`, blocking direct initialization. Clones start with `_initialized = false` and set it to `true` during `initialize()`. After `initialize()` sets it, any subsequent call reverts. Deployer contracts call deploy+initialize in a single transaction, preventing front-running. Ownership transfers to `_msgSender()` at the end of `initialize`.
-- **`balanceOf(address(0))` reverts.** Unlike the standard ERC-721 `balanceOf` which may return zero, the hook overrides `balanceOf` to revert with `JB721TiersHook_ZeroAddress` when called with `address(0)`. This guards against misleading zero-balance results for the zero address.
+- **`balanceOf(address(0))` reverts with a hook-specific error.** The hook explicitly reverts with `JB721TiersHook_ZeroAddress` when called with `address(0)`. This matches standard ERC-721 semantics but is still relevant for integrators that key off the custom error surface.
 - **`tokenURI` reverts for nonexistent tokens.** Calling `tokenURI` with a token ID that has never been minted reverts with `ERC721NonexistentToken(tokenId)`. The check is `_ownerOf(tokenId) == address(0)`.
 - **JBDirectory is trusted for terminal authentication.** `afterPayRecordedWith` and `afterCashOutRecordedWith` check `DIRECTORY.isTerminalOf()`. If the directory is compromised, arbitrary addresses can invoke pay/cashout hooks.
 - **JBPrices is trusted for cross-currency conversion.** A reverting price feed blocks all payments in non-matching currencies (DoS, not fund loss). If `address(prices) == address(0)`, cross-currency payments silently skip minting.
@@ -65,7 +82,7 @@
 - **`beforeCashOutRecordedWith` rejects fungible tokens.** Reverts with `JB721Hook_UnexpectedTokenCashedOut` if `context.cashOutCount > 0`. Cannot simultaneously cash out NFTs and fungible tokens in the same terminal call.
 - **Split group ID encoding.** Composite: `uint256(uint160(hookAddress)) | (tierId << 160)`. Tier IDs are capped at uint16, so no overflow. Splits are permanently coupled to a specific hook address -- migrating to a new hook requires re-creating all split groups.
 - **ERC-20 split distribution pulls from terminal.** `distributeAll` calls `SafeERC20.safeTransferFrom(token, msg.sender, address(this), amount)` to pull ERC-20s from the terminal. Requires the terminal to have granted allowance via its `_beforeTransferTo` pattern. If the terminal's allowance mechanism changes, distribution fails.
-- **ETH sent with `afterPayRecordedWith` is used for split distribution.** If no splits are configured but ETH is forwarded (non-zero `forwardedAmount`), the `hookMetadata` is empty and `distributeAll` is not called. The ETH remains in the hook contract with no recovery mechanism.
+- **Forwarded funds depend on non-empty split metadata.** `_processPayment` only calls `distributeAll` when both `context.forwardedAmount.value != 0` and `context.hookMetadata.length != 0`. If an integration ever forwards funds with empty hook metadata, distribution is skipped and the funds remain in the hook contract with no dedicated rescue path.
 - **Token URI resolver external calls.** `tokenURI()` and `tiersOf(..., includeResolvedUri=true)` call the resolver if set. A reverting resolver blocks all metadata reads (marketplace/frontend impact, no fund risk).
 
 ## 7. Invariants to Verify
