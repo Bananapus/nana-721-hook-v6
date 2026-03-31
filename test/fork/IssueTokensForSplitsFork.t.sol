@@ -78,6 +78,7 @@ import "../../src/structs/JBLaunchProjectConfig.sol";
 import "../../src/structs/JBPayDataHookRulesetConfig.sol";
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/structs/JBPayDataHookRulesetMetadata.sol";
+import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
 
 /// @title IssueTokensForSplitsFork
 /// @notice Fork tests for the issueTokensForSplits flag in JB721TiersHookFlags.
@@ -349,13 +350,15 @@ contract IssueTokensForSplitsFork is Test {
             encodedIPFSUri: bytes32("tier1"),
             category: 1,
             discountPercent: 0,
-            allowOwnerMint: false,
-            useReserveBeneficiaryAsDefault: false,
-            transfersPausable: false,
-            useVotingUnits: false,
-            cantBeRemoved: false,
-            cantIncreaseDiscountPercent: false,
-            cantBuyWithCredits: false,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: false,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: false,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false
+            }),
             splitPercent: splitPercent,
             splits: splits
         });

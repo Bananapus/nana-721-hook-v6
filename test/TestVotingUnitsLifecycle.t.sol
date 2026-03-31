@@ -20,9 +20,9 @@ contract TestVotingUnitsLifecycle is UnitTestSetup {
     /// through the full lifecycle: mint to user A, transfer to user B, burn by user B.
     function test_votingUnits_mintTransferBurn_lifecycle() public {
         // Configure a tier with custom voting units.
-        defaultTierConfig.allowOwnerMint = true;
+        defaultTierConfig.flags.allowOwnerMint = true;
         defaultTierConfig.reserveFrequency = 0;
-        defaultTierConfig.useVotingUnits = true;
+        defaultTierConfig.flags.useVotingUnits = true;
         defaultTierConfig.votingUnits = 100;
 
         ForTest_JB721TiersHook testHook = _initializeForTestHook(1);
@@ -75,9 +75,9 @@ contract TestVotingUnitsLifecycle is UnitTestSetup {
     /// and update properly when NFTs are transferred between users.
     function test_votingUnits_multiTier_aggregation() public {
         // Configure tiers with different custom voting units.
-        defaultTierConfig.allowOwnerMint = true;
+        defaultTierConfig.flags.allowOwnerMint = true;
         defaultTierConfig.reserveFrequency = 0;
-        defaultTierConfig.useVotingUnits = true;
+        defaultTierConfig.flags.useVotingUnits = true;
 
         ForTest_JB721TiersHook testHook = _initializeForTestHook(3);
         IJB721TiersHookStore hookStore = testHook.STORE();
@@ -149,9 +149,9 @@ contract TestVotingUnitsLifecycle is UnitTestSetup {
     /// @notice Verifies that when useVotingUnits is false, the tier price is used as voting power.
     function test_votingUnits_priceBasedVoting_lifecycle() public {
         // Configure tiers WITHOUT custom voting units (price-based voting).
-        defaultTierConfig.allowOwnerMint = true;
+        defaultTierConfig.flags.allowOwnerMint = true;
         defaultTierConfig.reserveFrequency = 0;
-        defaultTierConfig.useVotingUnits = false;
+        defaultTierConfig.flags.useVotingUnits = false;
         defaultTierConfig.votingUnits = 0;
 
         ForTest_JB721TiersHook testHook = _initializeForTestHook(3);
@@ -200,9 +200,9 @@ contract TestVotingUnitsLifecycle is UnitTestSetup {
     /// @notice Verifies that voting units scale correctly when a user owns multiple NFTs from one tier.
     function test_votingUnits_multipleMintsSameTier() public {
         // Configure tier with custom voting units.
-        defaultTierConfig.allowOwnerMint = true;
+        defaultTierConfig.flags.allowOwnerMint = true;
         defaultTierConfig.reserveFrequency = 0;
-        defaultTierConfig.useVotingUnits = true;
+        defaultTierConfig.flags.useVotingUnits = true;
         defaultTierConfig.votingUnits = 50;
 
         ForTest_JB721TiersHook testHook = _initializeForTestHook(1);
@@ -242,7 +242,7 @@ contract TestVotingUnitsLifecycle is UnitTestSetup {
     // ---------------------------------------------------------------
     /// @notice Verifies that addresses with no NFTs always return 0 voting units.
     function test_votingUnits_zeroForNonHolders() public {
-        defaultTierConfig.useVotingUnits = true;
+        defaultTierConfig.flags.useVotingUnits = true;
         defaultTierConfig.votingUnits = 100;
 
         ForTest_JB721TiersHook testHook = _initializeForTestHook(5);
@@ -260,9 +260,9 @@ contract TestVotingUnitsLifecycle is UnitTestSetup {
     /// @notice Verifies that voting units work correctly when some tiers use custom voting units
     /// and others use price-based voting. The tier with useVotingUnits=false should use price.
     function test_votingUnits_mixedTierConfigs() public {
-        defaultTierConfig.allowOwnerMint = true;
+        defaultTierConfig.flags.allowOwnerMint = true;
         defaultTierConfig.reserveFrequency = 0;
-        defaultTierConfig.useVotingUnits = true;
+        defaultTierConfig.flags.useVotingUnits = true;
         defaultTierConfig.votingUnits = 100;
 
         ForTest_JB721TiersHook testHook = _initializeForTestHook(3);

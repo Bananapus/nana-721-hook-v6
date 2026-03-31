@@ -11,6 +11,7 @@ import {JBAfterPayRecordedContext} from "@bananapus/core-v6/src/structs/JBAfterP
 import {JBPayHookSpecification} from "@bananapus/core-v6/src/structs/JBPayHookSpecification.sol";
 import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 import {IJBSplitHook} from "@bananapus/core-v6/src/interfaces/IJBSplitHook.sol";
+import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
 
 contract CodexPayCreditsBypassTierSplits is UnitTestSetup {
     address internal splitBeneficiary = makeAddr("splitBeneficiary");
@@ -118,13 +119,15 @@ contract CodexPayCreditsBypassTierSplits is UnitTestSetup {
             encodedIPFSUri: bytes32(uint256(0x1234)),
             category: 1,
             discountPercent: 0,
-            allowOwnerMint: false,
-            useReserveBeneficiaryAsDefault: false,
-            transfersPausable: false,
-            cantBeRemoved: false,
-            cantIncreaseDiscountPercent: false,
-            cantBuyWithCredits: false,
-            useVotingUnits: false,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: false,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: false,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false
+            }),
             splitPercent: 1_000_000_000,
             splits: new JBSplit[](0)
         });

@@ -1309,7 +1309,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
     // as long as the `transfersPausable` flag must be true.
     // Transfers involving the zero address (minting and burning) are not affected.
     function test_transferFrom_revertTransferIfPausedInRuleset() public {
-        defaultTierConfig.transfersPausable = true;
+        defaultTierConfig.flags.transfersPausable = true;
         JB721TiersHook hook = _initHookDefaultTiers(10);
 
         // Mock the directory call.

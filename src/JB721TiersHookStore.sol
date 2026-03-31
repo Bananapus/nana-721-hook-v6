@@ -10,6 +10,7 @@ import {JB721Constants} from "./libraries/JB721Constants.sol";
 import {JBBitmap} from "./libraries/JBBitmap.sol";
 import {JB721Tier} from "./structs/JB721Tier.sol";
 import {JB721TierConfig} from "./structs/JB721TierConfig.sol";
+import {JB721TierFlags} from "./structs/JB721TierFlags.sol";
 import {JB721TiersHookFlags} from "./structs/JB721TiersHookFlags.sol";
 import {JBBitmapWord} from "./structs/JBBitmapWord.sol";
 import {JBStored721Tier} from "./structs/JBStored721Tier.sol";
@@ -549,11 +550,13 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             encodedIPFSUri: encodedIPFSUriOf[hook][tierId],
             category: storedTier.category,
             discountPercent: storedTier.discountPercent,
-            allowOwnerMint: (packed & 0x1 != 0),
-            transfersPausable: (packed & 0x2 != 0),
-            cantBeRemoved: (packed & 0x8 != 0),
-            cantIncreaseDiscountPercent: (packed & 0x10 != 0),
-            cantBuyWithCredits: (packed & 0x20 != 0),
+            flags: JB721TierFlags({
+                allowOwnerMint: (packed & 0x1 != 0),
+                transfersPausable: (packed & 0x2 != 0),
+                cantBeRemoved: (packed & 0x8 != 0),
+                cantIncreaseDiscountPercent: (packed & 0x10 != 0),
+                cantBuyWithCredits: (packed & 0x20 != 0)
+            }),
             splitPercent: storedTier.splitPercent,
             resolvedUri: !includeResolvedUri || tokenUriResolverOf[hook] == IJB721TokenUriResolver(address(0))
                 ? ""
@@ -744,9 +747,11 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         uint256 currentSortedTierId = _firstSortedTierIdOf({hook: hook, category: 0});
 
         // Keep track of the previous non-removed tier ID.
+        // slither-disable-next-line uninitialized-local
         uint256 previousSortedTierId;
 
         // Initialize a `JBBitmapWord` for tracking removed tiers.
+        // slither-disable-next-line uninitialized-local
         JBBitmapWord memory bitmapWord;
 
         // Make the sorted array.
@@ -820,6 +825,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         uint256 startSortedTierId = currentMaxTierIdOf == 0 ? 0 : _firstSortedTierIdOf({hook: msg.sender, category: 0});
 
         // Keep track of the previous tier's ID while iterating.
+        // slither-disable-next-line uninitialized-local
         uint256 previousTierId;
 
         // Keep a reference to the 721 contract's flags.
@@ -855,20 +861,20 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             // Make sure the new tier doesn't have voting units if the 721 contract's flags don't allow it to.
             if (
                 flags.noNewTiersWithVotes
-                    && ((tierToAdd.useVotingUnits && tierToAdd.votingUnits != 0)
-                        || (!tierToAdd.useVotingUnits && tierToAdd.price != 0))
+                    && ((tierToAdd.flags.useVotingUnits && tierToAdd.votingUnits != 0)
+                        || (!tierToAdd.flags.useVotingUnits && tierToAdd.price != 0))
             ) {
                 revert JB721TiersHookStore_VotingUnitsNotAllowed(tierId);
             }
 
             // Make sure the new tier doesn't have a reserve frequency if the 721 contract's flags don't allow it to,
             // OR if manual minting is allowed.
-            if ((flags.noNewTiersWithReserves || tierToAdd.allowOwnerMint) && tierToAdd.reserveFrequency != 0) {
+            if ((flags.noNewTiersWithReserves || tierToAdd.flags.allowOwnerMint) && tierToAdd.reserveFrequency != 0) {
                 revert JB721TiersHookStore_ReserveFrequencyNotAllowed(tierId);
             }
 
             // Make sure the new tier doesn't have owner minting enabled if the 721 contract's flags don't allow it to.
-            if (flags.noNewTiersWithOwnerMinting && tierToAdd.allowOwnerMint) {
+            if (flags.noNewTiersWithOwnerMinting && tierToAdd.flags.allowOwnerMint) {
                 revert JB721TiersHookStore_ManualMintingNotAllowed(tierId);
             }
 
@@ -905,17 +911,17 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                 category: uint24(tierToAdd.category),
                 discountPercent: uint8(tierToAdd.discountPercent),
                 packedBools: _packBools({
-                    allowOwnerMint: tierToAdd.allowOwnerMint,
-                    transfersPausable: tierToAdd.transfersPausable,
-                    useVotingUnits: tierToAdd.useVotingUnits,
-                    cantBeRemoved: tierToAdd.cantBeRemoved,
-                    cantIncreaseDiscountPercent: tierToAdd.cantIncreaseDiscountPercent,
-                    cantBuyWithCredits: tierToAdd.cantBuyWithCredits
+                    allowOwnerMint: tierToAdd.flags.allowOwnerMint,
+                    transfersPausable: tierToAdd.flags.transfersPausable,
+                    useVotingUnits: tierToAdd.flags.useVotingUnits,
+                    cantBeRemoved: tierToAdd.flags.cantBeRemoved,
+                    cantIncreaseDiscountPercent: tierToAdd.flags.cantIncreaseDiscountPercent,
+                    cantBuyWithCredits: tierToAdd.flags.cantBuyWithCredits
                 })
             });
 
             // Store voting units in a separate mapping if custom voting units are used.
-            if (tierToAdd.useVotingUnits && tierToAdd.votingUnits != 0) {
+            if (tierToAdd.flags.useVotingUnits && tierToAdd.votingUnits != 0) {
                 _tierVotingUnitsOf[msg.sender][tierId] = uint32(tierToAdd.votingUnits);
             }
 
@@ -928,7 +934,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
             // Set the reserve beneficiary if needed.
             if (tierToAdd.reserveBeneficiary != address(0) && tierToAdd.reserveFrequency != 0) {
-                if (tierToAdd.useReserveBeneficiaryAsDefault) {
+                if (tierToAdd.flags.useReserveBeneficiaryAsDefault) {
                     // WARNING: This overwrites the global default for ALL tiers without a tier-specific beneficiary.
                     if (defaultReserveBeneficiaryOf[msg.sender] != tierToAdd.reserveBeneficiary) {
                         defaultReserveBeneficiaryOf[msg.sender] = tierToAdd.reserveBeneficiary;
@@ -1084,10 +1090,6 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         // Initialize a `JBBitmapWord` for checking whether tiers have been removed.
         JBBitmapWord memory bitmapWord;
 
-        // Track total cost of tiers that can't be bought with credits.
-        // Uses a local variable to reduce stack pressure for via_ir consumers.
-        uint256 totalRestrictedCost;
-
         for (uint256 i; i < numberOfTiers; i++) {
             // Set the tier ID being iterated on.
             uint256 tierId = tierIds[i];
@@ -1123,7 +1125,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             }
 
             // Accumulate cost of credit-restricted tiers.
-            if (cantBuyWithCredits) totalRestrictedCost += price;
+            if (cantBuyWithCredits) restrictedCost += price;
 
             // Make sure the `amount` is greater than or equal to the tier's price.
             if (price > leftoverAmount) revert JB721TiersHookStore_PriceExceedsAmount(price, leftoverAmount);
@@ -1150,8 +1152,6 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             }
         }
 
-        // Assign local to return variable.
-        restrictedCost = totalRestrictedCost;
     }
 
     /// @notice Record reserve 721 minting for the provided tier ID on the provided 721 contract.

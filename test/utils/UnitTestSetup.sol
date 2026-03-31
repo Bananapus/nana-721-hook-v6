@@ -44,6 +44,8 @@ import "@bananapus/core-v6/src/interfaces/IJBRulesetApprovalHook.sol";
 import "../../src/structs/JBLaunchProjectConfig.sol";
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/structs/JBPayDataHookRulesetMetadata.sol";
+import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
+import {JB721TierFlags} from "../../src/structs/JB721TierFlags.sol";
 
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "@bananapus/address-registry-v6/src/JBAddressRegistry.sol";
@@ -177,7 +179,7 @@ contract UnitTestSetup is Test {
         defaultTierConfig.reserveFrequency = uint16(10);
         defaultTierConfig.reserveBeneficiary = reserveBeneficiary;
         defaultTierConfig.category = type(uint24).max;
-        defaultTierConfig.useVotingUnits = true;
+        defaultTierConfig.flags.useVotingUnits = true;
 
         // Create 10 tiers, each with 100 NFTs available to mint.
         for (uint256 i; i < 10; i++) {
@@ -187,7 +189,7 @@ contract UnitTestSetup is Test {
             tiers[i].reserveBeneficiary = reserveBeneficiary;
             tiers[i].encodedIPFSUri = tokenUris[i];
             tiers[i].category = uint24(100);
-            tiers[i].useVotingUnits = true;
+            tiers[i].flags.useVotingUnits = true;
         }
         vm.mockCall(
             mockJBRulesets,
@@ -516,13 +518,15 @@ contract UnitTestSetup is Test {
                     // forge-lint: disable-next-line(unsafe-typecast)
                     : uint24(i * 2 + categoryIncrement),
                 discountPercent: tierConfig.discountPercent,
-                allowOwnerMint: tierConfig.allowOwnerMint,
-                useReserveBeneficiaryAsDefault: tierConfig.useReserveBeneficiaryAsDefault,
-                transfersPausable: tierConfig.transfersPausable,
-                useVotingUnits: tierConfig.useVotingUnits,
-                cantBeRemoved: tierConfig.cantBeRemoved,
-                cantIncreaseDiscountPercent: tierConfig.cantIncreaseDiscountPercent,
-                cantBuyWithCredits: tierConfig.cantBuyWithCredits,
+                flags: JB721TierConfigFlags({
+                    allowOwnerMint: tierConfig.flags.allowOwnerMint,
+                    useReserveBeneficiaryAsDefault: tierConfig.flags.useReserveBeneficiaryAsDefault,
+                    transfersPausable: tierConfig.flags.transfersPausable,
+                    useVotingUnits: tierConfig.flags.useVotingUnits,
+                    cantBeRemoved: tierConfig.flags.cantBeRemoved,
+                    cantIncreaseDiscountPercent: tierConfig.flags.cantIncreaseDiscountPercent,
+                    cantBuyWithCredits: tierConfig.flags.cantBuyWithCredits
+                }),
                 splitPercent: tierConfig.splitPercent,
                 splits: new JBSplit[](0)
             });
@@ -539,11 +543,13 @@ contract UnitTestSetup is Test {
                 encodedIPFSUri: tierConfigs[i].encodedIPFSUri,
                 category: tierConfigs[i].category,
                 discountPercent: tierConfigs[i].discountPercent,
-                allowOwnerMint: tierConfigs[i].allowOwnerMint,
-                transfersPausable: tierConfigs[i].transfersPausable,
-                cantBeRemoved: tierConfigs[i].cantBeRemoved,
-                cantIncreaseDiscountPercent: tierConfigs[i].cantIncreaseDiscountPercent,
-                cantBuyWithCredits: tierConfigs[i].cantBuyWithCredits,
+                flags: JB721TierFlags({
+                    allowOwnerMint: tierConfigs[i].flags.allowOwnerMint,
+                    transfersPausable: tierConfigs[i].flags.transfersPausable,
+                    cantBeRemoved: tierConfigs[i].flags.cantBeRemoved,
+                    cantIncreaseDiscountPercent: tierConfigs[i].flags.cantIncreaseDiscountPercent,
+                    cantBuyWithCredits: tierConfigs[i].flags.cantBuyWithCredits
+                }),
                 splitPercent: tierConfigs[i].splitPercent,
                 resolvedUri: defaultTierConfig.encodedIPFSUri == bytes32(0)
                     ? ""
@@ -710,13 +716,15 @@ contract UnitTestSetup is Test {
                 encodedIPFSUri: tokenUris[i],
                 category: uint24(100),
                 discountPercent: uint8(0),
-                allowOwnerMint: false,
-                useReserveBeneficiaryAsDefault: false,
-                transfersPausable: false,
-                useVotingUnits: true,
-                cantBeRemoved: false,
-                cantIncreaseDiscountPercent: false,
-                cantBuyWithCredits: false,
+                flags: JB721TierConfigFlags({
+                    allowOwnerMint: false,
+                    useReserveBeneficiaryAsDefault: false,
+                    transfersPausable: false,
+                    useVotingUnits: true,
+                    cantBeRemoved: false,
+                    cantIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false
+                }),
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });

@@ -11,6 +11,7 @@ import "../../src/structs/JBLaunchRulesetsConfig.sol";
 import "../../src/structs/JBQueueRulesetsConfig.sol";
 
 import {IJBController} from "@bananapus/core-v6/src/interfaces/IJBController.sol";
+import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 import {IJBPermissions} from "@bananapus/core-v6/src/interfaces/IJBPermissions.sol";
 import {JBTerminalConfig} from "@bananapus/core-v6/src/structs/JBTerminalConfig.sol";
@@ -119,13 +120,15 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
             encodedIPFSUri: tokenUris[0],
             category: uint24(100),
             discountPercent: uint8(0),
-            allowOwnerMint: false,
-            useReserveBeneficiaryAsDefault: false,
-            transfersPausable: false,
-            useVotingUnits: true,
-            cantBeRemoved: false,
-            cantIncreaseDiscountPercent: false,
-            cantBuyWithCredits: false,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: false,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: true,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false
+            }),
             splitPercent: 0,
             splits: new JBSplit[](0)
         });

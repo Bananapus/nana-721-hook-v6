@@ -3,6 +3,8 @@ pragma solidity 0.8.28;
 
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "../utils/UnitTestSetup.sol";
+import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
+import {JB721TierFlags} from "../../src/structs/JB721TierFlags.sol";
 
 contract Test_adjustTier_Unit is UnitTestSetup {
     using stdStorage for StdStorage;
@@ -545,13 +547,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
-                allowOwnerMint: false,
-                useReserveBeneficiaryAsDefault: false,
-                transfersPausable: false,
-                useVotingUnits: true,
-                cantBeRemoved: false,
-                cantIncreaseDiscountPercent: false,
-                cantBuyWithCredits: false,
+                flags: JB721TierConfigFlags({
+                    allowOwnerMint: false,
+                    useReserveBeneficiaryAsDefault: false,
+                    transfersPausable: false,
+                    useVotingUnits: true,
+                    cantBeRemoved: false,
+                    cantIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false
+                }),
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -567,11 +571,13 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tierConfigs[i].encodedIPFSUri,
                 category: tierConfigs[i].category,
                 discountPercent: tierConfigs[i].discountPercent,
-                allowOwnerMint: tierConfigs[i].allowOwnerMint,
-                transfersPausable: tierConfigs[i].transfersPausable,
-                cantBeRemoved: tierConfigs[i].cantBeRemoved,
-                cantIncreaseDiscountPercent: tierConfigs[i].cantIncreaseDiscountPercent,
-                cantBuyWithCredits: tierConfigs[i].cantBuyWithCredits,
+                flags: JB721TierFlags({
+                    allowOwnerMint: tierConfigs[i].flags.allowOwnerMint,
+                    transfersPausable: tierConfigs[i].flags.transfersPausable,
+                    cantBeRemoved: tierConfigs[i].flags.cantBeRemoved,
+                    cantIncreaseDiscountPercent: tierConfigs[i].flags.cantIncreaseDiscountPercent,
+                    cantBuyWithCredits: tierConfigs[i].flags.cantBuyWithCredits
+                }),
                 splitPercent: 0,
                 resolvedUri: ""
             });
@@ -680,13 +686,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
-                allowOwnerMint: false,
-                useReserveBeneficiaryAsDefault: false,
-                transfersPausable: false,
-                useVotingUnits: true,
-                cantBeRemoved: false,
-                cantIncreaseDiscountPercent: false,
-                cantBuyWithCredits: false,
+                flags: JB721TierConfigFlags({
+                    allowOwnerMint: false,
+                    useReserveBeneficiaryAsDefault: false,
+                    transfersPausable: false,
+                    useVotingUnits: true,
+                    cantBeRemoved: false,
+                    cantIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false
+                }),
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -702,11 +710,13 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tierConfigs[i].encodedIPFSUri,
                 category: tierConfigs[i].category,
                 discountPercent: tierConfigs[i].discountPercent,
-                allowOwnerMint: tierConfigs[i].allowOwnerMint,
-                transfersPausable: tierConfigs[i].transfersPausable,
-                cantBeRemoved: tierConfigs[i].cantBeRemoved,
-                cantIncreaseDiscountPercent: tierConfigs[i].cantIncreaseDiscountPercent,
-                cantBuyWithCredits: tierConfigs[i].cantBuyWithCredits,
+                flags: JB721TierFlags({
+                    allowOwnerMint: tierConfigs[i].flags.allowOwnerMint,
+                    transfersPausable: tierConfigs[i].flags.transfersPausable,
+                    cantBeRemoved: tierConfigs[i].flags.cantBeRemoved,
+                    cantIncreaseDiscountPercent: tierConfigs[i].flags.cantIncreaseDiscountPercent,
+                    cantBuyWithCredits: tierConfigs[i].flags.cantBuyWithCredits
+                }),
                 splitPercent: 0,
                 resolvedUri: ""
             });
@@ -751,13 +761,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                     encodedIPFSUri: tokenUris[0],
                     category: uint24(100),
                     discountPercent: uint8(0),
-                    allowOwnerMint: false,
-                    useReserveBeneficiaryAsDefault: false,
-                    transfersPausable: false,
-                    useVotingUnits: true,
-                    cantBeRemoved: false,
-                    cantIncreaseDiscountPercent: false,
-                    cantBuyWithCredits: false,
+                    flags: JB721TierConfigFlags({
+                        allowOwnerMint: false,
+                        useReserveBeneficiaryAsDefault: false,
+                        transfersPausable: false,
+                        useVotingUnits: true,
+                        cantBeRemoved: false,
+                        cantIncreaseDiscountPercent: false,
+                        cantBuyWithCredits: false
+                    }),
                     splitPercent: 0,
                     splits: new JBSplit[](0)
                 });
@@ -773,11 +785,13 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                     encodedIPFSUri: tierConfigsRemaining[arrayIndex].encodedIPFSUri,
                     category: tierConfigsRemaining[arrayIndex].category,
                     discountPercent: tierConfigsRemaining[arrayIndex].discountPercent,
-                    allowOwnerMint: tierConfigsRemaining[arrayIndex].allowOwnerMint,
-                    transfersPausable: tierConfigsRemaining[arrayIndex].transfersPausable,
-                    cantBeRemoved: tierConfigsRemaining[arrayIndex].cantBeRemoved,
-                    cantIncreaseDiscountPercent: tierConfigsRemaining[arrayIndex].cantIncreaseDiscountPercent,
-                    cantBuyWithCredits: tierConfigsRemaining[arrayIndex].cantBuyWithCredits,
+                    flags: JB721TierFlags({
+                        allowOwnerMint: tierConfigsRemaining[arrayIndex].flags.allowOwnerMint,
+                        transfersPausable: tierConfigsRemaining[arrayIndex].flags.transfersPausable,
+                        cantBeRemoved: tierConfigsRemaining[arrayIndex].flags.cantBeRemoved,
+                        cantIncreaseDiscountPercent: tierConfigsRemaining[arrayIndex].flags.cantIncreaseDiscountPercent,
+                        cantBuyWithCredits: tierConfigsRemaining[arrayIndex].flags.cantBuyWithCredits
+                    }),
                     splitPercent: 0,
                     resolvedUri: ""
                 });
@@ -804,13 +818,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(100 + i),
                 discountPercent: uint8(0),
-                allowOwnerMint: false,
-                useReserveBeneficiaryAsDefault: false,
-                transfersPausable: false,
-                useVotingUnits: true,
-                cantBeRemoved: false,
-                cantIncreaseDiscountPercent: false,
-                cantBuyWithCredits: false,
+                flags: JB721TierConfigFlags({
+                    allowOwnerMint: false,
+                    useReserveBeneficiaryAsDefault: false,
+                    transfersPausable: false,
+                    useVotingUnits: true,
+                    cantBeRemoved: false,
+                    cantIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false
+                }),
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -825,11 +841,13 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tierConfigsToAdd[i].encodedIPFSUri,
                 category: tierConfigsToAdd[i].category,
                 discountPercent: tierConfigsToAdd[i].discountPercent,
-                allowOwnerMint: tierConfigsToAdd[i].allowOwnerMint,
-                transfersPausable: tierConfigsToAdd[i].transfersPausable,
-                cantBeRemoved: tierConfigsToAdd[i].cantBeRemoved,
-                cantIncreaseDiscountPercent: tierConfigsToAdd[i].cantIncreaseDiscountPercent,
-                cantBuyWithCredits: tierConfigsToAdd[i].cantBuyWithCredits,
+                flags: JB721TierFlags({
+                    allowOwnerMint: tierConfigsToAdd[i].flags.allowOwnerMint,
+                    transfersPausable: tierConfigsToAdd[i].flags.transfersPausable,
+                    cantBeRemoved: tierConfigsToAdd[i].flags.cantBeRemoved,
+                    cantIncreaseDiscountPercent: tierConfigsToAdd[i].flags.cantIncreaseDiscountPercent,
+                    cantBuyWithCredits: tierConfigsToAdd[i].flags.cantBuyWithCredits
+                }),
                 splitPercent: 0,
                 resolvedUri: ""
             });
@@ -882,13 +900,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
-                allowOwnerMint: false,
-                useReserveBeneficiaryAsDefault: false,
-                transfersPausable: false,
-                useVotingUnits: true,
-                cantBeRemoved: false,
-                cantIncreaseDiscountPercent: false,
-                cantBuyWithCredits: false,
+                flags: JB721TierConfigFlags({
+                    allowOwnerMint: false,
+                    useReserveBeneficiaryAsDefault: false,
+                    transfersPausable: false,
+                    useVotingUnits: true,
+                    cantBeRemoved: false,
+                    cantIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false
+                }),
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -904,11 +924,13 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tierConfigs[i].encodedIPFSUri,
                 category: tierConfigs[i].category,
                 discountPercent: tierConfigs[i].discountPercent,
-                allowOwnerMint: tierConfigs[i].allowOwnerMint,
-                transfersPausable: tierConfigs[i].transfersPausable,
-                cantBeRemoved: tierConfigs[i].cantBeRemoved,
-                cantIncreaseDiscountPercent: tierConfigs[i].cantIncreaseDiscountPercent,
-                cantBuyWithCredits: tierConfigs[i].cantBuyWithCredits,
+                flags: JB721TierFlags({
+                    allowOwnerMint: tierConfigs[i].flags.allowOwnerMint,
+                    transfersPausable: tierConfigs[i].flags.transfersPausable,
+                    cantBeRemoved: tierConfigs[i].flags.cantBeRemoved,
+                    cantIncreaseDiscountPercent: tierConfigs[i].flags.cantIncreaseDiscountPercent,
+                    cantBuyWithCredits: tierConfigs[i].flags.cantBuyWithCredits
+                }),
                 splitPercent: 0,
                 resolvedUri: ""
             });
@@ -952,13 +974,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
-                allowOwnerMint: false,
-                useReserveBeneficiaryAsDefault: false,
-                transfersPausable: false,
-                useVotingUnits: true,
-                cantBeRemoved: false,
-                cantIncreaseDiscountPercent: false,
-                cantBuyWithCredits: false,
+                flags: JB721TierConfigFlags({
+                    allowOwnerMint: false,
+                    useReserveBeneficiaryAsDefault: false,
+                    transfersPausable: false,
+                    useVotingUnits: true,
+                    cantBeRemoved: false,
+                    cantIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false
+                }),
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -973,11 +997,13 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tierConfigsToAdd[i].encodedIPFSUri,
                 category: tierConfigsToAdd[i].category,
                 discountPercent: tierConfigsToAdd[i].discountPercent,
-                allowOwnerMint: tierConfigsToAdd[i].allowOwnerMint,
-                transfersPausable: tierConfigsToAdd[i].transfersPausable,
-                cantBeRemoved: tierConfigsToAdd[i].cantBeRemoved,
-                cantIncreaseDiscountPercent: tierConfigsToAdd[i].cantIncreaseDiscountPercent,
-                cantBuyWithCredits: tierConfigsToAdd[i].cantBuyWithCredits,
+                flags: JB721TierFlags({
+                    allowOwnerMint: tierConfigsToAdd[i].flags.allowOwnerMint,
+                    transfersPausable: tierConfigsToAdd[i].flags.transfersPausable,
+                    cantBeRemoved: tierConfigsToAdd[i].flags.cantBeRemoved,
+                    cantIncreaseDiscountPercent: tierConfigsToAdd[i].flags.cantIncreaseDiscountPercent,
+                    cantBuyWithCredits: tierConfigsToAdd[i].flags.cantBuyWithCredits
+                }),
                 splitPercent: 0,
                 resolvedUri: ""
             });
@@ -1014,13 +1040,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
-                allowOwnerMint: false,
-                useReserveBeneficiaryAsDefault: false,
-                transfersPausable: false,
-                useVotingUnits: true,
-                cantBeRemoved: false,
-                cantIncreaseDiscountPercent: false,
-                cantBuyWithCredits: false,
+                flags: JB721TierConfigFlags({
+                    allowOwnerMint: false,
+                    useReserveBeneficiaryAsDefault: false,
+                    transfersPausable: false,
+                    useVotingUnits: true,
+                    cantBeRemoved: false,
+                    cantIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false
+                }),
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -1036,11 +1064,13 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tierConfigs[i].encodedIPFSUri,
                 category: tierConfigs[i].category,
                 discountPercent: tierConfigs[i].discountPercent,
-                allowOwnerMint: tierConfigs[i].allowOwnerMint,
-                transfersPausable: tierConfigs[i].transfersPausable,
-                cantBeRemoved: tierConfigs[i].cantBeRemoved,
-                cantIncreaseDiscountPercent: tierConfigs[i].cantIncreaseDiscountPercent,
-                cantBuyWithCredits: tierConfigs[i].cantBuyWithCredits,
+                flags: JB721TierFlags({
+                    allowOwnerMint: tierConfigs[i].flags.allowOwnerMint,
+                    transfersPausable: tierConfigs[i].flags.transfersPausable,
+                    cantBeRemoved: tierConfigs[i].flags.cantBeRemoved,
+                    cantIncreaseDiscountPercent: tierConfigs[i].flags.cantIncreaseDiscountPercent,
+                    cantBuyWithCredits: tierConfigs[i].flags.cantBuyWithCredits
+                }),
                 splitPercent: 0,
                 resolvedUri: ""
             });
@@ -1083,13 +1113,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
-                allowOwnerMint: false,
-                useReserveBeneficiaryAsDefault: false,
-                transfersPausable: false,
-                useVotingUnits: true,
-                cantBeRemoved: false,
-                cantIncreaseDiscountPercent: false,
-                cantBuyWithCredits: false,
+                flags: JB721TierConfigFlags({
+                    allowOwnerMint: false,
+                    useReserveBeneficiaryAsDefault: false,
+                    transfersPausable: false,
+                    useVotingUnits: true,
+                    cantBeRemoved: false,
+                    cantIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false
+                }),
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -1104,11 +1136,13 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tierConfigsToAdd[i].encodedIPFSUri,
                 category: tierConfigsToAdd[i].category,
                 discountPercent: tierConfigsToAdd[i].discountPercent,
-                allowOwnerMint: tierConfigsToAdd[i].allowOwnerMint,
-                transfersPausable: tierConfigsToAdd[i].transfersPausable,
-                cantBeRemoved: tierConfigsToAdd[i].cantBeRemoved,
-                cantIncreaseDiscountPercent: tierConfigsToAdd[i].cantIncreaseDiscountPercent,
-                cantBuyWithCredits: tierConfigsToAdd[i].cantBuyWithCredits,
+                flags: JB721TierFlags({
+                    allowOwnerMint: tierConfigsToAdd[i].flags.allowOwnerMint,
+                    transfersPausable: tierConfigsToAdd[i].flags.transfersPausable,
+                    cantBeRemoved: tierConfigsToAdd[i].flags.cantBeRemoved,
+                    cantIncreaseDiscountPercent: tierConfigsToAdd[i].flags.cantIncreaseDiscountPercent,
+                    cantBuyWithCredits: tierConfigsToAdd[i].flags.cantBuyWithCredits
+                }),
                 splitPercent: 0,
                 resolvedUri: ""
             });
@@ -1140,13 +1174,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             encodedIPFSUri: tokenUris[0],
             category: uint24(100),
             discountPercent: uint8(0),
-            allowOwnerMint: false,
-            useReserveBeneficiaryAsDefault: false,
-            transfersPausable: false,
-            useVotingUnits: true,
-            cantBeRemoved: true,
-            cantIncreaseDiscountPercent: false,
-            cantBuyWithCredits: false,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: false,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: true,
+                cantBeRemoved: true,
+                cantIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false
+            }),
             splitPercent: 0,
             splits: new JBSplit[](0)
         });
@@ -1159,13 +1195,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             encodedIPFSUri: tokenUris[0],
             category: uint24(100),
             discountPercent: uint8(0),
-            allowOwnerMint: false,
-            useReserveBeneficiaryAsDefault: false,
-            transfersPausable: false,
-            useVotingUnits: true,
-            cantBeRemoved: false,
-            cantIncreaseDiscountPercent: false,
-            cantBuyWithCredits: false,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: false,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: true,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false
+            }),
             splitPercent: 0,
             splits: new JBSplit[](0)
         });
@@ -1216,13 +1254,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
-                allowOwnerMint: false,
-                useReserveBeneficiaryAsDefault: false,
-                transfersPausable: false,
-                useVotingUnits: true,
-                cantBeRemoved: false,
-                cantIncreaseDiscountPercent: false,
-                cantBuyWithCredits: false,
+                flags: JB721TierConfigFlags({
+                    allowOwnerMint: false,
+                    useReserveBeneficiaryAsDefault: false,
+                    transfersPausable: false,
+                    useVotingUnits: true,
+                    cantBeRemoved: false,
+                    cantIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false
+                }),
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -1238,11 +1278,13 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tierConfigs[i].encodedIPFSUri,
                 category: tierConfigs[i].category,
                 discountPercent: tierConfigs[i].discountPercent,
-                allowOwnerMint: tierConfigs[i].allowOwnerMint,
-                transfersPausable: tierConfigs[i].transfersPausable,
-                cantBeRemoved: tierConfigs[i].cantBeRemoved,
-                cantIncreaseDiscountPercent: tierConfigs[i].cantIncreaseDiscountPercent,
-                cantBuyWithCredits: tierConfigs[i].cantBuyWithCredits,
+                flags: JB721TierFlags({
+                    allowOwnerMint: tierConfigs[i].flags.allowOwnerMint,
+                    transfersPausable: tierConfigs[i].flags.transfersPausable,
+                    cantBeRemoved: tierConfigs[i].flags.cantBeRemoved,
+                    cantIncreaseDiscountPercent: tierConfigs[i].flags.cantIncreaseDiscountPercent,
+                    cantBuyWithCredits: tierConfigs[i].flags.cantBuyWithCredits
+                }),
                 splitPercent: 0,
                 resolvedUri: ""
             });
@@ -1284,13 +1326,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
-                allowOwnerMint: false,
-                useReserveBeneficiaryAsDefault: false,
-                transfersPausable: false,
-                useVotingUnits: false,
-                cantBeRemoved: false,
-                cantIncreaseDiscountPercent: false,
-                cantBuyWithCredits: false,
+                flags: JB721TierConfigFlags({
+                    allowOwnerMint: false,
+                    useReserveBeneficiaryAsDefault: false,
+                    transfersPausable: false,
+                    useVotingUnits: false,
+                    cantBeRemoved: false,
+                    cantIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false
+                }),
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -1305,11 +1349,13 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tierConfigsToAdd[i].encodedIPFSUri,
                 category: tierConfigsToAdd[i].category,
                 discountPercent: tierConfigsToAdd[i].discountPercent,
-                allowOwnerMint: tierConfigsToAdd[i].allowOwnerMint,
-                transfersPausable: tierConfigsToAdd[i].transfersPausable,
-                cantBeRemoved: tierConfigsToAdd[i].cantBeRemoved,
-                cantIncreaseDiscountPercent: tierConfigsToAdd[i].cantIncreaseDiscountPercent,
-                cantBuyWithCredits: tierConfigsToAdd[i].cantBuyWithCredits,
+                flags: JB721TierFlags({
+                    allowOwnerMint: tierConfigsToAdd[i].flags.allowOwnerMint,
+                    transfersPausable: tierConfigsToAdd[i].flags.transfersPausable,
+                    cantBeRemoved: tierConfigsToAdd[i].flags.cantBeRemoved,
+                    cantIncreaseDiscountPercent: tierConfigsToAdd[i].flags.cantIncreaseDiscountPercent,
+                    cantBuyWithCredits: tierConfigsToAdd[i].flags.cantBuyWithCredits
+                }),
                 splitPercent: 0,
                 resolvedUri: ""
             });
@@ -1348,13 +1394,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
-                allowOwnerMint: false,
-                useReserveBeneficiaryAsDefault: false,
-                transfersPausable: false,
-                cantBeRemoved: false,
-                useVotingUnits: true,
-                cantIncreaseDiscountPercent: false,
-                cantBuyWithCredits: false,
+                flags: JB721TierConfigFlags({
+                    allowOwnerMint: false,
+                    useReserveBeneficiaryAsDefault: false,
+                    transfersPausable: false,
+                    useVotingUnits: true,
+                    cantBeRemoved: false,
+                    cantIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false
+                }),
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -1392,13 +1440,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
-                allowOwnerMint: false,
-                useReserveBeneficiaryAsDefault: false,
-                transfersPausable: false,
-                useVotingUnits: false,
-                cantBeRemoved: false,
-                cantIncreaseDiscountPercent: false,
-                cantBuyWithCredits: false,
+                flags: JB721TierConfigFlags({
+                    allowOwnerMint: false,
+                    useReserveBeneficiaryAsDefault: false,
+                    transfersPausable: false,
+                    useVotingUnits: false,
+                    cantBeRemoved: false,
+                    cantIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false
+                }),
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -1442,13 +1492,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
-                allowOwnerMint: false,
-                useReserveBeneficiaryAsDefault: false,
-                transfersPausable: false,
-                useVotingUnits: false, // <-- If false, voting power is based on tier price
-                cantBeRemoved: false,
-                cantIncreaseDiscountPercent: false,
-                cantBuyWithCredits: false,
+                flags: JB721TierConfigFlags({
+                    allowOwnerMint: false,
+                    useReserveBeneficiaryAsDefault: false,
+                    transfersPausable: false,
+                    useVotingUnits: false, // <-- If false, voting power is based on tier price
+                    cantBeRemoved: false,
+                    cantIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false
+                }),
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -1486,13 +1538,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
-                allowOwnerMint: false,
-                useReserveBeneficiaryAsDefault: false,
-                transfersPausable: false,
-                useVotingUnits: true,
-                cantBeRemoved: false,
-                cantIncreaseDiscountPercent: false,
-                cantBuyWithCredits: false,
+                flags: JB721TierConfigFlags({
+                    allowOwnerMint: false,
+                    useReserveBeneficiaryAsDefault: false,
+                    transfersPausable: false,
+                    useVotingUnits: true,
+                    cantBeRemoved: false,
+                    cantIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false
+                }),
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -1536,13 +1590,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
-                allowOwnerMint: false,
-                useReserveBeneficiaryAsDefault: false,
-                transfersPausable: false,
-                useVotingUnits: true, // <-- If false, voting power is based on tier price
-                cantBeRemoved: false,
-                cantIncreaseDiscountPercent: false,
-                cantBuyWithCredits: false,
+                flags: JB721TierConfigFlags({
+                    allowOwnerMint: false,
+                    useReserveBeneficiaryAsDefault: false,
+                    transfersPausable: false,
+                    useVotingUnits: true, // <-- If false, voting power is based on tier price
+                    cantBeRemoved: false,
+                    cantIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false
+                }),
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -1612,13 +1668,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
-                allowOwnerMint: false,
-                useReserveBeneficiaryAsDefault: false,
-                transfersPausable: false,
-                useVotingUnits: false,
-                cantBeRemoved: false,
-                cantIncreaseDiscountPercent: false,
-                cantBuyWithCredits: false,
+                flags: JB721TierConfigFlags({
+                    allowOwnerMint: false,
+                    useReserveBeneficiaryAsDefault: false,
+                    transfersPausable: false,
+                    useVotingUnits: false,
+                    cantBeRemoved: false,
+                    cantIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false
+                }),
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -1634,11 +1692,13 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 encodedIPFSUri: tierConfigs[i].encodedIPFSUri,
                 category: tierConfigs[i].category,
                 discountPercent: tierConfigs[i].discountPercent,
-                allowOwnerMint: tierConfigs[i].allowOwnerMint,
-                transfersPausable: tierConfigs[i].transfersPausable,
-                cantBeRemoved: tierConfigs[i].cantBeRemoved,
-                cantIncreaseDiscountPercent: tierConfigs[i].cantIncreaseDiscountPercent,
-                cantBuyWithCredits: tierConfigs[i].cantBuyWithCredits,
+                flags: JB721TierFlags({
+                    allowOwnerMint: tierConfigs[i].flags.allowOwnerMint,
+                    transfersPausable: tierConfigs[i].flags.transfersPausable,
+                    cantBeRemoved: tierConfigs[i].flags.cantBeRemoved,
+                    cantIncreaseDiscountPercent: tierConfigs[i].flags.cantIncreaseDiscountPercent,
+                    cantBuyWithCredits: tierConfigs[i].flags.cantBuyWithCredits
+                }),
                 splitPercent: 0,
                 resolvedUri: ""
             });
@@ -1743,13 +1803,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             encodedIPFSUri: tokenUris[0],
             category: uint24(100),
             discountPercent: uint8(0),
-            allowOwnerMint: false,
-            useReserveBeneficiaryAsDefault: false,
-            transfersPausable: false,
-            useVotingUnits: true,
-            cantBeRemoved: true,
-            cantIncreaseDiscountPercent: true,
-            cantBuyWithCredits: false,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: false,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: true,
+                cantBeRemoved: true,
+                cantIncreaseDiscountPercent: true,
+                cantBuyWithCredits: false
+            }),
             splitPercent: 0,
             splits: new JBSplit[](0)
         });
@@ -1799,13 +1861,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             encodedIPFSUri: tokenUris[0],
             category: uint24(100),
             discountPercent: uint8(0),
-            allowOwnerMint: false,
-            useReserveBeneficiaryAsDefault: false,
-            transfersPausable: false,
-            useVotingUnits: true,
-            cantBeRemoved: true,
-            cantIncreaseDiscountPercent: true,
-            cantBuyWithCredits: false,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: false,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: true,
+                cantBeRemoved: true,
+                cantIncreaseDiscountPercent: true,
+                cantBuyWithCredits: false
+            }),
             splitPercent: 0,
             splits: new JBSplit[](0)
         });
@@ -1818,13 +1882,15 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             encodedIPFSUri: tokenUris[0],
             category: uint24(100),
             discountPercent: uint8(0),
-            allowOwnerMint: false,
-            useReserveBeneficiaryAsDefault: false,
-            transfersPausable: false,
-            useVotingUnits: true,
-            cantBeRemoved: true,
-            cantIncreaseDiscountPercent: false,
-            cantBuyWithCredits: false,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: false,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: true,
+                cantBeRemoved: true,
+                cantIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false
+            }),
             splitPercent: 0,
             splits: new JBSplit[](0)
         });

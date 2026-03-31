@@ -776,7 +776,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // Transfers must not be paused (when not minting or burning).
         if (from != address(0)) {
             // If transfers are pausable, check if they're paused.
-            if (tier.transfersPausable) {
+            if (tier.flags.transfersPausable) {
                 // Get a reference to the project's current ruleset.
                 JBRuleset memory ruleset = _currentRulesetOf(PROJECT_ID);
 

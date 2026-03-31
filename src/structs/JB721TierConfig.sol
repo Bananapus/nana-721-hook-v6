@@ -3,6 +3,8 @@ pragma solidity ^0.8.0;
 
 import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 
+import {JB721TierConfigFlags} from "./JB721TierConfigFlags.sol";
+
 /// @notice Config for a single NFT tier within a `JB721TiersHook`.
 /// @custom:member price The price to buy an NFT in this tier, in terms of the currency in its `JBInitTiersConfig`.
 /// @custom:member initialSupply The total number of NFTs which can be minted from this tier.
@@ -15,19 +17,8 @@ import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 /// @custom:member encodedIPFSUri The IPFS URI to use for each NFT in this tier.
 /// @custom:member category The category that NFTs in this tier belongs to. Used to group NFT tiers.
 /// @custom:member discountPercent The discount that should be applied to the tier.
-/// @custom:member allowOwnerMint A boolean indicating whether the contract's owner can mint NFTs from this tier
-/// on-demand.
-/// @custom:member useReserveBeneficiaryAsDefault A boolean indicating whether this tier's `reserveBeneficiary` should
-/// be stored as the default beneficiary for all tiers. WARNING: Setting this to `true` overwrites the global
-/// `defaultReserveBeneficiaryOf` for the hook, which affects ALL existing tiers that do not have a tier-specific
-/// reserve beneficiary. Use with caution when calling `adjustTiers` on hooks with existing tiers.
-/// @custom:member transfersPausable A boolean indicating whether transfers for NFTs in tier can be paused.
-/// @custom:member useVotingUnits A boolean indicating whether the `votingUnits` should be used to calculate voting
-/// power. If `useVotingUnits` is false, voting power is based on the tier's price.
-/// @custom:member cantBeRemoved If the tier cannot be removed once added.
-/// @custom:member cannotIncreaseDiscount If the tier cannot have its discount increased.
-/// @custom:member cantBuyWithCredits If true, this tier cannot be purchased using accumulated pay credits. Only fresh
-/// payment value counts toward this tier's price.
+/// @custom:member flags Boolean flags for this tier config (allowOwnerMint, useReserveBeneficiaryAsDefault,
+/// transfersPausable, useVotingUnits, cantBeRemoved, cantIncreaseDiscountPercent, cantBuyWithCredits).
 /// @custom:member splitPercent The percentage of the tier's price that gets routed to the tier's split group when
 /// an NFT from this tier is minted. Out of `JBConstants.SPLITS_TOTAL_PERCENT`.
 /// @custom:member splits The splits to use for this tier's split group. These define where the split portion of the
@@ -43,13 +34,7 @@ struct JB721TierConfig {
     bytes32 encodedIPFSUri;
     uint24 category;
     uint8 discountPercent;
-    bool allowOwnerMint;
-    bool useReserveBeneficiaryAsDefault;
-    bool transfersPausable;
-    bool useVotingUnits;
-    bool cantBeRemoved;
-    bool cantIncreaseDiscountPercent;
-    bool cantBuyWithCredits;
+    JB721TierConfigFlags flags;
     uint32 splitPercent;
     JBSplit[] splits;
 }

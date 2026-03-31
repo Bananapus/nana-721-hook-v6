@@ -7,6 +7,7 @@ import {StdUtils} from "forge-std/StdUtils.sol";
 
 import {JB721TiersHookStore} from "../../../src/JB721TiersHookStore.sol";
 import {JB721TierConfig} from "../../../src/structs/JB721TierConfig.sol";
+import {JB721TierConfigFlags} from "../../../src/structs/JB721TierConfigFlags.sol";
 // forge-lint: disable-next-line(unused-import)
 import {JB721TiersHookFlags} from "../../../src/structs/JB721TiersHookFlags.sol";
 import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
@@ -59,13 +60,15 @@ contract TierStoreHandler is CommonBase, StdCheats, StdUtils {
             encodedIPFSUri: bytes32(0),
             category: category,
             discountPercent: 0,
-            allowOwnerMint: true,
-            useReserveBeneficiaryAsDefault: false,
-            transfersPausable: false,
-            useVotingUnits: false,
-            cantBeRemoved: false,
-            cantIncreaseDiscountPercent: false,
-            cantBuyWithCredits: false,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: true,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: false,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false
+            }),
             splitPercent: 0,
             splits: new JBSplit[](0)
         });

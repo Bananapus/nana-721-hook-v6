@@ -80,6 +80,7 @@ import "../../src/structs/JBLaunchProjectConfig.sol";
 import "../../src/structs/JBPayDataHookRulesetConfig.sol";
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/structs/JBPayDataHookRulesetMetadata.sol";
+import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
 
 /// @notice Mock ERC20 with 6 decimals (USDC-like).
 contract MockUSDC6 is ERC20 {
@@ -402,13 +403,15 @@ contract ERC20TierSplitFork is Test {
             encodedIPFSUri: bytes32("tier1"),
             category: 1,
             discountPercent: 0,
-            allowOwnerMint: false,
-            useReserveBeneficiaryAsDefault: false,
-            transfersPausable: false,
-            useVotingUnits: false,
-            cantBeRemoved: false,
-            cantIncreaseDiscountPercent: false,
-            cantBuyWithCredits: false,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: false,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: false,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false
+            }),
             splitPercent: 300_000_000, // 30%
             splits: splits
         });
@@ -472,13 +475,15 @@ contract ERC20TierSplitFork is Test {
             encodedIPFSUri: bytes32("tier1"),
             category: 1,
             discountPercent: 0,
-            allowOwnerMint: false,
-            useReserveBeneficiaryAsDefault: false,
-            transfersPausable: false,
-            useVotingUnits: false,
-            cantBeRemoved: false,
-            cantIncreaseDiscountPercent: false,
-            cantBuyWithCredits: false,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: false,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: false,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false
+            }),
             splitPercent: 300_000_000, // 30%
             splits: splits
         });
@@ -540,13 +545,15 @@ contract ERC20TierSplitFork is Test {
             encodedIPFSUri: bytes32("tier1"),
             category: 1,
             discountPercent: 0,
-            allowOwnerMint: false,
-            useReserveBeneficiaryAsDefault: false,
-            transfersPausable: false,
-            useVotingUnits: false,
-            cantBeRemoved: false,
-            cantIncreaseDiscountPercent: false,
-            cantBuyWithCredits: false,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: false,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: false,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false
+            }),
             splitPercent: 500_000_000, // 50%
             splits: splits
         });
