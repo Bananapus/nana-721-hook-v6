@@ -82,6 +82,7 @@ import "../src/structs/JB721TiersRulesetMetadata.sol";
 import "../src/libraries/JB721TiersRulesetMetadataResolver.sol";
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "../src/libraries/JB721Constants.sol";
+import {JB721TierConfigFlags} from "../src/structs/JB721TierConfigFlags.sol";
 
 /// @title Fork_721Hook_Test
 /// @notice Comprehensive fork tests for JB721TiersHook: lifecycle, features, flags, and adversarial conditions.
@@ -358,13 +359,15 @@ contract Fork_721Hook_Test is Test {
                 encodedIPFSUri: IPFS_URI,
                 category: uint24(100),
                 discountPercent: 0,
-                allowOwnerMint: allowOwnerMint,
-                useReserveBeneficiaryAsDefault: false,
-                transfersPausable: false,
-                useVotingUnits: false,
-                cantBeRemoved: false,
-                cantIncreaseDiscountPercent: false,
-                cantBuyWithCredits: false,
+                flags: JB721TierConfigFlags({
+                    allowOwnerMint: allowOwnerMint,
+                    useReserveBeneficiaryAsDefault: false,
+                    transfersPausable: false,
+                    useVotingUnits: false,
+                    cantBeRemoved: false,
+                    cantIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false
+                }),
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -789,13 +792,15 @@ contract Fork_721Hook_Test is Test {
             encodedIPFSUri: IPFS_URI,
             category: 200,
             discountPercent: 0,
-            allowOwnerMint: false,
-            useReserveBeneficiaryAsDefault: false,
-            transfersPausable: false,
-            useVotingUnits: false,
-            cantBeRemoved: false,
-            cantIncreaseDiscountPercent: false,
-            cantBuyWithCredits: false,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: false,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: false,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false
+            }),
             splitPercent: 0,
             splits: new JBSplit[](0)
         });
@@ -822,13 +827,15 @@ contract Fork_721Hook_Test is Test {
             encodedIPFSUri: IPFS_URI,
             category: 200,
             discountPercent: 0,
-            allowOwnerMint: true,
-            useReserveBeneficiaryAsDefault: false,
-            transfersPausable: false,
-            useVotingUnits: false,
-            cantBeRemoved: false,
-            cantIncreaseDiscountPercent: false,
-            cantBuyWithCredits: false,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: true,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: false,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false
+            }),
             splitPercent: 0,
             splits: new JBSplit[](0)
         });
@@ -841,7 +848,7 @@ contract Fork_721Hook_Test is Test {
     /// @notice cantBeRemoved: removing an immutable tier should revert.
     function test_fork_cantBeRemoved_reverts() public {
         JB721TierConfig[] memory tierConfigs = _makeStandardTiers(1, 10, false);
-        tierConfigs[0].cantBeRemoved = true;
+        tierConfigs[0].flags.cantBeRemoved = true;
         JB721TiersHookFlags memory flags = _defaultFlags();
         (, address hook) = _launchProject(tierConfigs, flags, 5000, true, 0x00);
 
@@ -906,7 +913,7 @@ contract Fork_721Hook_Test is Test {
     function test_fork_cannotIncreaseDiscount() public {
         JB721TierConfig[] memory tierConfigs = _makeStandardTiers(1, 10, false);
         tierConfigs[0].discountPercent = 50;
-        tierConfigs[0].cantIncreaseDiscountPercent = true;
+        tierConfigs[0].flags.cantIncreaseDiscountPercent = true;
         JB721TiersHookFlags memory flags = _defaultFlags();
         (, address hook) = _launchProject(tierConfigs, flags, 5000, true, 0x00);
 
@@ -997,7 +1004,7 @@ contract Fork_721Hook_Test is Test {
     /// @notice transfersPausable tier flag + ruleset metadata pauses transfers.
     function test_fork_transfersPaused_reverts() public {
         JB721TierConfig[] memory tierConfigs = _makeStandardTiers(1, 10, false);
-        tierConfigs[0].transfersPausable = true;
+        tierConfigs[0].flags.transfersPausable = true;
         JB721TiersHookFlags memory flags = _defaultFlags();
 
         // Pack 721 metadata: bit 0 = pauseTransfers = true.
@@ -1022,7 +1029,7 @@ contract Fork_721Hook_Test is Test {
     /// @notice Transfer works when transfersPausable=true but ruleset metadata doesn't pause.
     function test_fork_transfersPausable_notPaused_works() public {
         JB721TierConfig[] memory tierConfigs = _makeStandardTiers(1, 10, false);
-        tierConfigs[0].transfersPausable = true;
+        tierConfigs[0].flags.transfersPausable = true;
         JB721TiersHookFlags memory flags = _defaultFlags();
 
         // 721 metadata: transfers NOT paused.
@@ -1130,13 +1137,15 @@ contract Fork_721Hook_Test is Test {
             encodedIPFSUri: IPFS_URI,
             category: 200,
             discountPercent: 0,
-            allowOwnerMint: false,
-            useReserveBeneficiaryAsDefault: false,
-            transfersPausable: false,
-            useVotingUnits: false,
-            cantBeRemoved: false,
-            cantIncreaseDiscountPercent: false,
-            cantBuyWithCredits: false,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: false,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: false,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false
+            }),
             splitPercent: 0,
             splits: new JBSplit[](0)
         });
@@ -1298,7 +1307,7 @@ contract Fork_721Hook_Test is Test {
     /// @notice Custom voting units (useVotingUnits=true) uses specified value.
     function test_fork_customVotingUnits() public {
         JB721TierConfig[] memory tierConfigs = _makeStandardTiers(1, 10, false);
-        tierConfigs[0].useVotingUnits = true;
+        tierConfigs[0].flags.useVotingUnits = true;
         tierConfigs[0].votingUnits = 42;
         JB721TiersHookFlags memory flags = _defaultFlags();
         (uint256 projectId, address hook) = _launchProject(tierConfigs, flags, 5000, true, 0x00);
@@ -1524,13 +1533,15 @@ contract Fork_721Hook_Test is Test {
             encodedIPFSUri: IPFS_URI,
             category: 200,
             discountPercent: 0,
-            allowOwnerMint: false,
-            useReserveBeneficiaryAsDefault: false,
-            transfersPausable: false,
-            useVotingUnits: false,
-            cantBeRemoved: false,
-            cantIncreaseDiscountPercent: false,
-            cantBuyWithCredits: false,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: false,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: false,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false
+            }),
             splitPercent: 0,
             splits: new JBSplit[](0)
         });
@@ -1771,13 +1782,15 @@ contract Fork_721Hook_Test is Test {
                 encodedIPFSUri: IPFS_URI,
                 category: uint24((i + 1) * 100), // Categories: 100, 200, 300
                 discountPercent: 0,
-                allowOwnerMint: false,
-                useReserveBeneficiaryAsDefault: false,
-                transfersPausable: false,
-                useVotingUnits: false,
-                cantBeRemoved: false,
-                cantIncreaseDiscountPercent: false,
-                cantBuyWithCredits: false,
+                flags: JB721TierConfigFlags({
+                    allowOwnerMint: false,
+                    useReserveBeneficiaryAsDefault: false,
+                    transfersPausable: false,
+                    useVotingUnits: false,
+                    cantBeRemoved: false,
+                    cantIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false
+                }),
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });
@@ -2047,13 +2060,15 @@ contract Fork_721Hook_Test is Test {
             encodedIPFSUri: IPFS_URI,
             category: category,
             discountPercent: 0,
-            allowOwnerMint: false,
-            useReserveBeneficiaryAsDefault: false,
-            transfersPausable: false,
-            useVotingUnits: false,
-            cantBeRemoved: false,
-            cantIncreaseDiscountPercent: false,
-            cantBuyWithCredits: false,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: false,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: false,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false
+            }),
             splitPercent: splitPct,
             splits: splits
         });

@@ -3,6 +3,8 @@ pragma solidity 0.8.28;
 
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "../utils/UnitTestSetup.sol";
+import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
+import {JB721TierFlags} from "../../src/structs/JB721TierFlags.sol";
 
 contract Test_Getters_Constructor_Unit is UnitTestSetup {
     using stdStorage for StdStorage;
@@ -151,11 +153,13 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                     encodedIPFSUri: bytes32(0),
                     category: uint24(100),
                     discountPercent: uint8(0),
-                    allowOwnerMint: false,
-                    transfersPausable: false,
-                    cantBeRemoved: false,
-                    cantIncreaseDiscountPercent: false,
-                    cantBuyWithCredits: false,
+                    flags: JB721TierFlags({
+                        allowOwnerMint: false,
+                        transfersPausable: false,
+                        cantBeRemoved: false,
+                        cantIncreaseDiscountPercent: false,
+                        cantBuyWithCredits: false
+                    }),
                     splitPercent: 0,
                     resolvedUri: ""
                 })
@@ -265,7 +269,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         votingUnits = bound(votingUnits, 1, type(uint32).max);
         balances = bound(balances, 1, type(uint32).max);
 
-        defaultTierConfig.useVotingUnits = true;
+        defaultTierConfig.flags.useVotingUnits = true;
         // forge-lint: disable-next-line(unsafe-typecast)
         defaultTierConfig.votingUnits = uint32(votingUnits);
         ForTest_JB721TiersHook hook = _initializeForTestHook(numberOfTiers);
@@ -474,7 +478,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         vm.assume(newOwner != trustedForwarder);
         vm.assume(previousOwner != trustedForwarder);
 
-        defaultTierConfig.allowOwnerMint = true;
+        defaultTierConfig.flags.allowOwnerMint = true;
         defaultTierConfig.reserveFrequency = 0;
         ForTest_JB721TiersHook hook = _initializeForTestHook(10);
 
@@ -546,13 +550,15 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                 encodedIPFSUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
-                allowOwnerMint: false,
-                useReserveBeneficiaryAsDefault: false,
-                transfersPausable: false,
-                useVotingUnits: true,
-                cantBeRemoved: false,
-                cantIncreaseDiscountPercent: false,
-                cantBuyWithCredits: false,
+                flags: JB721TierConfigFlags({
+                    allowOwnerMint: false,
+                    useReserveBeneficiaryAsDefault: false,
+                    transfersPausable: false,
+                    useVotingUnits: true,
+                    cantBeRemoved: false,
+                    cantIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false
+                }),
                 splitPercent: 0,
                 splits: new JBSplit[](0)
             });

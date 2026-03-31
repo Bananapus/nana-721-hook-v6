@@ -32,7 +32,8 @@ This file describes the verified change from `nana-721-hook-v5` to the current `
 
 - `pricingContext()` return shape changed.
 - `setMetadata(...)` argument order changed and now includes `name` and `symbol`.
-- `JB721TierConfig` gained `cantBuyWithCredits`, `splitPercent`, and `splits`.
+- `JB721TierConfig` gained `cantBuyWithCredits`, `splitPercent`, and `splits`. Boolean flags (`allowOwnerMint`, `useReserveBeneficiaryAsDefault`, `transfersPausable`, `useVotingUnits`, `cantBeRemoved`, `cantIncreaseDiscountPercent`, `cantBuyWithCredits`) are nested in a `flags` field of type `JB721TierConfigFlags`.
+- `JB721Tier` boolean flags (`allowOwnerMint`, `transfersPausable`, `cantBeRemoved`, `cantIncreaseDiscountPercent`, `cantBuyWithCredits`) are nested in a `flags` field of type `JB721TierFlags`.
 - `JBStored721Tier` replaced packed `votingUnits` storage with `splitPercent` in the stored struct layout.
 - `SPLITS()` and `PRICES()` are explicit interface getters.
 
@@ -62,5 +63,9 @@ This file describes the verified change from `nana-721-hook-v5` to the current `
   - `SetSymbol`
   - `SplitPayoutReverted`
 - Changed structs
-  - `JB721TierConfig`
+  - `JB721TierConfig` (boolean flags moved to nested `JB721TierConfigFlags flags`)
+  - `JB721Tier` (boolean flags moved to nested `JB721TierFlags flags`)
   - `JBStored721Tier`
+- Added structs
+  - `JB721TierConfigFlags`
+  - `JB721TierFlags`

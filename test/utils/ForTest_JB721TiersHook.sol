@@ -3,6 +3,7 @@ pragma solidity 0.8.28;
 
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/interfaces/IJB721TiersHook.sol";
+import {JB721TierFlags} from "../../src/structs/JB721TierFlags.sol";
 
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/JB721TiersHook.sol";
@@ -160,11 +161,13 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
                 encodedIPFSUri: encodedIPFSUriOf[nft][currentSortIndex],
                 category: storedTier.category,
                 discountPercent: storedTier.discountPercent,
-                allowOwnerMint: allowOwnerMint,
-                transfersPausable: transfersPausable,
-                cantBeRemoved: false,
-                cantIncreaseDiscountPercent: false,
-                cantBuyWithCredits: false,
+                flags: JB721TierFlags({
+                    allowOwnerMint: allowOwnerMint,
+                    transfersPausable: transfersPausable,
+                    cantBeRemoved: false,
+                    cantIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false
+                }),
                 splitPercent: storedTier.splitPercent,
                 resolvedUri: ""
             });

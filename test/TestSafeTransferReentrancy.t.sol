@@ -84,7 +84,7 @@ contract TestSafeTransferReentrancy is UnitTestSetup {
     /// The re-entry fails because the receiver is not registered as a terminal.
     function test_safeTransferFrom_maliciousReceiver_cannotReenterAfterPay() public {
         // Set up hook with tiers and mint an NFT.
-        defaultTierConfig.allowOwnerMint = true;
+        defaultTierConfig.flags.allowOwnerMint = true;
         defaultTierConfig.reserveFrequency = 0;
         ForTest_JB721TiersHook testHook = _initializeForTestHook(10);
 
@@ -161,7 +161,7 @@ contract TestSafeTransferReentrancy is UnitTestSetup {
     /// The call is blocked by permission checks.
     function test_safeTransferFrom_maliciousReceiver_cannotReenterAdjustTiers() public {
         // Set up hook with tiers and mint an NFT.
-        defaultTierConfig.allowOwnerMint = true;
+        defaultTierConfig.flags.allowOwnerMint = true;
         defaultTierConfig.reserveFrequency = 0;
         ForTest_JB721TiersHook testHook = _initializeForTestHook(10);
 
@@ -205,7 +205,7 @@ contract TestSafeTransferReentrancy is UnitTestSetup {
     /// and a re-transfer should succeed with correct state.
     function test_safeTransferFrom_maliciousReceiver_retransferDuringCallback() public {
         // Set up hook with tiers and mint an NFT.
-        defaultTierConfig.allowOwnerMint = true;
+        defaultTierConfig.flags.allowOwnerMint = true;
         defaultTierConfig.reserveFrequency = 0;
         ForTest_JB721TiersHook testHook = _initializeForTestHook(10);
 
@@ -258,7 +258,7 @@ contract TestSafeTransferReentrancy is UnitTestSetup {
     /// tier balances, voting units, and firstOwner tracking consistent.
     function test_safeTransferFrom_normalReceiver_stateConsistent() public {
         // Set up hook with tiers and mint an NFT.
-        defaultTierConfig.allowOwnerMint = true;
+        defaultTierConfig.flags.allowOwnerMint = true;
         defaultTierConfig.reserveFrequency = 0;
         ForTest_JB721TiersHook testHook = _initializeForTestHook(10);
 

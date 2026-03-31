@@ -11,6 +11,7 @@ import "../../../src/JB721TiersHookStore.sol";
 import "../../../src/structs/JB721TierConfig.sol";
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "../../../src/structs/JB721Tier.sol";
+import {JB721TierConfigFlags} from "../../../src/structs/JB721TierConfigFlags.sol";
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "../../../src/interfaces/IJB721TiersHookStore.sol";
 // forge-lint: disable-next-line(unaliased-plain-import)
@@ -189,13 +190,15 @@ contract TierLifecycleHandler is Test {
             encodedIPFSUri: bytes32(0),
             category: uint24(100),
             discountPercent: 0,
-            allowOwnerMint: true,
-            useReserveBeneficiaryAsDefault: false,
-            transfersPausable: false,
-            useVotingUnits: false,
-            cantBeRemoved: false,
-            cantIncreaseDiscountPercent: false,
-            cantBuyWithCredits: false,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: true,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: false,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false
+            }),
             splitPercent: 0,
             splits: new JBSplit[](0)
         });

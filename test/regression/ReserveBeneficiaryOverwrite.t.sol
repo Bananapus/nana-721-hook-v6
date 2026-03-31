@@ -27,7 +27,7 @@ contract Test_L34_ReserveBeneficiaryOverwrite is UnitTestSetup {
         tier1Configs[0].encodedIPFSUri = bytes32(uint256(0x1234));
         tier1Configs[0].reserveFrequency = 5;
         tier1Configs[0].reserveBeneficiary = alice;
-        tier1Configs[0].useReserveBeneficiaryAsDefault = true;
+        tier1Configs[0].flags.useReserveBeneficiaryAsDefault = true;
 
         vm.prank(address(testHook));
         uint256[] memory tier1Ids = hookStore.recordAddTiers(tier1Configs);
@@ -46,7 +46,7 @@ contract Test_L34_ReserveBeneficiaryOverwrite is UnitTestSetup {
         tier2Configs[0].encodedIPFSUri = bytes32(uint256(0x5678));
         tier2Configs[0].reserveFrequency = 5;
         tier2Configs[0].reserveBeneficiary = bob;
-        tier2Configs[0].useReserveBeneficiaryAsDefault = false;
+        tier2Configs[0].flags.useReserveBeneficiaryAsDefault = false;
 
         vm.prank(address(testHook));
         uint256[] memory tier2Ids = hookStore.recordAddTiers(tier2Configs);
@@ -66,7 +66,7 @@ contract Test_L34_ReserveBeneficiaryOverwrite is UnitTestSetup {
         tier3Configs[0].encodedIPFSUri = bytes32(uint256(0x9ABC));
         tier3Configs[0].reserveFrequency = 5;
         tier3Configs[0].reserveBeneficiary = bob;
-        tier3Configs[0].useReserveBeneficiaryAsDefault = true;
+        tier3Configs[0].flags.useReserveBeneficiaryAsDefault = true;
 
         vm.prank(address(testHook));
         uint256[] memory tier3Ids = hookStore.recordAddTiers(tier3Configs);
@@ -97,7 +97,7 @@ contract Test_L34_ReserveBeneficiaryOverwrite is UnitTestSetup {
         tierConfigs[0].encodedIPFSUri = bytes32(uint256(0x1234));
         tierConfigs[0].reserveFrequency = 5;
         tierConfigs[0].reserveBeneficiary = alice;
-        tierConfigs[0].useReserveBeneficiaryAsDefault = true;
+        tierConfigs[0].flags.useReserveBeneficiaryAsDefault = true;
 
         // Expect the SetDefaultReserveBeneficiary event.
         vm.expectEmit(true, true, false, true, address(hookStore));
@@ -122,7 +122,7 @@ contract Test_L34_ReserveBeneficiaryOverwrite is UnitTestSetup {
         tier1Configs[0].encodedIPFSUri = bytes32(uint256(0x1234));
         tier1Configs[0].reserveFrequency = 5;
         tier1Configs[0].reserveBeneficiary = alice;
-        tier1Configs[0].useReserveBeneficiaryAsDefault = true;
+        tier1Configs[0].flags.useReserveBeneficiaryAsDefault = true;
 
         vm.prank(address(testHook));
         hookStore.recordAddTiers(tier1Configs);
@@ -135,7 +135,7 @@ contract Test_L34_ReserveBeneficiaryOverwrite is UnitTestSetup {
         tier2Configs[0].encodedIPFSUri = bytes32(uint256(0x5678));
         tier2Configs[0].reserveFrequency = 5;
         tier2Configs[0].reserveBeneficiary = alice;
-        tier2Configs[0].useReserveBeneficiaryAsDefault = true;
+        tier2Configs[0].flags.useReserveBeneficiaryAsDefault = true;
 
         // Record the logs to verify no SetDefaultReserveBeneficiary event is emitted.
         vm.recordLogs();

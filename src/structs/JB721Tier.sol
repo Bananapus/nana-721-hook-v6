@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {JB721TierFlags} from "./JB721TierFlags.sol";
+
 /// @custom:member id The tier's ID.
 /// @custom:member price The price to buy an NFT in this tier, in terms of the currency in its `JBInitTiersConfig`.
 /// @custom:member remainingSupply The remaining number of NFTs which can be minted from this tier.
@@ -13,12 +15,8 @@ pragma solidity ^0.8.0;
 /// @custom:member encodedIPFSUri The IPFS URI to use for each NFT in this tier.
 /// @custom:member category The category that NFTs in this tier belongs to. Used to group NFT tiers.
 /// @custom:member discountPercent The discount that should be applied to the tier.
-/// @custom:member allowOwnerMint A boolean indicating whether the contract's owner can mint NFTs from this tier
-/// on-demand.
-/// @custom:member cantBeRemoved A boolean indicating whether attempts to remove this tier will revert.
-/// @custom:member cantIncreaseDiscountPercent If the tier cannot have its discount increased.
-/// @custom:member cantBuyWithCredits If true, this tier cannot be purchased using accumulated pay credits.
-/// @custom:member transfersPausable A boolean indicating whether transfers for NFTs in tier can be paused.
+/// @custom:member flags Boolean flags for this tier (allowOwnerMint, transfersPausable, cantBeRemoved,
+/// cantIncreaseDiscountPercent, cantBuyWithCredits).
 /// @custom:member splitPercent The percentage of the tier's price that gets routed to the project's split group when
 /// an NFT from this tier is minted. Out of `JBConstants.SPLITS_TOTAL_PERCENT`.
 /// @custom:member resolvedUri A resolved token URI for NFTs in this tier. Only available if the NFT this tier belongs
@@ -36,11 +34,7 @@ struct JB721Tier {
     bytes32 encodedIPFSUri;
     uint24 category;
     uint8 discountPercent;
-    bool allowOwnerMint;
-    bool transfersPausable;
-    bool cantBeRemoved;
-    bool cantIncreaseDiscountPercent;
-    bool cantBuyWithCredits;
+    JB721TierFlags flags;
     uint32 splitPercent;
     string resolvedUri;
 }

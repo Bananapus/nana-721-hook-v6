@@ -414,7 +414,7 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
     function test_mintFor_mintArrayOfTiers() public {
         uint256 numberOfTiers = 3;
 
-        defaultTierConfig.allowOwnerMint = true;
+        defaultTierConfig.flags.allowOwnerMint = true;
         defaultTierConfig.reserveFrequency = 0;
         ForTest_JB721TiersHook hook = _initializeForTestHook(numberOfTiers);
 
@@ -454,7 +454,7 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
         }
 
         // Set the `allowOwnerMint` flag to false and initialize the hook.
-        defaultTierConfig.allowOwnerMint = false;
+        defaultTierConfig.flags.allowOwnerMint = false;
         ForTest_JB721TiersHook hook = _initializeForTestHook(numberOfTiers);
 
         vm.prank(owner);

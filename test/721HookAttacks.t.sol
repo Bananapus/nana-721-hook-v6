@@ -3,6 +3,7 @@ pragma solidity 0.8.28;
 
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "./utils/UnitTestSetup.sol";
+import {JB721TierConfigFlags} from "../src/structs/JB721TierConfigFlags.sol";
 
 /// @title 721HookAttacks
 /// @notice Adversarial security tests for JB721TiersHook and JB721TiersHookStore.
@@ -81,13 +82,15 @@ contract NFTHookAttacks is UnitTestSetup {
             encodedIPFSUri: tokenUris[0],
             category: 2,
             discountPercent: 0,
-            allowOwnerMint: false,
-            useReserveBeneficiaryAsDefault: false,
-            transfersPausable: false,
-            cantBeRemoved: false,
-            cantIncreaseDiscountPercent: false,
-            cantBuyWithCredits: false,
-            useVotingUnits: false,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: false,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: false,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false
+            }),
             splitPercent: 0,
             splits: new JBSplit[](0)
         });
@@ -116,7 +119,7 @@ contract NFTHookAttacks is UnitTestSetup {
     /// @notice Set discount to 100%, verify the effective price for the tier.
     function test_maxDiscountPercent_effectivePrice() public {
         defaultTierConfig.discountPercent = 0;
-        defaultTierConfig.cantIncreaseDiscountPercent = false;
+        defaultTierConfig.flags.cantIncreaseDiscountPercent = false;
 
         JB721TiersHook targetHook = _initHookDefaultTiers(1);
 
@@ -137,7 +140,7 @@ contract NFTHookAttacks is UnitTestSetup {
     /// @notice Try to increase discount when the flag forbids it.
     function test_cantIncreaseDiscountPercent_enforcement() public {
         defaultTierConfig.discountPercent = 10;
-        defaultTierConfig.cantIncreaseDiscountPercent = true;
+        defaultTierConfig.flags.cantIncreaseDiscountPercent = true;
 
         JB721TiersHook targetHook = _initHookDefaultTiers(1);
 
@@ -213,7 +216,7 @@ contract NFTHookAttacks is UnitTestSetup {
     function test_cashOutWeight_afterTierRemoval() public {
         defaultTierConfig.initialSupply = 100;
         defaultTierConfig.votingUnits = 10;
-        defaultTierConfig.useVotingUnits = true;
+        defaultTierConfig.flags.useVotingUnits = true;
 
         ForTest_JB721TiersHook targetHook = _initializeForTestHook(1);
         IJB721TiersHookStore hookStore = targetHook.STORE();
@@ -369,13 +372,15 @@ contract NFTHookAttacks is UnitTestSetup {
             encodedIPFSUri: tokenUris[0],
             category: 1,
             discountPercent: 0,
-            allowOwnerMint: true,
-            useReserveBeneficiaryAsDefault: false,
-            transfersPausable: false,
-            cantBeRemoved: false,
-            cantIncreaseDiscountPercent: false,
-            cantBuyWithCredits: false,
-            useVotingUnits: false,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: true,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: false,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false
+            }),
             splitPercent: 0,
             splits: new JBSplit[](0)
         });
