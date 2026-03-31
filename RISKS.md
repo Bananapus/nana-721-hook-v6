@@ -20,9 +20,9 @@ This file focuses on the tiered-NFT accounting, reserve-mint, and cash-out risks
 ## 1. Trust Assumptions
 
 - **Store contract (`JB721TiersHookStore`) is fully trusted.** Record functions (`recordMint`, `recordBurn`, `recordAddTiers`, `recordTransferForTier`, `recordFlags`) have no access control -- they key state by `msg.sender`. Any address can call the store to manipulate state for a hook address it controls, but cannot affect other hooks.
-- **Tier configuration is partially immutable.** Once created: `price`, `initialSupply`, `reserveFrequency`, `category`, `votingUnits`, `splitPercent` are permanent. Mutable: `discountPercent` (owner-controlled, subject to `cannotIncreaseDiscountPercent`), `encodedIPFSUri` (owner-controlled).
+- **Tier configuration is partially immutable.** Once created: `price`, `initialSupply`, `reserveFrequency`, `category`, `votingUnits`, `splitPercent` are permanent. Mutable: `discountPercent` (owner-controlled, subject to `flags.cantIncreaseDiscountPercent`), `encodedIPFSUri` (owner-controlled).
 - **Category sort order is enforced only at insertion.** `recordAddTiers` reverts `InvalidCategorySortOrder` if tiers are not ascending by category. The sorted linked list (`_tierIdAfter`) depends on this invariant across all `adjustTiers` calls. Direct store callers could corrupt the list.
-- **`useReserveBeneficiaryAsDefault` has global side effects.** Setting this on ANY new tier overwrites `defaultReserveBeneficiaryOf` for ALL existing tiers that lack a tier-specific `_reserveBeneficiaryOf` entry. Documented but dangerous when calling `adjustTiers` on hooks with existing tiers.
+- **`flags.useReserveBeneficiaryAsDefault` has global side effects.** Setting this on ANY new tier overwrites `defaultReserveBeneficiaryOf` for ALL existing tiers that lack a tier-specific `_reserveBeneficiaryOf` entry. Documented but dangerous when calling `adjustTiers` on hooks with existing tiers.
 - **Clone initialization is one-shot, atomic.** `initialize()` guards via an `_initialized` bool flag. The implementation contract's constructor sets `_initialized = true`, blocking direct initialization. Clones start with `_initialized = false` and set it to `true` during `initialize()`. After `initialize()` sets it, any subsequent call reverts. Deployer contracts call deploy+initialize in a single transaction, preventing front-running. Ownership transfers to `_msgSender()` at the end of `initialize`.
 - **`balanceOf(address(0))` reverts with a hook-specific error.** The hook explicitly reverts with `JB721TiersHook_ZeroAddress` when called with `address(0)`. This matches standard ERC-721 semantics but is still relevant for integrators that key off the custom error surface.
 - **`tokenURI` reverts for nonexistent tokens.** Calling `tokenURI` with a token ID that has never been minted reverts with `ERC721NonexistentToken(tokenId)`. The check is `_ownerOf(tokenId) == address(0)`.
@@ -31,7 +31,7 @@ This file focuses on the tiered-NFT accounting, reserve-mint, and cash-out risks
 
 ## 2. Economic Risks
 
-- **Cash out weight uses full undiscounted price.** `cashOutWeightOf` and `totalCashOutWeight` always use `storedTier.price`, not the discounted price. NFTs bought at a discount have cash-out value proportional to the full tier price. A `discountPercent=200` (100% off, denominator is 200) enables free minting with full cash-out weight. Mitigated by `cannotIncreaseDiscountPercent` flag.
+- **Cash out weight uses full undiscounted price.** `cashOutWeightOf` and `totalCashOutWeight` always use `storedTier.price`, not the discounted price. NFTs bought at a discount have cash-out value proportional to the full tier price. A `discountPercent=200` (100% off, denominator is 200) enables free minting with full cash-out weight. Mitigated by `flags.cantIncreaseDiscountPercent` flag.
 - **Pending reserves inflate the `totalCashOutWeight` denominator.** The total includes `price * pendingReserves` for unminted reserve NFTs. This dilutes per-NFT reclaim value before reserves are actually minted. Effect is proportional to reserve frequency and number of unminted reserves.
 - **Pay credits accumulate without cap.** `payCreditsOf` grows from leftover amounts after minting. Credits are per-beneficiary, not per-payer. When `payer != beneficiary`, overspend accrues to the beneficiary's credits; the payer's existing credits are not applied. No upper bound on accumulation.
 - **Zero-price tiers are valid.** A tier with `price=0` allows free minting. Cash-out weight for price-0 tiers is zero, so no value extraction risk. However, they still consume supply and generate pending reserves if `reserveFrequency > 0`.
@@ -66,11 +66,11 @@ This file focuses on the tiered-NFT accounting, reserve-mint, and cash-out risks
 
 ## 5. Access Control
 
-- **`adjustTiers` (add/remove):** Requires `ADJUST_721_TIERS` permission from `owner()`. Respects `noNewTiersWithReserves`, `noNewTiersWithVotes`, `noNewTiersWithOwnerMinting` flags (append-only restrictions). `cannotBeRemoved` flag on individual tiers is enforced by the store.
-- **`mintFor` (owner minting):** Requires `MINT_721` permission. Bypasses price checks (`amount: type(uint256).max`). Still requires per-tier `allowOwnerMint` flag. Tiers with `reserveFrequency > 0` cannot have `allowOwnerMint` (enforced at creation).
-- **`setDiscountPercentOf`:** Requires `SET_721_DISCOUNT_PERCENT` permission. Cannot increase discount if `cannotIncreaseDiscountPercent` is set on the tier. Can always decrease.
+- **`adjustTiers` (add/remove):** Requires `ADJUST_721_TIERS` permission from `owner()`. Respects `noNewTiersWithReserves`, `noNewTiersWithVotes`, `noNewTiersWithOwnerMinting` flags (append-only restrictions). `flags.cantBeRemoved` flag on individual tiers is enforced by the store.
+- **`mintFor` (owner minting):** Requires `MINT_721` permission. Bypasses price checks (`amount: type(uint256).max`). Still requires per-tier `flags.allowOwnerMint` flag. Tiers with `reserveFrequency > 0` cannot have `flags.allowOwnerMint` (enforced at creation).
+- **`setDiscountPercentOf`:** Requires `SET_721_DISCOUNT_PERCENT` permission. Cannot increase discount if `flags.cantIncreaseDiscountPercent` is set on the tier. Can always decrease.
 - **`setMetadata`:** Requires `SET_721_METADATA` permission. Can change name, symbol, baseURI, contractURI, tokenUriResolver, and per-tier IPFS URIs. Sentinel value `IJB721TokenUriResolver(address(this))` means "no change" for resolver.
-- **Transfer pause:** Ruleset-level flag (`transfersPaused` in 721-specific metadata, bit 0). Only applies to tiers with `transfersPausable = true`. Burns (transfer to address(0)) are never paused. Tiers created with `transfersPausable = false` can never be paused.
+- **Transfer pause:** Ruleset-level flag (`transfersPaused` in 721-specific metadata, bit 0). Only applies to tiers with `flags.transfersPausable = true`. Burns (transfer to address(0)) are never paused. Tiers created with `flags.transfersPausable = false` can never be paused.
 - **`mintPendingReservesFor`:** Permissionless. Only gated by `mintPendingReservesPaused` ruleset flag (bit 1 of 721 metadata).
 - **`cleanTiers`:** Permissionless, idempotent. Compacts the sorted tier list by removing gaps from deleted tiers. No economic impact.
 - **Store `recordFlags`:** No access control -- stores against `msg.sender`. Safe because the store keys by caller address, but a compromised hook can freely change its own flags.
@@ -97,7 +97,7 @@ This file focuses on the tiered-NFT accounting, reserve-mint, and cash-out risks
 - **`maxTierIdOf` monotonically increases:** Tier removal marks a bitmap, does not decrement `maxTierIdOf`.
 - **Balance consistency:** `sum(tierBalanceOf[hook][owner][tierId])` across all tiers equals `ERC721._balances[owner]` for each owner.
 - **Cash out weight uses full price regardless of discount:** `cashOutWeightOf` for any token returns the tier's stored `price`, not the discounted purchase price.
-- **Discount monotonicity when locked:** If `cannotIncreaseDiscountPercent` is set, `discountPercent` can only decrease or stay the same.
+- **Discount monotonicity when locked:** If `flags.cantIncreaseDiscountPercent` is set, `discountPercent` can only decrease or stay the same.
 - **Flags are append-only restrictions:** `noNewTiersWithReserves`, `noNewTiersWithVotes`, `noNewTiersWithOwnerMinting` prevent future tiers from using those features but do not retroactively affect existing tiers.
 
 ## 8. Accepted Behaviors
