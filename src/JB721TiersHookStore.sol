@@ -1084,6 +1084,10 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         // Initialize a `JBBitmapWord` for checking whether tiers have been removed.
         JBBitmapWord memory bitmapWord;
 
+        // Track total cost of tiers that can't be bought with credits.
+        // Uses a local variable to reduce stack pressure for via_ir consumers.
+        uint256 totalRestrictedCost;
+
         for (uint256 i; i < numberOfTiers; i++) {
             // Set the tier ID being iterated on.
             uint256 tierId = tierIds[i];
@@ -1119,7 +1123,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             }
 
             // Accumulate cost of credit-restricted tiers.
-            if (cantBuyWithCredits) restrictedCost += price;
+            if (cantBuyWithCredits) totalRestrictedCost += price;
 
             // Make sure the `amount` is greater than or equal to the tier's price.
             if (price > leftoverAmount) revert JB721TiersHookStore_PriceExceedsAmount(price, leftoverAmount);
@@ -1145,6 +1149,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                 revert JB721TiersHookStore_InsufficientSupplyRemaining(tierId);
             }
         }
+
+        // Assign local to return variable.
+        restrictedCost = totalRestrictedCost;
     }
 
     /// @notice Record reserve 721 minting for the provided tier ID on the provided 721 contract.
