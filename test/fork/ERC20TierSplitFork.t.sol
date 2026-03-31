@@ -406,8 +406,8 @@ contract ERC20TierSplitFork is Test {
             useReserveBeneficiaryAsDefault: false,
             transfersPausable: false,
             useVotingUnits: false,
-            cannotBeRemoved: false,
-            cannotIncreaseDiscountPercent: false,
+            cantBeRemoved: false,
+            cantIncreaseDiscountPercent: false,
             cantBuyWithCredits: false,
             splitPercent: 300_000_000, // 30%
             splits: splits
@@ -476,8 +476,8 @@ contract ERC20TierSplitFork is Test {
             useReserveBeneficiaryAsDefault: false,
             transfersPausable: false,
             useVotingUnits: false,
-            cannotBeRemoved: false,
-            cannotIncreaseDiscountPercent: false,
+            cantBeRemoved: false,
+            cantIncreaseDiscountPercent: false,
             cantBuyWithCredits: false,
             splitPercent: 300_000_000, // 30%
             splits: splits
@@ -544,8 +544,8 @@ contract ERC20TierSplitFork is Test {
             useReserveBeneficiaryAsDefault: false,
             transfersPausable: false,
             useVotingUnits: false,
-            cannotBeRemoved: false,
-            cannotIncreaseDiscountPercent: false,
+            cantBeRemoved: false,
+            cantIncreaseDiscountPercent: false,
             cantBuyWithCredits: false,
             splitPercent: 500_000_000, // 50%
             splits: splits

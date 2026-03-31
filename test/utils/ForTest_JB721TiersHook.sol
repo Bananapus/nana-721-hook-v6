@@ -42,8 +42,8 @@ interface IJB721TiersHookStore_ForTest is IJB721TiersHookStore {
         bool allowOwnerMint,
         bool transfersPausable,
         bool useVotingUnits,
-        bool cannotBeRemoved,
-        bool cannotIncreaseDiscountPercent,
+        bool cantBeRemoved,
+        bool cantIncreaseDiscountPercent,
         bool cantBuyWithCredits
     )
         external
@@ -162,8 +162,8 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
                 discountPercent: storedTier.discountPercent,
                 allowOwnerMint: allowOwnerMint,
                 transfersPausable: transfersPausable,
-                cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
                 cantBuyWithCredits: false,
                 splitPercent: storedTier.splitPercent,
                 resolvedUri: ""
@@ -214,8 +214,8 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
         bool allowOwnerMint,
         bool transfersPausable,
         bool useVotingUnits,
-        bool cannotBeRemoved,
-        bool cannotIncreaseDiscountPercent,
+        bool cantBeRemoved,
+        bool cantIncreaseDiscountPercent,
         bool cantBuyWithCredits
     )
         public
@@ -226,8 +226,8 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
             allowOwnerMint,
             transfersPausable,
             useVotingUnits,
-            cannotBeRemoved,
-            cannotIncreaseDiscountPercent,
+            cantBeRemoved,
+            cantIncreaseDiscountPercent,
             cantBuyWithCredits
         );
     }

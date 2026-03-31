@@ -84,8 +84,8 @@ contract NFTHookAttacks is UnitTestSetup {
             allowOwnerMint: false,
             useReserveBeneficiaryAsDefault: false,
             transfersPausable: false,
-            cannotBeRemoved: false,
-            cannotIncreaseDiscountPercent: false,
+            cantBeRemoved: false,
+            cantIncreaseDiscountPercent: false,
             cantBuyWithCredits: false,
             useVotingUnits: false,
             splitPercent: 0,
@@ -116,7 +116,7 @@ contract NFTHookAttacks is UnitTestSetup {
     /// @notice Set discount to 100%, verify the effective price for the tier.
     function test_maxDiscountPercent_effectivePrice() public {
         defaultTierConfig.discountPercent = 0;
-        defaultTierConfig.cannotIncreaseDiscountPercent = false;
+        defaultTierConfig.cantIncreaseDiscountPercent = false;
 
         JB721TiersHook targetHook = _initHookDefaultTiers(1);
 
@@ -132,12 +132,12 @@ contract NFTHookAttacks is UnitTestSetup {
     }
 
     // =========================================================================
-    // Test 3: cannotIncreaseDiscountPercent flag enforcement
+    // Test 3: cantIncreaseDiscountPercent flag enforcement
     // =========================================================================
     /// @notice Try to increase discount when the flag forbids it.
-    function test_cannotIncreaseDiscountPercent_enforcement() public {
+    function test_cantIncreaseDiscountPercent_enforcement() public {
         defaultTierConfig.discountPercent = 10;
-        defaultTierConfig.cannotIncreaseDiscountPercent = true;
+        defaultTierConfig.cantIncreaseDiscountPercent = true;
 
         JB721TiersHook targetHook = _initHookDefaultTiers(1);
 
@@ -372,8 +372,8 @@ contract NFTHookAttacks is UnitTestSetup {
             allowOwnerMint: true,
             useReserveBeneficiaryAsDefault: false,
             transfersPausable: false,
-            cannotBeRemoved: false,
-            cannotIncreaseDiscountPercent: false,
+            cantBeRemoved: false,
+            cantIncreaseDiscountPercent: false,
             cantBuyWithCredits: false,
             useVotingUnits: false,
             splitPercent: 0,

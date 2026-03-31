@@ -123,8 +123,8 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
             useReserveBeneficiaryAsDefault: false,
             transfersPausable: false,
             useVotingUnits: true,
-            cannotBeRemoved: false,
-            cannotIncreaseDiscountPercent: false,
+            cantBeRemoved: false,
+            cantIncreaseDiscountPercent: false,
             cantBuyWithCredits: false,
             splitPercent: 0,
             splits: new JBSplit[](0)

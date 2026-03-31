@@ -15,8 +15,8 @@ pragma solidity ^0.8.0;
 /// @custom:member discountPercent The discount that should be applied to the tier.
 /// @custom:member allowOwnerMint A boolean indicating whether the contract's owner can mint NFTs from this tier
 /// on-demand.
-/// @custom:member cannotBeRemoved A boolean indicating whether attempts to remove this tier will revert.
-/// @custom:member cannotIncreaseDiscountPercent If the tier cannot have its discount increased.
+/// @custom:member cantBeRemoved A boolean indicating whether attempts to remove this tier will revert.
+/// @custom:member cantIncreaseDiscountPercent If the tier cannot have its discount increased.
 /// @custom:member cantBuyWithCredits If true, this tier cannot be purchased using accumulated pay credits.
 /// @custom:member transfersPausable A boolean indicating whether transfers for NFTs in tier can be paused.
 /// @custom:member splitPercent The percentage of the tier's price that gets routed to the project's split group when
@@ -38,8 +38,8 @@ struct JB721Tier {
     uint8 discountPercent;
     bool allowOwnerMint;
     bool transfersPausable;
-    bool cannotBeRemoved;
-    bool cannotIncreaseDiscountPercent;
+    bool cantBeRemoved;
+    bool cantIncreaseDiscountPercent;
     bool cantBuyWithCredits;
     uint32 splitPercent;
     string resolvedUri;

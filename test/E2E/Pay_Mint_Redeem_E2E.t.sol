@@ -800,8 +800,8 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
                 useReserveBeneficiaryAsDefault: false,
                 transfersPausable: false,
                 useVotingUnits: false,
-                cannotBeRemoved: false,
-                cannotIncreaseDiscountPercent: false,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
                 cantBuyWithCredits: false,
                 splitPercent: 0,
                 splits: new JBSplit[](0)
@@ -893,8 +893,8 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
             useReserveBeneficiaryAsDefault: false,
             transfersPausable: false,
             useVotingUnits: false,
-            cannotBeRemoved: false,
-            cannotIncreaseDiscountPercent: false,
+            cantBeRemoved: false,
+            cantIncreaseDiscountPercent: false,
             cantBuyWithCredits: false,
             splitPercent: 0,
             splits: new JBSplit[](0)
