@@ -281,7 +281,7 @@ contract TestVotingUnitsLifecycle is UnitTestSetup {
                     reserveFrequency: uint16(0),
                     category: uint24(100),
                     discountPercent: uint8(0),
-                    packedBools: testHook.test_store().ForTest_packBools(true, false, false, false, false),
+                    packedBools: testHook.test_store().ForTest_packBools(true, false, false, false, false, false),
                     splitPercent: 0
                 })
             );

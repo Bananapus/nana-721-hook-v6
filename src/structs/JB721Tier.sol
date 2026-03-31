@@ -17,6 +17,7 @@ pragma solidity ^0.8.0;
 /// on-demand.
 /// @custom:member cannotBeRemoved A boolean indicating whether attempts to remove this tier will revert.
 /// @custom:member cannotIncreaseDiscountPercent If the tier cannot have its discount increased.
+/// @custom:member cantBuyWithCredits If true, this tier cannot be purchased using accumulated pay credits.
 /// @custom:member transfersPausable A boolean indicating whether transfers for NFTs in tier can be paused.
 /// @custom:member splitPercent The percentage of the tier's price that gets routed to the project's split group when
 /// an NFT from this tier is minted. Out of `JBConstants.SPLITS_TOTAL_PERCENT`.
@@ -39,6 +40,7 @@ struct JB721Tier {
     bool transfersPausable;
     bool cannotBeRemoved;
     bool cannotIncreaseDiscountPercent;
+    bool cantBuyWithCredits;
     uint32 splitPercent;
     string resolvedUri;
 }

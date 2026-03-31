@@ -42,6 +42,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     //*********************************************************************//
 
     error JB721TiersHook_AlreadyInitialized(uint256 projectId);
+    error JB721TiersHook_CantBuyWithCredits();
     error JB721TiersHook_CurrencyMismatch(uint256 paymentCurrency, uint256 tierCurrency);
     error JB721TiersHook_InvalidPricingDecimals(uint256 decimals);
     error JB721TiersHook_MintReserveNftsPaused();
@@ -387,23 +388,13 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
         // Record the mint. The token IDs returned correspond to the tiers passed in.
         // slither-disable-next-line reentrancy-events,unused-return
-        (tokenIds,) = STORE.recordMint({
+        (tokenIds,,) = STORE.recordMint({
             amount: type(uint256).max, // force the mint.
             tierIds: tierIds,
             isOwnerMint: true // manual mint.
         });
 
-        for (uint256 i; i < tierIds.length; i++) {
-            // Set the token ID.
-            uint256 tokenId = tokenIds[i];
-
-            // Mint the NFT.
-            _mint({to: beneficiary, tokenId: tokenId});
-
-            emit Mint({
-                tokenId: tokenId, tierId: tierIds[i], beneficiary: beneficiary, totalAmountPaid: 0, caller: _msgSender()
-            });
-        }
+        _mintTokens({tokenIds: tokenIds, tierIds: tierIds, beneficiary: beneficiary, totalAmountPaid: 0});
     }
 
     /// @notice Mint pending reserved NFTs based on the provided information.
@@ -594,47 +585,30 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         STORE.recordBurn(tokenIds);
     }
 
-    /// @notice Mints one NFT from each of the specified tiers for the beneficiary.
-    /// @dev The same tier can be specified more than once.
-    /// @param amount The amount to base the mints on. The total price of the NFTs being minted cannot be larger than
-    /// this amount.
-    /// @param mintTierIds An array of NFT tier IDs to be minted.
-    /// @param beneficiary The address receiving the newly minted NFTs.
-    /// @return leftoverAmount The `amount` leftover after minting.
-    function _mintAll(
-        uint256 amount,
-        uint16[] memory mintTierIds,
-        address beneficiary
+    /// @notice Mints NFTs and emits events for each.
+    /// @param tokenIds The token IDs to mint.
+    /// @param tierIds The tier IDs corresponding to each token.
+    /// @param beneficiary The address receiving the NFTs.
+    /// @param totalAmountPaid The amount to report in the Mint event.
+    function _mintTokens(
+        uint256[] memory tokenIds,
+        uint16[] memory tierIds,
+        address beneficiary,
+        uint256 totalAmountPaid
     )
         internal
-        returns (uint256 leftoverAmount)
     {
-        // Keep a reference to the NFT token IDs.
-        uint256[] memory tokenIds;
-
-        // Record the NFT mints. The token IDs returned correspond to the tier IDs passed in.
-        (tokenIds, leftoverAmount) = STORE.recordMint({
-            amount: amount,
-            tierIds: mintTierIds,
-            isOwnerMint: false // Not a manual mint
-        });
-
-        // Loop through each token ID and mint the corresponding NFT.
         for (uint256 i; i < tokenIds.length; i++) {
-            // Get a reference to the token ID being iterated on.
-            uint256 tokenId = tokenIds[i];
-
             emit Mint({
-                tokenId: tokenId,
-                tierId: mintTierIds[i],
+                tokenId: tokenIds[i],
+                tierId: tierIds[i],
                 beneficiary: beneficiary,
-                totalAmountPaid: amount,
+                totalAmountPaid: totalAmountPaid,
                 caller: _msgSender()
             });
 
-            // Mint the NFT.
             // slither-disable-next-line reentrancy-events
-            _mint({to: beneficiary, tokenId: tokenId});
+            _mint({to: beneficiary, tokenId: tokenIds[i]});
         }
     }
 
@@ -683,9 +657,25 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
             // Mint NFTs from the tiers as specified.
             if (tierIdsToMint.length != 0) {
+                uint256[] memory tokenIds;
+                uint256 restrictedCost;
+                uint256 totalAmountPaid = leftoverAmount;
+
+                // Record the mints.
                 // slither-disable-next-line reentrancy-events,reentrancy-no-eth
-                leftoverAmount =
-                    _mintAll({amount: leftoverAmount, mintTierIds: tierIdsToMint, beneficiary: context.beneficiary});
+                (tokenIds, leftoverAmount, restrictedCost) =
+                    STORE.recordMint({amount: leftoverAmount, tierIds: tierIdsToMint, isOwnerMint: false});
+
+                // Enforce `cantBuyWithCredits`: restricted tiers must be fully covered by fresh payment (not credits).
+                if (restrictedCost > value) revert JB721TiersHook_CantBuyWithCredits();
+
+                // Mint each token.
+                _mintTokens({
+                    tokenIds: tokenIds,
+                    tierIds: tierIdsToMint,
+                    beneficiary: context.beneficiary,
+                    totalAmountPaid: totalAmountPaid
+                });
             }
         }
 
