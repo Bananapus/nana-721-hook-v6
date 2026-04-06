@@ -113,3 +113,7 @@ This file focuses on the tiered-NFT accounting, reserve-mint, and cash-out risks
 ### 8.3 Currency mismatch silently skips minting (accepted degradation)
 
 If the payment currency differs from the tier pricing currency and `PRICES == address(0)`, `_processPayment` returns without minting NFTs or creating credits. Funds enter the project balance but no NFTs are issued. This is accepted because: (1) reverting would block all payments in the mismatched currency, (2) the project owner chose not to configure price feeds (by not setting `PRICES`), and (3) the funds are not lost — they increase the project's surplus and are reclaimable via cash-out. Projects that need cross-currency NFT minting must configure `JBPrices`.
+
+### 8.4 Tiny split allocations can round down to zero recipient amounts
+
+Split metadata is expressed in whole token units after conversion and capping. For very small allocations, each rounded per-tier split amount can become zero even though the overall forwarded amount is still reduced by the capped split total. This is an accepted precision tradeoff for dust-sized payments: integrations should not rely on sub-precision split routing and should expect tiny split allocations to be economically lossy.

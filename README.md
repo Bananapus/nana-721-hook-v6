@@ -115,6 +115,7 @@ script/
 ## Risks And Notes
 
 - tier accounting is sensitive to reserve minting, split routing, and cross-currency normalization
+- tiny split allocations can round down to zero recipient amounts; integrations should not rely on dust-sized split routing
 - custom token URI resolvers are part of the security surface because they define how metadata is served
 - projects need to be deliberate about whether the hook participates in pay, cash-out, or both paths
 - tier mutations after launch are powerful and should be permissioned carefully

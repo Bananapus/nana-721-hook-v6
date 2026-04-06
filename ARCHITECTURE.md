@@ -65,7 +65,7 @@ holder burns NFT
 ## Dependencies
 
 - `nana-core-v6` hooks, permissions, controller, and terminal surfaces
-- Optional token URI resolvers such as `banny-retail-v6` and `defifa-collection-deployer-v6`
+- Optional token URI resolvers such as `banny-retail-v6` and `defifa`
 
 ## Safe Change Guide
 
