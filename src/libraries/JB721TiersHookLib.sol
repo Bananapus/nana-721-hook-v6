@@ -27,6 +27,7 @@ import {JBIpfsDecoder} from "./JBIpfsDecoder.sol";
 /// @dev Handles tier adjustments, split calculations, price normalization, and split fund distribution.
 library JB721TiersHookLib {
     error JB721TiersHookLib_NoTerminalForLeftover(uint256 projectId, address token, uint256 leftoverAmount);
+    error JB721TiersHookLib_TokenTransferAmountMismatch(uint256 expectedAmount, uint256 receivedAmount);
     // Events mirrored from IJB721TiersHook (emitted via DELEGATECALL from the hook's context).
     event AddToBalanceReverted(uint256 indexed projectId, address token, uint256 amount, bytes reason);
     event AddTier(uint256 indexed tierId, JB721TierConfig tier, address caller);
@@ -140,12 +141,18 @@ library JB721TiersHookLib {
     {
         // forge-lint: disable-next-line(unsafe-typecast)
         uint256 pricingCurrency = uint256(uint32(packedPricingContext));
-        if (amountCurrency == pricingCurrency) return (amountValue, true);
+        // forge-lint: disable-next-line(unsafe-typecast)
+        uint256 pricingDecimals = uint256(uint8(packedPricingContext >> 32));
+        if (amountCurrency == pricingCurrency) {
+            if (amountDecimals == pricingDecimals) return (amountValue, true);
+            if (amountDecimals > pricingDecimals) {
+                return (amountValue / (10 ** (amountDecimals - pricingDecimals)), true);
+            }
+            return (amountValue * (10 ** (pricingDecimals - amountDecimals)), true);
+        }
 
         if (address(prices) == address(0)) return (0, false);
 
-        // forge-lint: disable-next-line(unsafe-typecast)
-        uint256 pricingDecimals = uint256(uint8(packedPricingContext >> 32));
         value = mulDiv({
             x: amountValue,
             y: 10 ** pricingDecimals,
@@ -331,15 +338,18 @@ library JB721TiersHookLib {
             if (convertedMetadata.length != 0) {
                 (uint16[] memory tierIds, uint256[] memory amounts) =
                     abi.decode(convertedMetadata, (uint16[], uint256[]));
+                uint256 uncappedTotal = convertedTotal;
+                convertedTotal = 0;
                 for (uint256 i; i < amounts.length; i++) {
                     // Scale down: amount * amountValue / originalTotal.
-                    amounts[i] = mulDiv({x: amounts[i], y: amountValue, denominator: convertedTotal});
+                    amounts[i] = mulDiv({x: amounts[i], y: amountValue, denominator: uncappedTotal});
+                    convertedTotal += amounts[i];
                 }
                 convertedMetadata = abi.encode(tierIds, amounts);
+            } else {
+                // Clamp the total to the payment value.
+                convertedTotal = amountValue;
             }
-
-            // Clamp the total to the payment value.
-            convertedTotal = amountValue;
         }
     }
 
@@ -395,7 +405,12 @@ library JB721TiersHookLib {
     {
         // For ERC20 tokens, pull from terminal using the allowance it granted via _beforeTransferTo.
         if (token != JBConstants.NATIVE_TOKEN) {
+            uint256 balanceBefore = IERC20(token).balanceOf(address(this));
             SafeERC20.safeTransferFrom({token: IERC20(token), from: msg.sender, to: address(this), value: amount});
+            uint256 receivedAmount = IERC20(token).balanceOf(address(this)) - balanceBefore;
+            if (receivedAmount != amount) {
+                revert JB721TiersHookLib_TokenTransferAmountMismatch(amount, receivedAmount);
+            }
         }
 
         (uint16[] memory tierIds, uint256[] memory amounts) = abi.decode(encodedSplitData, (uint16[], uint256[]));
