@@ -27,6 +27,7 @@ import {JBIpfsDecoder} from "./JBIpfsDecoder.sol";
 /// @dev Handles tier adjustments, split calculations, price normalization, and split fund distribution.
 library JB721TiersHookLib {
     error JB721TiersHookLib_NoTerminalForLeftover(uint256 projectId, address token, uint256 leftoverAmount);
+    error JB721TiersHookLib_TokenTransferAmountMismatch(uint256 expectedAmount, uint256 receivedAmount);
     // Events mirrored from IJB721TiersHook (emitted via DELEGATECALL from the hook's context).
     event AddToBalanceReverted(uint256 indexed projectId, address token, uint256 amount, bytes reason);
     event AddTier(uint256 indexed tierId, JB721TierConfig tier, address caller);
@@ -102,8 +103,8 @@ library JB721TiersHookLib {
     {
         uint256[] memory tierIdsAdded = store.recordAddTiers(tiersToAdd);
 
-        // slither-disable-next-line reentrancy-events
         for (uint256 i; i < tiersToAdd.length; i++) {
+            // slither-disable-next-line reentrancy-events
             emit AddTier({tierId: tierIdsAdded[i], tier: tiersToAdd[i], caller: caller});
         }
 
@@ -140,12 +141,18 @@ library JB721TiersHookLib {
     {
         // forge-lint: disable-next-line(unsafe-typecast)
         uint256 pricingCurrency = uint256(uint32(packedPricingContext));
-        if (amountCurrency == pricingCurrency) return (amountValue, true);
+        // forge-lint: disable-next-line(unsafe-typecast)
+        uint256 pricingDecimals = uint256(uint8(packedPricingContext >> 32));
+        if (amountCurrency == pricingCurrency) {
+            if (amountDecimals == pricingDecimals) return (amountValue, true);
+            if (amountDecimals > pricingDecimals) {
+                return (amountValue / (10 ** (amountDecimals - pricingDecimals)), true);
+            }
+            return (amountValue * (10 ** (pricingDecimals - amountDecimals)), true);
+        }
 
         if (address(prices) == address(0)) return (0, false);
 
-        // forge-lint: disable-next-line(unsafe-typecast)
-        uint256 pricingDecimals = uint256(uint8(packedPricingContext >> 32));
         value = mulDiv({
             x: amountValue,
             y: 10 ** pricingDecimals,
@@ -331,15 +338,18 @@ library JB721TiersHookLib {
             if (convertedMetadata.length != 0) {
                 (uint16[] memory tierIds, uint256[] memory amounts) =
                     abi.decode(convertedMetadata, (uint16[], uint256[]));
+                uint256 uncappedTotal = convertedTotal;
+                convertedTotal = 0;
                 for (uint256 i; i < amounts.length; i++) {
                     // Scale down: amount * amountValue / originalTotal.
-                    amounts[i] = mulDiv({x: amounts[i], y: amountValue, denominator: convertedTotal});
+                    amounts[i] = mulDiv({x: amounts[i], y: amountValue, denominator: uncappedTotal});
+                    convertedTotal += amounts[i];
                 }
                 convertedMetadata = abi.encode(tierIds, amounts);
+            } else {
+                // Clamp the total to the payment value.
+                convertedTotal = amountValue;
             }
-
-            // Clamp the total to the payment value.
-            convertedTotal = amountValue;
         }
     }
 
@@ -395,7 +405,12 @@ library JB721TiersHookLib {
     {
         // For ERC20 tokens, pull from terminal using the allowance it granted via _beforeTransferTo.
         if (token != JBConstants.NATIVE_TOKEN) {
+            uint256 balanceBefore = IERC20(token).balanceOf(address(this));
             SafeERC20.safeTransferFrom({token: IERC20(token), from: msg.sender, to: address(this), value: amount});
+            uint256 receivedAmount = IERC20(token).balanceOf(address(this)) - balanceBefore;
+            if (receivedAmount != amount) {
+                revert JB721TiersHookLib_TokenTransferAmountMismatch(amount, receivedAmount);
+            }
         }
 
         (uint16[] memory tierIds, uint256[] memory amounts) = abi.decode(encodedSplitData, (uint16[], uint256[]));
@@ -451,6 +466,7 @@ library JB721TiersHookLib {
                 // On failure, don't re-add to leftoverAmount — this prevents inflating later recipients.
                 // Failed amounts accumulate as the gap between `amount` and `leftoverAmount + total sent`.
                 // After the loop, we re-add leftoverPercentage-based residual naturally.
+                // slither-disable-next-line calls-loop,reentrancy-no-eth,reentrancy-benign,reentrancy-events
                 if (!_sendPayoutToSplit({
                         directory: directory,
                         split: tierSplits[j],
@@ -493,6 +509,7 @@ library JB721TiersHookLib {
                     metadata: bytes("")
                 }) {}
                 catch (bytes memory reason) {
+                    // slither-disable-next-line reentrancy-events
                     emit AddToBalanceReverted(projectId, token, leftoverAmount, reason);
                 }
             } else {
@@ -509,6 +526,7 @@ library JB721TiersHookLib {
                 catch (bytes memory reason) {
                     // Reset approval on failure.
                     SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
+                    // slither-disable-next-line reentrancy-events
                     emit AddToBalanceReverted(projectId, token, leftoverAmount, reason);
                 }
             }
@@ -541,9 +559,11 @@ library JB721TiersHookLib {
             if (isNativeToken) {
                 // Wrap in try-catch so a reverting hook doesn't brick all project payments.
                 // On revert, ETH stays with the caller and we return false.
+                // slither-disable-next-line calls-loop,reentrancy-no-eth,reentrancy-events
                 try split.hook.processSplitWith{value: amount}(context) {
                     return true;
                 } catch (bytes memory reason) {
+                    // slither-disable-next-line reentrancy-events
                     emit SplitPayoutReverted({
                         projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
                     });
@@ -556,8 +576,10 @@ library JB721TiersHookLib {
                 // cause the caller to skip subtracting this amount from leftoverAmount, leading
                 // to a double-spend when the leftover is later sent to the project's balance.
                 SafeERC20.safeTransfer({token: IERC20(token), to: address(split.hook), value: amount});
+                // slither-disable-next-line calls-loop,reentrancy-no-eth,reentrancy-events
                 try split.hook.processSplitWith(context) {}
                 catch (bytes memory reason) {
+                    // slither-disable-next-line reentrancy-events
                     emit SplitPayoutReverted({
                         projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
                     });
@@ -572,7 +594,7 @@ library JB721TiersHookLib {
             // Wrap terminal calls in try-catch to prevent a failing terminal from bricking payments.
             if (split.preferAddToBalance) {
                 if (isNativeToken) {
-                    // slither-disable-next-line arbitrary-send-eth,calls-loop
+                    // slither-disable-next-line arbitrary-send-eth,calls-loop,reentrancy-no-eth,reentrancy-events
                     try terminal.addToBalanceOf{value: amount}({
                         projectId: split.projectId,
                         token: token,
@@ -583,6 +605,7 @@ library JB721TiersHookLib {
                     }) {
                         return true;
                     } catch (bytes memory reason) {
+                        // slither-disable-next-line reentrancy-events
                         emit SplitPayoutReverted({
                             projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
                         });
@@ -590,7 +613,7 @@ library JB721TiersHookLib {
                     }
                 } else {
                     SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: amount});
-                    // slither-disable-next-line calls-loop
+                    // slither-disable-next-line calls-loop,reentrancy-no-eth,reentrancy-events
                     try terminal.addToBalanceOf({
                         projectId: split.projectId,
                         token: token,
@@ -603,6 +626,7 @@ library JB721TiersHookLib {
                     } catch (bytes memory reason) {
                         // Reset approval on failure so tokens aren't left approved to the terminal.
                         SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
+                        // slither-disable-next-line reentrancy-events
                         emit SplitPayoutReverted({
                             projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
                         });
@@ -611,7 +635,7 @@ library JB721TiersHookLib {
                 }
             } else {
                 if (isNativeToken) {
-                    // slither-disable-next-line arbitrary-send-eth,unused-return,calls-loop
+                    // slither-disable-next-line arbitrary-send-eth,unused-return,calls-loop,reentrancy-events
                     try terminal.pay{value: amount}({
                         projectId: split.projectId,
                         token: token,
@@ -623,6 +647,7 @@ library JB721TiersHookLib {
                     }) {
                         return true;
                     } catch (bytes memory reason) {
+                        // slither-disable-next-line reentrancy-events
                         emit SplitPayoutReverted({
                             projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
                         });
@@ -630,7 +655,7 @@ library JB721TiersHookLib {
                     }
                 } else {
                     SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: amount});
-                    // slither-disable-next-line unused-return,calls-loop
+                    // slither-disable-next-line unused-return,calls-loop,reentrancy-no-eth,reentrancy-events
                     try terminal.pay({
                         projectId: split.projectId,
                         token: token,
@@ -644,6 +669,7 @@ library JB721TiersHookLib {
                     } catch (bytes memory reason) {
                         // Reset approval on failure so tokens aren't left approved to the terminal.
                         SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
+                        // slither-disable-next-line reentrancy-events
                         emit SplitPayoutReverted({
                             projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
                         });
@@ -661,6 +687,7 @@ library JB721TiersHookLib {
                 // false on failure instead of reverting. This handles non-standard tokens (e.g. USDT)
                 // that return void, while routing failed transfers to the project's balance instead
                 // of bricking all payments.
+                // slither-disable-next-line calls-loop
                 (bool callSuccess, bytes memory returndata) =
                     address(token).call(abi.encodeCall(IERC20.transfer, (split.beneficiary, amount)));
                 if (!callSuccess || (returndata.length != 0 && !abi.decode(returndata, (bool)))) return false;

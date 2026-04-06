@@ -112,8 +112,8 @@ contract Test_AuditFixes_Unit is UnitTestSetup {
 
         (, JBPayHookSpecification[] memory specs) = testHook.beforePayRecordedWith(context);
 
-        // The total forwarded amount must be capped at 2 ETH (the actual payment value).
-        assertEq(specs[0].amount, 2 ether, "Total split should be capped at payment value");
+        // The total forwarded amount must be capped at the payment value (may be up to 1 wei less due to rounding).
+        assertApproxEqAbs(specs[0].amount, 2 ether, 1, "Total split should be capped at payment value");
 
         // Decode the per-tier breakdown from hookMetadata.
         (uint16[] memory resultTierIds, uint256[] memory resultAmounts) =

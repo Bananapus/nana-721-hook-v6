@@ -666,7 +666,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                 (tokenIds, leftoverAmount, restrictedCost) =
                     STORE.recordMint({amount: leftoverAmount, tierIds: tierIdsToMint, isOwnerMint: false});
 
-                // Enforce `cantBuyWithCredits`: restricted tiers must be fully covered by fresh payment (not credits).
+                // Enforce `cantBuyWithCredits`: only tiers explicitly configured as credit-restricted must be fully
+                // covered by fresh payment (not stored credits). Split-bearing tiers are not automatically restricted;
+                // deployers must set that flag in tier configuration when they need that invariant.
                 if (restrictedCost > value) revert JB721TiersHook_CantBuyWithCredits();
 
                 // Mint each token.
