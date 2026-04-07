@@ -239,7 +239,7 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
             new JBRulesetConfig[](launchProjectConfig.rulesetConfigurations.length);
 
         // Set the data hook to be active for pay transactions for each ruleset configuration.
-        for (uint256 i; i < launchProjectConfig.rulesetConfigurations.length; i++) {
+        for (uint256 i; i < launchProjectConfig.rulesetConfigurations.length;) {
             // Set the pay data ruleset config being iterated on.
             JBPayDataHookRulesetConfig memory payDataRulesetConfig = launchProjectConfig.rulesetConfigurations[i];
 
@@ -274,6 +274,10 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
                 splitGroups: payDataRulesetConfig.splitGroups,
                 fundAccessLimitGroups: payDataRulesetConfig.fundAccessLimitGroups
             });
+
+            unchecked {
+                ++i;
+            }
         }
 
         // Launch the project.
@@ -307,7 +311,7 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
             new JBRulesetConfig[](launchRulesetsConfig.rulesetConfigurations.length);
 
         // Set the data hook to be active for pay transactions for each ruleset configuration.
-        for (uint256 i; i < launchRulesetsConfig.rulesetConfigurations.length; i++) {
+        for (uint256 i; i < launchRulesetsConfig.rulesetConfigurations.length;) {
             // Set the pay data ruleset config being iterated on.
             JBPayDataHookRulesetConfig memory payDataRulesetConfig = launchRulesetsConfig.rulesetConfigurations[i];
 
@@ -342,6 +346,10 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
                 splitGroups: payDataRulesetConfig.splitGroups,
                 fundAccessLimitGroups: payDataRulesetConfig.fundAccessLimitGroups
             });
+
+            unchecked {
+                ++i;
+            }
         }
 
         // Launch the rulesets.
@@ -373,7 +381,7 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
             new JBRulesetConfig[](queueRulesetsConfig.rulesetConfigurations.length);
 
         // Set the data hook to be active for pay transactions for each ruleset configuration.
-        for (uint256 i; i < queueRulesetsConfig.rulesetConfigurations.length; i++) {
+        for (uint256 i; i < queueRulesetsConfig.rulesetConfigurations.length;) {
             // Set the pay data ruleset config being iterated on.
             JBPayDataHookRulesetConfig memory payDataRulesetConfig = queueRulesetsConfig.rulesetConfigurations[i];
 
@@ -408,6 +416,10 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
                 splitGroups: payDataRulesetConfig.splitGroups,
                 fundAccessLimitGroups: payDataRulesetConfig.fundAccessLimitGroups
             });
+
+            unchecked {
+                ++i;
+            }
         }
 
         // Queue the rulesets.

@@ -401,12 +401,16 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @dev "Pending" means that the NFTs have been reserved, but have not been minted yet.
     /// @param reserveMintConfigs Contains information about how many reserved tokens to mint for each tier.
     function mintPendingReservesFor(JB721TiersMintReservesConfig[] calldata reserveMintConfigs) external override {
-        for (uint256 i; i < reserveMintConfigs.length; i++) {
+        for (uint256 i; i < reserveMintConfigs.length;) {
             // Get a reference to the params being iterated upon.
             JB721TiersMintReservesConfig memory params = reserveMintConfigs[i];
 
             // Mint pending reserved NFTs from the tier.
             mintPendingReservesFor({tierId: params.tierId, count: params.count});
+
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -432,11 +436,15 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             account: owner(), projectId: PROJECT_ID, permissionId: JBPermissionIds.SET_721_DISCOUNT_PERCENT
         });
 
-        for (uint256 i; i < configs.length; i++) {
+        for (uint256 i; i < configs.length;) {
             // Set the config being iterated on.
             JB721TiersSetDiscountPercentConfig memory config = configs[i];
 
             _setDiscountPercentOf({tierId: config.tierId, discountPercent: config.discountPercent});
+
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -470,25 +478,28 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             account: owner(), projectId: PROJECT_ID, permissionId: JBPermissionIds.SET_721_METADATA
         });
 
+        // Cache _msgSender() at function entry to avoid repeated calls.
+        address caller = _msgSender();
+
         if (bytes(name).length != 0) {
             // Store the new collection name.
             _setName(name);
-            emit SetName({name: name, caller: _msgSender()});
+            emit SetName({name: name, caller: caller});
         }
         if (bytes(symbol).length != 0) {
             // Store the new collection symbol.
             _setSymbol(symbol);
-            emit SetSymbol({symbol: symbol, caller: _msgSender()});
+            emit SetSymbol({symbol: symbol, caller: caller});
         }
         if (bytes(baseUri).length != 0) {
             // Store the new base URI.
             baseURI = baseUri;
-            emit SetBaseUri({baseUri: baseUri, caller: _msgSender()});
+            emit SetBaseUri({baseUri: baseUri, caller: caller});
         }
         if (bytes(contractUri).length != 0) {
             // Store the new contract URI.
             contractURI = contractUri;
-            emit SetContractUri({uri: contractUri, caller: _msgSender()});
+            emit SetContractUri({uri: contractUri, caller: caller});
         }
 
         // `address(this)` is the sentinel value meaning "leave unchanged" (since `address(0)` clears the resolver).
@@ -498,7 +509,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             _recordSetTokenUriResolver(tokenUriResolver);
         }
         if (encodedIPFSUriTierId != 0 && encodedIPFSUri != bytes32(0)) {
-            emit SetEncodedIPFSUri({tierId: encodedIPFSUriTierId, encodedUri: encodedIPFSUri, caller: _msgSender()});
+            emit SetEncodedIPFSUri({tierId: encodedIPFSUriTierId, encodedUri: encodedIPFSUri, caller: caller});
 
             // Store the new encoded IPFS URI.
             STORE.recordSetEncodedIPFSUriOf({tierId: encodedIPFSUriTierId, encodedIPFSUri: encodedIPFSUri});
@@ -531,17 +542,22 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // slither-disable-next-line calls-loop
         address reserveBeneficiary = STORE.reserveBeneficiaryOf({hook: address(this), tierId: tierId});
 
-        for (uint256 i; i < count; i++) {
+        // Cache _msgSender() before the loop to avoid repeated calls.
+        address caller = _msgSender();
+
+        for (uint256 i; i < count;) {
             // Set the token ID.
             uint256 tokenId = tokenIds[i];
 
-            emit MintReservedNft({
-                tokenId: tokenId, tierId: tierId, beneficiary: reserveBeneficiary, caller: _msgSender()
-            });
+            emit MintReservedNft({tokenId: tokenId, tierId: tierId, beneficiary: reserveBeneficiary, caller: caller});
 
             // Mint the NFT.
             // slither-disable-next-line reentrency-events
             _mint({to: reserveBeneficiary, tokenId: tokenId});
+
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -598,17 +614,24 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     )
         internal
     {
-        for (uint256 i; i < tokenIds.length; i++) {
+        // Cache _msgSender() before the loop to avoid repeated calls.
+        address caller = _msgSender();
+
+        for (uint256 i; i < tokenIds.length;) {
             emit Mint({
                 tokenId: tokenIds[i],
                 tierId: tierIds[i],
                 beneficiary: beneficiary,
                 totalAmountPaid: totalAmountPaid,
-                caller: _msgSender()
+                caller: caller
             });
 
             // slither-disable-next-line reentrancy-events
             _mint({to: beneficiary, tokenId: tokenIds[i]});
+
+            unchecked {
+                ++i;
+            }
         }
     }
 

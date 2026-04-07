@@ -209,7 +209,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
         if (metadataExists) decodedTokenIds = abi.decode(metadata, (uint256[]));
 
         // Iterate through the NFTs, burning them if the owner is correct.
-        for (uint256 i; i < decodedTokenIds.length; i++) {
+        for (uint256 i; i < decodedTokenIds.length;) {
             // Set the current NFT's token ID.
             uint256 tokenId = decodedTokenIds[i];
 
@@ -218,6 +218,10 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
 
             // Burn the token.
             _burn(tokenId);
+
+            unchecked {
+                ++i;
+            }
         }
 
         // Call the hook.

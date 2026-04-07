@@ -56,8 +56,12 @@ library JB721TiersHookLib {
     {
         // Remove tiers.
         if (tierIdsToRemove.length != 0) {
-            for (uint256 i; i < tierIdsToRemove.length; i++) {
+            for (uint256 i; i < tierIdsToRemove.length;) {
                 emit RemoveTier({tierId: tierIdsToRemove[i], caller: caller});
+
+                unchecked {
+                    ++i;
+                }
             }
             // slither-disable-next-line reentrancy-events
             store.recordRemoveTierIds(tierIdsToRemove);
@@ -68,8 +72,12 @@ library JB721TiersHookLib {
             uint256[] memory tierIdsAdded = store.recordAddTiers(tiersToAdd);
 
             // slither-disable-next-line reentrancy-events
-            for (uint256 i; i < tiersToAdd.length; i++) {
+            for (uint256 i; i < tiersToAdd.length;) {
                 emit AddTier({tierId: tierIdsAdded[i], tier: tiersToAdd[i], caller: caller});
+
+                unchecked {
+                    ++i;
+                }
             }
 
             // Set split groups for tiers that have splits configured.
@@ -103,9 +111,13 @@ library JB721TiersHookLib {
     {
         uint256[] memory tierIdsAdded = store.recordAddTiers(tiersToAdd);
 
-        for (uint256 i; i < tiersToAdd.length; i++) {
+        for (uint256 i; i < tiersToAdd.length;) {
             // slither-disable-next-line reentrancy-events
             emit AddTier({tierId: tierIdsAdded[i], tier: tiersToAdd[i], caller: caller});
+
+            unchecked {
+                ++i;
+            }
         }
 
         // Set split groups for tiers that have splits configured.
@@ -195,7 +207,7 @@ library JB721TiersHookLib {
         uint256[] memory splitAmounts = new uint256[](tierIdsToMint.length);
         uint256 splitTierCount;
 
-        for (uint256 i; i < tierIdsToMint.length; i++) {
+        for (uint256 i; i < tierIdsToMint.length;) {
             // slither-disable-next-line calls-loop
             JB721Tier memory tier = store.tierOf({hook: hook, id: tierIdsToMint[i], includeResolvedUri: false});
             if (tier.splitPercent != 0) {
@@ -217,6 +229,10 @@ library JB721TiersHookLib {
                     mulDiv({x: effectivePrice, y: tier.splitPercent, denominator: JBConstants.SPLITS_TOTAL_PERCENT});
                 totalSplitAmount += splitAmounts[splitTierCount];
                 splitTierCount++;
+            }
+
+            unchecked {
+                ++i;
             }
         }
 
@@ -319,10 +335,14 @@ library JB721TiersHookLib {
 
                 // Re-accumulate the total from converted amounts to avoid rounding drift.
                 convertedTotal = 0;
-                for (uint256 i; i < amounts.length; i++) {
+                for (uint256 i; i < amounts.length;) {
                     // Convert this tier's amount: amount * ratio / 10^pricingDecimals.
                     amounts[i] = mulDiv({x: amounts[i], y: ratio, denominator: denom});
                     convertedTotal += amounts[i];
+
+                    unchecked {
+                        ++i;
+                    }
                 }
 
                 // Re-encode with the converted amounts.
@@ -340,10 +360,14 @@ library JB721TiersHookLib {
                     abi.decode(convertedMetadata, (uint16[], uint256[]));
                 uint256 uncappedTotal = convertedTotal;
                 convertedTotal = 0;
-                for (uint256 i; i < amounts.length; i++) {
+                for (uint256 i; i < amounts.length;) {
                     // Scale down: amount * amountValue / originalTotal.
                     amounts[i] = mulDiv({x: amounts[i], y: amountValue, denominator: uncappedTotal});
                     convertedTotal += amounts[i];
+
+                    unchecked {
+                        ++i;
+                    }
                 }
                 convertedMetadata = abi.encode(tierIds, amounts);
             } else {
@@ -364,19 +388,27 @@ library JB721TiersHookLib {
         private
     {
         uint256 splitGroupCount;
-        for (uint256 i; i < tiersToAdd.length; i++) {
+        for (uint256 i; i < tiersToAdd.length;) {
             if (tiersToAdd[i].splits.length != 0) splitGroupCount++;
+
+            unchecked {
+                ++i;
+            }
         }
         if (splitGroupCount == 0) return;
 
         JBSplitGroup[] memory splitGroups = new JBSplitGroup[](splitGroupCount);
         uint256 groupIndex;
-        for (uint256 i; i < tiersToAdd.length; i++) {
+        for (uint256 i; i < tiersToAdd.length;) {
             if (tiersToAdd[i].splits.length != 0) {
                 splitGroups[groupIndex] = JBSplitGroup({
                     groupId: uint256(uint160(hookAddress)) | (tierIdsAdded[i] << 160), splits: tiersToAdd[i].splits
                 });
                 groupIndex++;
+            }
+
+            unchecked {
+                ++i;
             }
         }
         splits.setSplitGroupsOf({projectId: projectId, rulesetId: 0, splitGroups: splitGroups});
@@ -415,8 +447,13 @@ library JB721TiersHookLib {
 
         (uint16[] memory tierIds, uint256[] memory amounts) = abi.decode(encodedSplitData, (uint16[], uint256[]));
 
-        for (uint256 i; i < tierIds.length; i++) {
-            if (amounts[i] == 0) continue;
+        for (uint256 i; i < tierIds.length;) {
+            if (amounts[i] == 0) {
+                unchecked {
+                    ++i;
+                }
+                continue;
+            }
             uint256 groupId = uint256(uint160(hookAddress)) | (uint256(tierIds[i]) << 160);
             _distributeSingleSplit({
                 directory: directory,
@@ -427,6 +464,10 @@ library JB721TiersHookLib {
                 amount: amounts[i],
                 decimals: decimals
             });
+
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -456,7 +497,7 @@ library JB721TiersHookLib {
         uint256 leftoverAmount = amount;
         amount = 0;
 
-        for (uint256 j; j < tierSplits.length; j++) {
+        for (uint256 j; j < tierSplits.length;) {
             uint256 payoutAmount =
                 mulDiv({x: leftoverAmount, y: tierSplits[j].percent, denominator: leftoverPercentage});
             if (payoutAmount != 0) {
@@ -485,6 +526,7 @@ library JB721TiersHookLib {
             }
             unchecked {
                 leftoverPercentage -= tierSplits[j].percent;
+                ++j;
             }
         }
 
