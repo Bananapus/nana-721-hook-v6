@@ -110,6 +110,20 @@ interface IJB721TiersHookStore {
     /// @return tier The tier.
     function tierOf(address hook, uint256 id, bool includeResolvedUri) external view returns (JB721Tier memory tier);
 
+    /// @notice Get only the pricing fields for a tier, avoiding full struct construction.
+    /// @param hook The 721 contract that the tier belongs to.
+    /// @param id The tier ID.
+    /// @return price The tier price.
+    /// @return splitPercent The split percent.
+    /// @return discountPercent The discount percent.
+    function tierPricingOf(
+        address hook,
+        uint256 id
+    )
+        external
+        view
+        returns (uint104 price, uint32 splitPercent, uint8 discountPercent);
+
     /// @notice Get the tier of the 721 with the provided token ID.
     /// @param hook The 721 contract that the tier belongs to.
     /// @param tokenId The token ID of the 721 to get the tier of.
@@ -123,6 +137,19 @@ interface IJB721TiersHookStore {
         external
         view
         returns (JB721Tier memory tier);
+
+    /// @notice Get only the tier ID and transfersPausable flag for a token, avoiding full struct construction.
+    /// @param hook The 721 hook address.
+    /// @param tokenId The token ID.
+    /// @return tierId The tier ID.
+    /// @return transfersPausable Whether transfers are paused for this tier.
+    function tierTransferInfoOfTokenId(
+        address hook,
+        uint256 tokenId
+    )
+        external
+        view
+        returns (uint256 tierId, bool transfersPausable);
 
     /// @notice Get an array of currently active 721 tiers for the provided 721 contract.
     /// @param hook The 721 contract to get the tiers of.

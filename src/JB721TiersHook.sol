@@ -25,7 +25,6 @@ import {IJB721TokenUriResolver} from "./interfaces/IJB721TokenUriResolver.sol";
 import {JB721TiersHookLib} from "./libraries/JB721TiersHookLib.sol";
 import {JB721TiersRulesetMetadataResolver} from "./libraries/JB721TiersRulesetMetadataResolver.sol";
 import {JB721InitTiersConfig} from "./structs/JB721InitTiersConfig.sol";
-import {JB721Tier} from "./structs/JB721Tier.sol";
 import {JB721TierConfig} from "./structs/JB721TierConfig.sol";
 import {JB721TiersHookFlags} from "./structs/JB721TiersHookFlags.sol";
 import {JB721TiersMintReservesConfig} from "./structs/JB721TiersMintReservesConfig.sol";
@@ -791,9 +790,10 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @param to The address the NFT is being transferred to.
     /// @param tokenId The token ID of the NFT being transferred.
     function _update(address to, uint256 tokenId, address auth) internal virtual override returns (address from) {
-        // Get a reference to the tier.
+        // Get only the tier ID and transfersPausable flag (lightweight — avoids full struct construction).
         // slither-disable-next-line calls-loop
-        JB721Tier memory tier = STORE.tierOfTokenId({hook: address(this), tokenId: tokenId, includeResolvedUri: false});
+        (uint256 tierId, bool transfersPausable) =
+            STORE.tierTransferInfoOfTokenId({hook: address(this), tokenId: tokenId});
 
         // Record the transfers and keep a reference to where the token is coming from.
         from = super._update({to: to, tokenId: tokenId, auth: auth});
@@ -801,7 +801,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // Transfers must not be paused (when not minting or burning).
         if (from != address(0)) {
             // If transfers are pausable, check if they're paused.
-            if (tier.flags.transfersPausable) {
+            if (transfersPausable) {
                 // Get a reference to the project's current ruleset.
                 JBRuleset memory ruleset = _currentRulesetOf(PROJECT_ID);
 
@@ -821,6 +821,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
         // Record the transfer.
         // slither-disable-next-line reentrency-events,calls-loop
-        STORE.recordTransferForTier({tierId: tier.id, from: from, to: to});
+        STORE.recordTransferForTier({tierId: tierId, from: from, to: to});
     }
 }

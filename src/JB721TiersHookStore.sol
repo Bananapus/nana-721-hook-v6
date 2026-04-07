@@ -214,6 +214,26 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         });
     }
 
+    /// @notice Get only the tier ID and transfersPausable flag for a token, avoiding full struct construction.
+    /// @param hook The 721 hook address.
+    /// @param tokenId The token ID.
+    /// @return tierId The tier ID.
+    /// @return transfersPausable Whether transfers are paused for this tier.
+    function tierTransferInfoOfTokenId(
+        address hook,
+        uint256 tokenId
+    )
+        external
+        view
+        override
+        returns (uint256 tierId, bool transfersPausable)
+    {
+        tierId = tierIdOfToken(tokenId);
+        JBStored721Tier memory storedTier = _storedTierOf[hook][tierId];
+        // Bit 1 (0-indexed) of packedBools is transfersPausable.
+        transfersPausable = (storedTier.packedBools & 0x2) != 0;
+    }
+
     /// @notice Gets an array of currently active 721 tiers for the provided 721 contract.
     /// @param hook The 721 contract to get the tiers of.
     /// @param categories An array tier categories to get tiers from. Send an empty array to get all categories.
@@ -482,6 +502,27 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         return _getTierFrom({
             hook: hook, tierId: id, storedTier: _storedTierOf[hook][id], includeResolvedUri: includeResolvedUri
         });
+    }
+
+    /// @notice Get only the pricing fields for a tier, avoiding full struct construction.
+    /// @param hook The 721 contract that the tier belongs to.
+    /// @param id The tier ID.
+    /// @return price The tier price.
+    /// @return splitPercent The split percent.
+    /// @return discountPercent The discount percent.
+    function tierPricingOf(
+        address hook,
+        uint256 id
+    )
+        external
+        view
+        override
+        returns (uint104 price, uint32 splitPercent, uint8 discountPercent)
+    {
+        JBStored721Tier memory storedTier = _storedTierOf[hook][id];
+        price = storedTier.price;
+        splitPercent = storedTier.splitPercent;
+        discountPercent = storedTier.discountPercent;
     }
 
     /// @notice The combined cash out weight for all NFTs from the provided 721 contract.

@@ -18,7 +18,6 @@ import {JBSplitGroup} from "@bananapus/core-v6/src/structs/JBSplitGroup.sol";
 
 import {IJB721TiersHookStore} from "../interfaces/IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "../interfaces/IJB721TokenUriResolver.sol";
-import {JB721Tier} from "../structs/JB721Tier.sol";
 import {JB721TierConfig} from "../structs/JB721TierConfig.sol";
 import {JB721Constants} from "./JB721Constants.sol";
 import {JBIpfsDecoder} from "./JBIpfsDecoder.sol";
@@ -195,12 +194,15 @@ library JB721TiersHookLib {
         view
         returns (uint256 totalSplitAmount, bytes memory hookMetadata)
     {
-        (bool found, bytes memory data) = JBMetadataResolver.getDataFor({
-            id: JBMetadataResolver.getId({purpose: "pay", target: metadataIdTarget}), metadata: metadata
-        });
-        if (!found) return (0, bytes(""));
-
-        (, uint16[] memory tierIdsToMint) = abi.decode(data, (bool, uint16[]));
+        // Decode tier IDs from metadata within a scope to free stack slots for the loop below.
+        uint16[] memory tierIdsToMint;
+        {
+            (bool found, bytes memory data) = JBMetadataResolver.getDataFor({
+                id: JBMetadataResolver.getId({purpose: "pay", target: metadataIdTarget}), metadata: metadata
+            });
+            if (!found) return (0, bytes(""));
+            (, tierIdsToMint) = abi.decode(data, (bool, uint16[]));
+        }
         if (tierIdsToMint.length == 0) return (0, bytes(""));
 
         uint16[] memory splitTierIds = new uint16[](tierIdsToMint.length);
@@ -208,9 +210,11 @@ library JB721TiersHookLib {
         uint256 splitTierCount;
 
         for (uint256 i; i < tierIdsToMint.length;) {
+            // Get only the pricing fields (lightweight — avoids full struct construction).
             // slither-disable-next-line calls-loop
-            JB721Tier memory tier = store.tierOf({hook: hook, id: tierIdsToMint[i], includeResolvedUri: false});
-            if (tier.splitPercent != 0) {
+            (uint104 tierPrice, uint32 tierSplitPercent, uint8 tierDiscountPercent) =
+                store.tierPricingOf({hook: hook, id: tierIdsToMint[i]});
+            if (tierSplitPercent != 0) {
                 // Apply discount to tier price to match the discounted price that recordMint charges.
                 // Note on discount semantics: `discountPercent` uses a denominator of 200 (JB721Constants
                 // .DISCOUNT_DENOMINATOR), so a value of 200 represents a 100% discount (free mint). Even with a
@@ -218,15 +222,15 @@ library JB721TiersHookLib {
                 // in `cashOutWeightOf`. This means free/discounted mints still carry their full cashout weight
                 // value. Project owners should be aware that discounted mints dilute the cashout pool at full
                 // weight while contributing less (or no) payment to the treasury.
-                uint256 effectivePrice = tier.price;
-                if (tier.discountPercent > 0) {
+                uint256 effectivePrice = tierPrice;
+                if (tierDiscountPercent > 0) {
                     effectivePrice -= mulDiv({
-                        x: effectivePrice, y: tier.discountPercent, denominator: JB721Constants.DISCOUNT_DENOMINATOR
+                        x: effectivePrice, y: tierDiscountPercent, denominator: JB721Constants.DISCOUNT_DENOMINATOR
                     });
                 }
                 splitTierIds[splitTierCount] = tierIdsToMint[i];
                 splitAmounts[splitTierCount] =
-                    mulDiv({x: effectivePrice, y: tier.splitPercent, denominator: JBConstants.SPLITS_TOTAL_PERCENT});
+                    mulDiv({x: effectivePrice, y: tierSplitPercent, denominator: JBConstants.SPLITS_TOTAL_PERCENT});
                 totalSplitAmount += splitAmounts[splitTierCount];
                 splitTierCount++;
             }
