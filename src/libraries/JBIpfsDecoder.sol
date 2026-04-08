@@ -41,7 +41,7 @@ library JBIpfsDecoder {
         uint8 digitlength = 1;
         uint256 sourceLength = source.length;
 
-        for (uint256 i; i < sourceLength; i++) {
+        for (uint256 i; i < sourceLength;) {
             // forge-lint: disable-next-line(unsafe-typecast)
             uint256 carry = uint8(source[i]);
 
@@ -64,14 +64,22 @@ library JBIpfsDecoder {
                 }
                 carry = carry / 58;
             }
+
+            unchecked {
+                ++i;
+            }
         }
         return string(_toAlphabet(_reverse(_truncate({array: digits, length: digitlength}))));
     }
 
     function _truncate(uint8[] memory array, uint8 length) private pure returns (uint8[] memory) {
         uint8[] memory output = new uint8[](length);
-        for (uint256 i; i < length; i++) {
+        for (uint256 i; i < length;) {
             output[i] = array[i];
+
+            unchecked {
+                ++i;
+            }
         }
         return output;
     }
@@ -79,9 +87,10 @@ library JBIpfsDecoder {
     function _reverse(uint8[] memory input) private pure returns (uint8[] memory) {
         uint256 inputLength = input.length;
         uint8[] memory output = new uint8[](inputLength);
-        for (uint256 i; i < inputLength; i++) {
+        for (uint256 i; i < inputLength;) {
             unchecked {
                 output[i] = input[input.length - 1 - i];
+                ++i;
             }
         }
         return output;
@@ -90,8 +99,12 @@ library JBIpfsDecoder {
     function _toAlphabet(uint8[] memory indices) private pure returns (bytes memory) {
         uint256 indicesLength = indices.length;
         bytes memory output = new bytes(indicesLength);
-        for (uint256 i; i < indicesLength; i++) {
+        for (uint256 i; i < indicesLength;) {
             output[i] = ALPHABET[indices[i]];
+
+            unchecked {
+                ++i;
+            }
         }
         return output;
     }

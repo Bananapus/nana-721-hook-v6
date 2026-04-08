@@ -18,7 +18,6 @@ import {JBSplitGroup} from "@bananapus/core-v6/src/structs/JBSplitGroup.sol";
 
 import {IJB721TiersHookStore} from "../interfaces/IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "../interfaces/IJB721TokenUriResolver.sol";
-import {JB721Tier} from "../structs/JB721Tier.sol";
 import {JB721TierConfig} from "../structs/JB721TierConfig.sol";
 import {JB721Constants} from "./JB721Constants.sol";
 import {JBIpfsDecoder} from "./JBIpfsDecoder.sol";
@@ -27,9 +26,8 @@ import {JBIpfsDecoder} from "./JBIpfsDecoder.sol";
 /// @dev Handles tier adjustments, split calculations, price normalization, and split fund distribution.
 library JB721TiersHookLib {
     error JB721TiersHookLib_NoTerminalForLeftover(uint256 projectId, address token, uint256 leftoverAmount);
+    error JB721TiersHookLib_SplitFallbackFailed(uint256 projectId, address token, uint256 amount, bytes reason);
     error JB721TiersHookLib_TokenTransferAmountMismatch(uint256 expectedAmount, uint256 receivedAmount);
-    // Events mirrored from IJB721TiersHook (emitted via DELEGATECALL from the hook's context).
-    event AddToBalanceReverted(uint256 indexed projectId, address token, uint256 amount, bytes reason);
     event AddTier(uint256 indexed tierId, JB721TierConfig tier, address caller);
     event RemoveTier(uint256 indexed tierId, address caller);
     event SplitPayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
@@ -56,8 +54,12 @@ library JB721TiersHookLib {
     {
         // Remove tiers.
         if (tierIdsToRemove.length != 0) {
-            for (uint256 i; i < tierIdsToRemove.length; i++) {
+            for (uint256 i; i < tierIdsToRemove.length;) {
                 emit RemoveTier({tierId: tierIdsToRemove[i], caller: caller});
+
+                unchecked {
+                    ++i;
+                }
             }
             // slither-disable-next-line reentrancy-events
             store.recordRemoveTierIds(tierIdsToRemove);
@@ -68,8 +70,12 @@ library JB721TiersHookLib {
             uint256[] memory tierIdsAdded = store.recordAddTiers(tiersToAdd);
 
             // slither-disable-next-line reentrancy-events
-            for (uint256 i; i < tiersToAdd.length; i++) {
+            for (uint256 i; i < tiersToAdd.length;) {
                 emit AddTier({tierId: tierIdsAdded[i], tier: tiersToAdd[i], caller: caller});
+
+                unchecked {
+                    ++i;
+                }
             }
 
             // Set split groups for tiers that have splits configured.
@@ -103,9 +109,13 @@ library JB721TiersHookLib {
     {
         uint256[] memory tierIdsAdded = store.recordAddTiers(tiersToAdd);
 
-        for (uint256 i; i < tiersToAdd.length; i++) {
+        for (uint256 i; i < tiersToAdd.length;) {
             // slither-disable-next-line reentrancy-events
             emit AddTier({tierId: tierIdsAdded[i], tier: tiersToAdd[i], caller: caller});
+
+            unchecked {
+                ++i;
+            }
         }
 
         // Set split groups for tiers that have splits configured.
@@ -183,22 +193,27 @@ library JB721TiersHookLib {
         view
         returns (uint256 totalSplitAmount, bytes memory hookMetadata)
     {
-        (bool found, bytes memory data) = JBMetadataResolver.getDataFor({
-            id: JBMetadataResolver.getId({purpose: "pay", target: metadataIdTarget}), metadata: metadata
-        });
-        if (!found) return (0, bytes(""));
-
-        (, uint16[] memory tierIdsToMint) = abi.decode(data, (bool, uint16[]));
+        // Decode tier IDs from metadata within a scope to free stack slots for the loop below.
+        uint16[] memory tierIdsToMint;
+        {
+            (bool found, bytes memory data) = JBMetadataResolver.getDataFor({
+                id: JBMetadataResolver.getId({purpose: "pay", target: metadataIdTarget}), metadata: metadata
+            });
+            if (!found) return (0, bytes(""));
+            (, tierIdsToMint) = abi.decode(data, (bool, uint16[]));
+        }
         if (tierIdsToMint.length == 0) return (0, bytes(""));
 
         uint16[] memory splitTierIds = new uint16[](tierIdsToMint.length);
         uint256[] memory splitAmounts = new uint256[](tierIdsToMint.length);
         uint256 splitTierCount;
 
-        for (uint256 i; i < tierIdsToMint.length; i++) {
+        for (uint256 i; i < tierIdsToMint.length;) {
+            // Get only the pricing fields (lightweight — avoids full struct construction).
             // slither-disable-next-line calls-loop
-            JB721Tier memory tier = store.tierOf({hook: hook, id: tierIdsToMint[i], includeResolvedUri: false});
-            if (tier.splitPercent != 0) {
+            (uint104 tierPrice, uint32 tierSplitPercent, uint8 tierDiscountPercent) =
+                store.tierPricingOf({hook: hook, id: tierIdsToMint[i]});
+            if (tierSplitPercent != 0) {
                 // Apply discount to tier price to match the discounted price that recordMint charges.
                 // Note on discount semantics: `discountPercent` uses a denominator of 200 (JB721Constants
                 // .DISCOUNT_DENOMINATOR), so a value of 200 represents a 100% discount (free mint). Even with a
@@ -206,17 +221,21 @@ library JB721TiersHookLib {
                 // in `cashOutWeightOf`. This means free/discounted mints still carry their full cashout weight
                 // value. Project owners should be aware that discounted mints dilute the cashout pool at full
                 // weight while contributing less (or no) payment to the treasury.
-                uint256 effectivePrice = tier.price;
-                if (tier.discountPercent > 0) {
+                uint256 effectivePrice = tierPrice;
+                if (tierDiscountPercent > 0) {
                     effectivePrice -= mulDiv({
-                        x: effectivePrice, y: tier.discountPercent, denominator: JB721Constants.DISCOUNT_DENOMINATOR
+                        x: effectivePrice, y: tierDiscountPercent, denominator: JB721Constants.DISCOUNT_DENOMINATOR
                     });
                 }
                 splitTierIds[splitTierCount] = tierIdsToMint[i];
                 splitAmounts[splitTierCount] =
-                    mulDiv({x: effectivePrice, y: tier.splitPercent, denominator: JBConstants.SPLITS_TOTAL_PERCENT});
+                    mulDiv({x: effectivePrice, y: tierSplitPercent, denominator: JBConstants.SPLITS_TOTAL_PERCENT});
                 totalSplitAmount += splitAmounts[splitTierCount];
                 splitTierCount++;
+            }
+
+            unchecked {
+                ++i;
             }
         }
 
@@ -319,10 +338,14 @@ library JB721TiersHookLib {
 
                 // Re-accumulate the total from converted amounts to avoid rounding drift.
                 convertedTotal = 0;
-                for (uint256 i; i < amounts.length; i++) {
+                for (uint256 i; i < amounts.length;) {
                     // Convert this tier's amount: amount * ratio / 10^pricingDecimals.
                     amounts[i] = mulDiv({x: amounts[i], y: ratio, denominator: denom});
                     convertedTotal += amounts[i];
+
+                    unchecked {
+                        ++i;
+                    }
                 }
 
                 // Re-encode with the converted amounts.
@@ -340,10 +363,14 @@ library JB721TiersHookLib {
                     abi.decode(convertedMetadata, (uint16[], uint256[]));
                 uint256 uncappedTotal = convertedTotal;
                 convertedTotal = 0;
-                for (uint256 i; i < amounts.length; i++) {
+                for (uint256 i; i < amounts.length;) {
                     // Scale down: amount * amountValue / originalTotal.
                     amounts[i] = mulDiv({x: amounts[i], y: amountValue, denominator: uncappedTotal});
                     convertedTotal += amounts[i];
+
+                    unchecked {
+                        ++i;
+                    }
                 }
                 convertedMetadata = abi.encode(tierIds, amounts);
             } else {
@@ -364,19 +391,27 @@ library JB721TiersHookLib {
         private
     {
         uint256 splitGroupCount;
-        for (uint256 i; i < tiersToAdd.length; i++) {
+        for (uint256 i; i < tiersToAdd.length;) {
             if (tiersToAdd[i].splits.length != 0) splitGroupCount++;
+
+            unchecked {
+                ++i;
+            }
         }
         if (splitGroupCount == 0) return;
 
         JBSplitGroup[] memory splitGroups = new JBSplitGroup[](splitGroupCount);
         uint256 groupIndex;
-        for (uint256 i; i < tiersToAdd.length; i++) {
+        for (uint256 i; i < tiersToAdd.length;) {
             if (tiersToAdd[i].splits.length != 0) {
                 splitGroups[groupIndex] = JBSplitGroup({
                     groupId: uint256(uint160(hookAddress)) | (tierIdsAdded[i] << 160), splits: tiersToAdd[i].splits
                 });
                 groupIndex++;
+            }
+
+            unchecked {
+                ++i;
             }
         }
         splits.setSplitGroupsOf({projectId: projectId, rulesetId: 0, splitGroups: splitGroups});
@@ -415,8 +450,13 @@ library JB721TiersHookLib {
 
         (uint16[] memory tierIds, uint256[] memory amounts) = abi.decode(encodedSplitData, (uint16[], uint256[]));
 
-        for (uint256 i; i < tierIds.length; i++) {
-            if (amounts[i] == 0) continue;
+        for (uint256 i; i < tierIds.length;) {
+            if (amounts[i] == 0) {
+                unchecked {
+                    ++i;
+                }
+                continue;
+            }
             uint256 groupId = uint256(uint160(hookAddress)) | (uint256(tierIds[i]) << 160);
             _distributeSingleSplit({
                 directory: directory,
@@ -427,6 +467,10 @@ library JB721TiersHookLib {
                 amount: amounts[i],
                 decimals: decimals
             });
+
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -456,7 +500,7 @@ library JB721TiersHookLib {
         uint256 leftoverAmount = amount;
         amount = 0;
 
-        for (uint256 j; j < tierSplits.length; j++) {
+        for (uint256 j; j < tierSplits.length;) {
             uint256 payoutAmount =
                 mulDiv({x: leftoverAmount, y: tierSplits[j].percent, denominator: leftoverPercentage});
             if (payoutAmount != 0) {
@@ -485,6 +529,7 @@ library JB721TiersHookLib {
             }
             unchecked {
                 leftoverPercentage -= tierSplits[j].percent;
+                ++j;
             }
         }
 
@@ -509,8 +554,7 @@ library JB721TiersHookLib {
                     metadata: bytes("")
                 }) {}
                 catch (bytes memory reason) {
-                    // slither-disable-next-line reentrancy-events
-                    emit AddToBalanceReverted(projectId, token, leftoverAmount, reason);
+                    revert JB721TiersHookLib_SplitFallbackFailed(projectId, token, leftoverAmount, reason);
                 }
             } else {
                 SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: leftoverAmount});
@@ -526,8 +570,7 @@ library JB721TiersHookLib {
                 catch (bytes memory reason) {
                     // Reset approval on failure.
                     SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
-                    // slither-disable-next-line reentrancy-events
-                    emit AddToBalanceReverted(projectId, token, leftoverAmount, reason);
+                    revert JB721TiersHookLib_SplitFallbackFailed(projectId, token, leftoverAmount, reason);
                 }
             }
         }

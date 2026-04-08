@@ -11,10 +11,9 @@ import {IJBSplitHook} from "@bananapus/core-v6/src/interfaces/IJBSplitHook.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 import {IJBTerminal} from "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
-import {IJB721TiersHook} from "../../src/interfaces/IJB721TiersHook.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-/// @notice Regression tests: a broken project terminal in _addToBalance should not DOS payments.
+/// @notice Regression tests: a broken project terminal in _addToBalance now reverts the payment (M-4 fix).
 contract Test_BrokenTerminalDoesNotDos is UnitTestSetup {
     using stdStorage for StdStorage;
 
@@ -76,15 +75,13 @@ contract Test_BrokenTerminalDoesNotDos is UnitTestSetup {
     }
 
     // ──────────────────────────────────────────────────────────────────────
-    // ETH: broken own-project terminal in _addToBalance should not revert
+    // ETH: broken own-project terminal in _addToBalance should revert (M-4)
     // ──────────────────────────────────────────────────────────────────────
 
     /// @notice When a split has no valid recipient (projectId==0, beneficiary==address(0)),
     /// funds route to the project's own terminal via _addToBalance. If that terminal reverts,
-    /// the old code would propagate the revert and DOS the entire payment. With the try-catch
-    /// fix, the function silently catches the failure and the payment succeeds (funds stay in
-    /// the hook contract).
-    function test_brokenOwnTerminal_eth_doesNotDosPayments() public {
+    /// the payment now reverts with JB721TiersHookLib_SplitFallbackFailed (M-4 fix).
+    function test_brokenOwnTerminal_eth_reverts() public {
         ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
         IJB721TiersHookStore hookStore = testHook.STORE();
 
@@ -172,26 +169,19 @@ contract Test_BrokenTerminalDoesNotDos is UnitTestSetup {
 
         vm.deal(mockTerminalAddress, 2 ether);
 
-        // Expect AddToBalanceReverted event when the broken terminal reverts.
-        vm.expectEmit(true, false, false, false);
-        emit IJB721TiersHook.AddToBalanceReverted(projectId, JBConstants.NATIVE_TOKEN, 1 ether, "");
-
         vm.prank(mockTerminalAddress);
-        // Before the fix, this would revert with "terminal broken".
-        // With the try-catch, it succeeds, emits the event, and the ETH stays in the hook contract.
+        // The payment should now revert when the fallback addToBalanceOf call fails (M-4).
+        vm.expectRevert();
         testHook.afterPayRecordedWith{value: 1 ether}(payContext);
-
-        // The ETH should remain in the hook contract since the terminal call failed.
-        assertGe(address(testHook).balance, 1 ether, "ETH should stay in hook when terminal reverts");
     }
 
     // ──────────────────────────────────────────────────────────────────────
-    // ERC-20: broken own-project terminal in _addToBalance should not revert
+    // ERC-20: broken own-project terminal in _addToBalance should revert (M-4)
     // ──────────────────────────────────────────────────────────────────────
 
     /// @notice Same scenario as above but with ERC-20 tokens. On terminal failure, the
-    /// approval should be reset to 0 for safety, and the payment should not revert.
-    function test_brokenOwnTerminal_erc20_doesNotDosPayments() public {
+    /// approval is reset to 0 for safety and the payment now reverts (M-4 fix).
+    function test_brokenOwnTerminal_erc20_reverts() public {
         BrokenTerminalERC20 usdc = new BrokenTerminalERC20("USD Coin", "USDC", 6);
         uint32 usdcCurrency = uint32(uint160(address(usdc)));
 
@@ -217,24 +207,10 @@ contract Test_BrokenTerminalDoesNotDos is UnitTestSetup {
         vm.prank(mockTerminalAddress);
         usdc.approve(address(testHook), 100e6);
 
-        address brokenTerminal = makeAddr("brokenTerminal");
-
-        // Expect AddToBalanceReverted event when the broken terminal reverts.
-        vm.expectEmit(true, false, false, false);
-        emit IJB721TiersHook.AddToBalanceReverted(projectId, address(usdc), 100e6, "");
-
         vm.prank(mockTerminalAddress);
-        // Before the fix, this would revert with "terminal broken".
-        // With the try-catch, it succeeds and emits the event.
+        // The payment should now revert when the fallback addToBalanceOf call fails (M-4).
+        vm.expectRevert();
         testHook.afterPayRecordedWith(payContext);
-
-        // Tokens should remain in the hook (terminal call failed).
-        assertEq(usdc.balanceOf(address(testHook)), 100e6, "ERC20 should stay in hook when terminal reverts");
-
-        // Approval to the broken terminal should have been reset to 0.
-        assertEq(
-            usdc.allowance(address(testHook), brokenTerminal), 0, "Approval to broken terminal should be reset to 0"
-        );
     }
 
     /// @notice Sets up mocks for the ERC-20 broken terminal test (extracted to avoid stack-too-deep).

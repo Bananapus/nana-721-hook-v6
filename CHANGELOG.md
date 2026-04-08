@@ -39,7 +39,7 @@ This file describes the verified change from `nana-721-hook-v5` to the current `
 
 ## Indexer impact
 
-- New events: `AddToBalanceReverted`, `SetName`, `SetSymbol`, `SplitPayoutReverted`.
+- New events: `AddToBalanceReverted` (declared but no longer emitted -- replaced by `JB721TiersHookLib_SplitFallbackFailed` revert error), `SetName`, `SetSymbol`, `SplitPayoutReverted`.
 - Tier config decoding changed because `JB721TierConfig` is no longer v5-compatible.
 - Collection metadata can now change after deployment, so one-time indexing of `name` and `symbol` is no longer sufficient.
 
@@ -58,7 +58,7 @@ This file describes the verified change from `nana-721-hook-v5` to the current `
   - `pricingContext()`
   - `setMetadata(...)`
 - Added events
-  - `AddToBalanceReverted`
+  - `AddToBalanceReverted` (declared in interface but no longer emitted; the library now reverts with `JB721TiersHookLib_SplitFallbackFailed` instead)
   - `SetName`
   - `SetSymbol`
   - `SplitPayoutReverted`
