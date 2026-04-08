@@ -26,9 +26,8 @@ import {JBIpfsDecoder} from "./JBIpfsDecoder.sol";
 /// @dev Handles tier adjustments, split calculations, price normalization, and split fund distribution.
 library JB721TiersHookLib {
     error JB721TiersHookLib_NoTerminalForLeftover(uint256 projectId, address token, uint256 leftoverAmount);
+    error JB721TiersHookLib_SplitFallbackFailed(uint256 projectId, address token, uint256 amount, bytes reason);
     error JB721TiersHookLib_TokenTransferAmountMismatch(uint256 expectedAmount, uint256 receivedAmount);
-    // Events mirrored from IJB721TiersHook (emitted via DELEGATECALL from the hook's context).
-    event AddToBalanceReverted(uint256 indexed projectId, address token, uint256 amount, bytes reason);
     event AddTier(uint256 indexed tierId, JB721TierConfig tier, address caller);
     event RemoveTier(uint256 indexed tierId, address caller);
     event SplitPayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
@@ -555,8 +554,7 @@ library JB721TiersHookLib {
                     metadata: bytes("")
                 }) {}
                 catch (bytes memory reason) {
-                    // slither-disable-next-line reentrancy-events
-                    emit AddToBalanceReverted(projectId, token, leftoverAmount, reason);
+                    revert JB721TiersHookLib_SplitFallbackFailed(projectId, token, leftoverAmount, reason);
                 }
             } else {
                 SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: leftoverAmount});
@@ -572,8 +570,7 @@ library JB721TiersHookLib {
                 catch (bytes memory reason) {
                     // Reset approval on failure.
                     SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
-                    // slither-disable-next-line reentrancy-events
-                    emit AddToBalanceReverted(projectId, token, leftoverAmount, reason);
+                    revert JB721TiersHookLib_SplitFallbackFailed(projectId, token, leftoverAmount, reason);
                 }
             }
         }
