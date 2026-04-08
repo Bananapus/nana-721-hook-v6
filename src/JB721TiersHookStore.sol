@@ -214,6 +214,27 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         });
     }
 
+    /// @notice Get only the pricing fields for a tier, avoiding full struct construction.
+    /// @param hook The 721 contract that the tier belongs to.
+    /// @param id The tier ID.
+    /// @return price The tier price.
+    /// @return splitPercent The split percent.
+    /// @return discountPercent The discount percent.
+    function tierPricingOf(
+        address hook,
+        uint256 id
+    )
+        external
+        view
+        override
+        returns (uint104 price, uint32 splitPercent, uint8 discountPercent)
+    {
+        JBStored721Tier memory storedTier = _storedTierOf[hook][id];
+        price = storedTier.price;
+        splitPercent = storedTier.splitPercent;
+        discountPercent = storedTier.discountPercent;
+    }
+
     /// @notice Get only the tier ID and transfersPausable flag for a token, avoiding full struct construction.
     /// @param hook The 721 hook address.
     /// @param tokenId The token ID.
@@ -502,27 +523,6 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         return _getTierFrom({
             hook: hook, tierId: id, storedTier: _storedTierOf[hook][id], includeResolvedUri: includeResolvedUri
         });
-    }
-
-    /// @notice Get only the pricing fields for a tier, avoiding full struct construction.
-    /// @param hook The 721 contract that the tier belongs to.
-    /// @param id The tier ID.
-    /// @return price The tier price.
-    /// @return splitPercent The split percent.
-    /// @return discountPercent The discount percent.
-    function tierPricingOf(
-        address hook,
-        uint256 id
-    )
-        external
-        view
-        override
-        returns (uint104 price, uint32 splitPercent, uint8 discountPercent)
-    {
-        JBStored721Tier memory storedTier = _storedTierOf[hook][id];
-        price = storedTier.price;
-        splitPercent = storedTier.splitPercent;
-        discountPercent = storedTier.discountPercent;
     }
 
     /// @notice The combined cash out weight for all NFTs from the provided 721 contract.
