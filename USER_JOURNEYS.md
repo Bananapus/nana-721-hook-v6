@@ -81,6 +81,17 @@
 2. Keep collection-specific behavior in the downstream repo while leaving pay, reserve, and cash-out semantics in this repo.
 3. Audit hook-store interactions here first, then audit the downstream resolver or wrapper.
 
+## Journey 7: Mint NFTs To The Correct Beneficiary During Cross-Chain Payments
+
+**Starting state:** a sucker pays the project on behalf of a remote user via `payRemote`, and the 721 hook needs to mint NFTs and accrue credits to the real user instead of the sucker contract.
+
+**Success:** NFTs mint to and pay credits accrue to the real remote user.
+
+**Flow**
+1. The sucker calls `terminal.pay()` with itself as both payer and beneficiary, embedding the real user's address in the `JB_RELAY_BENEFICIARY` metadata key.
+2. `_mintAndUpdateCredits` detects that `payer == beneficiary` and finds relay-beneficiary metadata.
+3. All NFT minting and credit accounting uses the resolved relay beneficiary instead of the sucker address.
+
 ## Hand-Offs
 
 - Use [nana-core-v6](../nana-core-v6/USER_JOURNEYS.md) for the treasury, ruleset, and permission surfaces the hook plugs into.
