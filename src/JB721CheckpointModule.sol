@@ -9,8 +9,7 @@ import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 /// @title JB721CheckpointModule
 /// @notice Provides IVotes-compatible checkpointed voting power for a JB721TiersHook. Deployed as an EIP-1167 clone
 /// via JB721CheckpointModuleFactory — one module per hook. The hook calls `onTransfer` on every NFT transfer to
-/// maintain accurate vote checkpoints. Auto-self-delegation ensures users get snapshot-ready voting power without
-/// manually calling `delegate()`.
+/// maintain accurate vote checkpoints.
 /// @dev EIP712 on clones: OZ stores name/version as immutables (accessible via DELEGATECALL). The storage cache
 /// (`_cachedThis`) is uninitialized on clones, so `domainSeparatorV4()` always rebuilds using the clone's
 /// `address(this)` — correct behavior, tiny gas overhead.
@@ -66,7 +65,6 @@ contract JB721CheckpointModule is Votes, IJB721CheckpointModule {
 
     /// @notice Called by the hook after every NFT transfer to update checkpointed voting power.
     /// @dev Only callable by the HOOK. Looks up the token's tier voting units from the store.
-    /// Auto-self-delegates on first receive so checkpoints work without manual delegation.
     /// @param from The previous owner (address(0) on mint).
     /// @param to The new owner (address(0) on burn).
     /// @param tokenId The token ID being transferred.
@@ -77,15 +75,7 @@ contract JB721CheckpointModule is Votes, IJB721CheckpointModule {
         uint256 votingUnits = STORE.tierOfTokenId(HOOK, tokenId, false).votingUnits;
 
         // Move checkpointed voting power from the previous owner to the new owner.
-        // Note: _transferVotingUnits short-circuits when delegates(to) == address(0) (no checkpoint update).
         _transferVotingUnits(from, to, votingUnits);
-
-        // Auto-self-delegate on first receive so checkpoints work without manual delegation.
-        // _delegate reads _getVotingUnits(to) from the store (which already includes the transfer),
-        // creating a checkpoint with the full balance.
-        if (to != address(0) && delegates(to) == address(0)) {
-            _delegate(to, to);
-        }
     }
 
     //*********************************************************************//

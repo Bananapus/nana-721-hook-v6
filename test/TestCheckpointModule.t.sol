@@ -12,7 +12,7 @@ import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 /// @title TestCheckpointModule
 /// @notice Tests the checkpoint module IVotes checkpointed voting power baked into the base hook:
-/// auto-delegation, checkpoints, transfer, multi-tier, burn, and module deployment.
+/// delegation, checkpoints, transfer, multi-tier, burn, and module deployment.
 contract TestCheckpointModule is UnitTestSetup {
     /// @notice Deploys a ForTest hook with the given number of tiers.
     function _initializeHookWithCheckpoints(
@@ -79,9 +79,9 @@ contract TestCheckpointModule is UnitTestSetup {
     }
 
     // -------------------------------------------------------------------
-    // Test 3: Mint -> auto-delegation -> getVotes equals tier votingUnits
+    // Test 3: Mint + manual delegate -> getVotes equals tier votingUnits
     // -------------------------------------------------------------------
-    function test_mintAutoDelegate_getVotes() public {
+    function test_mintAndDelegate_getVotes() public {
         defaultTierConfig.flags.allowOwnerMint = true;
         defaultTierConfig.reserveFrequency = 0;
         defaultTierConfig.flags.useVotingUnits = true;
@@ -98,14 +98,20 @@ contract TestCheckpointModule is UnitTestSetup {
         vm.prank(owner);
         tiersHook.mintFor(tiersToMint, user);
 
-        // Auto-delegation should have occurred — getVotes should equal voting units immediately.
-        assertEq(module.getVotes(user), 100, "Votes should be 100 after mint (auto-delegated)");
+        // Without delegation, getVotes should be 0.
+        assertEq(module.getVotes(user), 0, "Votes should be 0 before delegation");
+
+        // User self-delegates.
+        vm.prank(user);
+        module.delegate(user);
+
+        assertEq(module.getVotes(user), 100, "Votes should be 100 after delegation");
     }
 
     // -------------------------------------------------------------------
-    // Test 4: Auto-delegation sets delegates(user) == user
+    // Test 4: No auto-delegation — delegates(user) stays address(0) after mint
     // -------------------------------------------------------------------
-    function test_autoDelegation_setsDelegate() public {
+    function test_noAutoDelegation_delegateStaysZero() public {
         defaultTierConfig.flags.allowOwnerMint = true;
         defaultTierConfig.reserveFrequency = 0;
         defaultTierConfig.flags.useVotingUnits = true;
@@ -116,7 +122,6 @@ contract TestCheckpointModule is UnitTestSetup {
 
         address user = makeAddr("user");
 
-        // Before mint: delegates should be address(0).
         assertEq(module.delegates(user), address(0), "Delegate should be zero before mint");
 
         // Mint an NFT to user.
@@ -125,12 +130,12 @@ contract TestCheckpointModule is UnitTestSetup {
         vm.prank(owner);
         tiersHook.mintFor(tiersToMint, user);
 
-        // After mint: delegates should be user (auto-self-delegation).
-        assertEq(module.delegates(user), user, "Delegate should be user after auto-delegation");
+        // Delegate should remain address(0) — no auto-delegation.
+        assertEq(module.delegates(user), address(0), "Delegate should still be zero after mint");
     }
 
     // -------------------------------------------------------------------
-    // Test 5: Transfer moves checkpointed votes
+    // Test 5: Transfer moves checkpointed votes (with manual delegation)
     // -------------------------------------------------------------------
     function test_transfer_movesCheckpointedVotes() public {
         defaultTierConfig.flags.allowOwnerMint = true;
@@ -144,11 +149,17 @@ contract TestCheckpointModule is UnitTestSetup {
         address alice = makeAddr("alice");
         address bob = makeAddr("bob");
 
-        // Mint to alice (auto-delegated).
+        // Mint to alice.
         uint16[] memory tiersToMint = new uint16[](1);
         tiersToMint[0] = 1;
         vm.prank(owner);
         tiersHook.mintFor(tiersToMint, alice);
+
+        // Both delegate to themselves.
+        vm.prank(alice);
+        module.delegate(alice);
+        vm.prank(bob);
+        module.delegate(bob);
 
         assertEq(module.getVotes(alice), 100, "Alice should have 100 votes");
         assertEq(module.getVotes(bob), 0, "Bob should have 0 votes");
@@ -158,7 +169,6 @@ contract TestCheckpointModule is UnitTestSetup {
         vm.prank(alice);
         IERC721(address(tiersHook)).transferFrom(alice, bob, tokenId);
 
-        // Bob should be auto-delegated on first receive.
         assertEq(module.getVotes(alice), 0, "Alice should have 0 votes after transfer");
         assertEq(module.getVotes(bob), 100, "Bob should have 100 votes after transfer");
     }
@@ -177,10 +187,14 @@ contract TestCheckpointModule is UnitTestSetup {
 
         address user = makeAddr("user");
 
+        // User self-delegates before mint so checkpoints are created.
+        vm.prank(user);
+        module.delegate(user);
+
         uint256 blockBeforeMint = block.number;
         vm.roll(block.number + 1);
 
-        // Mint (auto-delegated).
+        // Mint.
         uint16[] memory tiersToMint = new uint16[](1);
         tiersToMint[0] = 1;
         vm.prank(owner);
@@ -217,7 +231,11 @@ contract TestCheckpointModule is UnitTestSetup {
 
         address user = makeAddr("user");
 
-        // Mint one from each tier (auto-delegated on first mint).
+        // User self-delegates before mints.
+        vm.prank(user);
+        module.delegate(user);
+
+        // Mint one from each tier.
         uint16[] memory tier1 = new uint16[](1);
         tier1[0] = 1;
         uint16[] memory tier2 = new uint16[](1);
@@ -249,7 +267,11 @@ contract TestCheckpointModule is UnitTestSetup {
 
         address user = makeAddr("user");
 
-        // Mint 2 NFTs (auto-delegated on first mint).
+        // User self-delegates before mints.
+        vm.prank(user);
+        module.delegate(user);
+
+        // Mint 2 NFTs.
         uint16[] memory tiersToMint = new uint16[](2);
         tiersToMint[0] = 1;
         tiersToMint[1] = 1;
