@@ -310,6 +310,10 @@ library JB721TiersHookLib {
         convertedTotal = totalSplitAmount;
         convertedMetadata = splitMetadata;
 
+        // Extract pricing decimals for reuse below.
+        // forge-lint: disable-next-line(unsafe-typecast)
+        uint256 pricingDecimals = uint256(uint8(packedPricingContext >> 32));
+
         // Convert each per-tier amount from the tier pricing currency to the payment currency.
         // forge-lint: disable-next-line(unsafe-typecast)
         if (amountCurrency != uint256(uint32(packedPricingContext))) {
@@ -329,8 +333,7 @@ library JB721TiersHookLib {
                 });
 
                 // The denominator scales each amount from tier-pricing decimals to payment-token decimals.
-                // forge-lint: disable-next-line(unsafe-typecast)
-                uint256 denom = 10 ** uint256(uint8(packedPricingContext >> 32));
+                uint256 denom = 10 ** pricingDecimals;
 
                 // Decode per-tier breakdown so each amount can be converted individually.
                 (uint16[] memory tierIds, uint256[] memory amounts) =
@@ -351,6 +354,35 @@ library JB721TiersHookLib {
                 // Re-encode with the converted amounts.
                 convertedMetadata = abi.encode(tierIds, amounts);
             }
+        } else if (amountDecimals != pricingDecimals) {
+            // Same currency but different decimal scales (e.g. pricing at 18 decimals, payment token at 6).
+            // Without this branch, split amounts stay in pricing decimals while the cap comparison uses
+            // payment decimals — causing orders-of-magnitude mis-scaling. This mirrors the same-currency
+            // decimal adjustment in `normalizePaymentValue` (which handles the mint path).
+
+            // Decode the per-tier breakdown so each amount can be rescaled individually.
+            (uint16[] memory tierIds, uint256[] memory amounts) = abi.decode(convertedMetadata, (uint16[], uint256[]));
+
+            // Re-accumulate the total from rescaled amounts to avoid rounding drift.
+            convertedTotal = 0;
+            for (uint256 i; i < amounts.length;) {
+                // Scale each amount from pricing decimals to payment decimals.
+                if (amountDecimals > pricingDecimals) {
+                    // Payment has more decimals — multiply to add precision (e.g. 6→18: multiply by 10^12).
+                    amounts[i] = amounts[i] * (10 ** (amountDecimals - pricingDecimals));
+                } else {
+                    // Payment has fewer decimals — divide to remove precision (e.g. 18→6: divide by 10^12).
+                    amounts[i] = amounts[i] / (10 ** (pricingDecimals - amountDecimals));
+                }
+                convertedTotal += amounts[i];
+
+                unchecked {
+                    ++i;
+                }
+            }
+
+            // Re-encode with the rescaled amounts.
+            convertedMetadata = abi.encode(tierIds, amounts);
         }
 
         // Cap the total at the actual payment value. Pay credits fund NFT minting (virtual), but splits
