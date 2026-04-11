@@ -115,9 +115,9 @@ contract Test_AuditFixes_Unit is UnitTestSetup {
         // The total forwarded amount must be capped at the payment value (may be up to 1 wei less due to rounding).
         assertApproxEqAbs(specs[0].amount, 2 ether, 1, "Total split should be capped at payment value");
 
-        // Decode the per-tier breakdown from hookMetadata.
-        (uint16[] memory resultTierIds, uint256[] memory resultAmounts) =
-            abi.decode(specs[0].metadata, (uint16[], uint256[]));
+        // Decode the per-tier breakdown from hookMetadata (unwrap beneficiary wrapper first).
+        (, bytes memory splitData) = abi.decode(specs[0].metadata, (address, bytes));
+        (uint16[] memory resultTierIds, uint256[] memory resultAmounts) = abi.decode(splitData, (uint16[], uint256[]));
 
         // Both tiers should be present in the metadata.
         assertEq(resultTierIds.length, 2, "Should have 2 tier entries");
@@ -260,7 +260,7 @@ contract Test_AuditFixes_Unit is UnitTestSetup {
             weight: 10e18,
             newlyIssuedTokenCount: 0,
             beneficiary: beneficiary,
-            hookMetadata: abi.encode(splitTierIds, splitAmounts),
+            hookMetadata: abi.encode(beneficiary, abi.encode(splitTierIds, splitAmounts)),
             payerMetadata: payerMetadata
         });
 
@@ -341,7 +341,7 @@ contract Test_AuditFixes_Unit is UnitTestSetup {
             weight: 10e18,
             newlyIssuedTokenCount: 0,
             beneficiary: beneficiary,
-            hookMetadata: abi.encode(splitTierIds, splitAmounts),
+            hookMetadata: abi.encode(beneficiary, abi.encode(splitTierIds, splitAmounts)),
             payerMetadata: payerMetadata
         });
 

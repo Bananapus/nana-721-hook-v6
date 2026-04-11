@@ -112,7 +112,7 @@ contract Test_L36_SplitNoBeneficiary is UnitTestSetup {
             weight: 10e18,
             newlyIssuedTokenCount: 0,
             beneficiary: beneficiary,
-            hookMetadata: abi.encode(splitTierIds, splitAmounts),
+            hookMetadata: abi.encode(beneficiary, abi.encode(splitTierIds, splitAmounts)),
             payerMetadata: payerMetadata
         });
 

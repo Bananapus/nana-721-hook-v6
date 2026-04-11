@@ -225,8 +225,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             hook: address(this)
         });
 
-        hookSpecifications[0] =
-            JBPayHookSpecification({hook: this, noop: false, amount: totalSplitAmount, metadata: splitMetadata});
+        hookSpecifications[0] = JBPayHookSpecification({
+            hook: this, noop: false, amount: totalSplitAmount, metadata: abi.encode(context.beneficiary, splitMetadata)
+        });
     }
 
     /// @notice The combined cash out weight of the NFTs with the specified token IDs.
@@ -637,31 +638,23 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @notice Mint NFTs from the specified tiers and update the beneficiary's pay credits.
     /// @param value The normalized payment value.
     /// @param context Payment context provided by the terminal.
-    function _mintAndUpdateCredits(uint256 value, JBAfterPayRecordedContext calldata context) internal {
-        // Resolve relay beneficiary: when payer == beneficiary (sucker paying with itself as beneficiary)
-        // and relay metadata is present, use the relay beneficiary for all operations.
-        address effectiveBeneficiary = context.beneficiary;
-        if (context.payer == context.beneficiary) {
-            bytes4 relayId = bytes4(keccak256("JB_RELAY_BENEFICIARY"));
-            (bool relayFound, bytes memory relayData) =
-                JBMetadataResolver.getDataFor(relayId, context.payerMetadata);
-            if (relayFound && relayData.length >= 32) {
-                address relayBeneficiary = abi.decode(relayData, (address));
-                if (relayBeneficiary != address(0)) {
-                    effectiveBeneficiary = relayBeneficiary;
-                }
-            }
-        }
-
+    /// @param beneficiary The address to mint NFTs to and track credits for.
+    function _mintAndUpdateCredits(
+        uint256 value,
+        JBAfterPayRecordedContext calldata context,
+        address beneficiary
+    )
+        internal
+    {
         // Keep a reference to the number of NFT credits the beneficiary already has.
-        uint256 payCredits = payCreditsOf[effectiveBeneficiary];
+        uint256 payCredits = payCreditsOf[beneficiary];
 
         // Set the leftover amount as the initial value.
         uint256 leftoverAmount = value;
 
         // If the payer is the effective beneficiary, combine their NFT credits with the amount paid.
         uint256 unusedPayCredits;
-        if (context.payer == effectiveBeneficiary) {
+        if (context.payer == beneficiary) {
             leftoverAmount += payCredits;
         } else {
             // Otherwise, the payer's NFT credits won't be used, and we keep track of the unused credits.
@@ -712,7 +705,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                 _mintTokens({
                     tokenIds: tokenIds,
                     tierIds: tierIdsToMint,
-                    beneficiary: effectiveBeneficiary,
+                    beneficiary: beneficiary,
                     totalAmountPaid: totalAmountPaid
                 });
             }
@@ -729,19 +722,19 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                 emit AddPayCredits({
                     amount: newPayCredits - payCredits,
                     newTotalCredits: newPayCredits,
-                    account: effectiveBeneficiary,
+                    account: beneficiary,
                     caller: _msgSender()
                 });
             } else {
                 emit UsePayCredits({
                     amount: payCredits - newPayCredits,
                     newTotalCredits: newPayCredits,
-                    account: effectiveBeneficiary,
+                    account: beneficiary,
                     caller: _msgSender()
                 });
             }
 
-            payCreditsOf[effectiveBeneficiary] = newPayCredits;
+            payCreditsOf[beneficiary] = newPayCredits;
         }
     }
 
@@ -764,11 +757,20 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         });
         if (!valid) return;
 
+        // Decode the beneficiary forwarded from beforePayRecordedWith.
+        address beneficiary;
+        bytes memory splitData;
+        if (context.hookMetadata.length != 0) {
+            (beneficiary, splitData) = abi.decode(context.hookMetadata, (address, bytes));
+        }
+        // Fall back to context.beneficiary if no beneficiary was forwarded.
+        if (beneficiary == address(0)) beneficiary = context.beneficiary;
+
         // Mint NFTs from the specified tiers and update the beneficiary's pay credits.
-        _mintAndUpdateCredits({value: value, context: context});
+        _mintAndUpdateCredits({value: value, context: context, beneficiary: beneficiary});
 
         // Distribute any forwarded funds to tier split groups.
-        if (context.hookMetadata.length != 0 && context.forwardedAmount.value != 0) {
+        if (splitData.length != 0 && context.forwardedAmount.value != 0) {
             JB721TiersHookLib.distributeAll({
                 directory: DIRECTORY,
                 splits: SPLITS,
@@ -777,7 +779,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                 token: context.forwardedAmount.token,
                 amount: context.forwardedAmount.value,
                 decimals: context.forwardedAmount.decimals,
-                encodedSplitData: context.hookMetadata
+                encodedSplitData: splitData
             });
         }
     }

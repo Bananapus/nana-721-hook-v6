@@ -59,7 +59,8 @@ contract SplitFailureRedistribution is UnitTestSetup {
         );
 
         bytes memory payerMetadata = _buildPayMetadata(address(testHook), uint16(tierIds[0]));
-        bytes memory hookMetadata = abi.encode(_singleTierId(uint16(tierIds[0])), _singleAmount(1 ether));
+        bytes memory hookMetadata =
+            abi.encode(beneficiary, abi.encode(_singleTierId(uint16(tierIds[0])), _singleAmount(1 ether)));
 
         JBAfterPayRecordedContext memory payContext = JBAfterPayRecordedContext({
             payer: beneficiary,
