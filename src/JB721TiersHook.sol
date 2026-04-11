@@ -638,15 +638,30 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @param value The normalized payment value.
     /// @param context Payment context provided by the terminal.
     function _mintAndUpdateCredits(uint256 value, JBAfterPayRecordedContext calldata context) internal {
+        // Resolve relay beneficiary: when payer == beneficiary (sucker paying with itself as beneficiary)
+        // and relay metadata is present, use the relay beneficiary for all operations.
+        address effectiveBeneficiary = context.beneficiary;
+        if (context.payer == context.beneficiary) {
+            bytes4 relayId = bytes4(keccak256("JB_RELAY_BENEFICIARY"));
+            (bool relayFound, bytes memory relayData) =
+                JBMetadataResolver.getDataFor(relayId, context.payerMetadata);
+            if (relayFound && relayData.length >= 32) {
+                address relayBeneficiary = abi.decode(relayData, (address));
+                if (relayBeneficiary != address(0)) {
+                    effectiveBeneficiary = relayBeneficiary;
+                }
+            }
+        }
+
         // Keep a reference to the number of NFT credits the beneficiary already has.
-        uint256 payCredits = payCreditsOf[context.beneficiary];
+        uint256 payCredits = payCreditsOf[effectiveBeneficiary];
 
         // Set the leftover amount as the initial value.
         uint256 leftoverAmount = value;
 
-        // If the payer is the beneficiary, combine their NFT credits with the amount paid.
+        // If the payer is the effective beneficiary, combine their NFT credits with the amount paid.
         uint256 unusedPayCredits;
-        if (context.payer == context.beneficiary) {
+        if (context.payer == effectiveBeneficiary) {
             leftoverAmount += payCredits;
         } else {
             // Otherwise, the payer's NFT credits won't be used, and we keep track of the unused credits.
@@ -693,11 +708,11 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                 // deployers must set that flag in tier configuration when they need that invariant.
                 if (restrictedCost > value) revert JB721TiersHook_CantBuyWithCredits();
 
-                // Mint each token.
+                // Mint each token to the effective beneficiary.
                 _mintTokens({
                     tokenIds: tokenIds,
                     tierIds: tierIdsToMint,
-                    beneficiary: context.beneficiary,
+                    beneficiary: effectiveBeneficiary,
                     totalAmountPaid: totalAmountPaid
                 });
             }
@@ -714,19 +729,19 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                 emit AddPayCredits({
                     amount: newPayCredits - payCredits,
                     newTotalCredits: newPayCredits,
-                    account: context.beneficiary,
+                    account: effectiveBeneficiary,
                     caller: _msgSender()
                 });
             } else {
                 emit UsePayCredits({
                     amount: payCredits - newPayCredits,
                     newTotalCredits: newPayCredits,
-                    account: context.beneficiary,
+                    account: effectiveBeneficiary,
                     caller: _msgSender()
                 });
             }
 
-            payCreditsOf[context.beneficiary] = newPayCredits;
+            payCreditsOf[effectiveBeneficiary] = newPayCredits;
         }
     }
 
