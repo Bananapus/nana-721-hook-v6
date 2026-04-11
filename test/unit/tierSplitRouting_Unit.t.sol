@@ -377,7 +377,7 @@ contract Test_TierSplitRouting is UnitTestSetup {
             weight: 10e18,
             newlyIssuedTokenCount: 0,
             beneficiary: beneficiary,
-            hookMetadata: abi.encode(beneficiary, abi.encode(splitTierIds, splitAmounts)),
+            hookMetadata: abi.encode(beneficiary, beneficiary, abi.encode(splitTierIds, splitAmounts)),
             payerMetadata: payerMetadata
         });
 
@@ -570,7 +570,7 @@ contract Test_TierSplitRouting is UnitTestSetup {
             weight: 10e18,
             newlyIssuedTokenCount: 0,
             beneficiary: beneficiary,
-            hookMetadata: abi.encode(beneficiary, abi.encode(splitTierIds, splitAmounts)),
+            hookMetadata: abi.encode(beneficiary, beneficiary, abi.encode(splitTierIds, splitAmounts)),
             payerMetadata: payerMetadata
         });
     }
