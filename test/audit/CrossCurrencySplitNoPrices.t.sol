@@ -20,7 +20,7 @@ contract CrossCurrencySplitNoPrices is UnitTestSetup {
             IJBRulesets(mockJBRulesets),
             store,
             IJBSplits(mockJBSplits),
-            IJB721CheckpointModuleFactory(address(new JB721CheckpointModuleFactory())),
+            IJB721CheckpointsFactory(address(new JB721CheckpointsFactory())),
             trustedForwarder
         );
 

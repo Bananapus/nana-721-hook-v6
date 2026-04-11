@@ -70,8 +70,8 @@ import "../../src/JB721TiersHookDeployer.sol";
 import "../../src/JB721TiersHookProjectDeployer.sol";
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/JB721TiersHookStore.sol";
-import {JB721CheckpointModuleFactory} from "../../src/JB721CheckpointModuleFactory.sol";
-import {IJB721CheckpointModuleFactory} from "../../src/interfaces/IJB721CheckpointModuleFactory.sol";
+import {JB721CheckpointsFactory} from "../../src/JB721CheckpointsFactory.sol";
+import {IJB721CheckpointsFactory} from "../../src/interfaces/IJB721CheckpointsFactory.sol";
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/interfaces/IJB721TiersHook.sol";
 // forge-lint: disable-next-line(unaliased-plain-import)
@@ -225,7 +225,7 @@ contract ERC20CashOutFork is Test {
             jbRulesets,
             store,
             IJBSplits(address(jbSplits)),
-            IJB721CheckpointModuleFactory(address(new JB721CheckpointModuleFactory())),
+            IJB721CheckpointsFactory(address(new JB721CheckpointsFactory())),
             address(0)
         );
         addressRegistry = new JBAddressRegistry();

@@ -10,8 +10,8 @@ import {
 import {Sphinx} from "@sphinx-labs/contracts/contracts/foundry/SphinxPlugin.sol";
 import {Script} from "forge-std/Script.sol";
 
-import {JB721CheckpointModuleFactory} from "../src/JB721CheckpointModuleFactory.sol";
-import {IJB721CheckpointModuleFactory} from "../src/interfaces/IJB721CheckpointModuleFactory.sol";
+import {JB721CheckpointsFactory} from "../src/JB721CheckpointsFactory.sol";
+import {IJB721CheckpointsFactory} from "../src/interfaces/IJB721CheckpointsFactory.sol";
 import {JB721TiersHookDeployer} from "../src/JB721TiersHookDeployer.sol";
 import {JB721TiersHookProjectDeployer} from "../src/JB721TiersHookProjectDeployer.sol";
 import {JB721TiersHookStore} from "../src/JB721TiersHookStore.sol";
@@ -37,7 +37,7 @@ contract DeployScript is Script, Sphinx {
     // forge-lint: disable-next-line(mixed-case-variable)
     bytes32 PROJECT_DEPLOYER_SALT = "JB721TiersHookProjectDeployerV6";
     // forge-lint: disable-next-line(mixed-case-variable)
-    bytes32 CHECKPOINT_MODULE_FACTORY_SALT = "JB721CheckpointModuleFactoryV6";
+    bytes32 CHECKPOINT_MODULE_FACTORY_SALT = "JB721CheckpointsFactoryV6";
 
     function configureSphinx() public override {
         sphinxConfig.projectName = "nana-721-hook-v6";
@@ -73,32 +73,36 @@ contract DeployScript is Script, Sphinx {
         JB721TiersHookStore store;
         {
             // Perform the check for the store.
-            (address _store, bool _storeIsDeployed) =
-                _isDeployed(HOOK_STORE_SALT, type(JB721TiersHookStore).creationCode, "");
+            (address _store, bool _storeIsDeployed) = _isDeployed({
+                salt: HOOK_STORE_SALT, creationCode: type(JB721TiersHookStore).creationCode, arguments: ""
+            });
 
             // Deploy it if it has not been deployed yet.
             store = !_storeIsDeployed ? new JB721TiersHookStore{salt: HOOK_STORE_SALT}() : JB721TiersHookStore(_store);
         }
 
-        JB721CheckpointModuleFactory checkpointModuleFactory;
+        JB721CheckpointsFactory checkpointModuleFactory;
         {
             // Perform the check for the factory.
-            (address _factory, bool _factoryIsDeployed) =
-                _isDeployed(CHECKPOINT_MODULE_FACTORY_SALT, type(JB721CheckpointModuleFactory).creationCode, "");
+            (address _factory, bool _factoryIsDeployed) = _isDeployed({
+                salt: CHECKPOINT_MODULE_FACTORY_SALT,
+                creationCode: type(JB721CheckpointsFactory).creationCode,
+                arguments: ""
+            });
 
             // Deploy it if it has not been deployed yet.
             checkpointModuleFactory = !_factoryIsDeployed
-                ? new JB721CheckpointModuleFactory{salt: CHECKPOINT_MODULE_FACTORY_SALT}()
-                : JB721CheckpointModuleFactory(_factory);
+                ? new JB721CheckpointsFactory{salt: CHECKPOINT_MODULE_FACTORY_SALT}()
+                : JB721CheckpointsFactory(_factory);
         }
 
         JB721TiersHook hook;
         {
             // Perform the check for the registry.
-            (address _hook, bool _hookIsDeployed) = _isDeployed(
-                HOOK_SALT,
-                type(JB721TiersHook).creationCode,
-                abi.encode(
+            (address _hook, bool _hookIsDeployed) = _isDeployed({
+                salt: HOOK_SALT,
+                creationCode: type(JB721TiersHook).creationCode,
+                arguments: abi.encode(
                     core.directory,
                     core.permissions,
                     core.prices,
@@ -108,7 +112,7 @@ contract DeployScript is Script, Sphinx {
                     checkpointModuleFactory,
                     TRUSTED_FORWARDER
                 )
-            );
+            });
 
             // Deploy it if it has not been deployed yet.
             hook = !_hookIsDeployed
@@ -119,7 +123,7 @@ contract DeployScript is Script, Sphinx {
                     core.rulesets,
                     store,
                     core.splits,
-                    IJB721CheckpointModuleFactory(address(checkpointModuleFactory)),
+                    IJB721CheckpointsFactory(address(checkpointModuleFactory)),
                     TRUSTED_FORWARDER
                 )
                 : JB721TiersHook(_hook);
@@ -128,11 +132,11 @@ contract DeployScript is Script, Sphinx {
         JB721TiersHookDeployer hookDeployer;
         {
             // Perform the check for the registry.
-            (address _hookDeployer, bool _hookDeployerIsDeployed) = _isDeployed(
-                HOOK_DEPLOYER_SALT,
-                type(JB721TiersHookDeployer).creationCode,
-                abi.encode(hook, store, registry.registry, TRUSTED_FORWARDER)
-            );
+            (address _hookDeployer, bool _hookDeployerIsDeployed) = _isDeployed({
+                salt: HOOK_DEPLOYER_SALT,
+                creationCode: type(JB721TiersHookDeployer).creationCode,
+                arguments: abi.encode(hook, store, registry.registry, TRUSTED_FORWARDER)
+            });
 
             hookDeployer = !_hookDeployerIsDeployed
                 ? new JB721TiersHookDeployer{salt: HOOK_DEPLOYER_SALT}(
@@ -144,11 +148,11 @@ contract DeployScript is Script, Sphinx {
         JB721TiersHookProjectDeployer projectDeployer;
         {
             // Perform the check for the registry.
-            (address _projectDeployer, bool _projectDeployerIsdeployed) = _isDeployed(
-                PROJECT_DEPLOYER_SALT,
-                type(JB721TiersHookProjectDeployer).creationCode,
-                abi.encode(core.directory, core.permissions, hookDeployer, TRUSTED_FORWARDER)
-            );
+            (address _projectDeployer, bool _projectDeployerIsdeployed) = _isDeployed({
+                salt: PROJECT_DEPLOYER_SALT,
+                creationCode: type(JB721TiersHookProjectDeployer).creationCode,
+                arguments: abi.encode(core.directory, core.permissions, hookDeployer, TRUSTED_FORWARDER)
+            });
 
             projectDeployer = !_projectDeployerIsdeployed
                 ? new JB721TiersHookProjectDeployer{salt: PROJECT_DEPLOYER_SALT}(

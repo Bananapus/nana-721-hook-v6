@@ -5,22 +5,17 @@ pragma solidity 0.8.28;
 import "./utils/UnitTestSetup.sol";
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "./utils/ForTest_JB721TiersHook.sol";
-import {JB721CheckpointModule} from "../src/JB721CheckpointModule.sol";
-import {IJB721CheckpointModule} from "../src/interfaces/IJB721CheckpointModule.sol";
+import {JB721Checkpoints} from "../src/JB721Checkpoints.sol";
+import {IJB721Checkpoints} from "../src/interfaces/IJB721Checkpoints.sol";
 import {IJB721TiersHook} from "../src/interfaces/IJB721TiersHook.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
-/// @title TestCheckpointModule
+/// @title TestCheckpoints
 /// @notice Tests the checkpoint module IVotes checkpointed voting power baked into the base hook:
 /// delegation, checkpoints, transfer, multi-tier, burn, and module deployment.
-contract TestCheckpointModule is UnitTestSetup {
+contract TestCheckpoints is UnitTestSetup {
     /// @notice Deploys a ForTest hook with the given number of tiers.
-    function _initializeHookWithCheckpoints(
-        uint256 numberOfTiers
-    )
-        internal
-        returns (ForTest_JB721TiersHook tiersHook)
-    {
+    function _initializeHookWithCheckpoints(uint256 numberOfTiers) internal returns (ForTest_JB721TiersHook tiersHook) {
         (JB721TierConfig[] memory tierConfigs,) = _createTiers(defaultTierConfig, numberOfTiers);
 
         ForTest_JB721TiersHookStore hookStore = new ForTest_JB721TiersHookStore();
@@ -73,9 +68,7 @@ contract TestCheckpointModule is UnitTestSetup {
 
         ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
 
-        assertTrue(
-            tiersHook.supportsInterface(type(IJB721TiersHook).interfaceId), "Should support IJB721TiersHook"
-        );
+        assertTrue(tiersHook.supportsInterface(type(IJB721TiersHook).interfaceId), "Should support IJB721TiersHook");
     }
 
     // -------------------------------------------------------------------
@@ -88,7 +81,7 @@ contract TestCheckpointModule is UnitTestSetup {
         defaultTierConfig.votingUnits = 100;
 
         ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
-        IJB721CheckpointModule module = tiersHook.CHECKPOINT_MODULE();
+        IJB721Checkpoints module = tiersHook.CHECKPOINT_MODULE();
 
         address user = makeAddr("user");
 
@@ -118,7 +111,7 @@ contract TestCheckpointModule is UnitTestSetup {
         defaultTierConfig.votingUnits = 100;
 
         ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
-        IJB721CheckpointModule module = tiersHook.CHECKPOINT_MODULE();
+        IJB721Checkpoints module = tiersHook.CHECKPOINT_MODULE();
 
         address user = makeAddr("user");
 
@@ -144,7 +137,7 @@ contract TestCheckpointModule is UnitTestSetup {
         defaultTierConfig.votingUnits = 100;
 
         ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
-        IJB721CheckpointModule module = tiersHook.CHECKPOINT_MODULE();
+        IJB721Checkpoints module = tiersHook.CHECKPOINT_MODULE();
 
         address alice = makeAddr("alice");
         address bob = makeAddr("bob");
@@ -183,7 +176,7 @@ contract TestCheckpointModule is UnitTestSetup {
         defaultTierConfig.votingUnits = 100;
 
         ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
-        IJB721CheckpointModule module = tiersHook.CHECKPOINT_MODULE();
+        IJB721Checkpoints module = tiersHook.CHECKPOINT_MODULE();
 
         address user = makeAddr("user");
 
@@ -222,7 +215,7 @@ contract TestCheckpointModule is UnitTestSetup {
         defaultTierConfig.flags.useVotingUnits = true;
 
         ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(3);
-        IJB721CheckpointModule module = tiersHook.CHECKPOINT_MODULE();
+        IJB721Checkpoints module = tiersHook.CHECKPOINT_MODULE();
 
         // Set custom voting units per tier.
         tiersHook.test_store().ForTest_setTierVotingUnits(address(tiersHook), 1, 100);
@@ -263,7 +256,7 @@ contract TestCheckpointModule is UnitTestSetup {
         defaultTierConfig.votingUnits = 100;
 
         ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
-        IJB721CheckpointModule module = tiersHook.CHECKPOINT_MODULE();
+        IJB721Checkpoints module = tiersHook.CHECKPOINT_MODULE();
 
         address user = makeAddr("user");
 
@@ -303,9 +296,9 @@ contract TestCheckpointModule is UnitTestSetup {
         defaultTierConfig.reserveFrequency = 0;
 
         ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
-        IJB721CheckpointModule module = tiersHook.CHECKPOINT_MODULE();
+        IJB721Checkpoints module = tiersHook.CHECKPOINT_MODULE();
 
-        vm.expectRevert(JB721CheckpointModule.JB721CheckpointModule_Unauthorized.selector);
+        vm.expectRevert(JB721Checkpoints.JB721Checkpoints_Unauthorized.selector);
         module.onTransfer(address(0), address(1), 1);
     }
 }

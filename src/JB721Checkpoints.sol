@@ -3,23 +3,23 @@ pragma solidity 0.8.28;
 
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {Votes} from "@openzeppelin/contracts/governance/utils/Votes.sol";
-import {IJB721CheckpointModule} from "./interfaces/IJB721CheckpointModule.sol";
+import {IJB721Checkpoints} from "./interfaces/IJB721Checkpoints.sol";
 import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 
-/// @title JB721CheckpointModule
+/// @title JB721Checkpoints
 /// @notice Provides IVotes-compatible checkpointed voting power for a JB721TiersHook. Deployed as an EIP-1167 clone
-/// via JB721CheckpointModuleFactory — one module per hook. The hook calls `onTransfer` on every NFT transfer to
+/// via JB721CheckpointsFactory — one module per hook. The hook calls `onTransfer` on every NFT transfer to
 /// maintain accurate vote checkpoints.
 /// @dev EIP712 on clones: OZ stores name/version as immutables (accessible via DELEGATECALL). The storage cache
 /// (`_cachedThis`) is uninitialized on clones, so `domainSeparatorV4()` always rebuilds using the clone's
 /// `address(this)` — correct behavior, tiny gas overhead.
-contract JB721CheckpointModule is Votes, IJB721CheckpointModule {
+contract JB721Checkpoints is Votes, IJB721Checkpoints {
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
 
-    error JB721CheckpointModule_AlreadyInitialized();
-    error JB721CheckpointModule_Unauthorized();
+    error JB721Checkpoints_AlreadyInitialized();
+    error JB721Checkpoints_Unauthorized();
 
     //*********************************************************************//
     // --------------------- private stored properties ------------------ //
@@ -44,7 +44,7 @@ contract JB721CheckpointModule is Votes, IJB721CheckpointModule {
 
     /// @dev Parameterless. The implementation contract is initialized in the constructor to prevent direct use.
     /// Clones are initialized via `initialize()`.
-    constructor() EIP712("JB721CheckpointModule", "1") {
+    constructor() EIP712("JB721Checkpoints", "1") {
         _initialized = true;
     }
 
@@ -57,7 +57,7 @@ contract JB721CheckpointModule is Votes, IJB721CheckpointModule {
     /// @param hook The hook this module serves.
     /// @param store The store that holds tier data for the hook's NFTs.
     function initialize(address hook, IJB721TiersHookStore store) external override {
-        if (_initialized) revert JB721CheckpointModule_AlreadyInitialized();
+        if (_initialized) revert JB721Checkpoints_AlreadyInitialized();
         _initialized = true;
         HOOK = hook;
         STORE = store;
@@ -69,13 +69,13 @@ contract JB721CheckpointModule is Votes, IJB721CheckpointModule {
     /// @param to The new owner (address(0) on burn).
     /// @param tokenId The token ID being transferred.
     function onTransfer(address from, address to, uint256 tokenId) external override {
-        if (msg.sender != HOOK) revert JB721CheckpointModule_Unauthorized();
+        if (msg.sender != HOOK) revert JB721Checkpoints_Unauthorized();
 
         // Look up this token's tier to get its voting units.
-        uint256 votingUnits = STORE.tierOfTokenId(HOOK, tokenId, false).votingUnits;
+        uint256 votingUnits = STORE.tierOfTokenId({hook: HOOK, tokenId: tokenId, includeResolvedUri: false}).votingUnits;
 
         // Move checkpointed voting power from the previous owner to the new owner.
-        _transferVotingUnits(from, to, votingUnits);
+        _transferVotingUnits({from: from, to: to, amount: votingUnits});
     }
 
     //*********************************************************************//
@@ -87,6 +87,6 @@ contract JB721CheckpointModule is Votes, IJB721CheckpointModule {
     /// @param account The address to get the voting units of.
     /// @return The total voting units the account holds.
     function _getVotingUnits(address account) internal view override returns (uint256) {
-        return STORE.votingUnitsOf(HOOK, account);
+        return STORE.votingUnitsOf({hook: HOOK, account: account});
     }
 }
