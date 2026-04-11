@@ -52,12 +52,18 @@ contract SameCurrencyDecimalMismatch is UnitTestSetup {
             tierConfigs[0].price = 1e18;
             tierConfigs[0].splitPercent = 500_000_000; // 50%.
             testHook.initialize(
-                projectId, name, symbol, baseUri,
-                IJB721TokenUriResolver(mockTokenUriResolver), contractUri,
+                projectId,
+                name,
+                symbol,
+                baseUri,
+                IJB721TokenUriResolver(mockTokenUriResolver),
+                contractUri,
                 JB721InitTiersConfig({tiers: tierConfigs, currency: CURRENCY, decimals: 18}),
                 JB721TiersHookFlags({
-                    preventOverspending: false, issueTokensForSplits: false,
-                    noNewTiersWithReserves: false, noNewTiersWithVotes: false,
+                    preventOverspending: false,
+                    issueTokensForSplits: false,
+                    noNewTiersWithReserves: false,
+                    noNewTiersWithVotes: false,
                     noNewTiersWithOwnerMinting: false
                 })
             );
@@ -120,12 +126,18 @@ contract SameCurrencyDecimalMismatch is UnitTestSetup {
             tierConfigs[0].price = 1e18;
             tierConfigs[0].splitPercent = 500_000_000;
             testHook.initialize(
-                projectId, name, symbol, baseUri,
-                IJB721TokenUriResolver(mockTokenUriResolver), contractUri,
+                projectId,
+                name,
+                symbol,
+                baseUri,
+                IJB721TokenUriResolver(mockTokenUriResolver),
+                contractUri,
                 JB721InitTiersConfig({tiers: tierConfigs, currency: CURRENCY, decimals: 18}),
                 JB721TiersHookFlags({
-                    preventOverspending: false, issueTokensForSplits: false,
-                    noNewTiersWithReserves: false, noNewTiersWithVotes: false,
+                    preventOverspending: false,
+                    issueTokensForSplits: false,
+                    noNewTiersWithReserves: false,
+                    noNewTiersWithVotes: false,
                     noNewTiersWithOwnerMinting: false
                 })
             );
@@ -183,12 +195,18 @@ contract SameCurrencyDecimalMismatch is UnitTestSetup {
             tierConfigs[0].price = 1e6; // 1.0 token in 6-decimal pricing.
             tierConfigs[0].splitPercent = 500_000_000;
             testHook.initialize(
-                projectId, name, symbol, baseUri,
-                IJB721TokenUriResolver(mockTokenUriResolver), contractUri,
+                projectId,
+                name,
+                symbol,
+                baseUri,
+                IJB721TokenUriResolver(mockTokenUriResolver),
+                contractUri,
                 JB721InitTiersConfig({tiers: tierConfigs, currency: CURRENCY, decimals: 6}),
                 JB721TiersHookFlags({
-                    preventOverspending: false, issueTokensForSplits: false,
-                    noNewTiersWithReserves: false, noNewTiersWithVotes: false,
+                    preventOverspending: false,
+                    issueTokensForSplits: false,
+                    noNewTiersWithReserves: false,
+                    noNewTiersWithVotes: false,
                     noNewTiersWithOwnerMinting: false
                 })
             );

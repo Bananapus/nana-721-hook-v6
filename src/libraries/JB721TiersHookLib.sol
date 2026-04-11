@@ -361,8 +361,7 @@ library JB721TiersHookLib {
             // decimal adjustment in `normalizePaymentValue` (which handles the mint path).
 
             // Decode the per-tier breakdown so each amount can be rescaled individually.
-            (uint16[] memory tierIds, uint256[] memory amounts) =
-                abi.decode(convertedMetadata, (uint16[], uint256[]));
+            (uint16[] memory tierIds, uint256[] memory amounts) = abi.decode(convertedMetadata, (uint16[], uint256[]));
 
             // Re-accumulate the total from rescaled amounts to avoid rounding drift.
             convertedTotal = 0;
