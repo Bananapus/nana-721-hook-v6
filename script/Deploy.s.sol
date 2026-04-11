@@ -10,6 +10,8 @@ import {
 import {Sphinx} from "@sphinx-labs/contracts/contracts/foundry/SphinxPlugin.sol";
 import {Script} from "forge-std/Script.sol";
 
+import {JB721CheckpointModuleFactory} from "../src/JB721CheckpointModuleFactory.sol";
+import {IJB721CheckpointModuleFactory} from "../src/interfaces/IJB721CheckpointModuleFactory.sol";
 import {JB721TiersHookDeployer} from "../src/JB721TiersHookDeployer.sol";
 import {JB721TiersHookProjectDeployer} from "../src/JB721TiersHookProjectDeployer.sol";
 import {JB721TiersHookStore} from "../src/JB721TiersHookStore.sol";
@@ -34,6 +36,8 @@ contract DeployScript is Script, Sphinx {
     bytes32 HOOK_STORE_SALT = "JB721TiersHookStoreV6_";
     // forge-lint: disable-next-line(mixed-case-variable)
     bytes32 PROJECT_DEPLOYER_SALT = "JB721TiersHookProjectDeployerV6";
+    // forge-lint: disable-next-line(mixed-case-variable)
+    bytes32 CHECKPOINT_MODULE_FACTORY_SALT = "JB721CheckpointModuleFactoryV6";
 
     function configureSphinx() public override {
         sphinxConfig.projectName = "nana-721-hook-v6";
@@ -76,6 +80,18 @@ contract DeployScript is Script, Sphinx {
             store = !_storeIsDeployed ? new JB721TiersHookStore{salt: HOOK_STORE_SALT}() : JB721TiersHookStore(_store);
         }
 
+        JB721CheckpointModuleFactory checkpointModuleFactory;
+        {
+            // Perform the check for the factory.
+            (address _factory, bool _factoryIsDeployed) =
+                _isDeployed(CHECKPOINT_MODULE_FACTORY_SALT, type(JB721CheckpointModuleFactory).creationCode, "");
+
+            // Deploy it if it has not been deployed yet.
+            checkpointModuleFactory = !_factoryIsDeployed
+                ? new JB721CheckpointModuleFactory{salt: CHECKPOINT_MODULE_FACTORY_SALT}()
+                : JB721CheckpointModuleFactory(_factory);
+        }
+
         JB721TiersHook hook;
         {
             // Perform the check for the registry.
@@ -83,14 +99,28 @@ contract DeployScript is Script, Sphinx {
                 HOOK_SALT,
                 type(JB721TiersHook).creationCode,
                 abi.encode(
-                    core.directory, core.permissions, core.prices, core.rulesets, store, core.splits, TRUSTED_FORWARDER
+                    core.directory,
+                    core.permissions,
+                    core.prices,
+                    core.rulesets,
+                    store,
+                    core.splits,
+                    checkpointModuleFactory,
+                    TRUSTED_FORWARDER
                 )
             );
 
             // Deploy it if it has not been deployed yet.
             hook = !_hookIsDeployed
                 ? new JB721TiersHook{salt: HOOK_SALT}(
-                    core.directory, core.permissions, core.prices, core.rulesets, store, core.splits, TRUSTED_FORWARDER
+                    core.directory,
+                    core.permissions,
+                    core.prices,
+                    core.rulesets,
+                    store,
+                    core.splits,
+                    IJB721CheckpointModuleFactory(address(checkpointModuleFactory)),
+                    TRUSTED_FORWARDER
                 )
                 : JB721TiersHook(_hook);
         }

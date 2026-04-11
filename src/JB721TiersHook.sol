@@ -19,6 +19,8 @@ import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol"
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {JB721Hook} from "./abstract/JB721Hook.sol";
+import {IJB721CheckpointModule} from "./interfaces/IJB721CheckpointModule.sol";
+import {IJB721CheckpointModuleFactory} from "./interfaces/IJB721CheckpointModuleFactory.sol";
 import {IJB721TiersHook} from "./interfaces/IJB721TiersHook.sol";
 import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "./interfaces/IJB721TokenUriResolver.sol";
@@ -65,6 +67,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @notice The contract that stores and manages splits.
     IJBSplits public immutable override SPLITS;
 
+    /// @notice The factory used to deploy checkpoint module clones during initialization.
+    IJB721CheckpointModuleFactory public immutable override CHECKPOINT_MODULE_FACTORY;
+
     //*********************************************************************//
     // --------------------- private stored properties ------------------ //
     //*********************************************************************//
@@ -104,6 +109,10 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// - pricing decimals in bits 32-39 (8 bits).
     uint256 internal _packedPricingContext;
 
+    /// @notice The checkpoint module that manages IVotes-compatible checkpointed voting power for this hook's NFTs.
+    /// @dev Set once during `initialize()`. Pass this to JBTokenDistributor as the IVotes token.
+    IJB721CheckpointModule public override CHECKPOINT_MODULE;
+
     //*********************************************************************//
     // -------------------------- constructor ---------------------------- //
     //*********************************************************************//
@@ -114,6 +123,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @param rulesets A contract storing and managing project rulesets.
     /// @param store The contract which stores the NFT's data.
     /// @param splits The contract that stores and manages splits.
+    /// @param checkpointModuleFactory The factory used to deploy checkpoint module clones during initialization.
     /// @param trustedForwarder The trusted forwarder for the ERC2771Context.
     constructor(
         IJBDirectory directory,
@@ -122,6 +132,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         IJBRulesets rulesets,
         IJB721TiersHookStore store,
         IJBSplits splits,
+        IJB721CheckpointModuleFactory checkpointModuleFactory,
         address trustedForwarder
     )
         JBOwnable(permissions, directory.PROJECTS(), msg.sender, uint88(0))
@@ -132,6 +143,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         RULESETS = rulesets;
         STORE = store;
         SPLITS = splits;
+        CHECKPOINT_MODULE_FACTORY = checkpointModuleFactory;
 
         // Prevent the implementation contract from being initialized.
         _initialized = true;
@@ -318,6 +330,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                 || flags.preventOverspending || flags.issueTokensForSplits
         ) STORE.recordFlags(flags);
 
+        // Deploy a checkpoint module clone for this hook instance.
+        CHECKPOINT_MODULE = CHECKPOINT_MODULE_FACTORY.deploy(address(this), STORE);
+
         // Transfer ownership to the initializer.
         _transferOwnership(_msgSender());
     }
@@ -325,7 +340,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @notice Indicates if this contract adheres to the specified interface.
     /// @dev See {IERC165-supportsInterface}.
     /// @param interfaceId The ID of the interface to check for adherence to.
-    function supportsInterface(bytes4 interfaceId) public view override(IERC165, JB721Hook) returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, JB721Hook) returns (bool) {
         return interfaceId == type(IJB721TiersHook).interfaceId || JB721Hook.supportsInterface(interfaceId);
     }
 
@@ -583,13 +598,13 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
     /// @notice Returns the calldata, preferred to use over `msg.data`
     /// @return calldata the `msg.data` of this call
-    function _msgData() internal view override(ERC2771Context, Context) returns (bytes calldata) {
+    function _msgData() internal view virtual override(ERC2771Context, Context) returns (bytes calldata) {
         return ERC2771Context._msgData();
     }
 
     /// @notice Returns the sender, preferred to use over `msg.sender`
     /// @return sender the sender address of this call.
-    function _msgSender() internal view override(ERC2771Context, Context) returns (address sender) {
+    function _msgSender() internal view virtual override(ERC2771Context, Context) returns (address sender) {
         return ERC2771Context._msgSender();
     }
 
@@ -848,5 +863,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // Record the transfer.
         // slither-disable-next-line reentrency-events,calls-loop
         STORE.recordTransferForTier({tierId: tierId, from: from, to: to});
+
+        // Notify the checkpoint module to update checkpointed voting power.
+        CHECKPOINT_MODULE.onTransfer(from, to, tokenId);
     }
 }

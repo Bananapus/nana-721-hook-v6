@@ -1006,6 +1006,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
             IJBRulesets(mockJBRulesets),
             IJB721TiersHookStore(store),
             IJBSplits(mockJBSplits),
+            IJB721CheckpointModuleFactory(address(new JB721CheckpointModuleFactory())),
             trustedForwarder
         );
         address noPricesProxy = makeAddr("noPricesProxy2");

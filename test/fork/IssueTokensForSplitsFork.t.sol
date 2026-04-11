@@ -68,6 +68,8 @@ import "../../src/JB721TiersHookDeployer.sol";
 import "../../src/JB721TiersHookProjectDeployer.sol";
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/JB721TiersHookStore.sol";
+import {JB721CheckpointModuleFactory} from "../../src/JB721CheckpointModuleFactory.sol";
+import {IJB721CheckpointModuleFactory} from "../../src/interfaces/IJB721CheckpointModuleFactory.sol";
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/interfaces/IJB721TiersHook.sol";
 // forge-lint: disable-next-line(unaliased-plain-import)
@@ -208,7 +210,14 @@ contract IssueTokensForSplitsFork is Test {
     function _deploy721Hook() internal {
         store = new JB721TiersHookStore();
         hookImpl = new JB721TiersHook(
-            jbDirectory, jbPermissions, jbPrices, jbRulesets, store, IJBSplits(address(jbSplits)), address(0)
+            jbDirectory,
+            jbPermissions,
+            jbPrices,
+            jbRulesets,
+            store,
+            IJBSplits(address(jbSplits)),
+            IJB721CheckpointModuleFactory(address(new JB721CheckpointModuleFactory())),
+            address(0)
         );
         addressRegistry = new JBAddressRegistry();
         hookDeployer = new JB721TiersHookDeployer(hookImpl, store, addressRegistry, address(0));
