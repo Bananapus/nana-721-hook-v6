@@ -15,8 +15,8 @@ import "../../src/JB721TiersHookDeployer.sol";
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/JB721TiersHookStore.sol";
 
-import {JB721CheckpointsFactory} from "../../src/JB721CheckpointsFactory.sol";
-import {IJB721CheckpointsFactory} from "../../src/interfaces/IJB721CheckpointsFactory.sol";
+import {JB721CheckpointsDeployer} from "../../src/JB721CheckpointsDeployer.sol";
+import {IJB721CheckpointsDeployer} from "../../src/interfaces/IJB721CheckpointsDeployer.sol";
 
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "../utils/TestBaseWorkflow.sol";
@@ -78,7 +78,7 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
             jbRulesets,
             store,
             IJBSplits(address(jbSplits)),
-            IJB721CheckpointsFactory(address(new JB721CheckpointsFactory())),
+            IJB721CheckpointsDeployer(address(new JB721CheckpointsDeployer())),
             trustedForwarder
         );
         addressRegistry = new JBAddressRegistry();

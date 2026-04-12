@@ -5,7 +5,7 @@ import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
 import {IJB721TiersHookStore} from "./IJB721TiersHookStore.sol";
 
 /// @notice A checkpoint module that provides IVotes-compatible checkpointed voting power for a JB721TiersHook.
-/// @dev Deployed as a clone via JB721CheckpointsFactory during hook initialization. One module per hook.
+/// @dev Deployed as a clone via JB721CheckpointsDeployer during hook initialization. One module per hook.
 /// Pass this address to JBTokenDistributor as the IVotes token.
 interface IJB721Checkpoints is IERC5805 {
     /// @notice Called by the hook after every NFT transfer to update checkpointed voting power.
@@ -17,7 +17,7 @@ interface IJB721Checkpoints is IERC5805 {
     function onTransfer(address from, address to, uint256 tokenId) external;
 
     /// @notice Initializes a cloned module with its hook and store references.
-    /// @dev Can only be called once. Called by the factory after cloning.
+    /// @dev Can only be called once. Called by the deployer after cloning.
     /// @param hook The hook this module serves.
     /// @param store The store that holds tier data for the hook's NFTs.
     function initialize(address hook, IJB721TiersHookStore store) external;

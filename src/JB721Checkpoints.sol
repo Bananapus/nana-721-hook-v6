@@ -8,7 +8,7 @@ import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 
 /// @title JB721Checkpoints
 /// @notice Provides IVotes-compatible checkpointed voting power for a JB721TiersHook. Deployed as an EIP-1167 clone
-/// via JB721CheckpointsFactory — one module per hook. The hook calls `onTransfer` on every NFT transfer to
+/// via JB721CheckpointsDeployer — one module per hook. The hook calls `onTransfer` on every NFT transfer to
 /// maintain accurate vote checkpoints.
 /// @dev EIP712 on clones: OZ stores name/version as immutables (accessible via DELEGATECALL). The storage cache
 /// (`_cachedThis`) is uninitialized on clones, so `domainSeparatorV4()` always rebuilds using the clone's
@@ -53,7 +53,7 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     //*********************************************************************//
 
     /// @notice Initializes a cloned module with its hook and store references.
-    /// @dev Can only be called once. Called by the factory after cloning.
+    /// @dev Can only be called once. Called by the deployer after cloning.
     /// @param hook The hook this module serves.
     /// @param store The store that holds tier data for the hook's NFTs.
     function initialize(address hook, IJB721TiersHookStore store) external override {

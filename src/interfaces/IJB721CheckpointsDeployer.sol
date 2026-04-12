@@ -5,13 +5,14 @@ import {IJB721Checkpoints} from "./IJB721Checkpoints.sol";
 import {IJB721TiersHookStore} from "./IJB721TiersHookStore.sol";
 
 /// @notice Deploys JB721Checkpoints clones for JB721TiersHook instances.
-interface IJB721CheckpointsFactory {
+interface IJB721CheckpointsDeployer {
     /// @notice The implementation contract that clones are based on.
     /// @return The implementation address.
     // forge-lint: disable-next-line(mixed-case-function)
-    function MODULE_IMPLEMENTATION() external view returns (address);
+    function IMPLEMENTATION() external view returns (address);
 
-    /// @notice Deploys a new checkpoint module clone for the given hook.
+    /// @notice Deploys a new deterministic checkpoint clone for the given hook.
+    /// @dev Uses CREATE2 with the hook address as salt so the clone address is the same across chains.
     /// @param hook The hook address the module will serve.
     /// @param store The store that holds tier data for the hook's NFTs.
     /// @return module The newly deployed and initialized checkpoint module.

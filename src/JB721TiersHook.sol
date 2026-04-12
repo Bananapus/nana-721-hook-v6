@@ -20,7 +20,7 @@ import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {JB721Hook} from "./abstract/JB721Hook.sol";
 import {IJB721Checkpoints} from "./interfaces/IJB721Checkpoints.sol";
-import {IJB721CheckpointsFactory} from "./interfaces/IJB721CheckpointsFactory.sol";
+import {IJB721CheckpointsDeployer} from "./interfaces/IJB721CheckpointsDeployer.sol";
 import {IJB721TiersHook} from "./interfaces/IJB721TiersHook.sol";
 import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "./interfaces/IJB721TokenUriResolver.sol";
@@ -67,8 +67,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @notice The contract that stores and manages splits.
     IJBSplits public immutable override SPLITS;
 
-    /// @notice The factory used to deploy checkpoint module clones during initialization.
-    IJB721CheckpointsFactory public immutable override CHECKPOINT_MODULE_FACTORY;
+    /// @notice The deployer used to deploy checkpoint module clones during initialization.
+    IJB721CheckpointsDeployer public immutable override CHECKPOINTS_DEPLOYER;
 
     //*********************************************************************//
     // --------------------- private stored properties ------------------ //
@@ -111,7 +111,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
     /// @notice The checkpoint module that manages IVotes-compatible checkpointed voting power for this hook's NFTs.
     /// @dev Set once during `initialize()`. Pass this to JBTokenDistributor as the IVotes token.
-    IJB721Checkpoints public override CHECKPOINT_MODULE;
+    IJB721Checkpoints public override CHECKPOINTS;
 
     //*********************************************************************//
     // -------------------------- constructor ---------------------------- //
@@ -123,7 +123,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @param rulesets A contract storing and managing project rulesets.
     /// @param store The contract which stores the NFT's data.
     /// @param splits The contract that stores and manages splits.
-    /// @param checkpointModuleFactory The factory used to deploy checkpoint module clones during initialization.
+    /// @param checkpointsDeployer The deployer used to deploy checkpoint module clones during initialization.
     /// @param trustedForwarder The trusted forwarder for the ERC2771Context.
     constructor(
         IJBDirectory directory,
@@ -132,7 +132,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         IJBRulesets rulesets,
         IJB721TiersHookStore store,
         IJBSplits splits,
-        IJB721CheckpointsFactory checkpointModuleFactory,
+        IJB721CheckpointsDeployer checkpointsDeployer,
         address trustedForwarder
     )
         JBOwnable(permissions, directory.PROJECTS(), msg.sender, uint88(0))
@@ -143,7 +143,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         RULESETS = rulesets;
         STORE = store;
         SPLITS = splits;
-        CHECKPOINT_MODULE_FACTORY = checkpointModuleFactory;
+        CHECKPOINTS_DEPLOYER = checkpointsDeployer;
 
         // Prevent the implementation contract from being initialized.
         _initialized = true;
@@ -331,7 +331,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         ) STORE.recordFlags(flags);
 
         // Deploy a checkpoint module clone for this hook instance.
-        CHECKPOINT_MODULE = CHECKPOINT_MODULE_FACTORY.deploy({hook: address(this), store: STORE});
+        CHECKPOINTS = CHECKPOINTS_DEPLOYER.deploy({hook: address(this), store: STORE});
 
         // Transfer ownership to the initializer.
         _transferOwnership(_msgSender());
@@ -865,6 +865,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         STORE.recordTransferForTier({tierId: tierId, from: from, to: to});
 
         // Notify the checkpoint module to update checkpointed voting power.
-        CHECKPOINT_MODULE.onTransfer({from: from, to: to, tokenId: tokenId});
+        CHECKPOINTS.onTransfer({from: from, to: to, tokenId: tokenId});
     }
 }

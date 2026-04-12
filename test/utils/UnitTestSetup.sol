@@ -15,8 +15,8 @@ import "../../src/abstract/JB721Hook.sol";
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/JB721TiersHookStore.sol";
 
-import {JB721CheckpointsFactory} from "../../src/JB721CheckpointsFactory.sol";
-import {IJB721CheckpointsFactory} from "../../src/interfaces/IJB721CheckpointsFactory.sol";
+import {JB721CheckpointsDeployer} from "../../src/JB721CheckpointsDeployer.sol";
+import {IJB721CheckpointsDeployer} from "../../src/interfaces/IJB721CheckpointsDeployer.sol";
 
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
@@ -240,7 +240,7 @@ contract UnitTestSetup is Test {
         );
 
         store = new JB721TiersHookStore();
-        JB721CheckpointsFactory checkpointModuleFactory = new JB721CheckpointsFactory();
+        JB721CheckpointsDeployer checkpointsDeployer = new JB721CheckpointsDeployer();
         hookOrigin = new JB721TiersHook(
             IJBDirectory(mockJBDirectory),
             IJBPermissions(mockJBPermissions),
@@ -248,7 +248,7 @@ contract UnitTestSetup is Test {
             IJBRulesets(mockJBRulesets),
             IJB721TiersHookStore(store),
             IJBSplits(mockJBSplits),
-            IJB721CheckpointsFactory(address(checkpointModuleFactory)),
+            IJB721CheckpointsDeployer(address(checkpointsDeployer)),
             trustedForwarder
         );
         addressRegistry = new JBAddressRegistry();

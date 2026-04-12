@@ -221,7 +221,7 @@ contract Test_crossCurrencyPay_Unit is UnitTestSetup {
             IJBRulesets(mockJBRulesets),
             IJB721TiersHookStore(store),
             IJBSplits(mockJBSplits),
-            IJB721CheckpointsFactory(address(new JB721CheckpointsFactory())),
+            IJB721CheckpointsDeployer(address(new JB721CheckpointsDeployer())),
             trustedForwarder
         );
 

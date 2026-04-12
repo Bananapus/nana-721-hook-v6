@@ -7,7 +7,7 @@ import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 
 import {IJB721Checkpoints} from "./IJB721Checkpoints.sol";
-import {IJB721CheckpointsFactory} from "./IJB721CheckpointsFactory.sol";
+import {IJB721CheckpointsDeployer} from "./IJB721CheckpointsDeployer.sol";
 import {IJB721Hook} from "./IJB721Hook.sol";
 import {IJB721TiersHookStore} from "./IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "./IJB721TokenUriResolver.sol";
@@ -150,12 +150,12 @@ interface IJB721TiersHook is IJB721Hook {
     /// @dev Set once during `initialize()`. Pass this to JBTokenDistributor as the IVotes token.
     /// @return The checkpoint module.
     // forge-lint: disable-next-line(mixed-case-function)
-    function CHECKPOINT_MODULE() external view returns (IJB721Checkpoints);
+    function CHECKPOINTS() external view returns (IJB721Checkpoints);
 
-    /// @notice The factory used to deploy checkpoint module clones during initialization.
-    /// @return The factory contract.
+    /// @notice The deployer used to deploy checkpoint module clones during initialization.
+    /// @return The deployer contract.
     // forge-lint: disable-next-line(mixed-case-function)
-    function CHECKPOINT_MODULE_FACTORY() external view returns (IJB721CheckpointsFactory);
+    function CHECKPOINTS_DEPLOYER() external view returns (IJB721CheckpointsDeployer);
 
     /// @notice The contract that exposes price feeds for currency conversions.
     /// @return The prices contract.
