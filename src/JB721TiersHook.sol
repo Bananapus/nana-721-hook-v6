@@ -330,9 +330,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                 || flags.preventOverspending || flags.issueTokensForSplits
         ) STORE.recordFlags(flags);
 
-        // Deploy a checkpoint module clone for this hook instance.
-        CHECKPOINTS = CHECKPOINTS_DEPLOYER.deploy({hook: address(this), store: STORE});
-
         // Transfer ownership to the initializer.
         _transferOwnership(_msgSender());
     }
@@ -863,6 +860,11 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // Record the transfer.
         // slither-disable-next-line reentrency-events,calls-loop
         STORE.recordTransferForTier({tierId: tierId, from: from, to: to});
+
+        // Deploy the checkpoint module on first use (lazy initialization).
+        if (address(CHECKPOINTS) == address(0)) {
+            CHECKPOINTS = CHECKPOINTS_DEPLOYER.deploy({hook: address(this), store: STORE});
+        }
 
         // Notify the checkpoint module to update checkpointed voting power.
         CHECKPOINTS.onTransfer({from: from, to: to, tokenId: tokenId});

@@ -147,7 +147,7 @@ interface IJB721TiersHook is IJB721Hook {
     function pricingContext() external view returns (uint256 currency, uint256 decimals);
 
     /// @notice The checkpoint module that manages IVotes-compatible checkpointed voting power for this hook's NFTs.
-    /// @dev Set once during `initialize()`. Pass this to JBTokenDistributor as the IVotes token.
+    /// @dev Deployed lazily on first mint. Pass this to JBTokenDistributor as the IVotes token.
     /// @return The checkpoint module.
     // forge-lint: disable-next-line(mixed-case-function)
     function CHECKPOINTS() external view returns (IJB721Checkpoints);
