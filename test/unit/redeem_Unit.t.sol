@@ -54,7 +54,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
 
         // Generate the metadata.
         bytes memory hookMetadata = metadataHelper.createMetadata(ids, data);
-        (uint256 cashOutTaxRate,,, JBCashOutHookSpecification[] memory returnedHook) = hook.beforeCashOutRecordedWith(
+        (uint256 cashOutTaxRate,,,, JBCashOutHookSpecification[] memory returnedHook) = hook.beforeCashOutRecordedWith(
             JBBeforeCashOutRecordedContext({
                 terminal: address(0),
                 holder: beneficiary,
@@ -118,7 +118,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
             weight += (i + 1) * (i + 1) * 10;
         }
 
-        (cashOutTaxRate,,, returnedHook) = hook.beforeCashOutRecordedWith(
+        (cashOutTaxRate,,,, returnedHook) = hook.beforeCashOutRecordedWith(
             JBBeforeCashOutRecordedContext({
                 terminal: address(0),
                 holder: beneficiary,
@@ -206,7 +206,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
             metadata: hookMetadata
         });
 
-        (uint256 cashOutTaxRate,,, JBCashOutHookSpecification[] memory returnedHook) =
+        (uint256 cashOutTaxRate,,,, JBCashOutHookSpecification[] memory returnedHook) =
             hook.beforeCashOutRecordedWith(beforeCashOutContext);
 
         // Check: does the cash out tax rate match the expected value?

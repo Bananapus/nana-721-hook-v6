@@ -77,6 +77,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     /// @return cashOutTaxRate The cash out tax rate influencing the reclaim amount.
     /// @return cashOutCount The amount of tokens that should be considered cashed out.
     /// @return totalSupply The total amount of tokens that are considered to be existing.
+    /// @return taxTotalSupply The total supply used for the bonding curve tax (includes cross-chain supply).
     /// @return hookSpecifications The amount and data to send to cash out hooks (this contract) instead of returning to
     /// the beneficiary.
     function beforeCashOutRecordedWith(JBBeforeCashOutRecordedContext calldata context)
@@ -88,6 +89,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
             uint256 cashOutTaxRate,
             uint256 cashOutCount,
             uint256 totalSupply,
+            uint256 taxTotalSupply,
             JBCashOutHookSpecification[] memory hookSpecifications
         )
     {
