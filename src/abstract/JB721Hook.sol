@@ -116,6 +116,9 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
         // Use the total cash out weight of the 721s.
         totalSupply = totalCashOutWeight();
 
+        // Use the surplus from the context.
+        effectiveSurplusValue = context.surplus.value;
+
         // Use the cash out tax rate from the context.
         cashOutTaxRate = context.cashOutTaxRate;
     }
