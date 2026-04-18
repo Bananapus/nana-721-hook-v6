@@ -175,7 +175,8 @@ contract CodexSplitCreditsMismatch is UnitTestSetup {
         assertEq(specs[0].amount, 1, "forwarded amount should be capped to actual payment");
 
         // ...and proportionally scales the encoded per-tier split amounts to match the capped total.
-        (, uint256[] memory encodedAmounts) = abi.decode(specs[0].metadata, (uint16[], uint256[]));
+        (,, bytes memory splitData) = abi.decode(specs[0].metadata, (address, address, bytes));
+        (, uint256[] memory encodedAmounts) = abi.decode(splitData, (uint16[], uint256[]));
         assertEq(encodedAmounts.length, 1, "expected one encoded split amount");
         assertEq(encodedAmounts[0], 1, "hook metadata should be scaled down to match forwarded amount");
 
