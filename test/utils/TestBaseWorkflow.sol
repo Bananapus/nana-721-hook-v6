@@ -131,7 +131,7 @@ contract TestBaseWorkflow is Test {
         jbFeelessAddresses = new JBFeelessAddresses(address(69));
         vm.label(address(jbFeelessAddresses), "JBFeelessAddresses");
 
-        jbTokens = new JBTokens(jbDirectory, new JBERC20());
+        jbTokens = new JBTokens(jbDirectory, new JBERC20(jbPermissions, jbProjects));
         vm.label(address(jbTokens), "JBTokens");
 
         jbSplits = new JBSplits(jbDirectory);
