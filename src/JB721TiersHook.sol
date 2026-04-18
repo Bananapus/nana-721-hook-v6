@@ -774,7 +774,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         if (payer == address(0)) payer = context.payer;
 
         // Mint NFTs from the specified tiers and update the beneficiary's pay credits.
-        _mintAndUpdateCredits({value: value, payer: payer, payerMetadata: context.payerMetadata, beneficiary: beneficiary});
+        _mintAndUpdateCredits({
+            value: value, payer: payer, payerMetadata: context.payerMetadata, beneficiary: beneficiary
+        });
 
         // Distribute any forwarded funds to tier split groups.
         if (splitData.length != 0 && context.forwardedAmount.value != 0) {
