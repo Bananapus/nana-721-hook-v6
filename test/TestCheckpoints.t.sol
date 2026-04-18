@@ -57,7 +57,9 @@ contract TestCheckpoints is UnitTestSetup {
         ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
 
         // Before any mint, CHECKPOINTS should be unset.
-        assertTrue(address(tiersHook.CHECKPOINTS()) == address(0), "Checkpoint module should not be deployed before mint");
+        assertTrue(
+            address(tiersHook.CHECKPOINTS()) == address(0), "Checkpoint module should not be deployed before mint"
+        );
 
         // Mint an NFT to trigger lazy deployment.
         uint16[] memory tiersToMint = new uint16[](1);
