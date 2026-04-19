@@ -73,6 +73,11 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     // --------------------- private stored properties ------------------ //
     //*********************************************************************//
 
+    /// @notice The metadata ID used to identify the relay beneficiary entry in payment metadata.
+    /// @dev Matches the ID used by `JBRelayBeneficiary` in nana-suckers-v6. When a sucker pays on behalf of
+    /// a remote user, the real user's address is embedded under this key so NFTs mint to the correct recipient.
+    bytes4 internal constant _721_BENEFICIARY_METADATA_ID = bytes4(keccak256("JB_RELAY_BENEFICIARY"));
+
     /// @notice Whether this contract has been initialized. Used to prevent re-initialization of both the
     /// implementation contract itself and its clones.
     /// @dev Internal (not private) so test harnesses that extend this contract can reset it in their constructors.
@@ -230,11 +235,26 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             hook: address(this)
         });
 
+        // Resolve the effective beneficiary: if the metadata contains a relay beneficiary
+        // (injected by a sucker for cross-chain payments), use that address for NFT minting.
+        // Otherwise, use the context's beneficiary as-is.
+        address effectiveBeneficiary = context.beneficiary;
+        {
+            (bool found, bytes memory data) =
+                JBMetadataResolver.getDataFor({id: _721_BENEFICIARY_METADATA_ID, metadata: context.metadata});
+            if (found && data.length >= 32) {
+                address relayBeneficiary = abi.decode(data, (address));
+                if (relayBeneficiary != address(0)) {
+                    effectiveBeneficiary = relayBeneficiary;
+                }
+            }
+        }
+
         hookSpecifications[0] = JBPayHookSpecification({
             hook: this,
             noop: false,
             amount: totalSplitAmount,
-            metadata: abi.encode(context.beneficiary, context.payer, splitMetadata)
+            metadata: abi.encode(effectiveBeneficiary, context.payer, splitMetadata)
         });
     }
 
