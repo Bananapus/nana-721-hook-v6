@@ -2,7 +2,6 @@
 pragma solidity 0.8.28;
 
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
-import {IJBPayHook} from "@bananapus/core-v6/src/interfaces/IJBPayHook.sol";
 import {IJBPermissions} from "@bananapus/core-v6/src/interfaces/IJBPermissions.sol";
 import {IJBPrices} from "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
 import {IJBRulesetDataHook} from "@bananapus/core-v6/src/interfaces/IJBRulesetDataHook.sol";
@@ -216,7 +215,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         });
 
         hookSpecifications[0] = JBPayHookSpecification({
-            hook: IJBPayHook(address(this)),
+            hook: this,
             noop: false,
             amount: totalSplitAmount,
             metadata: abi.encode(beneficiary, context.payer, splitMetadata)
