@@ -193,7 +193,7 @@ library JB721TiersHookLib {
         address metadataIdTarget,
         bytes calldata metadata
     )
-        public
+        internal
         view
         returns (uint256 totalSplitAmount, bytes memory hookMetadata)
     {
@@ -267,7 +267,7 @@ library JB721TiersHookLib {
         IJB721TiersHookStore store,
         address hook
     )
-        public
+        internal
         view
         returns (uint256 weight)
     {
@@ -300,7 +300,7 @@ library JB721TiersHookLib {
         IJBPrices prices,
         JBBeforePayRecordedContext calldata context
     )
-        public
+        internal
         view
         returns (uint256 convertedTotal, bytes memory convertedMetadata)
     {
