@@ -239,9 +239,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             (bool found, bytes memory data) =
                 JBMetadataResolver.getDataFor({id: JB721Constants.BENEFICIARY_METADATA_ID, metadata: context.metadata});
             if (found && data.length >= 32) {
-                address relayBeneficiary = abi.decode(data, (address));
-                if (relayBeneficiary != address(0)) {
-                    effectiveBeneficiary = relayBeneficiary;
+                address metadataBeneficiary = abi.decode(data, (address));
+                if (metadataBeneficiary != address(0)) {
+                    effectiveBeneficiary = metadataBeneficiary;
                 }
             }
         }
