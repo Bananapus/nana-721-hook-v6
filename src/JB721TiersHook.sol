@@ -647,26 +647,22 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         uint256 payCredits = payCreditsOf[beneficiary];
 
         // Compute the mint: combine credits, decode metadata, record mint, and check overspending.
-        (uint256[] memory tokenIds, uint16[] memory tierIdsToMint, uint256 newPayCredits) =
-            JB721TiersHookLib.prepareMint({
-                store: STORE,
-                metadataIdTarget: METADATA_ID_TARGET,
-                value: value,
-                payer: payer,
-                beneficiary: beneficiary,
-                payCredits: payCredits,
-                payerMetadata: payerMetadata
-            });
+        (uint256[] memory tokenIds, uint16[] memory tierIdsToMint, uint256 newPayCredits) = JB721TiersHookLib.prepareMint({
+            store: STORE,
+            metadataIdTarget: METADATA_ID_TARGET,
+            value: value,
+            payer: payer,
+            beneficiary: beneficiary,
+            payCredits: payCredits,
+            payerMetadata: payerMetadata
+        });
 
         // Mint each token to the effective beneficiary.
         if (tokenIds.length != 0) {
             // totalAmountPaid is the full amount available before recordMint deducted tier prices.
             uint256 totalAmountPaid = (payer == beneficiary) ? value + payCredits : value;
             _mintTokens({
-                tokenIds: tokenIds,
-                tierIds: tierIdsToMint,
-                beneficiary: beneficiary,
-                totalAmountPaid: totalAmountPaid
+                tokenIds: tokenIds, tierIds: tierIdsToMint, beneficiary: beneficiary, totalAmountPaid: totalAmountPaid
             });
         }
 

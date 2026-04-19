@@ -3,38 +3,52 @@ pragma solidity 0.8.28;
 
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 import {IJBPrices} from "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
-import {JBBeforePayRecordedContext} from "@bananapus/core-v6/src/structs/JBBeforePayRecordedContext.sol";
 import {IJBSplitHook} from "@bananapus/core-v6/src/interfaces/IJBSplitHook.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 import {IJBTerminal} from "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
-import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
-import {JBSplitHookContext} from "@bananapus/core-v6/src/structs/JBSplitHookContext.sol";
 import {JBConstants} from "@bananapus/core-v6/src/libraries/JBConstants.sol";
 import {JBMetadataResolver} from "@bananapus/core-v6/src/libraries/JBMetadataResolver.sol";
+import {JBBeforePayRecordedContext} from "@bananapus/core-v6/src/structs/JBBeforePayRecordedContext.sol";
+import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
+import {JBSplitGroup} from "@bananapus/core-v6/src/structs/JBSplitGroup.sol";
+import {JBSplitHookContext} from "@bananapus/core-v6/src/structs/JBSplitHookContext.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {mulDiv} from "@prb/math/src/Common.sol";
 
-import {JBSplitGroup} from "@bananapus/core-v6/src/structs/JBSplitGroup.sol";
-
 import {IJB721TiersHookStore} from "../interfaces/IJB721TiersHookStore.sol";
-import {JB721Constants} from "./JB721Constants.sol";
 import {IJB721TokenUriResolver} from "../interfaces/IJB721TokenUriResolver.sol";
-import {JB721TierConfig} from "../structs/JB721TierConfig.sol";
+
 import {JB721Constants} from "./JB721Constants.sol";
 import {JBIpfsDecoder} from "./JBIpfsDecoder.sol";
+
+import {JB721TierConfig} from "../structs/JB721TierConfig.sol";
 
 /// @notice External library for JB721TiersHook operations extracted to stay within the EIP-170 contract size limit.
 /// @dev Handles tier adjustments, split calculations, price normalization, and split fund distribution.
 library JB721TiersHookLib {
+    //*********************************************************************//
+    // --------------------------- custom errors ------------------------- //
+    //*********************************************************************//
+
     error JB721TiersHook_CantBuyWithCredits();
     error JB721TiersHook_Overspending(uint256 leftoverAmount);
     error JB721TiersHookLib_NoTerminalForLeftover(uint256 projectId, address token, uint256 leftoverAmount);
     error JB721TiersHookLib_SplitFallbackFailed(uint256 projectId, address token, uint256 amount, bytes reason);
     error JB721TiersHookLib_TokenTransferAmountMismatch(uint256 expectedAmount, uint256 receivedAmount);
+
+    //*********************************************************************//
+    // ------------------------------- events ---------------------------- //
+    //*********************************************************************//
+
     event AddTier(uint256 indexed tierId, JB721TierConfig tier, address caller);
     event RemoveTier(uint256 indexed tierId, address caller);
+    event SetDiscountPercent(uint256 indexed tierId, uint256 discountPercent, address caller);
     event SplitPayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
+
+    //*********************************************************************//
+    // ---------------------- external transactions ---------------------- //
+    //*********************************************************************//
 
     /// @notice Handles the full tier adjustment logic: removes tiers, adds tiers, emits events, and sets splits.
     /// @dev Called via DELEGATECALL from the hook, so events are emitted from the hook's address.
@@ -93,6 +107,137 @@ library JB721TiersHookLib {
         }
     }
 
+    /// @notice Pulls ERC-20 tokens from the terminal (if needed) and distributes forwarded funds to tier splits.
+    /// @dev For ERC-20 tokens, pulls from the terminal using the allowance it granted via _beforeTransferTo.
+    /// @param directory The directory to look up terminals.
+    /// @param splits The splits contract to read tier split groups from.
+    /// @param projectId The project ID of the hook.
+    /// @param hookAddress The hook address (for computing split group IDs).
+    /// @param token The token being distributed.
+    /// @param amount The total amount to distribute.
+    /// @param decimals The token decimals.
+    /// @param encodedSplitData The encoded per-tier breakdown from hookMetadata.
+    function distributeAll(
+        IJBDirectory directory,
+        IJBSplits splits,
+        uint256 projectId,
+        address hookAddress,
+        address token,
+        uint256 amount,
+        uint256 decimals,
+        bytes calldata encodedSplitData
+    )
+        external
+    {
+        // For ERC20 tokens, pull from terminal using the allowance it granted via _beforeTransferTo.
+        if (token != JBConstants.NATIVE_TOKEN) {
+            uint256 balanceBefore = IERC20(token).balanceOf(address(this));
+            SafeERC20.safeTransferFrom({token: IERC20(token), from: msg.sender, to: address(this), value: amount});
+            uint256 receivedAmount = IERC20(token).balanceOf(address(this)) - balanceBefore;
+            if (receivedAmount != amount) {
+                revert JB721TiersHookLib_TokenTransferAmountMismatch(amount, receivedAmount);
+            }
+        }
+
+        (uint16[] memory tierIds, uint256[] memory amounts) = abi.decode(encodedSplitData, (uint16[], uint256[]));
+
+        for (uint256 i; i < tierIds.length;) {
+            if (amounts[i] == 0) {
+                unchecked {
+                    ++i;
+                }
+                continue;
+            }
+            uint256 groupId = uint256(uint160(hookAddress)) | (uint256(tierIds[i]) << 160);
+            _distributeSingleSplit({
+                directory: directory,
+                splitsContract: splits,
+                projectId: projectId,
+                token: token,
+                groupId: groupId,
+                amount: amounts[i],
+                decimals: decimals
+            });
+
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    /// @notice Prepares NFT minting data for a payment: combines credits, decodes metadata, records mint, and checks
+    /// overspending.
+    /// @dev Called via DELEGATECALL from the hook; uses address(this) as the hook address.
+    /// Reverts with JB721TiersHook_CantBuyWithCredits or JB721TiersHook_Overspending on failure.
+    /// @param store The 721 tiers hook store.
+    /// @param metadataIdTarget The metadata ID target for resolving pay metadata.
+    /// @param value The normalized payment value.
+    /// @param payer The address that initiated the payment.
+    /// @param beneficiary The address to mint NFTs to and track credits for.
+    /// @param payCredits The beneficiary's current pay credits balance.
+    /// @param payerMetadata The metadata provided by the payer.
+    /// @return tokenIds The token IDs minted (empty if none).
+    /// @return tierIdsToMint The tier IDs corresponding to each minted token (empty if none).
+    /// @return newPayCredits The beneficiary's updated pay credits balance.
+    function prepareMint(
+        IJB721TiersHookStore store,
+        address metadataIdTarget,
+        uint256 value,
+        address payer,
+        address beneficiary,
+        uint256 payCredits,
+        bytes calldata payerMetadata
+    )
+        external
+        returns (uint256[] memory tokenIds, uint16[] memory tierIdsToMint, uint256 newPayCredits)
+    {
+        // Resolve metadata first (minimal stack: only 3 return vars). Scope block frees temporaries.
+        bool payerDisallowsOverspending;
+        {
+            (bool found, bytes memory metadata) = JBMetadataResolver.getDataFor({
+                id: JBMetadataResolver.getId({purpose: "pay", target: metadataIdTarget}), metadata: payerMetadata
+            });
+
+            if (found) {
+                bool payerAllowsOverspending;
+                (payerAllowsOverspending, tierIdsToMint) = abi.decode(metadata, (bool, uint16[]));
+                payerDisallowsOverspending = !payerAllowsOverspending;
+            }
+        }
+
+        // Set the leftover amount as the initial value.
+        uint256 leftoverAmount = value;
+
+        // If the payer is the effective beneficiary, combine their NFT credits with the amount paid.
+        // Reuse newPayCredits to hold unused credits (avoids an extra local variable).
+        if (payer == beneficiary) {
+            leftoverAmount += payCredits;
+        } else {
+            newPayCredits = payCredits;
+        }
+
+        // Determine whether overspending is allowed (collection flag AND payer preference).
+        bool allowOverspending = !store.flagsOf(address(this)).preventOverspending && !payerDisallowsOverspending;
+
+        // Record the mints.
+        if (tierIdsToMint.length != 0) {
+            uint256 restrictedCost;
+
+            // slither-disable-next-line reentrancy-events,reentrancy-no-eth
+            (tokenIds, leftoverAmount, restrictedCost) =
+                store.recordMint({amount: leftoverAmount, tierIds: tierIdsToMint, isOwnerMint: false});
+
+            // Credit-restricted tiers must be fully covered by fresh payment (not stored credits).
+            if (restrictedCost > value) revert JB721TiersHook_CantBuyWithCredits();
+        }
+
+        // If overspending isn't allowed, revert.
+        if (leftoverAmount != 0 && !allowOverspending) revert JB721TiersHook_Overspending(leftoverAmount);
+
+        // Compute the new pay credits balance: leftover + unused credits (held in newPayCredits).
+        newPayCredits = leftoverAmount + newPayCredits;
+    }
+
     /// @notice Records new tiers, emits events, and sets their split groups.
     /// @dev Used during initialization when tier configs are in memory.
     /// @param store The 721 tiers hook store.
@@ -130,6 +275,87 @@ library JB721TiersHookLib {
             tiersToAdd: tiersToAdd,
             tierIdsAdded: tierIdsAdded
         });
+    }
+
+    /// @notice Set the discount percent for a tier, emitting an event and recording it in the store.
+    /// @param store The 721 tiers hook store.
+    /// @param tierId The ID of the tier.
+    /// @param discountPercent The discount percent to set.
+    /// @param caller The msg.sender of the original call.
+    function setDiscountPercentOf(
+        IJB721TiersHookStore store,
+        uint256 tierId,
+        uint256 discountPercent,
+        address caller
+    )
+        external
+    {
+        emit SetDiscountPercent({tierId: tierId, discountPercent: discountPercent, caller: caller});
+        store.recordSetDiscountPercentOf({tierId: tierId, discountPercent: discountPercent});
+    }
+
+    //*********************************************************************//
+    // ----------------------- external views ---------------------------- //
+    //*********************************************************************//
+
+    /// @notice Computes split amounts, weight adjustment, and resolved beneficiary for a payment.
+    /// @dev Called via DELEGATECALL from the hook; uses address(this) as the hook address.
+    /// @param store The 721 tiers hook store.
+    /// @param metadataIdTarget The metadata ID target for resolving pay metadata.
+    /// @param packedPricingContext The packed pricing context (currency, decimals).
+    /// @param prices The prices contract used for currency conversion.
+    /// @param context The full payment context.
+    /// @return weight The adjusted weight for token minting.
+    /// @return totalSplitAmount The total amount to forward for splits.
+    /// @return splitMetadata Encoded per-tier breakdown (tierIds, amounts).
+    /// @return beneficiary The resolved beneficiary address.
+    function computeSplitsAndWeight(
+        IJB721TiersHookStore store,
+        address metadataIdTarget,
+        uint256 packedPricingContext,
+        IJBPrices prices,
+        JBBeforePayRecordedContext calldata context
+    )
+        external
+        view
+        returns (uint256 weight, uint256 totalSplitAmount, bytes memory splitMetadata, address beneficiary)
+    {
+        // Calculate per-tier split amounts.
+        (totalSplitAmount, splitMetadata) = _calculateSplitAmounts({
+            store: store, hook: address(this), metadataIdTarget: metadataIdTarget, metadata: context.metadata
+        });
+
+        // Convert split amounts from tier pricing to payment token denomination (if currencies differ)
+        // and cap at the actual payment value so the terminal never forwards more than was paid.
+        if (totalSplitAmount != 0) {
+            (totalSplitAmount, splitMetadata) = _convertAndCapSplitAmounts({
+                totalSplitAmount: totalSplitAmount,
+                splitMetadata: splitMetadata,
+                packedPricingContext: packedPricingContext,
+                prices: prices,
+                context: context
+            });
+        }
+
+        // Adjust weight so the terminal mints tokens only for the amount that actually enters the project.
+        weight = _calculateWeight({
+            contextWeight: context.weight,
+            amountValue: context.amount.value,
+            totalSplitAmount: totalSplitAmount,
+            store: store,
+            hook: address(this)
+        });
+
+        // Resolve the effective beneficiary from payment metadata.
+        beneficiary = context.beneficiary;
+        {
+            (bool found, bytes memory data) =
+                JBMetadataResolver.getDataFor({id: JB721Constants.BENEFICIARY_METADATA_ID, metadata: context.metadata});
+            if (found && data.length >= 32) {
+                address metadataBeneficiary = abi.decode(data, (address));
+                if (metadataBeneficiary != address(0)) beneficiary = metadataBeneficiary;
+            }
+        }
     }
 
     /// @notice Normalizes a payment value based on the packed pricing context.
@@ -180,6 +406,40 @@ library JB721TiersHookLib {
         valid = true;
     }
 
+    /// @notice Resolves the token URI for a given NFT token ID.
+    /// @dev Extracted to the library to keep JBIpfsDecoder bytecode out of the hook contract (EIP-170 compliance).
+    /// @param store The 721 tiers hook store.
+    /// @param hook The hook address.
+    /// @param baseUri The base URI for IPFS-based token URIs.
+    /// @param tokenId The token ID to resolve the URI for.
+    /// @return The resolved token URI string.
+    function resolveTokenURI(
+        IJB721TiersHookStore store,
+        address hook,
+        string memory baseUri,
+        uint256 tokenId
+    )
+        external
+        view
+        returns (string memory)
+    {
+        // Get a reference to the `tokenUriResolver`.
+        IJB721TokenUriResolver resolver = store.tokenUriResolverOf(hook);
+
+        // If a `tokenUriResolver` is set, use it to resolve the token URI.
+        if (address(resolver) != address(0)) return resolver.tokenUriOf({nft: hook, tokenId: tokenId});
+
+        // Otherwise, return the token URI corresponding with the NFT's tier.
+        return
+            JBIpfsDecoder.decode({
+                baseUri: baseUri, hexString: store.encodedTierIPFSUriOf({hook: hook, tokenId: tokenId})
+            });
+    }
+
+    //*********************************************************************//
+    // ----------------------- internal views ---------------------------- //
+    //*********************************************************************//
+
     /// @notice Calculates per-tier split amounts for a pay event.
     /// @param store The 721 tiers hook store.
     /// @param hook The hook address.
@@ -187,7 +447,7 @@ library JB721TiersHookLib {
     /// @param metadata The payer metadata.
     /// @return totalSplitAmount The total amount to forward for splits.
     /// @return hookMetadata Encoded per-tier breakdown (tierIds, amounts) for afterPay.
-    function calculateSplitAmounts(
+    function _calculateSplitAmounts(
         IJB721TiersHookStore store,
         address hook,
         address metadataIdTarget,
@@ -260,7 +520,7 @@ library JB721TiersHookLib {
     /// @param store The 721 tiers hook store (to read flags).
     /// @param hook The hook address.
     /// @return weight The adjusted weight for token minting.
-    function calculateWeight(
+    function _calculateWeight(
         uint256 contextWeight,
         uint256 amountValue,
         uint256 totalSplitAmount,
@@ -293,7 +553,7 @@ library JB721TiersHookLib {
     /// @param context The full payment context (provides projectId, amount currency/decimals/value).
     /// @return convertedTotal The total split amount after conversion and capping.
     /// @return convertedMetadata The re-encoded per-tier breakdown with adjusted amounts.
-    function convertAndCapSplitAmounts(
+    function _convertAndCapSplitAmounts(
         uint256 totalSplitAmount,
         bytes memory splitMetadata,
         uint256 packedPricingContext,
@@ -410,99 +670,9 @@ library JB721TiersHookLib {
         }
     }
 
-    /// @notice Sets split groups in JBSplits for tiers that have splits configured.
-    function _setSplitGroupsFor(
-        IJBSplits splits,
-        uint256 projectId,
-        address hookAddress,
-        JB721TierConfig[] memory tiersToAdd,
-        uint256[] memory tierIdsAdded
-    )
-        private
-    {
-        uint256 splitGroupCount;
-        for (uint256 i; i < tiersToAdd.length;) {
-            if (tiersToAdd[i].splits.length != 0) splitGroupCount++;
-
-            unchecked {
-                ++i;
-            }
-        }
-        if (splitGroupCount == 0) return;
-
-        JBSplitGroup[] memory splitGroups = new JBSplitGroup[](splitGroupCount);
-        uint256 groupIndex;
-        for (uint256 i; i < tiersToAdd.length;) {
-            if (tiersToAdd[i].splits.length != 0) {
-                splitGroups[groupIndex] = JBSplitGroup({
-                    groupId: uint256(uint160(hookAddress)) | (tierIdsAdded[i] << 160), splits: tiersToAdd[i].splits
-                });
-                groupIndex++;
-            }
-
-            unchecked {
-                ++i;
-            }
-        }
-        splits.setSplitGroupsOf({projectId: projectId, rulesetId: 0, splitGroups: splitGroups});
-    }
-
-    /// @notice Pulls ERC-20 tokens from the terminal (if needed) and distributes forwarded funds to tier splits.
-    /// @dev For ERC-20 tokens, pulls from the terminal using the allowance it granted via _beforeTransferTo.
-    /// @param directory The directory to look up terminals.
-    /// @param splits The splits contract to read tier split groups from.
-    /// @param projectId The project ID of the hook.
-    /// @param hookAddress The hook address (for computing split group IDs).
-    /// @param token The token being distributed.
-    /// @param amount The total amount to distribute.
-    /// @param encodedSplitData The encoded per-tier breakdown from hookMetadata.
-    function distributeAll(
-        IJBDirectory directory,
-        IJBSplits splits,
-        uint256 projectId,
-        address hookAddress,
-        address token,
-        uint256 amount,
-        uint256 decimals,
-        bytes calldata encodedSplitData
-    )
-        external
-    {
-        // For ERC20 tokens, pull from terminal using the allowance it granted via _beforeTransferTo.
-        if (token != JBConstants.NATIVE_TOKEN) {
-            uint256 balanceBefore = IERC20(token).balanceOf(address(this));
-            SafeERC20.safeTransferFrom({token: IERC20(token), from: msg.sender, to: address(this), value: amount});
-            uint256 receivedAmount = IERC20(token).balanceOf(address(this)) - balanceBefore;
-            if (receivedAmount != amount) {
-                revert JB721TiersHookLib_TokenTransferAmountMismatch(amount, receivedAmount);
-            }
-        }
-
-        (uint16[] memory tierIds, uint256[] memory amounts) = abi.decode(encodedSplitData, (uint16[], uint256[]));
-
-        for (uint256 i; i < tierIds.length;) {
-            if (amounts[i] == 0) {
-                unchecked {
-                    ++i;
-                }
-                continue;
-            }
-            uint256 groupId = uint256(uint160(hookAddress)) | (uint256(tierIds[i]) << 160);
-            _distributeSingleSplit({
-                directory: directory,
-                splitsContract: splits,
-                projectId: projectId,
-                token: token,
-                groupId: groupId,
-                amount: amounts[i],
-                decimals: decimals
-            });
-
-            unchecked {
-                ++i;
-            }
-        }
-    }
+    //*********************************************************************//
+    // ----------------------- private helpers --------------------------- //
+    //*********************************************************************//
 
     /// @notice Distributes funds for a single tier's split group.
     /// @dev Edge case: if both `_sendPayoutToSplit` returns false (reverting hook/terminal/beneficiary) AND the
@@ -771,186 +941,40 @@ library JB721TiersHookLib {
         return false;
     }
 
-    /// @notice Resolves the token URI for a given NFT token ID.
-    /// @dev Extracted to the library to keep JBIpfsDecoder bytecode out of the hook contract (EIP-170 compliance).
-    /// @param store The 721 tiers hook store.
-    /// @param hook The hook address.
-    /// @param baseUri The base URI for IPFS-based token URIs.
-    /// @param tokenId The token ID to resolve the URI for.
-    /// @return The resolved token URI string.
-    function resolveTokenURI(
-        IJB721TiersHookStore store,
-        address hook,
-        string memory baseUri,
-        uint256 tokenId
+    /// @notice Sets split groups in JBSplits for tiers that have splits configured.
+    function _setSplitGroupsFor(
+        IJBSplits splits,
+        uint256 projectId,
+        address hookAddress,
+        JB721TierConfig[] memory tiersToAdd,
+        uint256[] memory tierIdsAdded
     )
-        external
-        view
-        returns (string memory)
+        private
     {
-        // Get a reference to the `tokenUriResolver`.
-        IJB721TokenUriResolver resolver = store.tokenUriResolverOf(hook);
+        uint256 splitGroupCount;
+        for (uint256 i; i < tiersToAdd.length;) {
+            if (tiersToAdd[i].splits.length != 0) splitGroupCount++;
 
-        // If a `tokenUriResolver` is set, use it to resolve the token URI.
-        if (address(resolver) != address(0)) return resolver.tokenUriOf({nft: hook, tokenId: tokenId});
-
-        // Otherwise, return the token URI corresponding with the NFT's tier.
-        return
-            JBIpfsDecoder.decode({
-                baseUri: baseUri, hexString: store.encodedTierIPFSUriOf({hook: hook, tokenId: tokenId})
-            });
-    }
-
-    event SetDiscountPercent(uint256 indexed tierId, uint256 discountPercent, address caller);
-
-    /// @notice Set the discount percent for a tier, emitting an event and recording it in the store.
-    /// @param store The 721 tiers hook store.
-    /// @param tierId The ID of the tier.
-    /// @param discountPercent The discount percent to set.
-    /// @param caller The msg.sender of the original call.
-    function setDiscountPercentOf(
-        IJB721TiersHookStore store,
-        uint256 tierId,
-        uint256 discountPercent,
-        address caller
-    )
-        external
-    {
-        emit SetDiscountPercent({tierId: tierId, discountPercent: discountPercent, caller: caller});
-        store.recordSetDiscountPercentOf({tierId: tierId, discountPercent: discountPercent});
-    }
-
-    /// @notice Computes split amounts, weight adjustment, and resolved beneficiary for a payment.
-    /// @dev Called via DELEGATECALL from the hook; uses address(this) as the hook address.
-    /// @param store The 721 tiers hook store.
-    /// @param metadataIdTarget The metadata ID target for resolving pay metadata.
-    /// @param packedPricingContext The packed pricing context (currency, decimals).
-    /// @param prices The prices contract used for currency conversion.
-    /// @param context The full payment context.
-    /// @return weight The adjusted weight for token minting.
-    /// @return totalSplitAmount The total amount to forward for splits.
-    /// @return splitMetadata Encoded per-tier breakdown (tierIds, amounts).
-    /// @return beneficiary The resolved beneficiary address.
-    function computeSplitsAndWeight(
-        IJB721TiersHookStore store,
-        address metadataIdTarget,
-        uint256 packedPricingContext,
-        IJBPrices prices,
-        JBBeforePayRecordedContext calldata context
-    )
-        external
-        view
-        returns (uint256 weight, uint256 totalSplitAmount, bytes memory splitMetadata, address beneficiary)
-    {
-        // Calculate per-tier split amounts.
-        (totalSplitAmount, splitMetadata) = calculateSplitAmounts({
-            store: store, hook: address(this), metadataIdTarget: metadataIdTarget, metadata: context.metadata
-        });
-
-        // Convert split amounts from tier pricing to payment token denomination (if currencies differ)
-        // and cap at the actual payment value so the terminal never forwards more than was paid.
-        if (totalSplitAmount != 0) {
-            (totalSplitAmount, splitMetadata) = convertAndCapSplitAmounts({
-                totalSplitAmount: totalSplitAmount,
-                splitMetadata: splitMetadata,
-                packedPricingContext: packedPricingContext,
-                prices: prices,
-                context: context
-            });
-        }
-
-        // Adjust weight so the terminal mints tokens only for the amount that actually enters the project.
-        weight = calculateWeight({
-            contextWeight: context.weight,
-            amountValue: context.amount.value,
-            totalSplitAmount: totalSplitAmount,
-            store: store,
-            hook: address(this)
-        });
-
-        // Resolve the effective beneficiary from payment metadata.
-        beneficiary = context.beneficiary;
-        {
-            (bool found, bytes memory data) =
-                JBMetadataResolver.getDataFor({id: JB721Constants.BENEFICIARY_METADATA_ID, metadata: context.metadata});
-            if (found && data.length >= 32) {
-                address metadataBeneficiary = abi.decode(data, (address));
-                if (metadataBeneficiary != address(0)) beneficiary = metadataBeneficiary;
+            unchecked {
+                ++i;
             }
         }
-    }
+        if (splitGroupCount == 0) return;
 
-    /// @notice Prepares NFT minting data for a payment: combines credits, decodes metadata, records mint, and checks
-    /// overspending.
-    /// @dev Called via DELEGATECALL from the hook; uses address(this) as the hook address.
-    /// Reverts with JB721TiersHook_CantBuyWithCredits or JB721TiersHook_Overspending on failure.
-    /// @param store The 721 tiers hook store.
-    /// @param metadataIdTarget The metadata ID target for resolving pay metadata.
-    /// @param value The normalized payment value.
-    /// @param payer The address that initiated the payment.
-    /// @param beneficiary The address to mint NFTs to and track credits for.
-    /// @param payCredits The beneficiary's current pay credits balance.
-    /// @param payerMetadata The metadata provided by the payer.
-    /// @return tokenIds The token IDs minted (empty if none).
-    /// @return tierIdsToMint The tier IDs corresponding to each minted token (empty if none).
-    /// @return newPayCredits The beneficiary's updated pay credits balance.
-    function prepareMint(
-        IJB721TiersHookStore store,
-        address metadataIdTarget,
-        uint256 value,
-        address payer,
-        address beneficiary,
-        uint256 payCredits,
-        bytes calldata payerMetadata
-    )
-        external
-        returns (uint256[] memory tokenIds, uint16[] memory tierIdsToMint, uint256 newPayCredits)
-    {
-        // Resolve metadata first (minimal stack: only 3 return vars). Scope block frees temporaries.
-        bool payerDisallowsOverspending;
-        {
-            (bool found, bytes memory metadata) = JBMetadataResolver.getDataFor({
-                id: JBMetadataResolver.getId({purpose: "pay", target: metadataIdTarget}), metadata: payerMetadata
-            });
+        JBSplitGroup[] memory splitGroups = new JBSplitGroup[](splitGroupCount);
+        uint256 groupIndex;
+        for (uint256 i; i < tiersToAdd.length;) {
+            if (tiersToAdd[i].splits.length != 0) {
+                splitGroups[groupIndex] = JBSplitGroup({
+                    groupId: uint256(uint160(hookAddress)) | (tierIdsAdded[i] << 160), splits: tiersToAdd[i].splits
+                });
+                groupIndex++;
+            }
 
-            if (found) {
-                bool payerAllowsOverspending;
-                (payerAllowsOverspending, tierIdsToMint) = abi.decode(metadata, (bool, uint16[]));
-                payerDisallowsOverspending = !payerAllowsOverspending;
+            unchecked {
+                ++i;
             }
         }
-
-        // Set the leftover amount as the initial value.
-        uint256 leftoverAmount = value;
-
-        // If the payer is the effective beneficiary, combine their NFT credits with the amount paid.
-        // Reuse newPayCredits to hold unused credits (avoids an extra local variable).
-        if (payer == beneficiary) {
-            leftoverAmount += payCredits;
-        } else {
-            newPayCredits = payCredits;
-        }
-
-        // Determine whether overspending is allowed (collection flag AND payer preference).
-        bool allowOverspending =
-            !store.flagsOf(address(this)).preventOverspending && !payerDisallowsOverspending;
-
-        // Record the mints.
-        if (tierIdsToMint.length != 0) {
-            uint256 restrictedCost;
-
-            // slither-disable-next-line reentrancy-events,reentrancy-no-eth
-            (tokenIds, leftoverAmount, restrictedCost) =
-                store.recordMint({amount: leftoverAmount, tierIds: tierIdsToMint, isOwnerMint: false});
-
-            // Credit-restricted tiers must be fully covered by fresh payment (not stored credits).
-            if (restrictedCost > value) revert JB721TiersHook_CantBuyWithCredits();
-        }
-
-        // If overspending isn't allowed, revert.
-        if (leftoverAmount != 0 && !allowOverspending) revert JB721TiersHook_Overspending(leftoverAmount);
-
-        // Compute the new pay credits balance: leftover + unused credits (held in newPayCredits).
-        newPayCredits = leftoverAmount + newPayCredits;
+        splits.setSplitGroupsOf({projectId: projectId, rulesetId: 0, splitGroups: splitGroups});
     }
 }
