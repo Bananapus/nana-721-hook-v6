@@ -10,6 +10,9 @@ import "../../src/JB721TiersHook.sol";
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/JB721TiersHookStore.sol";
 
+import {JB721CheckpointsDeployer} from "../../src/JB721CheckpointsDeployer.sol";
+import {IJB721CheckpointsDeployer} from "../../src/interfaces/IJB721CheckpointsDeployer.sol";
+
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "../../src/structs/JBBitmapWord.sol";
 
@@ -89,6 +92,7 @@ contract ForTest_JB721TiersHook is JB721TiersHook {
             rulesets,
             store,
             splits,
+            IJB721CheckpointsDeployer(address(new JB721CheckpointsDeployer())),
             _trustedForwarder
         )
     {

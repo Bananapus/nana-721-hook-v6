@@ -19,6 +19,8 @@ import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol"
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {JB721Hook} from "./abstract/JB721Hook.sol";
+import {IJB721Checkpoints} from "./interfaces/IJB721Checkpoints.sol";
+import {IJB721CheckpointsDeployer} from "./interfaces/IJB721CheckpointsDeployer.sol";
 import {IJB721TiersHook} from "./interfaces/IJB721TiersHook.sol";
 import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "./interfaces/IJB721TokenUriResolver.sol";
@@ -42,7 +44,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
     error JB721TiersHook_AlreadyInitialized(uint256 projectId);
     error JB721TiersHook_CantBuyWithCredits();
-    error JB721TiersHook_CurrencyMismatch(uint256 paymentCurrency, uint256 tierCurrency);
     error JB721TiersHook_InvalidPricingDecimals(uint256 decimals);
     error JB721TiersHook_MintReserveNftsPaused();
     error JB721TiersHook_NoProjectId();
@@ -64,6 +65,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
     /// @notice The contract that stores and manages splits.
     IJBSplits public immutable override SPLITS;
+
+    /// @notice The deployer used to deploy checkpoint module clones during initialization.
+    IJB721CheckpointsDeployer internal immutable CHECKPOINTS_DEPLOYER;
 
     //*********************************************************************//
     // --------------------- private stored properties ------------------ //
@@ -104,6 +108,10 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// - pricing decimals in bits 32-39 (8 bits).
     uint256 internal _packedPricingContext;
 
+    /// @notice The checkpoint module that manages IVotes-compatible checkpointed voting power for this hook's NFTs.
+    /// @dev Set once during `initialize()`. Pass this to JBTokenDistributor as the IVotes token.
+    IJB721Checkpoints public override CHECKPOINTS;
+
     //*********************************************************************//
     // -------------------------- constructor ---------------------------- //
     //*********************************************************************//
@@ -114,6 +122,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @param rulesets A contract storing and managing project rulesets.
     /// @param store The contract which stores the NFT's data.
     /// @param splits The contract that stores and manages splits.
+    /// @param checkpointsDeployer The deployer used to deploy checkpoint module clones during initialization.
     /// @param trustedForwarder The trusted forwarder for the ERC2771Context.
     constructor(
         IJBDirectory directory,
@@ -122,6 +131,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         IJBRulesets rulesets,
         IJB721TiersHookStore store,
         IJBSplits splits,
+        IJB721CheckpointsDeployer checkpointsDeployer,
         address trustedForwarder
     )
         JBOwnable(permissions, directory.PROJECTS(), msg.sender, uint88(0))
@@ -132,6 +142,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         RULESETS = rulesets;
         STORE = store;
         SPLITS = splits;
+        CHECKPOINTS_DEPLOYER = checkpointsDeployer;
 
         // Prevent the implementation contract from being initialized.
         _initialized = true;
@@ -146,14 +157,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @param tokenId The token ID of the NFT to get the first owner of.
     /// @return The address of the NFT's first owner.
     function firstOwnerOf(uint256 tokenId) external view override returns (address) {
-        // Get a reference to the first owner.
-        address storedFirstOwner = _firstOwnerOf[tokenId];
-
-        // If the stored first owner is set, return it.
-        if (storedFirstOwner != address(0)) return storedFirstOwner;
-
-        // Otherwise, the first owner must be the current owner.
-        return _ownerOf(tokenId);
+        address first = _firstOwnerOf[tokenId];
+        return first != address(0) ? first : _ownerOf(tokenId);
     }
 
     /// @notice Context for the pricing of this hook's tiers.
@@ -318,6 +323,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                 || flags.preventOverspending || flags.issueTokensForSplits
         ) STORE.recordFlags(flags);
 
+        // Deploy the checkpoint module for IVotes-compatible voting power.
+        CHECKPOINTS = CHECKPOINTS_DEPLOYER.deploy({hook: address(this), store: STORE});
+
         // Transfer ownership to the initializer.
         _transferOwnership(_msgSender());
     }
@@ -325,7 +333,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @notice Indicates if this contract adheres to the specified interface.
     /// @dev See {IERC165-supportsInterface}.
     /// @param interfaceId The ID of the interface to check for adherence to.
-    function supportsInterface(bytes4 interfaceId) public view override(IERC165, JB721Hook) returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, JB721Hook) returns (bool) {
         return interfaceId == type(IJB721TiersHook).interfaceId || JB721Hook.supportsInterface(interfaceId);
     }
 
@@ -583,13 +591,13 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
     /// @notice Returns the calldata, preferred to use over `msg.data`
     /// @return calldata the `msg.data` of this call
-    function _msgData() internal view override(ERC2771Context, Context) returns (bytes calldata) {
+    function _msgData() internal view virtual override(ERC2771Context, Context) returns (bytes calldata) {
         return ERC2771Context._msgData();
     }
 
     /// @notice Returns the sender, preferred to use over `msg.sender`
     /// @return sender the sender address of this call.
-    function _msgSender() internal view override(ERC2771Context, Context) returns (address sender) {
+    function _msgSender() internal view virtual override(ERC2771Context, Context) returns (address sender) {
         return ERC2771Context._msgSender();
     }
 
@@ -805,11 +813,10 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @param tierId The ID of the tier to set the discount percent for.
     /// @param discountPercent The discount percent to set for the tier.
     function _setDiscountPercentOf(uint256 tierId, uint256 discountPercent) internal {
-        emit SetDiscountPercent({tierId: tierId, discountPercent: discountPercent, caller: _msgSender()});
-
-        // Record the discount percent for the tier.
         // slither-disable-next-line calls-loop
-        STORE.recordSetDiscountPercentOf({tierId: tierId, discountPercent: discountPercent});
+        JB721TiersHookLib.setDiscountPercentOf({
+            store: STORE, tierId: tierId, discountPercent: discountPercent, caller: _msgSender()
+        });
     }
 
     /// @notice Before transferring an NFT, register its first owner (if necessary).
@@ -848,5 +855,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // Record the transfer.
         // slither-disable-next-line reentrency-events,calls-loop
         STORE.recordTransferForTier({tierId: tierId, from: from, to: to});
+
+        // Notify the checkpoint module to update checkpointed voting power.
+        CHECKPOINTS.onTransfer({from: from, to: to, tokenId: tokenId});
     }
 }

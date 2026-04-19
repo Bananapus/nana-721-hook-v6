@@ -6,6 +6,8 @@ import {IJBRulesets} from "@bananapus/core-v6/src/interfaces/IJBRulesets.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 
+import {IJB721Checkpoints} from "./IJB721Checkpoints.sol";
+import {IJB721CheckpointsDeployer} from "./IJB721CheckpointsDeployer.sol";
 import {IJB721Hook} from "./IJB721Hook.sol";
 import {IJB721TiersHookStore} from "./IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "./IJB721TokenUriResolver.sol";
@@ -143,6 +145,12 @@ interface IJB721TiersHook is IJB721Hook {
     /// @return currency The currency used for tier prices.
     /// @return decimals The amount of decimals being used in tier prices.
     function pricingContext() external view returns (uint256 currency, uint256 decimals);
+
+    /// @notice The checkpoint module that manages IVotes-compatible checkpointed voting power for this hook's NFTs.
+    /// @dev Deployed lazily on first mint. Pass this to JBTokenDistributor as the IVotes token.
+    /// @return The checkpoint module.
+    // forge-lint: disable-next-line(mixed-case-function)
+    function CHECKPOINTS() external view returns (IJB721Checkpoints);
 
     /// @notice The contract that exposes price feeds for currency conversions.
     /// @return The prices contract.

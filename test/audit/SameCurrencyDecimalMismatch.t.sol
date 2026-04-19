@@ -12,6 +12,8 @@ import {JBBeforePayRecordedContext} from "@bananapus/core-v6/src/structs/JBBefor
 import {JBPayHookSpecification} from "@bananapus/core-v6/src/structs/JBPayHookSpecification.sol";
 import {JBTokenAmount} from "@bananapus/core-v6/src/structs/JBTokenAmount.sol";
 import {JB721TiersHook} from "../../src/JB721TiersHook.sol";
+import {JB721CheckpointsDeployer} from "../../src/JB721CheckpointsDeployer.sol";
+import {IJB721CheckpointsDeployer} from "../../src/interfaces/IJB721CheckpointsDeployer.sol";
 import {JB721TierConfig} from "../../src/structs/JB721TierConfig.sol";
 import {JB721InitTiersConfig} from "../../src/structs/JB721InitTiersConfig.sol";
 import {JB721TiersHookFlags} from "../../src/structs/JB721TiersHookFlags.sol";
@@ -40,6 +42,7 @@ contract SameCurrencyDecimalMismatch is UnitTestSetup {
                 IJBRulesets(mockJBRulesets),
                 store,
                 IJBSplits(mockJBSplits),
+                IJB721CheckpointsDeployer(address(new JB721CheckpointsDeployer())),
                 trustedForwarder
             );
             address hookAddr = makeAddr("hook18to6");
@@ -114,6 +117,7 @@ contract SameCurrencyDecimalMismatch is UnitTestSetup {
                 IJBRulesets(mockJBRulesets),
                 store,
                 IJBSplits(mockJBSplits),
+                IJB721CheckpointsDeployer(address(new JB721CheckpointsDeployer())),
                 trustedForwarder
             );
             address hookAddr = makeAddr("hook18to18");
@@ -183,6 +187,7 @@ contract SameCurrencyDecimalMismatch is UnitTestSetup {
                 IJBRulesets(mockJBRulesets),
                 store,
                 IJBSplits(mockJBSplits),
+                IJB721CheckpointsDeployer(address(new JB721CheckpointsDeployer())),
                 trustedForwarder
             );
             address hookAddr = makeAddr("hook6to18");
