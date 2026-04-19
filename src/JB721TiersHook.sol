@@ -24,6 +24,7 @@ import {IJB721CheckpointsDeployer} from "./interfaces/IJB721CheckpointsDeployer.
 import {IJB721TiersHook} from "./interfaces/IJB721TiersHook.sol";
 import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "./interfaces/IJB721TokenUriResolver.sol";
+import {JB721Constants} from "./libraries/JB721Constants.sol";
 import {JB721TiersHookLib} from "./libraries/JB721TiersHookLib.sol";
 import {JB721TiersRulesetMetadataResolver} from "./libraries/JB721TiersRulesetMetadataResolver.sol";
 import {JB721InitTiersConfig} from "./structs/JB721InitTiersConfig.sol";
@@ -72,11 +73,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     //*********************************************************************//
     // --------------------- private stored properties ------------------ //
     //*********************************************************************//
-
-    /// @notice The metadata ID used to identify the relay beneficiary entry in payment metadata.
-    /// @dev Matches the ID used by `JBRelayBeneficiary` in nana-suckers-v6. When a sucker pays on behalf of
-    /// a remote user, the real user's address is embedded under this key so NFTs mint to the correct recipient.
-    bytes4 internal constant _721_BENEFICIARY_METADATA_ID = bytes4(keccak256("JB_RELAY_BENEFICIARY"));
 
     /// @notice Whether this contract has been initialized. Used to prevent re-initialization of both the
     /// implementation contract itself and its clones.
@@ -241,7 +237,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         address effectiveBeneficiary = context.beneficiary;
         {
             (bool found, bytes memory data) =
-                JBMetadataResolver.getDataFor({id: _721_BENEFICIARY_METADATA_ID, metadata: context.metadata});
+                JBMetadataResolver.getDataFor({id: JB721Constants.BENEFICIARY_METADATA_ID, metadata: context.metadata});
             if (found && data.length >= 32) {
                 address relayBeneficiary = abi.decode(data, (address));
                 if (relayBeneficiary != address(0)) {

@@ -8,7 +8,8 @@ import "../utils/UnitTestSetup.sol";
 contract Test_relayBeneficiary_Unit is UnitTestSetup {
     /// @notice The metadata ID the 721 hook uses to look up the relay beneficiary.
     /// Must match `_721_BENEFICIARY_METADATA_ID` in JB721TiersHook.
-    bytes4 constant RELAY_BENEFICIARY_ID = bytes4(keccak256("JB_RELAY_BENEFICIARY"));
+    /// @notice Must match `BENEFICIARY_METADATA_ID` in JB721TiersHook.
+    bytes4 constant BENEFICIARY_METADATA_ID = bytes4(keccak256("JB_721_BENEFICIARY"));
 
     address relayUser = makeAddr("relayUser");
     address sucker = makeAddr("sucker");
@@ -41,7 +42,7 @@ contract Test_relayBeneficiary_Unit is UnitTestSetup {
 
         ids[0] = JBMetadataResolver.getId({purpose: "pay", target: address(tiersHook)});
         datas[0] = tierData;
-        ids[1] = RELAY_BENEFICIARY_ID;
+        ids[1] = BENEFICIARY_METADATA_ID;
         datas[1] = abi.encode(relayUser);
 
         bytes memory metadata = metadataHelper.createMetadata(ids, datas);
@@ -124,7 +125,7 @@ contract Test_relayBeneficiary_Unit is UnitTestSetup {
         bytes[] memory datas = new bytes[](2);
         ids[0] = JBMetadataResolver.getId({purpose: "pay", target: address(tiersHook)});
         datas[0] = tierData;
-        ids[1] = RELAY_BENEFICIARY_ID;
+        ids[1] = BENEFICIARY_METADATA_ID;
         datas[1] = abi.encode(address(0));
 
         bytes memory metadata = metadataHelper.createMetadata(ids, datas);
