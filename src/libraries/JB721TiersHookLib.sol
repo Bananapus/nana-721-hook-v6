@@ -802,4 +802,23 @@ library JB721TiersHookLib {
                 baseUri: baseUri, hexString: store.encodedTierIPFSUriOf({hook: hook, tokenId: tokenId})
             });
     }
+
+    event SetDiscountPercent(uint256 indexed tierId, uint256 discountPercent, address caller);
+
+    /// @notice Set the discount percent for a tier, emitting an event and recording it in the store.
+    /// @param store The 721 tiers hook store.
+    /// @param tierId The ID of the tier.
+    /// @param discountPercent The discount percent to set.
+    /// @param caller The msg.sender of the original call.
+    function setDiscountPercentOf(
+        IJB721TiersHookStore store,
+        uint256 tierId,
+        uint256 discountPercent,
+        address caller
+    )
+        external
+    {
+        emit SetDiscountPercent({tierId: tierId, discountPercent: discountPercent, caller: caller});
+        store.recordSetDiscountPercentOf({tierId: tierId, discountPercent: discountPercent});
+    }
 }

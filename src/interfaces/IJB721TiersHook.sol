@@ -152,11 +152,6 @@ interface IJB721TiersHook is IJB721Hook {
     // forge-lint: disable-next-line(mixed-case-function)
     function CHECKPOINTS() external view returns (IJB721Checkpoints);
 
-    /// @notice The deployer used to deploy checkpoint module clones during initialization.
-    /// @return The deployer contract.
-    // forge-lint: disable-next-line(mixed-case-function)
-    function CHECKPOINTS_DEPLOYER() external view returns (IJB721CheckpointsDeployer);
-
     /// @notice The contract that exposes price feeds for currency conversions.
     /// @return The prices contract.
     function PRICES() external view returns (IJBPrices);

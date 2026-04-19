@@ -44,7 +44,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
     error JB721TiersHook_AlreadyInitialized(uint256 projectId);
     error JB721TiersHook_CantBuyWithCredits();
-    error JB721TiersHook_CurrencyMismatch(uint256 paymentCurrency, uint256 tierCurrency);
     error JB721TiersHook_InvalidPricingDecimals(uint256 decimals);
     error JB721TiersHook_MintReserveNftsPaused();
     error JB721TiersHook_NoProjectId();
@@ -68,7 +67,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     IJBSplits public immutable override SPLITS;
 
     /// @notice The deployer used to deploy checkpoint module clones during initialization.
-    IJB721CheckpointsDeployer public immutable override CHECKPOINTS_DEPLOYER;
+    IJB721CheckpointsDeployer internal immutable CHECKPOINTS_DEPLOYER;
 
     //*********************************************************************//
     // --------------------- private stored properties ------------------ //
@@ -158,14 +157,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @param tokenId The token ID of the NFT to get the first owner of.
     /// @return The address of the NFT's first owner.
     function firstOwnerOf(uint256 tokenId) external view override returns (address) {
-        // Get a reference to the first owner.
-        address storedFirstOwner = _firstOwnerOf[tokenId];
-
-        // If the stored first owner is set, return it.
-        if (storedFirstOwner != address(0)) return storedFirstOwner;
-
-        // Otherwise, the first owner must be the current owner.
-        return _ownerOf(tokenId);
+        address first = _firstOwnerOf[tokenId];
+        return first != address(0) ? first : _ownerOf(tokenId);
     }
 
     /// @notice Context for the pricing of this hook's tiers.
@@ -329,6 +322,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             flags.noNewTiersWithReserves || flags.noNewTiersWithVotes || flags.noNewTiersWithOwnerMinting
                 || flags.preventOverspending || flags.issueTokensForSplits
         ) STORE.recordFlags(flags);
+
+        // Deploy the checkpoint module for IVotes-compatible voting power.
+        CHECKPOINTS = CHECKPOINTS_DEPLOYER.deploy({hook: address(this), store: STORE});
 
         // Transfer ownership to the initializer.
         _transferOwnership(_msgSender());
@@ -817,11 +813,10 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @param tierId The ID of the tier to set the discount percent for.
     /// @param discountPercent The discount percent to set for the tier.
     function _setDiscountPercentOf(uint256 tierId, uint256 discountPercent) internal {
-        emit SetDiscountPercent({tierId: tierId, discountPercent: discountPercent, caller: _msgSender()});
-
-        // Record the discount percent for the tier.
         // slither-disable-next-line calls-loop
-        STORE.recordSetDiscountPercentOf({tierId: tierId, discountPercent: discountPercent});
+        JB721TiersHookLib.setDiscountPercentOf({
+            store: STORE, tierId: tierId, discountPercent: discountPercent, caller: _msgSender()
+        });
     }
 
     /// @notice Before transferring an NFT, register its first owner (if necessary).
@@ -860,11 +855,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // Record the transfer.
         // slither-disable-next-line reentrency-events,calls-loop
         STORE.recordTransferForTier({tierId: tierId, from: from, to: to});
-
-        // Deploy the checkpoint module on first use (lazy initialization).
-        if (address(CHECKPOINTS) == address(0)) {
-            CHECKPOINTS = CHECKPOINTS_DEPLOYER.deploy({hook: address(this), store: STORE});
-        }
 
         // Notify the checkpoint module to update checkpointed voting power.
         CHECKPOINTS.onTransfer({from: from, to: to, tokenId: tokenId});

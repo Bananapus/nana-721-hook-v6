@@ -48,7 +48,7 @@ contract TestCheckpoints is UnitTestSetup {
     }
 
     // -------------------------------------------------------------------
-    // Test 1: Checkpoint module is deployed lazily on first mint
+    // Test 1: Checkpoint module is deployed eagerly during initialize
     // -------------------------------------------------------------------
     function test_checkpointModule_isDeployed() public {
         defaultTierConfig.flags.allowOwnerMint = true;
@@ -56,18 +56,10 @@ contract TestCheckpoints is UnitTestSetup {
 
         ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
 
-        // Before any mint, CHECKPOINTS should be unset.
+        // CHECKPOINTS should be deployed immediately after initialization.
         assertTrue(
-            address(tiersHook.CHECKPOINTS()) == address(0), "Checkpoint module should not be deployed before mint"
+            address(tiersHook.CHECKPOINTS()) != address(0), "Checkpoint module should be deployed after initialization"
         );
-
-        // Mint an NFT to trigger lazy deployment.
-        uint16[] memory tiersToMint = new uint16[](1);
-        tiersToMint[0] = 1;
-        vm.prank(owner);
-        tiersHook.mintFor(tiersToMint, makeAddr("user"));
-
-        assertTrue(address(tiersHook.CHECKPOINTS()) != address(0), "Checkpoint module should be deployed after mint");
     }
 
     // -------------------------------------------------------------------
@@ -95,7 +87,7 @@ contract TestCheckpoints is UnitTestSetup {
 
         address user = makeAddr("user");
 
-        // Mint an NFT to user (also deploys CHECKPOINTS lazily).
+        // Mint an NFT to user (CHECKPOINTS already deployed during init).
         uint16[] memory tiersToMint = new uint16[](1);
         tiersToMint[0] = 1;
         vm.prank(owner);
@@ -126,7 +118,7 @@ contract TestCheckpoints is UnitTestSetup {
 
         address user = makeAddr("user");
 
-        // Mint an NFT to user (also deploys CHECKPOINTS lazily).
+        // Mint an NFT to user (CHECKPOINTS already deployed during init).
         uint16[] memory tiersToMint = new uint16[](1);
         tiersToMint[0] = 1;
         vm.prank(owner);
@@ -152,7 +144,7 @@ contract TestCheckpoints is UnitTestSetup {
         address alice = makeAddr("alice");
         address bob = makeAddr("bob");
 
-        // Mint to alice (also deploys CHECKPOINTS lazily).
+        // Mint to alice (CHECKPOINTS already deployed during init).
         uint16[] memory tiersToMint = new uint16[](1);
         tiersToMint[0] = 1;
         vm.prank(owner);
@@ -191,7 +183,7 @@ contract TestCheckpoints is UnitTestSetup {
 
         address user = makeAddr("user");
 
-        // Mint first NFT to deploy CHECKPOINTS lazily.
+        // Mint first NFT to test checkpoint tracking.
         uint16[] memory tiersToMint = new uint16[](1);
         tiersToMint[0] = 1;
         vm.prank(owner);
@@ -244,7 +236,7 @@ contract TestCheckpoints is UnitTestSetup {
 
         address user = makeAddr("user");
 
-        // Mint one from tier 1 to deploy CHECKPOINTS lazily.
+        // Mint one from tier 1 to test checkpoint tracking.
         uint16[] memory tier1 = new uint16[](1);
         tier1[0] = 1;
         vm.prank(owner);
@@ -323,7 +315,7 @@ contract TestCheckpoints is UnitTestSetup {
 
         ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
 
-        // Mint to deploy CHECKPOINTS lazily.
+        // Mint to test checkpoint tracking.
         uint16[] memory tiersToMint = new uint16[](1);
         tiersToMint[0] = 1;
         vm.prank(owner);
