@@ -24,6 +24,7 @@ import {IJB721CheckpointsDeployer} from "./interfaces/IJB721CheckpointsDeployer.
 import {IJB721TiersHook} from "./interfaces/IJB721TiersHook.sol";
 import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "./interfaces/IJB721TokenUriResolver.sol";
+import {JB721Constants} from "./libraries/JB721Constants.sol";
 import {JB721TiersHookLib} from "./libraries/JB721TiersHookLib.sol";
 import {JB721TiersRulesetMetadataResolver} from "./libraries/JB721TiersRulesetMetadataResolver.sol";
 import {JB721InitTiersConfig} from "./structs/JB721InitTiersConfig.sol";
@@ -201,40 +202,23 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     {
         hookSpecifications = new JBPayHookSpecification[](1);
 
-        // Calculate per-tier split amounts via the library.
-        (uint256 totalSplitAmount, bytes memory splitMetadata) = JB721TiersHookLib.calculateSplitAmounts({
-            store: STORE, hook: address(this), metadataIdTarget: METADATA_ID_TARGET, metadata: context.metadata
-        });
-
-        // Convert split amounts from tier pricing to payment token denomination (if currencies differ)
-        // and cap at the actual payment value so the terminal never forwards more than was paid.
-        if (totalSplitAmount != 0) {
-            (totalSplitAmount, splitMetadata) = JB721TiersHookLib.convertAndCapSplitAmounts({
-                totalSplitAmount: totalSplitAmount,
-                splitMetadata: splitMetadata,
-                packedPricingContext: _packedPricingContext,
-                prices: PRICES,
-                projectId: context.projectId,
-                amountCurrency: context.amount.currency,
-                amountDecimals: context.amount.decimals,
-                amountValue: context.amount.value
-            });
-        }
-
-        // Adjust weight so the terminal mints tokens only for the amount that actually enters the project.
-        weight = JB721TiersHookLib.calculateWeight({
-            contextWeight: context.weight,
-            amountValue: context.amount.value,
-            totalSplitAmount: totalSplitAmount,
+        // Compute split amounts, adjusted weight, and resolved beneficiary in a single library call.
+        uint256 totalSplitAmount;
+        bytes memory splitMetadata;
+        address beneficiary;
+        (weight, totalSplitAmount, splitMetadata, beneficiary) = JB721TiersHookLib.computeSplitsAndWeight({
             store: STORE,
-            hook: address(this)
+            metadataIdTarget: METADATA_ID_TARGET,
+            packedPricingContext: _packedPricingContext,
+            prices: PRICES,
+            context: context
         });
 
         hookSpecifications[0] = JBPayHookSpecification({
             hook: this,
             noop: false,
             amount: totalSplitAmount,
-            metadata: abi.encode(context.beneficiary, context.payer, splitMetadata)
+            metadata: abi.encode(beneficiary, context.payer, splitMetadata)
         });
     }
 
@@ -662,74 +646,27 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // Keep a reference to the number of NFT credits the beneficiary already has.
         uint256 payCredits = payCreditsOf[beneficiary];
 
-        // Set the leftover amount as the initial value.
-        uint256 leftoverAmount = value;
-
-        // If the payer is the effective beneficiary, combine their NFT credits with the amount paid.
-        uint256 unusedPayCredits;
-        if (payer == beneficiary) {
-            leftoverAmount += payCredits;
-        } else {
-            // Otherwise, the payer's NFT credits won't be used, and we keep track of the unused credits.
-            unusedPayCredits = payCredits;
-        }
-
-        // Keep a reference to the boolean indicating whether paying more than the price of the NFTs being minted
-        // is allowed. Defaults to the collection's flag.
-        bool allowOverspending = !STORE.flagsOf(address(this)).preventOverspending;
-
-        // Resolve the metadata.
-        (bool found, bytes memory metadata) = JBMetadataResolver.getDataFor({
-            id: JBMetadataResolver.getId({purpose: "pay", target: METADATA_ID_TARGET}), metadata: payerMetadata
+        // Compute the mint: combine credits, decode metadata, record mint, and check overspending.
+        (uint256[] memory tokenIds, uint16[] memory tierIdsToMint, uint256 newPayCredits) = JB721TiersHookLib.prepareMint({
+            store: STORE,
+            metadataIdTarget: METADATA_ID_TARGET,
+            value: value,
+            payer: payer,
+            beneficiary: beneficiary,
+            payCredits: payCredits,
+            payerMetadata: payerMetadata
         });
 
-        if (found) {
-            // Keep a reference to the IDs of the tier be to minted.
-            uint16[] memory tierIdsToMint;
-
-            // Keep a reference to the payer's flag indicating whether overspending is allowed.
-            bool payerAllowsOverspending;
-
-            // Decode the metadata.
-            (payerAllowsOverspending, tierIdsToMint) = abi.decode(metadata, (bool, uint16[]));
-
-            // Make sure overspending is allowed if requested.
-            if (allowOverspending && !payerAllowsOverspending) {
-                allowOverspending = false;
-            }
-
-            // Mint NFTs from the tiers as specified.
-            if (tierIdsToMint.length != 0) {
-                uint256[] memory tokenIds;
-                uint256 restrictedCost;
-                uint256 totalAmountPaid = leftoverAmount;
-
-                // Record the mints.
-                // slither-disable-next-line reentrancy-events,reentrancy-no-eth
-                (tokenIds, leftoverAmount, restrictedCost) =
-                    STORE.recordMint({amount: leftoverAmount, tierIds: tierIdsToMint, isOwnerMint: false});
-
-                // Enforce `cantBuyWithCredits`: only tiers explicitly configured as credit-restricted must be fully
-                // covered by fresh payment (not stored credits). Split-bearing tiers are not automatically restricted;
-                // deployers must set that flag in tier configuration when they need that invariant.
-                if (restrictedCost > value) revert JB721TiersHook_CantBuyWithCredits();
-
-                // Mint each token to the effective beneficiary.
-                _mintTokens({
-                    tokenIds: tokenIds,
-                    tierIds: tierIdsToMint,
-                    beneficiary: beneficiary,
-                    totalAmountPaid: totalAmountPaid
-                });
-            }
+        // Mint each token to the effective beneficiary.
+        if (tokenIds.length != 0) {
+            // totalAmountPaid is the full amount available before recordMint deducted tier prices.
+            uint256 totalAmountPaid = (payer == beneficiary) ? value + payCredits : value;
+            _mintTokens({
+                tokenIds: tokenIds, tierIds: tierIdsToMint, beneficiary: beneficiary, totalAmountPaid: totalAmountPaid
+            });
         }
 
-        // If overspending isn't allowed, revert.
-        if (leftoverAmount != 0 && !allowOverspending) revert JB721TiersHook_Overspending(leftoverAmount);
-
         // Update NFT credits if they changed.
-        uint256 newPayCredits = leftoverAmount + unusedPayCredits;
-
         if (newPayCredits != payCredits) {
             if (newPayCredits > payCredits) {
                 emit AddPayCredits({
@@ -747,6 +684,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                 });
             }
 
+            // slither-disable-next-line reentrancy-no-eth
             payCreditsOf[beneficiary] = newPayCredits;
         }
     }
