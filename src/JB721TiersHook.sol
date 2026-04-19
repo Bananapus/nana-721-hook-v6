@@ -684,6 +684,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                 });
             }
 
+            // slither-disable-next-line reentrancy-no-eth
             payCreditsOf[beneficiary] = newPayCredits;
         }
     }
