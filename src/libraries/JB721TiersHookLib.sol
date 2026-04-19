@@ -2,7 +2,10 @@
 pragma solidity 0.8.28;
 
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
+import {IJBPayHook} from "@bananapus/core-v6/src/interfaces/IJBPayHook.sol";
 import {IJBPrices} from "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
+import {JBBeforePayRecordedContext} from "@bananapus/core-v6/src/structs/JBBeforePayRecordedContext.sol";
+import {JBPayHookSpecification} from "@bananapus/core-v6/src/structs/JBPayHookSpecification.sol";
 import {IJBSplitHook} from "@bananapus/core-v6/src/interfaces/IJBSplitHook.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 import {IJBTerminal} from "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
@@ -17,6 +20,7 @@ import {mulDiv} from "@prb/math/src/Common.sol";
 import {JBSplitGroup} from "@bananapus/core-v6/src/structs/JBSplitGroup.sol";
 
 import {IJB721TiersHookStore} from "../interfaces/IJB721TiersHookStore.sol";
+import {JB721Constants} from "./JB721Constants.sol";
 import {IJB721TokenUriResolver} from "../interfaces/IJB721TokenUriResolver.sol";
 import {JB721TierConfig} from "../structs/JB721TierConfig.sol";
 import {JB721Constants} from "./JB721Constants.sol";
@@ -189,7 +193,7 @@ library JB721TiersHookLib {
         address metadataIdTarget,
         bytes calldata metadata
     )
-        external
+        public
         view
         returns (uint256 totalSplitAmount, bytes memory hookMetadata)
     {
@@ -263,7 +267,7 @@ library JB721TiersHookLib {
         IJB721TiersHookStore store,
         address hook
     )
-        external
+        public
         view
         returns (uint256 weight)
     {
@@ -281,15 +285,12 @@ library JB721TiersHookLib {
 
     /// @notice Converts split amounts from tier pricing to payment denomination (if currencies differ), then caps
     /// the total at the actual payment value — proportionally reducing per-tier amounts when the cap applies.
-    /// @dev Combines currency conversion and cap into one external call to keep hook bytecode under EIP-170.
+    /// @dev Combines currency conversion and cap into one call to keep hook bytecode under EIP-170.
     /// @param totalSplitAmount The total split amount in tier pricing denomination.
     /// @param splitMetadata The encoded per-tier breakdown (tierIds, amounts).
     /// @param packedPricingContext The packed pricing context (currency in bits 0-31, decimals in bits 32-39).
     /// @param prices The prices contract used for currency conversion.
-    /// @param projectId The project ID.
-    /// @param amountCurrency The payment amount currency.
-    /// @param amountDecimals The payment amount decimals.
-    /// @param amountValue The actual payment value (used as the cap).
+    /// @param context The full payment context (provides projectId, amount currency/decimals/value).
     /// @return convertedTotal The total split amount after conversion and capping.
     /// @return convertedMetadata The re-encoded per-tier breakdown with adjusted amounts.
     function convertAndCapSplitAmounts(
@@ -297,12 +298,9 @@ library JB721TiersHookLib {
         bytes memory splitMetadata,
         uint256 packedPricingContext,
         IJBPrices prices,
-        uint256 projectId,
-        uint256 amountCurrency,
-        uint256 amountDecimals,
-        uint256 amountValue
+        JBBeforePayRecordedContext calldata context
     )
-        external
+        public
         view
         returns (uint256 convertedTotal, bytes memory convertedMetadata)
     {
@@ -316,7 +314,7 @@ library JB721TiersHookLib {
 
         // Convert each per-tier amount from the tier pricing currency to the payment currency.
         // forge-lint: disable-next-line(unsafe-typecast)
-        if (amountCurrency != uint256(uint32(packedPricingContext))) {
+        if (context.amount.currency != uint256(uint32(packedPricingContext))) {
             // No price oracle available — return 0 to skip the split rather than forwarding an unconverted
             // amount denominated in the wrong currency, which would over- or under-pay.
             if (address(prices) == address(0)) return (0, convertedMetadata);
@@ -325,11 +323,11 @@ library JB721TiersHookLib {
                 // Get the price ratio: how many payment-currency units per one tier-pricing-currency unit.
                 // forge-lint: disable-next-line(unsafe-typecast)
                 uint256 ratio = prices.pricePerUnitOf({
-                    projectId: projectId,
-                    pricingCurrency: amountCurrency,
+                    projectId: context.projectId,
+                    pricingCurrency: context.amount.currency,
                     // forge-lint: disable-next-line(unsafe-typecast)
                     unitCurrency: uint256(uint32(packedPricingContext)),
-                    decimals: amountDecimals
+                    decimals: context.amount.decimals
                 });
 
                 // The denominator scales each amount from tier-pricing decimals to payment-token decimals.
@@ -354,7 +352,7 @@ library JB721TiersHookLib {
                 // Re-encode with the converted amounts.
                 convertedMetadata = abi.encode(tierIds, amounts);
             }
-        } else if (amountDecimals != pricingDecimals) {
+        } else if (context.amount.decimals != pricingDecimals) {
             // Same currency but different decimal scales (e.g. pricing at 18 decimals, payment token at 6).
             // Without this branch, split amounts stay in pricing decimals while the cap comparison uses
             // payment decimals — causing orders-of-magnitude mis-scaling. This mirrors the same-currency
@@ -367,12 +365,12 @@ library JB721TiersHookLib {
             convertedTotal = 0;
             for (uint256 i; i < amounts.length;) {
                 // Scale each amount from pricing decimals to payment decimals.
-                if (amountDecimals > pricingDecimals) {
+                if (context.amount.decimals > pricingDecimals) {
                     // Payment has more decimals — multiply to add precision (e.g. 6→18: multiply by 10^12).
-                    amounts[i] = amounts[i] * (10 ** (amountDecimals - pricingDecimals));
+                    amounts[i] = amounts[i] * (10 ** (context.amount.decimals - pricingDecimals));
                 } else {
                     // Payment has fewer decimals — divide to remove precision (e.g. 18→6: divide by 10^12).
-                    amounts[i] = amounts[i] / (10 ** (pricingDecimals - amountDecimals));
+                    amounts[i] = amounts[i] / (10 ** (pricingDecimals - context.amount.decimals));
                 }
                 convertedTotal += amounts[i];
 
@@ -388,7 +386,7 @@ library JB721TiersHookLib {
         // Cap the total at the actual payment value. Pay credits fund NFT minting (virtual), but splits
         // require real tokens to distribute. Without this cap, a user with sufficient pay credits but
         // insufficient ETH would revert because the terminal can't forward more than what was actually paid.
-        if (convertedTotal > amountValue) {
+        if (convertedTotal > context.amount.value) {
             // Proportionally reduce each per-tier amount to stay in sync with the capped total.
             if (convertedMetadata.length != 0) {
                 (uint16[] memory tierIds, uint256[] memory amounts) =
@@ -397,7 +395,7 @@ library JB721TiersHookLib {
                 convertedTotal = 0;
                 for (uint256 i; i < amounts.length;) {
                     // Scale down: amount * amountValue / originalTotal.
-                    amounts[i] = mulDiv({x: amounts[i], y: amountValue, denominator: uncappedTotal});
+                    amounts[i] = mulDiv({x: amounts[i], y: context.amount.value, denominator: uncappedTotal});
                     convertedTotal += amounts[i];
 
                     unchecked {
@@ -407,7 +405,7 @@ library JB721TiersHookLib {
                 convertedMetadata = abi.encode(tierIds, amounts);
             } else {
                 // Clamp the total to the payment value.
-                convertedTotal = amountValue;
+                convertedTotal = context.amount.value;
             }
         }
     }
@@ -820,5 +818,83 @@ library JB721TiersHookLib {
     {
         emit SetDiscountPercent({tierId: tierId, discountPercent: discountPercent, caller: caller});
         store.recordSetDiscountPercentOf({tierId: tierId, discountPercent: discountPercent});
+    }
+
+    /// @notice Computes the full beforePayRecordedWith result for JB721TiersHook.
+    /// @dev Extracted to the library to stay within the EIP-170 contract size limit.
+    function beforePayRecordedWith(
+        JBBeforePayRecordedContext calldata context,
+        IJB721TiersHookStore store,
+        address hook,
+        address metadataIdTarget,
+        uint256 packedPricingContext,
+        IJBPrices prices
+    )
+        external
+        view
+        returns (uint256 weight, JBPayHookSpecification[] memory hookSpecifications)
+    {
+        hookSpecifications = new JBPayHookSpecification[](1);
+
+        // Calculate per-tier split amounts.
+        (uint256 totalSplitAmount, bytes memory splitMetadata) = calculateSplitAmounts({
+            store: store, hook: hook, metadataIdTarget: metadataIdTarget, metadata: context.metadata
+        });
+
+        // Convert split amounts from tier pricing to payment token denomination (if currencies differ)
+        // and cap at the actual payment value so the terminal never forwards more than was paid.
+        if (totalSplitAmount != 0) {
+            (totalSplitAmount, splitMetadata) = convertAndCapSplitAmounts({
+                totalSplitAmount: totalSplitAmount,
+                splitMetadata: splitMetadata,
+                packedPricingContext: packedPricingContext,
+                prices: prices,
+                context: context
+            });
+        }
+
+        // Adjust weight so the terminal mints tokens only for the amount that actually enters the project.
+        weight = calculateWeight({
+            contextWeight: context.weight,
+            amountValue: context.amount.value,
+            totalSplitAmount: totalSplitAmount,
+            store: store,
+            hook: hook
+        });
+
+        hookSpecifications[0] = JBPayHookSpecification({
+            hook: IJBPayHook(hook),
+            noop: false,
+            amount: totalSplitAmount,
+            metadata: abi.encode(
+                resolveBeneficiary({fallbackBeneficiary: context.beneficiary, metadata: context.metadata}),
+                context.payer,
+                splitMetadata
+            )
+        });
+    }
+
+    /// @notice Resolves the effective beneficiary from payment metadata.
+    /// @dev Returns `fallbackBeneficiary` if no valid beneficiary is found in metadata.
+    /// @param fallbackBeneficiary The default beneficiary (typically `context.beneficiary`).
+    /// @param metadata The payment metadata to search.
+    /// @return The resolved beneficiary address.
+    function resolveBeneficiary(
+        address fallbackBeneficiary,
+        bytes memory metadata
+    )
+        public
+        pure
+        returns (address)
+    {
+        (bool found, bytes memory data) =
+            JBMetadataResolver.getDataFor({id: JB721Constants.BENEFICIARY_METADATA_ID, metadata: metadata});
+        if (found && data.length >= 32) {
+            address metadataBeneficiary = abi.decode(data, (address));
+            if (metadataBeneficiary != address(0)) {
+                return metadataBeneficiary;
+            }
+        }
+        return fallbackBeneficiary;
     }
 }

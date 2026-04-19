@@ -200,57 +200,13 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         override(JB721Hook, IJBRulesetDataHook)
         returns (uint256 weight, JBPayHookSpecification[] memory hookSpecifications)
     {
-        hookSpecifications = new JBPayHookSpecification[](1);
-
-        // Calculate per-tier split amounts via the library.
-        (uint256 totalSplitAmount, bytes memory splitMetadata) = JB721TiersHookLib.calculateSplitAmounts({
-            store: STORE, hook: address(this), metadataIdTarget: METADATA_ID_TARGET, metadata: context.metadata
-        });
-
-        // Convert split amounts from tier pricing to payment token denomination (if currencies differ)
-        // and cap at the actual payment value so the terminal never forwards more than was paid.
-        if (totalSplitAmount != 0) {
-            (totalSplitAmount, splitMetadata) = JB721TiersHookLib.convertAndCapSplitAmounts({
-                totalSplitAmount: totalSplitAmount,
-                splitMetadata: splitMetadata,
-                packedPricingContext: _packedPricingContext,
-                prices: PRICES,
-                projectId: context.projectId,
-                amountCurrency: context.amount.currency,
-                amountDecimals: context.amount.decimals,
-                amountValue: context.amount.value
-            });
-        }
-
-        // Adjust weight so the terminal mints tokens only for the amount that actually enters the project.
-        weight = JB721TiersHookLib.calculateWeight({
-            contextWeight: context.weight,
-            amountValue: context.amount.value,
-            totalSplitAmount: totalSplitAmount,
+        return JB721TiersHookLib.beforePayRecordedWith({
+            context: context,
             store: STORE,
-            hook: address(this)
-        });
-
-        // Resolve the effective beneficiary: if the metadata contains a relay beneficiary
-        // (injected by a sucker for cross-chain payments), use that address for NFT minting.
-        // Otherwise, use the context's beneficiary as-is.
-        address effectiveBeneficiary = context.beneficiary;
-        {
-            (bool found, bytes memory data) =
-                JBMetadataResolver.getDataFor({id: JB721Constants.BENEFICIARY_METADATA_ID, metadata: context.metadata});
-            if (found && data.length >= 32) {
-                address metadataBeneficiary = abi.decode(data, (address));
-                if (metadataBeneficiary != address(0)) {
-                    effectiveBeneficiary = metadataBeneficiary;
-                }
-            }
-        }
-
-        hookSpecifications[0] = JBPayHookSpecification({
-            hook: this,
-            noop: false,
-            amount: totalSplitAmount,
-            metadata: abi.encode(effectiveBeneficiary, context.payer, splitMetadata)
+            hook: address(this),
+            metadataIdTarget: METADATA_ID_TARGET,
+            packedPricingContext: _packedPricingContext,
+            prices: PRICES
         });
     }
 
