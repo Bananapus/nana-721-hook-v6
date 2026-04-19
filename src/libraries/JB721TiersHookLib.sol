@@ -869,34 +869,15 @@ library JB721TiersHookLib {
         });
 
         // Resolve the effective beneficiary from payment metadata.
-        beneficiary = resolveBeneficiary({
-            fallbackBeneficiary: context.beneficiary,
-            metadata: context.metadata
-        });
-    }
-
-    /// @notice Resolves the effective beneficiary from payment metadata.
-    /// @dev Returns `fallbackBeneficiary` if no valid beneficiary is found in metadata.
-    /// @param fallbackBeneficiary The default beneficiary (typically `context.beneficiary`).
-    /// @param metadata The payment metadata to search.
-    /// @return The resolved beneficiary address.
-    function resolveBeneficiary(
-        address fallbackBeneficiary,
-        bytes memory metadata
-    )
-        public
-        pure
-        returns (address)
-    {
-        (bool found, bytes memory data) =
-            JBMetadataResolver.getDataFor({id: JB721Constants.BENEFICIARY_METADATA_ID, metadata: metadata});
-        if (found && data.length >= 32) {
-            address metadataBeneficiary = abi.decode(data, (address));
-            if (metadataBeneficiary != address(0)) {
-                return metadataBeneficiary;
+        beneficiary = context.beneficiary;
+        {
+            (bool found, bytes memory data) =
+                JBMetadataResolver.getDataFor({id: JB721Constants.BENEFICIARY_METADATA_ID, metadata: context.metadata});
+            if (found && data.length >= 32) {
+                address metadataBeneficiary = abi.decode(data, (address));
+                if (metadataBeneficiary != address(0)) beneficiary = metadataBeneficiary;
             }
         }
-        return fallbackBeneficiary;
     }
 
     /// @notice Prepares NFT minting data for a payment: combines credits, decodes metadata, records mint, and checks
