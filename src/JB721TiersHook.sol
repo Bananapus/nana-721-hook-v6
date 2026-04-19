@@ -2,6 +2,7 @@
 pragma solidity 0.8.28;
 
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
+import {IJBPayHook} from "@bananapus/core-v6/src/interfaces/IJBPayHook.sol";
 import {IJBPermissions} from "@bananapus/core-v6/src/interfaces/IJBPermissions.sol";
 import {IJBPrices} from "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
 import {IJBRulesetDataHook} from "@bananapus/core-v6/src/interfaces/IJBRulesetDataHook.sol";
@@ -200,13 +201,25 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         override(JB721Hook, IJBRulesetDataHook)
         returns (uint256 weight, JBPayHookSpecification[] memory hookSpecifications)
     {
-        return JB721TiersHookLib.beforePayRecordedWith({
-            context: context,
+        hookSpecifications = new JBPayHookSpecification[](1);
+
+        // Compute split amounts, adjusted weight, and resolved beneficiary in a single library call.
+        uint256 totalSplitAmount;
+        bytes memory splitMetadata;
+        address beneficiary;
+        (weight, totalSplitAmount, splitMetadata, beneficiary) = JB721TiersHookLib.computeSplitsAndWeight({
             store: STORE,
-            hook: address(this),
             metadataIdTarget: METADATA_ID_TARGET,
             packedPricingContext: _packedPricingContext,
-            prices: PRICES
+            prices: PRICES,
+            context: context
+        });
+
+        hookSpecifications[0] = JBPayHookSpecification({
+            hook: IJBPayHook(address(this)),
+            noop: false,
+            amount: totalSplitAmount,
+            metadata: abi.encode(beneficiary, context.payer, splitMetadata)
         });
     }
 
@@ -634,74 +647,31 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // Keep a reference to the number of NFT credits the beneficiary already has.
         uint256 payCredits = payCreditsOf[beneficiary];
 
-        // Set the leftover amount as the initial value.
-        uint256 leftoverAmount = value;
+        // Compute the mint: combine credits, decode metadata, record mint, and check overspending.
+        (uint256[] memory tokenIds, uint16[] memory tierIdsToMint, uint256 newPayCredits) =
+            JB721TiersHookLib.prepareMint({
+                store: STORE,
+                metadataIdTarget: METADATA_ID_TARGET,
+                value: value,
+                payer: payer,
+                beneficiary: beneficiary,
+                payCredits: payCredits,
+                payerMetadata: payerMetadata
+            });
 
-        // If the payer is the effective beneficiary, combine their NFT credits with the amount paid.
-        uint256 unusedPayCredits;
-        if (payer == beneficiary) {
-            leftoverAmount += payCredits;
-        } else {
-            // Otherwise, the payer's NFT credits won't be used, and we keep track of the unused credits.
-            unusedPayCredits = payCredits;
+        // Mint each token to the effective beneficiary.
+        if (tokenIds.length != 0) {
+            // totalAmountPaid is the full amount available before recordMint deducted tier prices.
+            uint256 totalAmountPaid = (payer == beneficiary) ? value + payCredits : value;
+            _mintTokens({
+                tokenIds: tokenIds,
+                tierIds: tierIdsToMint,
+                beneficiary: beneficiary,
+                totalAmountPaid: totalAmountPaid
+            });
         }
-
-        // Keep a reference to the boolean indicating whether paying more than the price of the NFTs being minted
-        // is allowed. Defaults to the collection's flag.
-        bool allowOverspending = !STORE.flagsOf(address(this)).preventOverspending;
-
-        // Resolve the metadata.
-        (bool found, bytes memory metadata) = JBMetadataResolver.getDataFor({
-            id: JBMetadataResolver.getId({purpose: "pay", target: METADATA_ID_TARGET}), metadata: payerMetadata
-        });
-
-        if (found) {
-            // Keep a reference to the IDs of the tier be to minted.
-            uint16[] memory tierIdsToMint;
-
-            // Keep a reference to the payer's flag indicating whether overspending is allowed.
-            bool payerAllowsOverspending;
-
-            // Decode the metadata.
-            (payerAllowsOverspending, tierIdsToMint) = abi.decode(metadata, (bool, uint16[]));
-
-            // Make sure overspending is allowed if requested.
-            if (allowOverspending && !payerAllowsOverspending) {
-                allowOverspending = false;
-            }
-
-            // Mint NFTs from the tiers as specified.
-            if (tierIdsToMint.length != 0) {
-                uint256[] memory tokenIds;
-                uint256 restrictedCost;
-                uint256 totalAmountPaid = leftoverAmount;
-
-                // Record the mints.
-                // slither-disable-next-line reentrancy-events,reentrancy-no-eth
-                (tokenIds, leftoverAmount, restrictedCost) =
-                    STORE.recordMint({amount: leftoverAmount, tierIds: tierIdsToMint, isOwnerMint: false});
-
-                // Enforce `cantBuyWithCredits`: only tiers explicitly configured as credit-restricted must be fully
-                // covered by fresh payment (not stored credits). Split-bearing tiers are not automatically restricted;
-                // deployers must set that flag in tier configuration when they need that invariant.
-                if (restrictedCost > value) revert JB721TiersHook_CantBuyWithCredits();
-
-                // Mint each token to the effective beneficiary.
-                _mintTokens({
-                    tokenIds: tokenIds,
-                    tierIds: tierIdsToMint,
-                    beneficiary: beneficiary,
-                    totalAmountPaid: totalAmountPaid
-                });
-            }
-        }
-
-        // If overspending isn't allowed, revert.
-        if (leftoverAmount != 0 && !allowOverspending) revert JB721TiersHook_Overspending(leftoverAmount);
 
         // Update NFT credits if they changed.
-        uint256 newPayCredits = leftoverAmount + unusedPayCredits;
-
         if (newPayCredits != payCredits) {
             if (newPayCredits > payCredits) {
                 emit AddPayCredits({

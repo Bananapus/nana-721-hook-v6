@@ -2,10 +2,8 @@
 pragma solidity 0.8.28;
 
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
-import {IJBPayHook} from "@bananapus/core-v6/src/interfaces/IJBPayHook.sol";
 import {IJBPrices} from "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
 import {JBBeforePayRecordedContext} from "@bananapus/core-v6/src/structs/JBBeforePayRecordedContext.sol";
-import {JBPayHookSpecification} from "@bananapus/core-v6/src/structs/JBPayHookSpecification.sol";
 import {IJBSplitHook} from "@bananapus/core-v6/src/interfaces/IJBSplitHook.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 import {IJBTerminal} from "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
@@ -29,6 +27,8 @@ import {JBIpfsDecoder} from "./JBIpfsDecoder.sol";
 /// @notice External library for JB721TiersHook operations extracted to stay within the EIP-170 contract size limit.
 /// @dev Handles tier adjustments, split calculations, price normalization, and split fund distribution.
 library JB721TiersHookLib {
+    error JB721TiersHook_CantBuyWithCredits();
+    error JB721TiersHook_Overspending(uint256 leftoverAmount);
     error JB721TiersHookLib_NoTerminalForLeftover(uint256 projectId, address token, uint256 leftoverAmount);
     error JB721TiersHookLib_SplitFallbackFailed(uint256 projectId, address token, uint256 amount, bytes reason);
     error JB721TiersHookLib_TokenTransferAmountMismatch(uint256 expectedAmount, uint256 receivedAmount);
@@ -820,25 +820,31 @@ library JB721TiersHookLib {
         store.recordSetDiscountPercentOf({tierId: tierId, discountPercent: discountPercent});
     }
 
-    /// @notice Computes the full beforePayRecordedWith result for JB721TiersHook.
-    /// @dev Extracted to the library to stay within the EIP-170 contract size limit.
-    function beforePayRecordedWith(
-        JBBeforePayRecordedContext calldata context,
+    /// @notice Computes split amounts, weight adjustment, and resolved beneficiary for a payment.
+    /// @dev Called via DELEGATECALL from the hook; uses address(this) as the hook address.
+    /// @param store The 721 tiers hook store.
+    /// @param metadataIdTarget The metadata ID target for resolving pay metadata.
+    /// @param packedPricingContext The packed pricing context (currency, decimals).
+    /// @param prices The prices contract used for currency conversion.
+    /// @param context The full payment context.
+    /// @return weight The adjusted weight for token minting.
+    /// @return totalSplitAmount The total amount to forward for splits.
+    /// @return splitMetadata Encoded per-tier breakdown (tierIds, amounts).
+    /// @return beneficiary The resolved beneficiary address.
+    function computeSplitsAndWeight(
         IJB721TiersHookStore store,
-        address hook,
         address metadataIdTarget,
         uint256 packedPricingContext,
-        IJBPrices prices
+        IJBPrices prices,
+        JBBeforePayRecordedContext calldata context
     )
         external
         view
-        returns (uint256 weight, JBPayHookSpecification[] memory hookSpecifications)
+        returns (uint256 weight, uint256 totalSplitAmount, bytes memory splitMetadata, address beneficiary)
     {
-        hookSpecifications = new JBPayHookSpecification[](1);
-
         // Calculate per-tier split amounts.
-        (uint256 totalSplitAmount, bytes memory splitMetadata) = calculateSplitAmounts({
-            store: store, hook: hook, metadataIdTarget: metadataIdTarget, metadata: context.metadata
+        (totalSplitAmount, splitMetadata) = calculateSplitAmounts({
+            store: store, hook: address(this), metadataIdTarget: metadataIdTarget, metadata: context.metadata
         });
 
         // Convert split amounts from tier pricing to payment token denomination (if currencies differ)
@@ -859,18 +865,13 @@ library JB721TiersHookLib {
             amountValue: context.amount.value,
             totalSplitAmount: totalSplitAmount,
             store: store,
-            hook: hook
+            hook: address(this)
         });
 
-        hookSpecifications[0] = JBPayHookSpecification({
-            hook: IJBPayHook(hook),
-            noop: false,
-            amount: totalSplitAmount,
-            metadata: abi.encode(
-                resolveBeneficiary({fallbackBeneficiary: context.beneficiary, metadata: context.metadata}),
-                context.payer,
-                splitMetadata
-            )
+        // Resolve the effective beneficiary from payment metadata.
+        beneficiary = resolveBeneficiary({
+            fallbackBeneficiary: context.beneficiary,
+            metadata: context.metadata
         });
     }
 
@@ -896,5 +897,79 @@ library JB721TiersHookLib {
             }
         }
         return fallbackBeneficiary;
+    }
+
+    /// @notice Prepares NFT minting data for a payment: combines credits, decodes metadata, records mint, and checks
+    /// overspending.
+    /// @dev Called via DELEGATECALL from the hook; uses address(this) as the hook address.
+    /// Reverts with JB721TiersHook_CantBuyWithCredits or JB721TiersHook_Overspending on failure.
+    /// @param store The 721 tiers hook store.
+    /// @param metadataIdTarget The metadata ID target for resolving pay metadata.
+    /// @param value The normalized payment value.
+    /// @param payer The address that initiated the payment.
+    /// @param beneficiary The address to mint NFTs to and track credits for.
+    /// @param payCredits The beneficiary's current pay credits balance.
+    /// @param payerMetadata The metadata provided by the payer.
+    /// @return tokenIds The token IDs minted (empty if none).
+    /// @return tierIdsToMint The tier IDs corresponding to each minted token (empty if none).
+    /// @return newPayCredits The beneficiary's updated pay credits balance.
+    function prepareMint(
+        IJB721TiersHookStore store,
+        address metadataIdTarget,
+        uint256 value,
+        address payer,
+        address beneficiary,
+        uint256 payCredits,
+        bytes calldata payerMetadata
+    )
+        external
+        returns (uint256[] memory tokenIds, uint16[] memory tierIdsToMint, uint256 newPayCredits)
+    {
+        // Resolve metadata first (minimal stack: only 3 return vars). Scope block frees temporaries.
+        bool payerDisallowsOverspending;
+        {
+            (bool found, bytes memory metadata) = JBMetadataResolver.getDataFor({
+                id: JBMetadataResolver.getId({purpose: "pay", target: metadataIdTarget}), metadata: payerMetadata
+            });
+
+            if (found) {
+                bool payerAllowsOverspending;
+                (payerAllowsOverspending, tierIdsToMint) = abi.decode(metadata, (bool, uint16[]));
+                payerDisallowsOverspending = !payerAllowsOverspending;
+            }
+        }
+
+        // Set the leftover amount as the initial value.
+        uint256 leftoverAmount = value;
+
+        // If the payer is the effective beneficiary, combine their NFT credits with the amount paid.
+        // Reuse newPayCredits to hold unused credits (avoids an extra local variable).
+        if (payer == beneficiary) {
+            leftoverAmount += payCredits;
+        } else {
+            newPayCredits = payCredits;
+        }
+
+        // Determine whether overspending is allowed (collection flag AND payer preference).
+        bool allowOverspending =
+            !store.flagsOf(address(this)).preventOverspending && !payerDisallowsOverspending;
+
+        // Record the mints.
+        if (tierIdsToMint.length != 0) {
+            uint256 restrictedCost;
+
+            // slither-disable-next-line reentrancy-events,reentrancy-no-eth
+            (tokenIds, leftoverAmount, restrictedCost) =
+                store.recordMint({amount: leftoverAmount, tierIds: tierIdsToMint, isOwnerMint: false});
+
+            // Credit-restricted tiers must be fully covered by fresh payment (not stored credits).
+            if (restrictedCost > value) revert JB721TiersHook_CantBuyWithCredits();
+        }
+
+        // If overspending isn't allowed, revert.
+        if (leftoverAmount != 0 && !allowOverspending) revert JB721TiersHook_Overspending(leftoverAmount);
+
+        // Compute the new pay credits balance: leftover + unused credits (held in newPayCredits).
+        newPayCredits = leftoverAmount + newPayCredits;
     }
 }
