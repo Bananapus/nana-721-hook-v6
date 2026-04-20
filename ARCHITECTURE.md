@@ -2,86 +2,92 @@
 
 ## Purpose
 
-`nana-721-hook-v6` is the canonical tiered NFT issuance layer for Juicebox V6. It lets a project mint NFTs on payment, manage tier pricing and supply, accumulate NFT credits, lazily mint reserves, and optionally use NFT-aware cash-out behavior.
+`nana-721-hook-v6` is the shared tiered NFT layer for Juicebox V6. It lets projects sell NFT tiers, track reserves, route split payouts, and cash out NFTs without replacing core treasury accounting.
 
 ## System Overview
 
-`JB721TiersHook` is the project-facing hook surface. Through the shared `JB721Hook` base, it installs itself as both the ruleset data hook and the post-settlement pay and cash-out hook for the project. `JB721TiersHookStore` is the compact storage and validation backend that defines most tier semantics. The deployers package that behavior for existing projects or one-shot launches. The repo composes `nana-core-v6` rather than replacing terminal, controller, or surplus accounting.
+`JB721TiersHook` is the runtime hook. `JB721TiersHookStore` is the accounting backend for tiers, supply, reserves, and lookup. The deployers package that hook into reusable flows for existing projects and new project launches.
+
+Custom token URI resolvers usually live outside this repo, but they still affect the trusted surface seen by users.
 
 ## Core Invariants
 
-- Tier ordering, category ordering, and tier IDs are part of storage semantics.
-- Original configured tier price drives cash-out weight; discounts affect mint price, not reclaim weight.
-- Reserve frequency and owner-mint settings must not combine into duplicate mint authority.
-- Pending reserves count in supply-sensitive logic before reserve tokens are lazily minted.
-- Preview behavior must stay aligned with live mint and cash-out behavior.
-- Tier splits can reduce the fungible-token mint weight before terminal settlement unless `issueTokensForSplits` is enabled.
-- If `useDataHookForCashOut` is enabled, NFT cash-out semantics intentionally displace fungible-token cash-out behavior.
+- the hook must not create alternate treasury accounting
+- tier supply, burned counts, and reserves must stay coherent
+- cash-out weight must reflect the intended tier economics
+- reserve minting and split routing must not drift from stored tier state
+- store-linked list and bitmap assumptions must stay valid under tier add, remove, and clean operations
+- deployer wiring must preserve the expected ruleset and hook shape
 
 ## Modules
 
 | Module | Responsibility | Notes |
 | --- | --- | --- |
-| `JB721TiersHook` | Data-hook, pay-hook, and optional cash-out-hook behavior | Project-facing entrypoint |
-| `JB721TiersHookStore` | Tier storage, mint accounting, reserves, validation | Storage-critical |
-| `JB721Hook`, `ERC721` | Shared NFT machinery and metadata plumbing | Base abstractions |
-| `JB721TiersHookDeployer`, `JB721TiersHookProjectDeployer` | Clone and launch helpers | Deployment surface |
+| `JB721TiersHook` | Pay hook, cash-out hook, permissions, and project-facing execution | Runtime core |
+| `JB721TiersHookStore` | Tier definitions, balances, reserve tracking, and accounting | Shared state |
+| `JB721TiersHookDeployer` | Clone deployer for existing projects | Wiring helper |
+| `JB721TiersHookProjectDeployer` | Project-launch deployer with hook setup | Launch helper |
+| `JB721Hook` | Abstract 721 hook base | Shared behavior |
 
 ## Trust Boundaries
 
-- Treasury accounting, controller semantics, and permissions live in `nana-core-v6`.
-- Resolver contracts such as Banny are outside this repo and are part of the trusted metadata surface when configured.
-- Hook composition order matters when this hook is wrapped by deployers such as `nana-omnichain-deployers-v6`.
+- core accounting, pricing, and terminal authentication remain in `nana-core-v6`
+- metadata resolvers can be project-specific and should be treated as trusted external surfaces
+- the store is trusted by every hook that uses it
+- deployers are trusted to wire the hook into the intended project and ruleset shape
 
 ## Critical Flows
 
-### Payment
+### Pay And Mint
 
 ```text
-terminal payment
-  -> data hook decodes metadata and requested tiers
-  -> hook computes mintable tiers, split forwarding, beneficiary resolution, and leftover value
-  -> terminal settles the payment into the project
-  -> post-settlement pay hook mints NFTs and may store remaining value as credits
-```
-
-### Reserve Minting
-
-```text
-tier purchases
-  -> accumulate reserve entitlement
-  -> reserve-mint call later realizes those pending reserve tokens
+payment arrives
+  -> hook decodes metadata and tier choices
+  -> store records mints, credits, supply changes, and reserve effects
+  -> hook may route split payouts from forwarded funds
+  -> collection state and balances update for the beneficiary
 ```
 
 ### Cash Out
 
 ```text
-holder burns NFT
-  -> data hook overrides fungible-token cash-out inputs when enabled
-  -> terminal settles the cash out using NFT-derived weight
-  -> post-settlement cash-out hook burns the specified NFTs
-  -> reclaim value is derived from the tier's original configured price
+cash out requested
+  -> hook checks NFT-specific metadata and selected token IDs
+  -> hook burns NFTs
+  -> store records burn and supply effects
+  -> terminal reclaims value using hook-aware cash-out math
 ```
 
 ## Accounting Model
 
-The repo owns tier accounting, reserve accounting, credit accounting, and NFT-specific cash-out inputs. It also owns the mapping from hook metadata to NFT mint and burn side effects after terminal settlement. It does not own the canonical treasury ledger, which remains in `nana-core-v6`.
+This repo owns tier accounting and NFT lifecycle logic. It does not own the canonical project ledger for balances, fees, or surplus.
+
+The most important state lives in the store: remaining supply, burned counts, reserve tracking, and per-tier configuration.
 
 ## Security Model
 
-- Store layout changes have repo-wide blast radius because many downstream packages assume stable tier semantics.
-- Metadata decoding is part of economic correctness because it chooses tiers, credits, and cash-out behavior.
-- Terminal authorization in the base hook is part of the trust model; arbitrary callers must not be able to trigger pay or cash-out hooks.
-- Initialization is one-time and ends by transferring ownership to the initializer. Clone deployers and launch flows depend on that handoff being preserved.
-- Reserve math and supply math must be reviewed together.
+- store corruption has ecosystem-wide blast radius because many products reuse it
+- reserve logic, discounts, and cash-out weight are the main economic risk surfaces
+- split distribution and fallback behavior are part of correctness, not a secondary concern
+- gas costs matter because some reads and writes scale with tier count
 
 ## Safe Change Guide
 
-- Treat store changes as ecosystem-wide changes.
-- Keep previews aligned with state-changing behavior.
-- If you change split behavior, re-check both NFT mint side effects and the fungible-token weight returned to the terminal.
-- When adding metadata fields or flags, update wrapper deployers and downstream integrations in the same change set.
-- If reserve logic changes, re-check supply math, reserve minting, and cash-out denominators together.
+- review hook and store behavior together when changing tier lifecycle logic
+- if reserve logic changes, re-check cash-out weight and pending reserve effects together
+- if deployer behavior changes, re-check ruleset wiring and ownership transfer paths
+- do not treat resolver behavior as proof that hook accounting is correct
+
+## Canonical Checks
+
+- pay, mint, and redeem end-to-end behavior:
+  `test/E2E/Pay_Mint_Redeem_E2E.t.sol`
+- store and lifecycle invariants:
+  `test/invariants/TierLifecycleInvariant.t.sol`
+  `test/invariants/TieredHookStoreInvariant.t.sol`
+- split-credit and deployer regressions:
+  `test/audit/CodexSplitCreditsMismatch.t.sol`
+  `test/regression/ProjectDeployerRulesets.t.sol`
 
 ## Source Map
 
@@ -89,3 +95,4 @@ The repo owns tier accounting, reserve accounting, credit accounting, and NFT-sp
 - `src/JB721TiersHookStore.sol`
 - `src/JB721TiersHookDeployer.sol`
 - `src/JB721TiersHookProjectDeployer.sol`
+- `src/libraries/JB721TiersHookLib.sol`
