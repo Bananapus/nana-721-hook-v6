@@ -7,7 +7,6 @@ pragma solidity ^0.8.0;
 /// @custom:member cantBeRemoved A boolean indicating whether attempts to remove this tier will revert.
 /// @custom:member cantIncreaseDiscountPercent If the tier cannot have its discount increased.
 /// @custom:member cantBuyWithCredits If true, this tier cannot be purchased using accumulated pay credits.
-// forge-lint: disable-next-line(pascal-case-struct)
 struct JB721TierFlags {
     bool allowOwnerMint;
     bool transfersPausable;

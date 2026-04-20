@@ -8,6 +8,5 @@ library JB721Constants {
     /// @notice The metadata ID used to identify the 721 beneficiary entry in payment metadata.
     /// @dev When a sucker pays on behalf of a remote user, the real user's address is embedded under this key
     /// so NFTs mint to the correct recipient.
-    // forge-lint: disable-next-line(mixed-case-variable)
     bytes4 public constant BENEFICIARY_METADATA_ID = bytes4(keccak256("JB_721_BENEFICIARY"));
 }

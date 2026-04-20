@@ -2,7 +2,7 @@
 
 This repo is the tiered ERC-721 hook system for Juicebox payments and NFT cash-outs. Audit it as a shared primitive used by many other repos.
 
-## Objective
+## Audit Objective
 
 Find issues that:
 - let users mint tiers more cheaply than intended
@@ -26,7 +26,13 @@ In scope:
 
 This repo is depended on by Defifa, Croptop, Banny, Revnets, and omnichain deployers. Bugs here often have ecosystem-wide blast radius.
 
-## System Model
+## Start Here
+
+1. `src/JB721TiersHookStore.sol`
+2. `src/JB721TiersHook.sol`
+3. `src/JB721TiersHookDeployer.sol` and `src/JB721TiersHookProjectDeployer.sol`
+
+## Security Model
 
 The hook can act as:
 - a data hook for payment and cash-out accounting inputs
@@ -44,6 +50,22 @@ The most important design subtlety is that this repo affects both:
 - core Juicebox accounting inputs and fulfillment order
 
 That combination is why small-looking mistakes here often become ecosystem-wide economic bugs.
+
+## Roles And Privileges
+
+| Role | Powers | How constrained |
+|------|--------|-----------------|
+| Project authority | Adjust tiers, discounts, and resolver setup | Must not break supply, ordering, or accounting assumptions |
+| Hook instance | Mint, burn, and compute accounting inputs | Must stay isolated from other hook instances |
+| Store contract | Hold shared tier state | Must not leak or corrupt cross-project data |
+| Token URI resolver | Supply metadata only | Must not become a hidden control surface |
+
+## Integration Assumptions
+
+| Dependency | Assumption | What breaks if wrong |
+|------------|------------|----------------------|
+| `nana-core-v6` | Payment and cash-out semantics remain coherent | Downstream economic routing becomes unsafe |
+| Split recipients and hooks | Failures are handled in bounded ways | Mint accounting and treasury routing desync |
 
 ## Critical Invariants
 
@@ -68,21 +90,7 @@ Unused payment value that becomes credits must not let a user later mint tiers, 
 7. Resolver trust stays read-only unless explicitly intended
 Token URI resolvers must not become an implicit control plane for mint, burn, or accounting behavior.
 
-## Threat Model
-
-Prioritize:
-- overspending and leftover-credit edge cases
-- cross-currency pricing with missing or stale feeds
-- tier additions or adjustments with invalid sort order or percent bounds
-- split hooks or terminal recipients that revert or partially fail
-- data-hook and pay-hook interactions inside the same payment
-
-Especially high-value attacker profiles:
-- a payer crafting metadata and tier selections to desync credits, split routing, and token issuance
-- a project owner adjusting tiers between preview and execution windows
-- a downstream app assuming tier cash-out weight tracks discounted price when the primitive uses different economics
-
-## Hotspots
+## Attack Surfaces
 
 - `beforePayRecordedWith`, `afterPayRecordedWith`, and cash-out hooks
 - credit handling when `payer != beneficiary`
@@ -91,24 +99,19 @@ Especially high-value attacker profiles:
 - `splitPercent` handling and hook distribution fallback behavior
 - deployers that transfer ownership or queue rulesets around the hook
 
-## Sequences Worth Replaying
+Replay these sequences:
+1. cross-currency payment with missing, stale, or asymmetric prices
+2. leftover credits across different payer and beneficiary arrangements
+3. split-routed tier purchases when downstream hooks or terminals fail
+4. reserve-heavy tiers followed by NFT cash-out before reserves are minted
+5. tier adjustment or discount changes around active minting and cash-out windows
 
-1. Cross-currency payment where prices are missing, stale, or intentionally asymmetric.
-2. Payment with leftover value that becomes credits, then a second payment from a different payer/beneficiary arrangement.
-3. Tier purchases with split routing enabled, especially when split hooks or downstream terminals fail.
-4. Reserve-heavy tiers followed by NFT cash-out before pending reserves are minted.
-5. Tier adjustment or discount updates around active minting and cash-out windows.
+## Accepted Risks Or Behaviors
 
-## Build And Verification
+- Conservative behavior is preferable to optimistic behavior because downstream repos often treat these surfaces as economic truth.
 
-Standard workflow:
+## Verification
+
 - `npm install`
 - `forge build`
 - `forge test`
-
-Current tests emphasize:
-- audit and regression fixes around split accounting and cross-currency behavior
-- invariants on tier lifecycle and store state
-- fork coverage for ERC-20 cash-out and tier split routes
-
-High-value findings in this repo tend to become repeatable vulnerabilities in downstream repos, so favor proofs that show the primitive itself returning or recording the wrong value.

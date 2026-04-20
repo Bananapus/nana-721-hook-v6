@@ -3,18 +3,23 @@
 `@bananapus/721-hook-v6` is the tiered NFT issuance layer for Juicebox V6. It lets a project mint ERC-721s on payment, attach tier-specific pricing and supply rules, mint reserves, and integrate custom token URI resolvers.
 
 Docs: <https://docs.juicebox.money>
-Architecture: [ARCHITECTURE.md](./ARCHITECTURE.md)
+Architecture: [ARCHITECTURE.md](./ARCHITECTURE.md)  
+User journeys: [USER_JOURNEYS.md](./USER_JOURNEYS.md)  
+Skills: [SKILLS.md](./SKILLS.md)  
+Risks: [RISKS.md](./RISKS.md)  
+Administration: [ADMINISTRATION.md](./ADMINISTRATION.md)  
+Audit instructions: [AUDIT_INSTRUCTIONS.md](./AUDIT_INSTRUCTIONS.md)
 
 ## Overview
 
-This package is the standard NFT hook for the V6 ecosystem. Projects use it to:
+This package is the main shared tiered NFT hook used across the V6 ecosystem. Projects use it to:
 
 - sell fixed-price NFT tiers through Juicebox payments
 - apply tier supply, reserve frequency, voting unit, and discount rules
 - cash out tiers through the Juicebox terminal surface
 - compose custom metadata resolvers such as Banny or Defifa
 
-The deployer and project-deployer helpers make it practical to clone hooks for existing projects or launch a new project with a 721 hook already configured.
+The deployer helps clone hooks for existing projects, and the project-deployer helps launch new projects with a hook already attached.
 
 Use this repo when a project's NFT logic should be part of its payment and cash-out flow. Do not use it for collection-specific rendering or game logic; those belong in higher-level packages like Banny or Defifa.
 
@@ -70,6 +75,14 @@ The shortest useful reading order is:
 
 That split is why UI bugs, economic bugs, and deployment bugs often land in different repos even though users describe them all as "721 hook issues."
 
+## High-Signal Tests
+
+1. `test/E2E/Pay_Mint_Redeem_E2E.t.sol`
+2. `test/invariants/TierLifecycleInvariant.t.sol`
+3. `test/invariants/TieredHookStoreInvariant.t.sol`
+4. `test/audit/CodexSplitCreditsMismatch.t.sol`
+5. `test/regression/ProjectDeployerRulesets.t.sol`
+
 ## Install
 
 ```bash
@@ -121,3 +134,9 @@ script/
 - tier mutations after launch are powerful and should be permissioned carefully
 
 When people say "the 721 hook," they often mean three different things: the hook contract, the store, and the metadata resolver plugged into it. Audits and integrations should separate those concerns.
+
+## For AI Agents
+
+- Separate hook behavior, store behavior, and resolver behavior in your explanation.
+- Read the store invariants and end-to-end pay/mint/redeem tests before summarizing lifecycle guarantees.
+- If metadata or rendering behavior is project-specific, move to the downstream resolver repo.

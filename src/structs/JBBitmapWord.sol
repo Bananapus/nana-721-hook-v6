@@ -5,7 +5,6 @@ pragma solidity ^0.8.0;
 /// `JBBitmap` matrix is a "word".
 /// @custom:member The information stored at the index.
 /// @custom:member The index.
-// forge-lint: disable-next-line(pascal-case-struct)
 struct JBBitmapWord {
     uint256 currentWord;
     uint256 currentDepth;
