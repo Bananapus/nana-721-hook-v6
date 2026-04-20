@@ -48,17 +48,29 @@ contract TestCheckpoints is UnitTestSetup {
     }
 
     // -------------------------------------------------------------------
-    // Test 1: Checkpoint module is deployed eagerly during initialize
+    // Test 1: Checkpoint module is deployed lazily on first transfer
     // -------------------------------------------------------------------
-    function test_checkpointModule_isDeployed() public {
+    function test_checkpointModule_isDeployedLazily() public {
         defaultTierConfig.flags.allowOwnerMint = true;
         defaultTierConfig.reserveFrequency = 0;
 
         ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
 
-        // CHECKPOINTS should be deployed immediately after initialization.
+        // CHECKPOINTS should NOT be deployed after initialization (lazy deployment).
         assertTrue(
-            address(tiersHook.CHECKPOINTS()) != address(0), "Checkpoint module should be deployed after initialization"
+            address(tiersHook.CHECKPOINTS()) == address(0),
+            "Checkpoint module should not be deployed after initialization"
+        );
+
+        // Mint a token to trigger lazy deployment.
+        uint16[] memory tiersToMint = new uint16[](1);
+        tiersToMint[0] = 1;
+        vm.prank(owner);
+        tiersHook.mintFor(tiersToMint, owner);
+
+        // CHECKPOINTS should now be deployed after the first mint.
+        assertTrue(
+            address(tiersHook.CHECKPOINTS()) != address(0), "Checkpoint module should be deployed after first mint"
         );
     }
 
