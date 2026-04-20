@@ -247,7 +247,7 @@ interface IJB721TiersHookStore {
     /// @notice Record a new encoded IPFS URI for a tier.
     /// @param tierId The ID of the tier to set the encoded IPFS URI of.
     /// @param encodedIPFSUri The encoded IPFS URI to set for the tier.
-    // forge-lint: disable-next-line(mixed-case-function, mixed-case-variable)
+    // forge-lint: disable-next-line(mixed-case-function)
     function recordSetEncodedIPFSUriOf(uint256 tierId, bytes32 encodedIPFSUri) external;
 
     /// @notice Record a newly set token URI resolver.

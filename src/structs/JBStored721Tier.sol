@@ -13,7 +13,6 @@ pragma solidity ^0.8.0;
 /// purchased.
 /// @custom:member packedBools Packed boolean flags: allowOwnerMint, transfersPausable, useVotingUnits,
 /// cantBeRemoved, cantIncreaseDiscountPercent, cantBuyWithCredits.
-// forge-lint: disable-next-line(pascal-case-struct)
 struct JBStored721Tier {
     uint104 price;
     uint32 remainingSupply;

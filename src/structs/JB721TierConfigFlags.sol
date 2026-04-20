@@ -14,7 +14,6 @@ pragma solidity ^0.8.0;
 /// @custom:member cantIncreaseDiscountPercent If the tier cannot have its discount increased.
 /// @custom:member cantBuyWithCredits If true, this tier cannot be purchased using accumulated pay credits. Only fresh
 /// payment value counts toward this tier's price.
-// forge-lint: disable-next-line(pascal-case-struct)
 struct JB721TierConfigFlags {
     bool allowOwnerMint;
     bool useReserveBeneficiaryAsDefault;
