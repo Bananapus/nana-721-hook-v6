@@ -66,7 +66,6 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @custom:param hook The 721 contract that the tier belongs to.
     /// @custom:param tierId The ID of the tier to get the encoded IPFS URI of.
     /// @custom:returns The encoded IPFS URI.
-    // forge-lint: disable-next-line(mixed-case-variable)
     mapping(address hook => mapping(uint256 tierId => bytes32)) public override encodedIPFSUriOf;
 
     /// @notice Returns the largest tier ID currently used on the provided 721 contract.
@@ -1344,7 +1343,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @notice Record a new encoded IPFS URI for a tier.
     /// @param tierId The ID of the tier to set the encoded IPFS URI of.
     /// @param encodedIPFSUri The encoded IPFS URI to set for the tier.
-    // forge-lint: disable-next-line(mixed-case-function, mixed-case-variable)
+    // forge-lint: disable-next-line(mixed-case-function)
     function recordSetEncodedIPFSUriOf(uint256 tierId, bytes32 encodedIPFSUri) external override {
         encodedIPFSUriOf[msg.sender][tierId] = encodedIPFSUri;
     }
