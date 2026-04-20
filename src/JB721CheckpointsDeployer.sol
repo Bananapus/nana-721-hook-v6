@@ -37,6 +37,8 @@ contract JB721CheckpointsDeployer is IJB721CheckpointsDeployer {
     /// @param store The store that holds tier data for the hook's NFTs.
     /// @return module The newly deployed and initialized checkpoint module.
     function deploy(address hook, IJB721TiersHookStore store) external override returns (IJB721Checkpoints module) {
+        if (msg.sender != hook) revert JB721CheckpointsDeployer_Unauthorized();
+
         module = IJB721Checkpoints(
             LibClone.cloneDeterministic({implementation: IMPLEMENTATION, salt: bytes32(uint256(uint160(hook)))})
         );

@@ -1,114 +1,74 @@
 # Audit Instructions
 
-This repo is the tiered ERC-721 hook system for Juicebox payments and NFT cash-outs. Audit it as a shared primitive used by many other repos.
+This repo adds tiered NFT issuance and cash-out behavior to Juicebox projects. Audit it as a shared accounting layer whose mistakes can affect many downstream products.
 
 ## Audit Objective
 
 Find issues that:
-- let users mint tiers more cheaply than intended
-- over-mint, under-burn, or miscount reserves, credits, or supply
-- route split funds incorrectly or let split paths distort token issuance
-- let NFT cash-outs reclaim more value than intended
-- corrupt shared store state across different hook instances
+
+- corrupt tier supply, reserve state, or burn accounting
+- misprice cash outs or split routing
+- let permissions or deployer wiring create unsafe lifecycle changes
+- create gas or liveness failures in tier-heavy deployments
+- break trust boundaries between hook, store, and resolver behavior
 
 ## Scope
 
 In scope:
+
 - `src/JB721TiersHook.sol`
 - `src/JB721TiersHookStore.sol`
-- `src/JB721TiersHookDeployer.sol`
-- `src/JB721TiersHookProjectDeployer.sol`
-- `src/abstract/`
-- `src/interfaces/`
-- `src/libraries/`
-- `src/structs/`
+- deployers, libraries, interfaces, and structs under `src/`
 - deployment scripts in `script/`
-
-This repo is depended on by Defifa, Croptop, Banny, Revnets, and omnichain deployers. Bugs here often have ecosystem-wide blast radius.
 
 ## Start Here
 
-1. `src/JB721TiersHookStore.sol`
-2. `src/JB721TiersHook.sol`
-3. `src/JB721TiersHookDeployer.sol` and `src/JB721TiersHookProjectDeployer.sol`
+1. `src/JB721TiersHook.sol`
+2. `src/JB721TiersHookStore.sol`
+3. `src/libraries/JB721TiersHookLib.sol`
 
 ## Security Model
 
-The hook can act as:
-- a data hook for payment and cash-out accounting inputs
-- a pay hook that mints NFTs
-- a cash-out hook that burns NFTs and computes reclaim weight
+The hook:
 
-Key moving parts:
-- `JB721TiersHookStore` holds compact tier state
-- hook instances read and mutate tier data through the store
-- tier prices, discounts, reserves, credits, split percentages, and category order shape mint behavior
-- optional token URI resolvers can override metadata generation
-
-The most important design subtlety is that this repo affects both:
-- NFT state
-- core Juicebox accounting inputs and fulfillment order
-
-That combination is why small-looking mistakes here often become ecosystem-wide economic bugs.
+- mints and burns tiered NFTs through Juicebox flows
+- records tier lifecycle state in a shared store
+- can route split payouts from forwarded value
+- composes with project-specific metadata resolvers
 
 ## Roles And Privileges
 
 | Role | Powers | How constrained |
 |------|--------|-----------------|
-| Project authority | Adjust tiers, discounts, and resolver setup | Must not break supply, ordering, or accounting assumptions |
-| Hook instance | Mint, burn, and compute accounting inputs | Must stay isolated from other hook instances |
-| Store contract | Hold shared tier state | Must not leak or corrupt cross-project data |
-| Token URI resolver | Supply metadata only | Must not become a hidden control surface |
+| Project authority | Configure tiers, metadata, and minting policy | Must stay inside explicit permission checks |
+| Store caller | Mutate store state in its own namespace | Must not corrupt tier accounting |
+| Resolver | Serve metadata and URI behavior | Must not be confused with accounting truth |
 
 ## Integration Assumptions
 
 | Dependency | Assumption | What breaks if wrong |
 |------------|------------|----------------------|
-| `nana-core-v6` | Payment and cash-out semantics remain coherent | Downstream economic routing becomes unsafe |
-| Split recipients and hooks | Failures are handled in bounded ways | Mint accounting and treasury routing desync |
+| `nana-core-v6` | Terminal auth and pricing behavior are accurate | Pay and cash-out behavior drift |
+| Resolver repo | Metadata reads behave as expected | UI and marketplace behavior break |
 
 ## Critical Invariants
 
-1. Supply caps hold
-No tier may mint beyond its configured total supply once purchases, owner mints, and pending reserves are all considered.
-
-2. Reserve accounting is exact
-Pending reserves must neither disappear nor inflate reclaim denominators beyond what the design intends.
-
-3. Split routing matches accounting
-If part of a mint price is routed to splits, token issuance and treasury accounting must reflect only the intended project portion.
-
-4. Cash-out weight is consistent
-The reclaim value for NFTs must match documented tier economics and must not be manipulable through discounts, credits, cross-currency inputs, or reserve timing.
-
-5. Shared store isolation
-One hook instance must not corrupt or observe mutable state belonging to another project unexpectedly.
-
-6. Credit semantics remain bounded
-Unused payment value that becomes credits must not let a user later mint tiers, trigger splits, or receive project-token issuance on terms they did not actually fund.
-
-7. Resolver trust stays read-only unless explicitly intended
-Token URI resolvers must not become an implicit control plane for mint, burn, or accounting behavior.
+1. Tier supply stays coherent.  
+   Remaining supply, burned counts, and outstanding ownership must reconcile.
+2. Reserve logic stays bounded.  
+   Pending reserves and reserve minting must not over-allocate.
+3. Cash-out weight is consistent.  
+   NFT reclaim value must match the tier model the hook and store intend.
+4. Split and fallback behavior is safe.  
+   Failed split paths must not silently corrupt value or lifecycle state.
 
 ## Attack Surfaces
 
-- `beforePayRecordedWith`, `afterPayRecordedWith`, and cash-out hooks
-- credit handling when `payer != beneficiary`
-- discount logic versus cash-out pricing
-- pending reserve minting and denominator logic
-- `splitPercent` handling and hook distribution fallback behavior
-- deployers that transfer ownership or queue rulesets around the hook
-
-Replay these sequences:
-1. cross-currency payment with missing, stale, or asymmetric prices
-2. leftover credits across different payer and beneficiary arrangements
-3. split-routed tier purchases when downstream hooks or terminals fail
-4. reserve-heavy tiers followed by NFT cash-out before reserves are minted
-5. tier adjustment or discount changes around active minting and cash-out windows
-
-## Accepted Risks Or Behaviors
-
-- Conservative behavior is preferable to optimistic behavior because downstream repos often treat these surfaces as economic truth.
+- pay and cash-out hook entrypoints
+- tier add, remove, and clean flows
+- reserve minting
+- split distribution and fallback paths
+- resolver integration
 
 ## Verification
 
