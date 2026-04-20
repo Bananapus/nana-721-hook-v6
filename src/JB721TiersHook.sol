@@ -110,7 +110,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     uint256 internal _packedPricingContext;
 
     /// @notice The checkpoint module that manages IVotes-compatible checkpointed voting power for this hook's NFTs.
-    /// @dev Set once during `initialize()`. Pass this to JBTokenDistributor as the IVotes token.
+    /// @dev Lazily deployed on the first transfer. Pass this to JBTokenDistributor as the IVotes token.
     IJB721Checkpoints public override CHECKPOINTS;
 
     //*********************************************************************//
@@ -306,9 +306,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             flags.noNewTiersWithReserves || flags.noNewTiersWithVotes || flags.noNewTiersWithOwnerMinting
                 || flags.preventOverspending || flags.issueTokensForSplits
         ) STORE.recordFlags(flags);
-
-        // Deploy the checkpoint module for IVotes-compatible voting power.
-        CHECKPOINTS = CHECKPOINTS_DEPLOYER.deploy({hook: address(this), store: STORE});
 
         // Transfer ownership to the initializer.
         _transferOwnership(_msgSender());
@@ -793,6 +790,11 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // Record the transfer.
         // slither-disable-next-line reentrency-events,calls-loop
         STORE.recordTransferForTier({tierId: tierId, from: from, to: to});
+
+        // Deploy the checkpoint module lazily on the first transfer.
+        if (address(CHECKPOINTS) == address(0)) {
+            CHECKPOINTS = CHECKPOINTS_DEPLOYER.deploy({hook: address(this), store: STORE});
+        }
 
         // Notify the checkpoint module to update checkpointed voting power.
         CHECKPOINTS.onTransfer({from: from, to: to, tokenId: tokenId});
