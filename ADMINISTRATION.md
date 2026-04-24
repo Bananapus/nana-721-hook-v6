@@ -36,6 +36,18 @@
 - `setMetadata(...)`
 - deployer setup and hook ownership transfer paths
 
+## Deployer Permission Model
+
+`JB721TiersHookProjectDeployer` requires callers to hold the correct Juicebox permission for each operation:
+
+| Function | Required Permissions |
+| --- | --- |
+| `launchProjectFor(...)` | None (creates a new project) |
+| `launchRulesetsFor(...)` | `LAUNCH_RULESETS` + `SET_TERMINALS` |
+| `queueRulesetsOf(...)` | `QUEUE_RULESETS` |
+
+Permissions are checked against the project owner via `_requirePermissionFrom`. The deployer calls the controller on the caller's behalf, so the controller sees the deployer as `msg.sender`.
+
 ## Immutable And One-Way
 
 - many tier properties are immutable once created
