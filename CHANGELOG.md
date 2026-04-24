@@ -20,6 +20,10 @@ This file describes the verified change from `nana-721-hook-v5` to the current `
 - The repo now carries a dedicated helper library to keep the hook surface manageable and to support the larger v6 feature set.
 - The repo was upgraded from the v5 Solidity baseline to `0.8.28`.
 
+## Local audit remediations
+
+- `JB721TiersHookProjectDeployer.launchRulesetsFor` now checks `LAUNCH_RULESETS` instead of `QUEUE_RULESETS`. The previous check was semantically wrong — launching active rulesets should require the launch permission, not the queue permission.
+
 ## Verified deltas
 
 - `IJB721TiersHook.pricingContext()` changed from a three-value return to `(currency, decimals)`.

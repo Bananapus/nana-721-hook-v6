@@ -24,7 +24,7 @@ import {JBQueueRulesetsConfig} from "./structs/JBQueueRulesetsConfig.sol";
 
 /// @title JB721TiersHookProjectDeployer
 /// @notice Deploys a project and a 721 tiers hook for it. Can be used to queue rulesets for the project if given
-/// `JBPermissionIds.QUEUE_RULESETS`.
+/// `JBPermissionIds.QUEUE_RULESETS` or `JBPermissionIds.LAUNCH_RULESETS`.
 contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721TiersHookProjectDeployer {
     //*********************************************************************//
     // --------------- public immutable stored properties ---------------- //
@@ -102,7 +102,7 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
     }
 
     /// @notice Launches rulesets for a project with an attached 721 tiers hook.
-    /// @dev Only a project's owner or an operator with the `QUEUE_RULESETS & SET_TERMINALS` permission can launch its
+    /// @dev Only a project's owner or an operator with the `LAUNCH_RULESETS & SET_TERMINALS` permission can launch its
     /// rulesets.
     /// @param projectId The ID of the project that rulesets are being launched for.
     /// @param deployTiersHookConfig Configuration which dictates the behavior of the 721 tiers hook which is being
@@ -128,7 +128,7 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
 
         // Enforce permissions.
         _requirePermissionFrom({
-            account: PROJECTS.ownerOf(projectId), projectId: projectId, permissionId: JBPermissionIds.QUEUE_RULESETS
+            account: PROJECTS.ownerOf(projectId), projectId: projectId, permissionId: JBPermissionIds.LAUNCH_RULESETS
         });
 
         _requirePermissionFrom({
