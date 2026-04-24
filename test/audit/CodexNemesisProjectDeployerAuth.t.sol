@@ -89,9 +89,7 @@ contract Test_CodexNemesisProjectDeployerAuth is UnitTestSetup {
 
         vm.prank(owner);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                StrictControllerForNemesis.UnexpectedCaller.selector, address(projectDeployer)
-            )
+            abi.encodeWithSelector(StrictControllerForNemesis.UnexpectedCaller.selector, address(projectDeployer))
         );
         projectDeployer.launchRulesetsFor(
             testProjectId, hookConfig, launchConfig, IJBController(address(controller)), bytes32(0)
@@ -106,9 +104,7 @@ contract Test_CodexNemesisProjectDeployerAuth is UnitTestSetup {
 
         vm.prank(owner);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                StrictControllerForNemesis.UnexpectedCaller.selector, address(projectDeployer)
-            )
+            abi.encodeWithSelector(StrictControllerForNemesis.UnexpectedCaller.selector, address(projectDeployer))
         );
         projectDeployer.queueRulesetsOf(
             testProjectId, hookConfig, queueConfig, IJBController(address(controller)), bytes32(0)
@@ -251,8 +247,9 @@ contract Test_CodexNemesisProjectDeployerAuth is UnitTestSetup {
             currency: uint32(uint160(JBConstants.NATIVE_TOKEN)), decimals: 18, token: JBConstants.NATIVE_TOKEN
         });
         JBTerminalConfig[] memory terminalConfigs = new JBTerminalConfig[](1);
-        terminalConfigs[0] =
-            JBTerminalConfig({terminal: IJBTerminal(mockTerminalAddress), accountingContextsToAccept: accountingContexts});
+        terminalConfigs[0] = JBTerminalConfig({
+            terminal: IJBTerminal(mockTerminalAddress), accountingContextsToAccept: accountingContexts
+        });
 
         launchConfig = JBLaunchRulesetsConfig({
             projectId: uint56(projectId_),
@@ -270,9 +267,7 @@ contract Test_CodexNemesisProjectDeployerAuth is UnitTestSetup {
         JBLaunchRulesetsConfig memory launchConfig;
         (hookConfig, launchConfig) = _launchConfig(projectId_);
         queueConfig = JBQueueRulesetsConfig({
-            projectId: uint56(projectId_),
-            rulesetConfigurations: launchConfig.rulesetConfigurations,
-            memo: "queue"
+            projectId: uint56(projectId_), rulesetConfigurations: launchConfig.rulesetConfigurations, memo: "queue"
         });
     }
 }
