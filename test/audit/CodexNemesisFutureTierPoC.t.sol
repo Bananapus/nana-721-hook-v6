@@ -27,9 +27,7 @@ contract CodexNemesisFutureTierPoC is UnitTestSetup {
         tierIds[0] = 1;
         JB721TiersHookStore store = JB721TiersHookStore(address(hook.STORE()));
 
-        vm.expectRevert(
-            abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_TierRemoved.selector, 1)
-        );
+        vm.expectRevert(abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_TierRemoved.selector, 1));
         vm.prank(address(hook));
         store.recordMint(type(uint256).max, tierIds, false);
     }
@@ -40,15 +38,7 @@ contract CodexNemesisFutureTierPoC is UnitTestSetup {
         bytes32 poisonedUri = bytes32(uint256(0x1234));
 
         vm.prank(owner);
-        hook.setMetadata(
-            "",
-            "",
-            "",
-            "",
-            IJB721TokenUriResolver(address(hook)),
-            1,
-            poisonedUri
-        );
+        hook.setMetadata("", "", "", "", IJB721TokenUriResolver(address(hook)), 1, poisonedUri);
 
         (JB721TierConfig[] memory tiersToAdd,) = _createTiers(defaultTierConfig, 1);
         tiersToAdd[0].encodedIPFSUri = bytes32(0);
