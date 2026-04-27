@@ -87,9 +87,7 @@ contract Test_ProjectDeployerAuth is UnitTestSetup {
         StrictController controller = new StrictController(owner);
 
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(StrictController.UnexpectedCaller.selector, address(projectDeployer))
-        );
+        vm.expectRevert(abi.encodeWithSelector(StrictController.UnexpectedCaller.selector, address(projectDeployer)));
         projectDeployer.launchRulesetsFor(
             testProjectId, hookConfig, launchConfig, IJBController(address(controller)), bytes32(0)
         );
@@ -102,9 +100,7 @@ contract Test_ProjectDeployerAuth is UnitTestSetup {
         StrictController controller = new StrictController(owner);
 
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(StrictController.UnexpectedCaller.selector, address(projectDeployer))
-        );
+        vm.expectRevert(abi.encodeWithSelector(StrictController.UnexpectedCaller.selector, address(projectDeployer)));
         projectDeployer.queueRulesetsOf(
             testProjectId, hookConfig, queueConfig, IJBController(address(controller)), bytes32(0)
         );
@@ -161,9 +157,7 @@ contract Test_ProjectDeployerAuth is UnitTestSetup {
         // The permission check passes with LAUNCH_RULESETS. The call proceeds to the controller, which reverts
         // because it sees the deployer contract as the caller rather than the original operator.
         vm.prank(operator);
-        vm.expectRevert(
-            abi.encodeWithSelector(StrictController.UnexpectedCaller.selector, address(projectDeployer))
-        );
+        vm.expectRevert(abi.encodeWithSelector(StrictController.UnexpectedCaller.selector, address(projectDeployer)));
         projectDeployer.launchRulesetsFor(
             testProjectId, hookConfig, launchConfig, IJBController(address(controller)), bytes32(0)
         );

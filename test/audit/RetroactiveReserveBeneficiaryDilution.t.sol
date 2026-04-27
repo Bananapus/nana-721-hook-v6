@@ -6,54 +6,13 @@ import "../utils/UnitTestSetup.sol";
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 import {JBAfterPayRecordedContext} from "@bananapus/core-v6/src/structs/JBAfterPayRecordedContext.sol";
 import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
+import {JB721TiersHookStore} from "../../src/JB721TiersHookStore.sol";
 
 contract RetroactiveReserveBeneficiaryDilution is UnitTestSetup {
-    function _buildPayMetadata(address hookAddress, uint16[] memory tierIdsToMint)
-        internal
-        view
-        returns (bytes memory)
-    {
-        bytes[] memory data = new bytes[](1);
-        data[0] = abi.encode(true, tierIdsToMint);
-        bytes4[] memory ids = new bytes4[](1);
-        ids[0] = metadataHelper.getId("pay", hookAddress);
-        return metadataHelper.createMetadata(ids, data);
-    }
-
-    function _afterPayContext(
-        address hookAddress,
-        uint256 amountValue,
-        uint16[] memory tierIdsToMint
-    )
-        internal
-        view
-        returns (JBAfterPayRecordedContext memory)
-    {
-        return JBAfterPayRecordedContext({
-            payer: beneficiary,
-            projectId: projectId,
-            rulesetId: 0,
-            amount: JBTokenAmount({
-                token: JBConstants.NATIVE_TOKEN,
-                value: amountValue,
-                decimals: 18,
-                currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
-            }),
-            forwardedAmount: JBTokenAmount({
-                token: JBConstants.NATIVE_TOKEN,
-                value: 0,
-                decimals: 18,
-                currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
-            }),
-            weight: 10e18,
-            newlyIssuedTokenCount: 0,
-            beneficiary: beneficiary,
-            hookMetadata: "",
-            payerMetadata: _buildPayMetadata(hookAddress, tierIdsToMint)
-        });
-    }
-
-    function test_adjustTier_can_retroactively_create_reserves_for_existing_supply() public {
+    /// @notice Creating a tier with reserveFrequency > 0 but no beneficiary (tier-specific or default) now reverts,
+    /// preventing the phantom reserve scenario where a later default beneficiary retroactively inflates
+    /// totalCashOutWeight and dilutes existing holders.
+    function test_adjustTier_reverts_when_reserve_has_no_beneficiary() public {
         ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
 
         JB721TierConfig[] memory tier1 = new JB721TierConfig[](1);
@@ -80,41 +39,66 @@ contract RetroactiveReserveBeneficiaryDilution is UnitTestSetup {
         });
 
         vm.prank(owner);
+        vm.expectRevert(
+            abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_MissingReserveBeneficiary.selector, 1)
+        );
+        testHook.adjustTiers(tier1, new uint256[](0));
+    }
+
+    /// @notice A tier with reserveFrequency > 0 succeeds when an explicit beneficiary is provided.
+    function test_adjustTier_succeeds_with_explicit_reserve_beneficiary() public {
+        ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
+
+        JB721TierConfig[] memory tier1 = new JB721TierConfig[](1);
+        tier1[0] = JB721TierConfig({
+            price: 1 ether,
+            initialSupply: 100,
+            votingUnits: 0,
+            reserveFrequency: 2,
+            reserveBeneficiary: owner,
+            encodedIPFSUri: bytes32(uint256(0x1234)),
+            category: 1,
+            discountPercent: 0,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: false,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: false,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false
+            }),
+            splitPercent: 0,
+            splits: new JBSplit[](0)
+        });
+
+        vm.prank(owner);
         testHook.adjustTiers(tier1, new uint256[](0));
 
         assertEq(
-            testHook.STORE().numberOfPendingReservesFor(address(testHook), 1),
-            0,
-            "no beneficiary means no reserves are pending"
+            testHook.STORE().reserveBeneficiaryOf(address(testHook), 1),
+            owner,
+            "tier-specific beneficiary should be set"
         );
+    }
 
-        vm.mockCall(
-            mockJBDirectory,
-            abi.encodeWithSelector(IJBDirectory.isTerminalOf.selector, projectId, mockTerminalAddress),
-            abi.encode(true)
-        );
+    /// @notice A tier with reserveFrequency > 0 and no explicit beneficiary succeeds when a default beneficiary
+    /// was previously set by an earlier tier.
+    function test_adjustTier_succeeds_with_default_reserve_beneficiary() public {
+        ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
 
-        uint16[] memory mintIds = new uint16[](3);
-        mintIds[0] = 1;
-        mintIds[1] = 1;
-        mintIds[2] = 1;
+        // Add two tiers: first sets the default beneficiary, second relies on it.
+        JB721TierConfig[] memory tiers = new JB721TierConfig[](2);
 
-        JBAfterPayRecordedContext memory payContext = _afterPayContext(address(testHook), 3 ether, mintIds);
-        vm.prank(mockTerminalAddress);
-        testHook.afterPayRecordedWith(payContext);
-
-        assertEq(testHook.balanceOf(beneficiary), 3, "beneficiary should own the three paid NFTs");
-        assertEq(testHook.totalCashOutWeight(), 3 ether, "denominator initially reflects only sold NFTs");
-
-        JB721TierConfig[] memory tier2 = new JB721TierConfig[](1);
-        tier2[0] = JB721TierConfig({
-            price: 2 ether,
+        // Tier 1: sets default beneficiary via useReserveBeneficiaryAsDefault.
+        tiers[0] = JB721TierConfig({
+            price: 1 ether,
             initialSupply: 100,
             votingUnits: 0,
-            reserveFrequency: 1,
+            reserveFrequency: 2,
             reserveBeneficiary: owner,
-            encodedIPFSUri: bytes32(uint256(0x5678)),
-            category: 2,
+            encodedIPFSUri: bytes32(uint256(0x1234)),
+            category: 1,
             discountPercent: 0,
             flags: JB721TierConfigFlags({
                 allowOwnerMint: false,
@@ -129,33 +113,37 @@ contract RetroactiveReserveBeneficiaryDilution is UnitTestSetup {
             splits: new JBSplit[](0)
         });
 
+        // Tier 2: relies on the default beneficiary (no explicit one).
+        tiers[1] = JB721TierConfig({
+            price: 2 ether,
+            initialSupply: 100,
+            votingUnits: 0,
+            reserveFrequency: 3,
+            reserveBeneficiary: address(0),
+            encodedIPFSUri: bytes32(uint256(0x5678)),
+            category: 2,
+            discountPercent: 0,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: false,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: false,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false
+            }),
+            splitPercent: 0,
+            splits: new JBSplit[](0)
+        });
+
         vm.prank(owner);
-        testHook.adjustTiers(tier2, new uint256[](0));
+        testHook.adjustTiers(tiers, new uint256[](0));
 
+        // Tier 2 should inherit the default beneficiary set by tier 1.
         assertEq(
-            testHook.STORE().reserveBeneficiaryOf(address(testHook), 1),
+            testHook.STORE().reserveBeneficiaryOf(address(testHook), 2),
             owner,
-            "new default beneficiary retroactively applies to the old tier"
-        );
-        assertEq(
-            testHook.STORE().numberOfPendingReservesFor(address(testHook), 1),
-            2,
-            "historical sales now generate retroactive pending reserves"
-        );
-        assertEq(
-            testHook.totalCashOutWeight(),
-            5 ether,
-            "existing holders are diluted before any new payment enters the system"
-        );
-
-        vm.prank(address(0xBEEF));
-        testHook.mintPendingReservesFor(1, 2);
-
-        assertEq(testHook.balanceOf(owner), 2, "retroactive reserves mint directly to the new default beneficiary");
-        assertEq(
-            testHook.STORE().numberOfPendingReservesFor(address(testHook), 1),
-            0,
-            "all retroactive reserve entitlement can be extracted"
+            "tier 2 should inherit default beneficiary"
         );
     }
 }

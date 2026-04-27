@@ -4,6 +4,7 @@ pragma solidity 0.8.28;
 import "../utils/UnitTestSetup.sol";
 
 import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
+import {JB721TiersHookStore} from "../../src/JB721TiersHookStore.sol";
 import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 
 contract RepoFindings is UnitTestSetup {
@@ -156,6 +157,8 @@ contract RepoFindings is UnitTestSetup {
         );
     }
 
+    /// @notice Creating a tier with reserveFrequency > 0 and no beneficiary (tier-specific or default)
+    /// is now rejected at creation time, preventing the retroactive dilution bug.
     function test_new_default_reserve_beneficiary_retroactively_dilutes_existing_tiers() public {
         ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
 
@@ -182,88 +185,11 @@ contract RepoFindings is UnitTestSetup {
             splits: new JBSplit[](0)
         });
 
+        // The new creation-time check prevents tiers with reserves but no beneficiary.
+        vm.expectRevert(
+            abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_MissingReserveBeneficiary.selector, 1)
+        );
         vm.prank(owner);
         testHook.adjustTiers(initialTier, new uint256[](0));
-
-        mockAndExpect(
-            mockJBDirectory,
-            abi.encodeWithSelector(IJBDirectory.isTerminalOf.selector, projectId, mockTerminalAddress),
-            abi.encode(true)
-        );
-
-        uint16[] memory tierIdsToMint = new uint16[](3);
-        tierIdsToMint[0] = 1;
-        tierIdsToMint[1] = 1;
-        tierIdsToMint[2] = 1;
-        bytes memory payerMetadata = _payMetadata(address(testHook), false, tierIdsToMint);
-
-        vm.prank(mockTerminalAddress);
-        testHook.afterPayRecordedWith(
-            JBAfterPayRecordedContext({
-                payer: beneficiary,
-                projectId: projectId,
-                rulesetId: 0,
-                amount: _nativeTokenAmount(3 ether),
-                forwardedAmount: _nativeTokenAmount(0),
-                weight: 10e18,
-                newlyIssuedTokenCount: 0,
-                beneficiary: beneficiary,
-                hookMetadata: bytes(""),
-                payerMetadata: payerMetadata
-            })
-        );
-
-        assertEq(testHook.totalCashOutWeight(), 3 ether, "denominator initially reflects only sold NFTs");
-        assertEq(
-            testHook.STORE().numberOfPendingReservesFor(address(testHook), 1),
-            0,
-            "without a reserve beneficiary the sold tier has no pending reserves"
-        );
-
-        JB721TierConfig[] memory defaultingTier = new JB721TierConfig[](1);
-        defaultingTier[0] = JB721TierConfig({
-            price: 2 ether,
-            initialSupply: 10,
-            votingUnits: 0,
-            reserveFrequency: 1,
-            reserveBeneficiary: owner,
-            encodedIPFSUri: bytes32(uint256(0x2222)),
-            category: 2,
-            discountPercent: 0,
-            flags: JB721TierConfigFlags({
-                allowOwnerMint: false,
-                useReserveBeneficiaryAsDefault: true,
-                transfersPausable: false,
-                useVotingUnits: false,
-                cantBeRemoved: false,
-                cantIncreaseDiscountPercent: false,
-                cantBuyWithCredits: false
-            }),
-            splitPercent: 0,
-            splits: new JBSplit[](0)
-        });
-
-        vm.prank(owner);
-        testHook.adjustTiers(defaultingTier, new uint256[](0));
-
-        assertEq(
-            testHook.STORE().reserveBeneficiaryOf(address(testHook), 1),
-            owner,
-            "the new default reserve beneficiary retroactively applies to the older sold tier"
-        );
-        assertEq(
-            testHook.STORE().numberOfPendingReservesFor(address(testHook), 1),
-            2,
-            "the older tier now reports newly created pending reserves from past sales"
-        );
-        assertEq(
-            testHook.totalCashOutWeight(),
-            5 ether,
-            "cash-out denominator is diluted by retroactively created reserves on the existing tier"
-        );
-
-        testHook.mintPendingReservesFor(1, 2);
-
-        assertEq(testHook.balanceOf(owner), 2, "the owner can mint those retroactive reserve NFTs to themselves");
     }
 }

@@ -360,55 +360,39 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
         }
     }
 
+    /// @notice Tiers with reserveFrequency > 0 and no beneficiary are now rejected at creation time.
+    /// This test verifies that the creation-time check prevents such tiers from existing.
     function test_numberOfPendingReservesFor_noReservesIfNoBeneficiarySet() public {
-        uint256 initialSupply = 200; // The number of NFTs available for each tier.
-        uint256 totalMinted = 120; // The number of NFTs already minted for each tier (out of `initialSupply`).
-        uint256 reservedMinted = 10; // The number of reserve NFTs already minted (out of `totalMinted`).
-        uint256 reserveFrequency = 9; // The frequency at which NFTs are reserved.
-        // (For every 9 NFTs minted, 1 is reserved).
+        // Build tier configs with reserveFrequency > 0 but reserveBeneficiary == address(0).
+        JB721TierConfig[] memory tierConfigs = new JB721TierConfig[](1);
+        tierConfigs[0] = JB721TierConfig({
+            price: uint104(10),
+            initialSupply: uint32(200),
+            votingUnits: 0,
+            reserveFrequency: uint16(9),
+            reserveBeneficiary: address(0),
+            encodedIPFSUri: bytes32(uint256(1)),
+            category: uint24(100),
+            discountPercent: 0,
+            flags: JB721TierConfigFlags({
+                allowOwnerMint: false,
+                useReserveBeneficiaryAsDefault: false,
+                transfersPausable: false,
+                useVotingUnits: true,
+                cantBeRemoved: false,
+                cantIncreaseDiscountPercent: false,
+                cantBuyWithCredits: false
+            }),
+            splitPercent: 0,
+            splits: new JBSplit[](0)
+        });
 
-        reserveBeneficiary = address(0);
-        ForTest_JB721TiersHook hook = _initializeForTestHook(10);
-
-        // Initialize `numberOfTiers` tiers, and set the number of reserve NFTs already minted for each tier.
-        // Although the `reserveFrequency` is set, it should be ignored since there is no reserve beneficiary.
-        for (uint256 i; i < 10; i++) {
-            hook.test_store()
-                .ForTest_setTier(
-                    address(hook),
-                    i + 1,
-                    JBStored721Tier({
-                        price: uint104((i + 1) * 10),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        remainingSupply: uint32(initialSupply - totalMinted),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        initialSupply: uint32(initialSupply),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        reserveFrequency: uint16(reserveFrequency),
-                        category: uint24(100),
-                        discountPercent: uint8(0),
-                        packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false, false),
-                        splitPercent: 0
-                    })
-                );
-            hook.test_store().ForTest_setReservesMintedFor(address(hook), i + 1, reservedMinted);
-        }
-
-        // Fetch the stored tiers.
-        JB721Tier[] memory storedTiers = hook.test_store().tiersOf(address(hook), new uint256[](0), false, 0, 10);
-
-        // Check: did the reserve frequency default to 0 for all tiers?
-        for (uint256 i; i < 10; i++) {
-            assertEq(storedTiers[i].reserveFrequency, 0, "Reserve frequency should be zero (no beneficiary set).");
-        }
-        // Check: are we sure there are no pending reserves for all tiers?
-        for (uint256 i; i < 10; i++) {
-            assertEq(
-                hook.test_store().numberOfPendingReservesFor(address(hook), i + 1),
-                0,
-                "There should not be any pending reserves (no beneficiary set)."
-            );
-        }
+        // The creation-time check should reject a tier with reserves but no beneficiary.
+        ForTest_JB721TiersHookStore hookStore = new ForTest_JB721TiersHookStore();
+        vm.expectRevert(
+            abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_MissingReserveBeneficiary.selector, 1)
+        );
+        hookStore.recordAddTiers(tierConfigs);
     }
 
     function test_mintFor_mintArrayOfTiers() public {
