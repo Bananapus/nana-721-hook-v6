@@ -13,23 +13,11 @@ contract FutureTierPoC is UnitTestSetup {
         uint256[] memory futureTierIds = new uint256[](1);
         futureTierIds[0] = 1;
 
+        // L-18 FIX: Removing a future (nonexistent) tier ID now reverts,
+        // preventing the "born removed" bug entirely.
         vm.prank(owner);
+        vm.expectRevert(abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_UnrecognizedTier.selector, 1));
         hook.adjustTiers(new JB721TierConfig[](0), futureTierIds);
-
-        (JB721TierConfig[] memory tiersToAdd,) = _createTiers(defaultTierConfig, 1);
-
-        vm.prank(owner);
-        hook.adjustTiers(tiersToAdd, new uint256[](0));
-
-        assertTrue(hook.STORE().isTierRemoved(address(hook), 1), "future removal flag should persist");
-
-        uint16[] memory tierIds = new uint16[](1);
-        tierIds[0] = 1;
-        JB721TiersHookStore store = JB721TiersHookStore(address(hook.STORE()));
-
-        vm.expectRevert(abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_TierRemoved.selector, 1));
-        vm.prank(address(hook));
-        store.recordMint(type(uint256).max, tierIds, false);
     }
 
     function test_futureTierUriCanBePoisonedBeforeTierExists() external {

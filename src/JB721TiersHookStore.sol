@@ -1304,6 +1304,12 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             // Set the tier being iterated upon (0-indexed).
             uint256 tierId = tierIds[i];
 
+            // Reject tier IDs that don't exist yet — removing a future tier would cause it
+            // to be born already removed when later added.
+            if (tierId == 0 || tierId > maxTierIdOf[msg.sender]) {
+                revert JB721TiersHookStore_UnrecognizedTier(tierId);
+            }
+
             // Get a reference to the stored tier.
             JBStored721Tier storage storedTier = _storedTierOf[msg.sender][tierId];
 

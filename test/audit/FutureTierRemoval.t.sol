@@ -21,21 +21,12 @@ contract Test_FutureTierRemoval is Test {
         uint256[] memory firstIds = store.recordAddTiers(firstTier);
         assertEq(firstIds[0], 1);
 
+        // Attempting to remove a future (nonexistent) tier ID should now revert
+        // thanks to the L-18 fix, preventing the "born removed" bug.
         uint256[] memory futureIds = new uint256[](1);
         futureIds[0] = 2;
+        vm.expectRevert(abi.encodeWithSignature("JB721TiersHookStore_UnrecognizedTier(uint256)", 2));
         store.recordRemoveTierIds(futureIds);
-        assertTrue(store.isTierRemoved({hook: address(this), tierId: 2}));
-
-        JB721TierConfig[] memory secondTier = new JB721TierConfig[](1);
-        secondTier[0] = _tier(2);
-        uint256[] memory secondIds = store.recordAddTiers(secondTier);
-        assertEq(secondIds[0], 2);
-        assertTrue(store.isTierRemoved({hook: address(this), tierId: 2}));
-
-        uint16[] memory tierIds = new uint16[](1);
-        tierIds[0] = 2;
-        vm.expectRevert(abi.encodeWithSignature("JB721TiersHookStore_TierRemoved(uint256)", 2));
-        store.recordMint({amount: 1, tierIds: tierIds, isOwnerMint: false});
     }
 
     function _tier(uint24 category) internal pure returns (JB721TierConfig memory tier) {

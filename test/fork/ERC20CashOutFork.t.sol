@@ -160,7 +160,7 @@ contract ERC20CashOutFork is Test {
     receive() external payable {}
 
     function setUp() public {
-        vm.createSelectFork("ethereum");
+        vm.createSelectFork("ethereum", 24_971_900);
 
         _deployJBCore();
         _deploy721Hook();
