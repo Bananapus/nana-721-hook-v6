@@ -6,7 +6,7 @@ import {JB721TiersHookStore} from "../../src/JB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "../../src/interfaces/IJB721TokenUriResolver.sol";
 import {JB721TierConfig} from "../../src/structs/JB721TierConfig.sol";
 
-contract CodexNemesisFutureTierPoC is UnitTestSetup {
+contract FutureTierPoC is UnitTestSetup {
     function test_futureTierRemovalPersistsIntoNewTierAndBricksMint() external {
         hook = _initHookDefaultTiers(0);
 

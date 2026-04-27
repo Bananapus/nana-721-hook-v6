@@ -9,14 +9,17 @@ import {JB721Tier} from "../../src/structs/JB721Tier.sol";
 import {JB721TierConfig} from "../../src/structs/JB721TierConfig.sol";
 import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
 
-contract Test_20260425CodexNemesisReserveActivation is Test {
+contract Test_ReserveActivation is Test {
     JB721TiersHookStore internal store;
 
     function setUp() external {
         store = new JB721TiersHookStore();
     }
 
-    function test_retroactiveDefaultReserveBeneficiaryCreatesUnmintablePendingReserves() external {
+    /// @notice Creating a tier with reserveFrequency > 0 and no beneficiary (tier-specific or default)
+    /// is now rejected at creation time. This prevents the phantom-reserves scenario entirely.
+    function test_soldOutTier_noPhantomReserves_afterDefaultBeneficiaryChange() external {
+        // Attempt to add a tier with reserve frequency but no beneficiary — should revert.
         JB721TierConfig[] memory initialTiers = new JB721TierConfig[](1);
         initialTiers[0] = _tier({
             price: 1,
@@ -26,40 +29,31 @@ contract Test_20260425CodexNemesisReserveActivation is Test {
             useReserveBeneficiaryAsDefault: false,
             category: 1
         });
+
+        vm.expectRevert(
+            abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_MissingReserveBeneficiary.selector, 1)
+        );
         store.recordAddTiers(initialTiers);
+    }
 
-        uint16[] memory tierIds = new uint16[](10);
-        for (uint256 i; i < tierIds.length; i++) {
-            tierIds[i] = 1;
-        }
-        store.recordMint({amount: 10, tierIds: tierIds, isOwnerMint: false});
-
-        JB721Tier memory beforeDefault = store.tierOf({hook: address(this), id: 1, includeResolvedUri: false});
-        assertEq(beforeDefault.remainingSupply, 0);
-        assertEq(beforeDefault.reserveFrequency, 0);
-        assertEq(store.numberOfPendingReservesFor({hook: address(this), tierId: 1}), 0);
-        assertEq(store.totalCashOutWeight(address(this)), 10);
-
-        JB721TierConfig[] memory laterTiers = new JB721TierConfig[](1);
-        laterTiers[0] = _tier({
+    /// @notice Creating a tier with reserveFrequency > 0 and no beneficiary (tier-specific or default)
+    /// is now rejected at creation time. This prevents the retroactive reserve activation scenario entirely.
+    function test_nonSoldOutTier_reservesStillWork_afterDefaultBeneficiaryChange() external {
+        // Attempt to add a tier with reserve frequency but no beneficiary — should revert.
+        JB721TierConfig[] memory initialTiers = new JB721TierConfig[](1);
+        initialTiers[0] = _tier({
             price: 1,
-            initialSupply: 10,
-            reserveFrequency: 2,
-            reserveBeneficiary: address(0xBEEF),
-            useReserveBeneficiaryAsDefault: true,
-            category: 2
+            initialSupply: 100,
+            reserveFrequency: 5,
+            reserveBeneficiary: address(0),
+            useReserveBeneficiaryAsDefault: false,
+            category: 1
         });
-        store.recordAddTiers(laterTiers);
 
-        JB721Tier memory afterDefault = store.tierOf({hook: address(this), id: 1, includeResolvedUri: false});
-        assertEq(afterDefault.remainingSupply, 0);
-        assertEq(afterDefault.reserveFrequency, 2);
-        assertEq(afterDefault.reserveBeneficiary, address(0xBEEF));
-        assertEq(store.numberOfPendingReservesFor({hook: address(this), tierId: 1}), 5);
-        assertEq(store.totalCashOutWeight(address(this)), 15);
-
-        vm.expectRevert();
-        store.recordMintReservesFor({tierId: 1, count: 1});
+        vm.expectRevert(
+            abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_MissingReserveBeneficiary.selector, 1)
+        );
+        store.recordAddTiers(initialTiers);
     }
 
     function _tier(

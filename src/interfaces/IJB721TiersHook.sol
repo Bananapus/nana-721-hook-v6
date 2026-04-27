@@ -7,7 +7,6 @@ import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 
 import {IJB721Checkpoints} from "./IJB721Checkpoints.sol";
-import {IJB721CheckpointsDeployer} from "./IJB721CheckpointsDeployer.sol";
 import {IJB721Hook} from "./IJB721Hook.sol";
 import {IJB721TiersHookStore} from "./IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "./IJB721TokenUriResolver.sol";

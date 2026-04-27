@@ -36,6 +36,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     error JB721TiersHookStore_InvalidQuantity(uint256 quantity, uint256 limit);
     error JB721TiersHookStore_ManualMintingNotAllowed(uint256 tierId);
     error JB721TiersHookStore_MaxTiersExceeded(uint256 numberOfTiers, uint256 limit);
+    error JB721TiersHookStore_MissingReserveBeneficiary(uint256 tierId);
     error JB721TiersHookStore_PriceExceedsAmount(uint256 price, uint256 leftoverAmount);
     error JB721TiersHookStore_ReserveFrequencyNotAllowed(uint256 tierId);
     error JB721TiersHookStore_SplitPercentExceedsBounds(uint256 percent, uint256 limit);
@@ -724,6 +725,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                 || reserveBeneficiaryOf({hook: hook, tierId: tierId}) == address(0)
         ) return 0;
 
+        // A sold-out tier cannot have mintable pending reserves — minting would underflow remainingSupply.
+        if (storedTier.remainingSupply == 0) return 0;
+
         // The number of reserve NFTs which have already been minted from the tier.
         uint256 numberOfReserveMints = numberOfReservesMintedFor[hook][tierId];
 
@@ -974,6 +978,15 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             // leaving zero available for paid mints, but reserves only mint after a paid mint triggers them.
             if (tierToAdd.initialSupply == 1 && tierToAdd.reserveFrequency > 0) {
                 revert JB721TiersHookStore_DeadlockedReserve();
+            }
+
+            // A tier with reserves must have a beneficiary — either tier-specific or a previously set default.
+            // Without one, minted reserves would be sent to address(0).
+            if (
+                tierToAdd.reserveFrequency > 0 && tierToAdd.reserveBeneficiary == address(0)
+                    && defaultReserveBeneficiaryOf[msg.sender] == address(0)
+            ) {
+                revert JB721TiersHookStore_MissingReserveBeneficiary(tierId);
             }
 
             // Store the tier with that ID.
