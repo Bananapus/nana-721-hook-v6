@@ -16,7 +16,7 @@ contract Test_20260425CodexNemesisReserveActivation is Test {
         store = new JB721TiersHookStore();
     }
 
-    /// @notice M-48 fix verification: sold-out tiers must not produce phantom pending reserves
+    /// @notice Sold-out tiers must not produce phantom pending reserves
     /// when a later tier sets a default reserve beneficiary.
     function test_soldOutTier_noPhantomReserves_afterDefaultBeneficiaryChange() external {
         // Step 1: Add a tier with reserve frequency but no beneficiary.

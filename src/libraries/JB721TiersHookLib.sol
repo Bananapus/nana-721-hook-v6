@@ -356,7 +356,7 @@ library JB721TiersHookLib {
 
         // When issueTokensForSplits is true and there are splits, compute the weight portion
         // attributable to tier splits. Downstream compositors (e.g. JBOmnichainDeployer) use this
-        // to preserve split credit when an extra hook (buyback) returns weight=0 (M-49).
+        // to preserve split credit when an extra hook (buyback) returns weight=0.
         if (totalSplitAmount != 0 && context.amount.value != 0 && store.flagsOf(address(this)).issueTokensForSplits) {
             splitCreditWeight = mulDiv(context.weight, totalSplitAmount, context.amount.value);
         }
