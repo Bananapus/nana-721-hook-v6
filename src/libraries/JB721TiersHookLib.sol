@@ -309,6 +309,8 @@ library JB721TiersHookLib {
     /// @return totalSplitAmount The total amount to forward for splits.
     /// @return splitMetadata Encoded per-tier breakdown (tierIds, amounts).
     /// @return beneficiary The resolved beneficiary address.
+    /// @return splitCreditWeight The weight attributable to tier splits when `issueTokensForSplits` is true.
+    /// Zero when splits are absent or `issueTokensForSplits` is false.
     function computeSplitsAndWeight(
         IJB721TiersHookStore store,
         address metadataIdTarget,
@@ -318,7 +320,13 @@ library JB721TiersHookLib {
     )
         external
         view
-        returns (uint256 weight, uint256 totalSplitAmount, bytes memory splitMetadata, address beneficiary)
+        returns (
+            uint256 weight,
+            uint256 totalSplitAmount,
+            bytes memory splitMetadata,
+            address beneficiary,
+            uint256 splitCreditWeight
+        )
     {
         // Calculate per-tier split amounts.
         (totalSplitAmount, splitMetadata) = _calculateSplitAmounts({
@@ -345,6 +353,13 @@ library JB721TiersHookLib {
             store: store,
             hook: address(this)
         });
+
+        // When issueTokensForSplits is true and there are splits, compute the weight portion
+        // attributable to tier splits. Downstream compositors (e.g. JBOmnichainDeployer) use this
+        // to preserve split credit when an extra hook (buyback) returns weight=0 (M-49).
+        if (totalSplitAmount != 0 && context.amount.value != 0 && store.flagsOf(address(this)).issueTokensForSplits) {
+            splitCreditWeight = mulDiv(context.weight, totalSplitAmount, context.amount.value);
+        }
 
         // Resolve the effective beneficiary from payment metadata.
         beneficiary = context.beneficiary;

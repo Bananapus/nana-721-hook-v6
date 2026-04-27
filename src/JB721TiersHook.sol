@@ -206,19 +206,21 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         uint256 totalSplitAmount;
         bytes memory splitMetadata;
         address beneficiary;
-        (weight, totalSplitAmount, splitMetadata, beneficiary) = JB721TiersHookLib.computeSplitsAndWeight({
-            store: STORE,
-            metadataIdTarget: METADATA_ID_TARGET,
-            packedPricingContext: _packedPricingContext,
-            prices: PRICES,
-            context: context
-        });
+        uint256 splitCreditWeight;
+        (weight, totalSplitAmount, splitMetadata, beneficiary, splitCreditWeight) =
+            JB721TiersHookLib.computeSplitsAndWeight({
+                store: STORE,
+                metadataIdTarget: METADATA_ID_TARGET,
+                packedPricingContext: _packedPricingContext,
+                prices: PRICES,
+                context: context
+            });
 
         hookSpecifications[0] = JBPayHookSpecification({
             hook: this,
             noop: false,
             amount: totalSplitAmount,
-            metadata: abi.encode(beneficiary, context.payer, splitMetadata)
+            metadata: abi.encode(beneficiary, context.payer, splitMetadata, splitCreditWeight)
         });
     }
 
