@@ -15,7 +15,7 @@ import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
 /// @notice Regression test: split metadata is proportionally scaled when credits fund a split-bearing tier mint.
 /// @dev Previously (pre-fix), the per-tier split amounts were left at the uncapped value, trapping forwarded ETH.
 /// After the F-2 fix, split amounts are scaled down to match the actual forwarded amount.
-contract CodexSplitCreditsMismatch is UnitTestSetup {
+contract SplitCreditsMismatch is UnitTestSetup {
     address internal splitBeneficiary = makeAddr("splitBeneficiary");
 
     function setUp() public override {

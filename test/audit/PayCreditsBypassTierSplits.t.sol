@@ -13,7 +13,7 @@ import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 import {IJBSplitHook} from "@bananapus/core-v6/src/interfaces/IJBSplitHook.sol";
 import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
 
-contract CodexPayCreditsBypassTierSplits is UnitTestSetup {
+contract PayCreditsBypassTierSplits is UnitTestSetup {
     address internal splitBeneficiary = makeAddr("splitBeneficiary");
 
     function setUp() public override {

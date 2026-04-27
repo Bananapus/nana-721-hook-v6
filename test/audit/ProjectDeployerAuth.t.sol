@@ -12,7 +12,6 @@ import {JBPayDataHookRulesetMetadata} from "../../src/structs/JBPayDataHookRules
 import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
 import {JB721InitTiersConfig} from "../../src/structs/JB721InitTiersConfig.sol";
 import {JB721TiersHookFlags} from "../../src/structs/JB721TiersHookFlags.sol";
-import {IJB721TiersHook} from "../../src/interfaces/IJB721TiersHook.sol";
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 import {IJBPermissions} from "@bananapus/core-v6/src/interfaces/IJBPermissions.sol";
 import {IJBController} from "@bananapus/core-v6/src/interfaces/IJBController.sol";
@@ -24,7 +23,7 @@ import {JBAccountingContext} from "@bananapus/core-v6/src/structs/JBAccountingCo
 import {JBTerminalConfig} from "@bananapus/core-v6/src/structs/JBTerminalConfig.sol";
 import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 
-contract MockProjectsForNemesis {
+contract MockProjects {
     uint256 internal _count;
     address internal _owner;
 
@@ -44,7 +43,7 @@ contract MockProjectsForNemesis {
     fallback() external {}
 }
 
-contract StrictControllerForNemesis {
+contract StrictController {
     address internal immutable EXPECTED_CALLER;
 
     error UnexpectedCaller(address caller);
@@ -62,7 +61,7 @@ contract StrictControllerForNemesis {
     }
 }
 
-contract Test_CodexNemesisProjectDeployerAuth is UnitTestSetup {
+contract Test_ProjectDeployerAuth is UnitTestSetup {
     JB721TiersHookProjectDeployer internal projectDeployer;
     address internal operator = address(0xBEEF);
     uint256 internal testProjectId = 5;
@@ -70,9 +69,9 @@ contract Test_CodexNemesisProjectDeployerAuth is UnitTestSetup {
     function setUp() public override {
         super.setUp();
 
-        MockProjectsForNemesis projects = new MockProjectsForNemesis();
+        MockProjects projects = new MockProjects();
         vm.etch(mockJBProjects, address(projects).code);
-        MockProjectsForNemesis(mockJBProjects).setup(testProjectId, owner);
+        MockProjects(mockJBProjects).setup(testProjectId, owner);
 
         vm.mockCall(mockJBDirectory, abi.encodeWithSelector(IJBDirectory.PROJECTS.selector), abi.encode(mockJBProjects));
 
@@ -85,11 +84,11 @@ contract Test_CodexNemesisProjectDeployerAuth is UnitTestSetup {
         (JBDeploy721TiersHookConfig memory hookConfig, JBLaunchRulesetsConfig memory launchConfig) =
             _launchConfig(testProjectId);
 
-        StrictControllerForNemesis controller = new StrictControllerForNemesis(owner);
+        StrictController controller = new StrictController(owner);
 
         vm.prank(owner);
         vm.expectRevert(
-            abi.encodeWithSelector(StrictControllerForNemesis.UnexpectedCaller.selector, address(projectDeployer))
+            abi.encodeWithSelector(StrictController.UnexpectedCaller.selector, address(projectDeployer))
         );
         projectDeployer.launchRulesetsFor(
             testProjectId, hookConfig, launchConfig, IJBController(address(controller)), bytes32(0)
@@ -100,11 +99,11 @@ contract Test_CodexNemesisProjectDeployerAuth is UnitTestSetup {
         (JBDeploy721TiersHookConfig memory hookConfig, JBQueueRulesetsConfig memory queueConfig) =
             _queueConfig(testProjectId);
 
-        StrictControllerForNemesis controller = new StrictControllerForNemesis(owner);
+        StrictController controller = new StrictController(owner);
 
         vm.prank(owner);
         vm.expectRevert(
-            abi.encodeWithSelector(StrictControllerForNemesis.UnexpectedCaller.selector, address(projectDeployer))
+            abi.encodeWithSelector(StrictController.UnexpectedCaller.selector, address(projectDeployer))
         );
         projectDeployer.queueRulesetsOf(
             testProjectId, hookConfig, queueConfig, IJBController(address(controller)), bytes32(0)
@@ -116,7 +115,7 @@ contract Test_CodexNemesisProjectDeployerAuth is UnitTestSetup {
             _launchConfig(testProjectId);
 
         address account = owner;
-        StrictControllerForNemesis controller = new StrictControllerForNemesis(owner);
+        StrictController controller = new StrictController(owner);
 
         // Grant LAUNCH_RULESETS and SET_TERMINALS, deny QUEUE_RULESETS.
         vm.mockCall(
@@ -163,7 +162,7 @@ contract Test_CodexNemesisProjectDeployerAuth is UnitTestSetup {
         // because it sees the deployer contract as the caller rather than the original operator.
         vm.prank(operator);
         vm.expectRevert(
-            abi.encodeWithSelector(StrictControllerForNemesis.UnexpectedCaller.selector, address(projectDeployer))
+            abi.encodeWithSelector(StrictController.UnexpectedCaller.selector, address(projectDeployer))
         );
         projectDeployer.launchRulesetsFor(
             testProjectId, hookConfig, launchConfig, IJBController(address(controller)), bytes32(0)

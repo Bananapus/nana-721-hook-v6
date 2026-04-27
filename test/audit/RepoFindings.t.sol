@@ -3,11 +3,10 @@ pragma solidity 0.8.28;
 
 import "../utils/UnitTestSetup.sol";
 
-import {IJB721TiersHookStore} from "../../src/interfaces/IJB721TiersHookStore.sol";
 import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
 import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 
-contract CodexNemesisRepoFindings is UnitTestSetup {
+contract RepoFindings is UnitTestSetup {
     address payable internal splitBeneficiary = payable(makeAddr("splitBeneficiary"));
 
     function _payMetadata(

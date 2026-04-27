@@ -7,7 +7,7 @@ import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 import {JBAfterPayRecordedContext} from "@bananapus/core-v6/src/structs/JBAfterPayRecordedContext.sol";
 import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
 
-contract CodexRetroactiveReserveBeneficiaryDilution is UnitTestSetup {
+contract RetroactiveReserveBeneficiaryDilution is UnitTestSetup {
     function _buildPayMetadata(address hookAddress, uint16[] memory tierIdsToMint)
         internal
         view

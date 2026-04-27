@@ -8,7 +8,7 @@ import {JB721TiersHookStore} from "../../src/JB721TiersHookStore.sol";
 import {JB721TierConfig} from "../../src/structs/JB721TierConfig.sol";
 import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
 
-contract Test_20260425CodexNemesisFutureTierRemoval is Test {
+contract Test_FutureTierRemoval is Test {
     JB721TiersHookStore internal store;
 
     function setUp() external {
