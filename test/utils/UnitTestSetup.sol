@@ -574,10 +574,13 @@ contract UnitTestSetup is Test {
         returns (uint256)
     {
         uint256 newNumberOfTiers = currentNumberOfTiers;
-        uint256[] memory tiersToRemove = new uint256[](numberOfTiersToRemove);
+        // Cap removals to the number of tiers that actually exist.
+        uint256 actualRemovals =
+            numberOfTiersToRemove > currentNumberOfTiers ? currentNumberOfTiers : numberOfTiersToRemove;
+        uint256[] memory tiersToRemove = new uint256[](actualRemovals);
 
-        for (uint256 i; i < numberOfTiersToRemove && newNumberOfTiers != 0; i++) {
-            tiersToRemove[i] = currentNumberOfTiers - i - 1;
+        for (uint256 i; i < actualRemovals; i++) {
+            tiersToRemove[i] = currentNumberOfTiers - i;
             newNumberOfTiers--;
         }
 
