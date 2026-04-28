@@ -27,18 +27,18 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                     address(hook),
                     i + 1,
                     JBStored721Tier({
-                        price: uint104((i + 1) * 10),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        remainingSupply: uint32(initialSupply - totalMinted),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        initialSupply: uint32(initialSupply),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        reserveFrequency: uint16(reserveFrequency),
-                        category: uint24(100),
-                        discountPercent: uint8(0),
-                        packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false, false),
-                        splitPercent: 0
-                    })
+                    price: uint104((i + 1) * 10),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    remainingSupply: uint32(initialSupply - totalMinted),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    initialSupply: uint32(initialSupply),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    reserveFrequency: uint16(reserveFrequency),
+                    category: uint24(100),
+                    discountPercent: uint8(0),
+                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false, false),
+                    splitPercent: 0
+                })
                 );
             hook.test_store().ForTest_setReservesMintedFor(address(hook), i + 1, reservedMinted);
         }
@@ -77,18 +77,18 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                 address(hook),
                 1,
                 JBStored721Tier({
-                    price: uint104(10),
-                    // forge-lint: disable-next-line(unsafe-typecast)
-                    remainingSupply: uint32(initialSupply),
-                    // forge-lint: disable-next-line(unsafe-typecast)
-                    initialSupply: uint32(initialSupply),
-                    // forge-lint: disable-next-line(unsafe-typecast)
-                    reserveFrequency: uint16(reserveFrequency),
-                    category: uint24(100),
-                    discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(true, false, true, false, false, false),
-                    splitPercent: 0
-                })
+                price: uint104(10),
+                // forge-lint: disable-next-line(unsafe-typecast)
+                remainingSupply: uint32(initialSupply),
+                // forge-lint: disable-next-line(unsafe-typecast)
+                initialSupply: uint32(initialSupply),
+                // forge-lint: disable-next-line(unsafe-typecast)
+                reserveFrequency: uint16(reserveFrequency),
+                category: uint24(100),
+                discountPercent: uint8(0),
+                packedBools: hook.test_store().ForTest_packBools(true, false, true, false, false, false),
+                splitPercent: 0
+            })
             );
 
         // Mint the initial tiers.
@@ -184,18 +184,18 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                     address(hook),
                     i + 1,
                     JBStored721Tier({
-                        price: uint104((i + 1) * 10),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        remainingSupply: uint32(initialSupply - totalMinted),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        initialSupply: uint32(initialSupply),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        reserveFrequency: uint16(reserveFrequency),
-                        category: uint24(100),
-                        discountPercent: uint8(0),
-                        packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false, false),
-                        splitPercent: 0
-                    })
+                    price: uint104((i + 1) * 10),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    remainingSupply: uint32(initialSupply - totalMinted),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    initialSupply: uint32(initialSupply),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    reserveFrequency: uint16(reserveFrequency),
+                    category: uint24(100),
+                    discountPercent: uint8(0),
+                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false, false),
+                    splitPercent: 0
+                })
                 );
 
             // Set the number of reserve NFTs already minted for the tier.
@@ -286,18 +286,18 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                     address(hook),
                     i + 1,
                     JBStored721Tier({
-                        price: uint104((i + 1) * 10),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        remainingSupply: uint32(initialSupply - totalMinted),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        initialSupply: uint32(initialSupply),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        reserveFrequency: uint16(reserveFrequency),
-                        category: uint24(100),
-                        discountPercent: uint8(0),
-                        packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false, false),
-                        splitPercent: 0
-                    })
+                    price: uint104((i + 1) * 10),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    remainingSupply: uint32(initialSupply - totalMinted),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    initialSupply: uint32(initialSupply),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    reserveFrequency: uint16(reserveFrequency),
+                    category: uint24(100),
+                    discountPercent: uint8(0),
+                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false, false),
+                    splitPercent: 0
+                })
                 );
             hook.test_store().ForTest_setReservesMintedFor(address(hook), i + 1, reservedMinted);
         }
@@ -327,18 +327,18 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                     address(hook),
                     i + 1,
                     JBStored721Tier({
-                        price: uint104((i + 1) * 10),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        remainingSupply: uint32(initialSupply - totalMinted),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        initialSupply: uint32(initialSupply),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        reserveFrequency: uint16(reserveFrequency),
-                        category: uint24(100),
-                        discountPercent: uint8(0),
-                        packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false, false),
-                        splitPercent: 0
-                    })
+                    price: uint104((i + 1) * 10),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    remainingSupply: uint32(initialSupply - totalMinted),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    initialSupply: uint32(initialSupply),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    reserveFrequency: uint16(reserveFrequency),
+                    category: uint24(100),
+                    discountPercent: uint8(0),
+                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false, false),
+                    splitPercent: 0
+                })
                 );
             hook.test_store().ForTest_setReservesMintedFor(address(hook), i + 1, reservedMinted);
         }

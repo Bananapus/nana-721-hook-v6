@@ -275,15 +275,15 @@ contract TestVotingUnitsLifecycle is UnitTestSetup {
                 address(testHook),
                 2,
                 JBStored721Tier({
-                    price: uint104(20),
-                    remainingSupply: uint32(100),
-                    initialSupply: uint32(100),
-                    reserveFrequency: uint16(0),
-                    category: uint24(100),
-                    discountPercent: uint8(0),
-                    packedBools: testHook.test_store().ForTest_packBools(true, false, false, false, false, false),
-                    splitPercent: 0
-                })
+                price: uint104(20),
+                remainingSupply: uint32(100),
+                initialSupply: uint32(100),
+                reserveFrequency: uint16(0),
+                category: uint24(100),
+                discountPercent: uint8(0),
+                packedBools: testHook.test_store().ForTest_packBools(true, false, false, false, false, false),
+                splitPercent: 0
+            })
             );
         // Clear tier 2's custom voting units (so it falls back to price).
         testHook.test_store().ForTest_setTierVotingUnits(address(testHook), 2, 0);

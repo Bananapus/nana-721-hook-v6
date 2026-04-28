@@ -19,18 +19,18 @@ contract Test_cashOut_Unit is UnitTestSetup {
                     address(hook),
                     i,
                     JBStored721Tier({
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        price: uint104(i * 10),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        remainingSupply: uint32(10 * i - 5 * i),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        initialSupply: uint32(10 * i),
-                        reserveFrequency: uint16(0),
-                        category: uint24(100),
-                        discountPercent: uint8(0),
-                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false, false),
-                        splitPercent: 0
-                    })
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    price: uint104(i * 10),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    remainingSupply: uint32(10 * i - 5 * i),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    initialSupply: uint32(10 * i),
+                    reserveFrequency: uint16(0),
+                    category: uint24(100),
+                    discountPercent: uint8(0),
+                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false, false),
+                    splitPercent: 0
+                })
                 );
             totalWeight += (10 * i - 5 * i) * i * 10;
         }
@@ -94,18 +94,18 @@ contract Test_cashOut_Unit is UnitTestSetup {
                     address(hook),
                     i,
                     JBStored721Tier({
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        price: uint104(i * 10),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        remainingSupply: uint32(10 * i - 5 * i),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        initialSupply: uint32(10 * i),
-                        reserveFrequency: uint16(0),
-                        category: uint24(100),
-                        discountPercent: uint8(0),
-                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false, false),
-                        splitPercent: 0
-                    })
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    price: uint104(i * 10),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    remainingSupply: uint32(10 * i - 5 * i),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    initialSupply: uint32(10 * i),
+                    reserveFrequency: uint16(0),
+                    category: uint24(100),
+                    discountPercent: uint8(0),
+                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false, false),
+                    splitPercent: 0
+                })
                 );
             totalWeight += (10 * i - 5 * i) * i * 10;
         }
@@ -155,18 +155,18 @@ contract Test_cashOut_Unit is UnitTestSetup {
                     address(hook),
                     i,
                     JBStored721Tier({
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        price: uint104(i * 10),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        remainingSupply: uint32(10 * i - 5 * i),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        initialSupply: uint32(10 * i),
-                        reserveFrequency: uint16(0),
-                        category: uint24(100),
-                        discountPercent: uint8(0),
-                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false, false),
-                        splitPercent: 0
-                    })
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    price: uint104(i * 10),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    remainingSupply: uint32(10 * i - 5 * i),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    initialSupply: uint32(10 * i),
+                    reserveFrequency: uint16(0),
+                    category: uint24(100),
+                    discountPercent: uint8(0),
+                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false, false),
+                    splitPercent: 0
+                })
                 );
             totalWeight += (10 * i - 5 * i) * i * 10;
         }

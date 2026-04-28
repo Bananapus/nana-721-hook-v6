@@ -725,9 +725,6 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                 || reserveBeneficiaryOf({hook: hook, tierId: tierId}) == address(0)
         ) return 0;
 
-        // A sold-out tier cannot have mintable pending reserves — minting would underflow remainingSupply.
-        if (storedTier.remainingSupply == 0) return 0;
-
         // The number of reserve NFTs which have already been minted from the tier.
         uint256 numberOfReserveMints = numberOfReservesMintedFor[hook][tierId];
 
@@ -1232,7 +1229,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             if (storedTier.remainingSupply == 0) revert JB721TiersHookStore_InsufficientSupplyRemaining(tierId);
 
             // Mint the 721 — decrement remaining supply first so the reserve check below
-            // sees the post-mint state (this non-reserve mint may increase pending reserves).
+            // sees the correct post-mint non-reserve-mint count.
             unchecked {
                 // Keep a reference to its token ID.
                 tokenIds[i] = _generateTokenId({
