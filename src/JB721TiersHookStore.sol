@@ -93,6 +93,13 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @custom:param tierId The ID of the tier to get the balance for.
     mapping(address hook => mapping(address owner => mapping(uint256 tierId => uint256))) public override tierBalanceOf;
 
+    /// @notice Returns the block number at which a specific token was minted.
+    /// @dev Set during `recordMint` and `recordMintReservesFor`. Used by distributors to verify
+    /// a token existed before a snapshot block, preventing post-snapshot mints from stealing rewards.
+    /// @custom:param hook The 721 contract the token belongs to.
+    /// @custom:param tokenId The token ID to look up.
+    mapping(address hook => mapping(uint256 tokenId => uint256)) public override mintBlockOf;
+
     /// @notice Returns the custom token URI resolver which overrides the default token URI resolver for the provided
     /// 721 contract.
     /// @custom:param hook The 721 contract to get the custom token URI resolver of.
@@ -755,6 +762,57 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         }
     }
 
+    /// @notice Compute pending reserves without the sold-out early return.
+    /// @dev Used exclusively by `recordMint` to guard against paid mints consuming reserved slots.
+    /// The regular `_numberOfPendingReservesFor` early-returns 0 when `remainingSupply == 0` because
+    /// `recordMintReservesFor` would underflow. But in the `recordMint` guard context, we need the
+    /// *theoretical* pending count to decide whether the mint that just decremented supply was valid.
+    /// @param hook The 721 contract that the tier belongs to.
+    /// @param tierId The ID of the tier to get the number of pending reserve NFTs for.
+    /// @param storedTier The stored tier to get the number of pending reserve NFTs for.
+    /// @return The number of pending reserve NFTs for the tier (even if supply is 0).
+    function _numberOfPendingReservesForMintGuard(
+        address hook,
+        uint256 tierId,
+        JBStored721Tier memory storedTier
+    )
+        internal
+        view
+        returns (uint256)
+    {
+        uint256 initialSupply = storedTier.initialSupply;
+
+        // No pending reserves if no mints, no reserve frequency, or no reserve beneficiary.
+        if (
+            storedTier.reserveFrequency == 0 || initialSupply == storedTier.remainingSupply
+                || reserveBeneficiaryOf({hook: hook, tierId: tierId}) == address(0)
+        ) return 0;
+
+        // NOTE: intentionally omits the `remainingSupply == 0` early-return from _numberOfPendingReservesFor.
+        // That guard exists to prevent underflow in recordMintReservesFor, but here we need the theoretical count.
+
+        uint256 numberOfReserveMints = numberOfReservesMintedFor[hook][tierId];
+
+        // If only the reserved 721 (from rounding up) has been minted so far, return 0.
+        if (initialSupply == storedTier.remainingSupply + numberOfReserveMints) {
+            return 0;
+        }
+
+        uint256 numberOfNonReserveMints;
+        unchecked {
+            numberOfNonReserveMints = initialSupply - storedTier.remainingSupply - numberOfReserveMints;
+        }
+
+        uint256 totalNumberOfAvailableReserveMints = numberOfNonReserveMints / storedTier.reserveFrequency;
+
+        // Round up.
+        if (numberOfNonReserveMints % storedTier.reserveFrequency > 0) ++totalNumberOfAvailableReserveMints;
+
+        unchecked {
+            return totalNumberOfAvailableReserveMints - numberOfReserveMints;
+        }
+    }
+
     /// @notice Pack five bools into a single uint8.
     /// @param allowOwnerMint Whether or not owner minting is allowed in new tiers.
     /// @param transfersPausable Whether or not 721 transfers can be paused.
@@ -1232,7 +1290,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             if (storedTier.remainingSupply == 0) revert JB721TiersHookStore_InsufficientSupplyRemaining(tierId);
 
             // Mint the 721 — decrement remaining supply first so the reserve check below
-            // sees the post-mint state (this non-reserve mint may increase pending reserves).
+            // sees the correct post-mint non-reserve-mint count.
             unchecked {
                 // Keep a reference to its token ID.
                 tokenIds[i] = _generateTokenId({
@@ -1241,10 +1299,16 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                 leftoverAmount = leftoverAmount - price;
             }
 
+            // Record the block at which this token was minted for snapshot-based reward eligibility checks.
+            mintBlockOf[msg.sender][tokenIds[i]] = block.number;
+
             // Make sure there are still enough NFTs remaining to satisfy pending reserves.
+            // We use _numberOfPendingReservesForMintGuard instead of _numberOfPendingReservesFor
+            // because the latter early-returns 0 when remainingSupply == 0 (sold-out guard), which
+            // masks the reserve entitlement and allows paid mints to permanently steal reserved slots.
             if (
                 storedTier.remainingSupply
-                    < _numberOfPendingReservesFor({hook: msg.sender, tierId: tierId, storedTier: storedTier})
+                    < _numberOfPendingReservesForMintGuard({hook: msg.sender, tierId: tierId, storedTier: storedTier})
             ) {
                 revert JB721TiersHookStore_InsufficientSupplyRemaining(tierId);
             }
@@ -1288,6 +1352,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             tokenIds[i] = _generateTokenId({
                 tierId: tierId, tokenNumber: storedTier.initialSupply - --storedTier.remainingSupply
             });
+
+            // Record the block at which this token was minted for snapshot-based reward eligibility checks.
+            mintBlockOf[msg.sender][tokenIds[i]] = block.number;
 
             unchecked {
                 ++i;
