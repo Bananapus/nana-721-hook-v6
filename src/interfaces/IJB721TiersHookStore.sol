@@ -67,14 +67,6 @@ interface IJB721TiersHookStore {
     /// @return The largest tier ID.
     function maxTierIdOf(address hook) external view returns (uint256);
 
-    /// @notice The block number at which a specific token was minted.
-    /// @dev Returns 0 for tokens minted before this feature was deployed. Used by distributors to verify
-    /// a token existed before a snapshot block, preventing post-snapshot mints from stealing rewards.
-    /// @param hook The 721 contract the token belongs to.
-    /// @param tokenId The token ID to look up.
-    /// @return The block number at which the token was minted.
-    function mintBlockOf(address hook, uint256 tokenId) external view returns (uint256);
-
     /// @notice The number of NFTs which have been burned from the provided tier ID.
     /// @param hook The 721 contract that the tier belongs to.
     /// @param tierId The ID of the tier to get the burn count of.

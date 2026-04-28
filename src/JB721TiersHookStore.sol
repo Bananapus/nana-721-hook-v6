@@ -93,13 +93,6 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @custom:param tierId The ID of the tier to get the balance for.
     mapping(address hook => mapping(address owner => mapping(uint256 tierId => uint256))) public override tierBalanceOf;
 
-    /// @notice Returns the block number at which a specific token was minted.
-    /// @dev Set during `recordMint` and `recordMintReservesFor`. Used by distributors to verify
-    /// a token existed before a snapshot block, preventing post-snapshot mints from stealing rewards.
-    /// @custom:param hook The 721 contract the token belongs to.
-    /// @custom:param tokenId The token ID to look up.
-    mapping(address hook => mapping(uint256 tokenId => uint256)) public override mintBlockOf;
-
     /// @notice Returns the custom token URI resolver which overrides the default token URI resolver for the provided
     /// 721 contract.
     /// @custom:param hook The 721 contract to get the custom token URI resolver of.
@@ -1299,9 +1292,6 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                 leftoverAmount = leftoverAmount - price;
             }
 
-            // Record the block at which this token was minted for snapshot-based reward eligibility checks.
-            mintBlockOf[msg.sender][tokenIds[i]] = block.number;
-
             // Make sure there are still enough NFTs remaining to satisfy pending reserves.
             // We use _numberOfPendingReservesForMintGuard instead of _numberOfPendingReservesFor
             // because the latter early-returns 0 when remainingSupply == 0 (sold-out guard), which
@@ -1352,9 +1342,6 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             tokenIds[i] = _generateTokenId({
                 tierId: tierId, tokenNumber: storedTier.initialSupply - --storedTier.remainingSupply
             });
-
-            // Record the block at which this token was minted for snapshot-based reward eligibility checks.
-            mintBlockOf[msg.sender][tokenIds[i]] = block.number;
 
             unchecked {
                 ++i;
