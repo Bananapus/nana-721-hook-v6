@@ -181,15 +181,15 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                     address(hook),
                     i + 1,
                     JBStored721Tier({
-                        price: uint104((i + 1) * 10),
-                        remainingSupply: uint32(100 - (i + 1)),
-                        initialSupply: uint32(100),
-                        reserveFrequency: uint16(0),
-                        category: uint24(100),
-                        discountPercent: uint8(0),
-                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false, false),
-                        splitPercent: 0
-                    })
+                    price: uint104((i + 1) * 10),
+                    remainingSupply: uint32(100 - (i + 1)),
+                    initialSupply: uint32(100),
+                    reserveFrequency: uint16(0),
+                    category: uint24(100),
+                    discountPercent: uint8(0),
+                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false, false),
+                    splitPercent: 0
+                })
                 );
         }
 
@@ -235,18 +235,18 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                     address(hook),
                     i + 1,
                     JBStored721Tier({
-                        price: uint104((i + 1) * 10),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        remainingSupply: uint32(initialSupply - totalMinted),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        initialSupply: uint32(initialSupply),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        reserveFrequency: uint16(reserveFrequency),
-                        category: uint24(100),
-                        discountPercent: uint8(0),
-                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false, false),
-                        splitPercent: 0
-                    })
+                    price: uint104((i + 1) * 10),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    remainingSupply: uint32(initialSupply - totalMinted),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    initialSupply: uint32(initialSupply),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    reserveFrequency: uint16(reserveFrequency),
+                    category: uint24(100),
+                    discountPercent: uint8(0),
+                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false, false),
+                    splitPercent: 0
+                })
                 );
             // Manually set the number of reserve mints for each tier.
             hook.test_store().ForTest_setReservesMintedFor(address(hook), i + 1, reservedMinted);
@@ -280,15 +280,15 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                 address(hook),
                 1,
                 JBStored721Tier({
-                    price: uint104(10),
-                    remainingSupply: uint32(10),
-                    initialSupply: uint32(20),
-                    reserveFrequency: uint16(100),
-                    category: uint24(100),
-                    discountPercent: uint8(0),
-                    packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false, false),
-                    splitPercent: 0
-                })
+                price: uint104(10),
+                remainingSupply: uint32(10),
+                initialSupply: uint32(20),
+                reserveFrequency: uint16(100),
+                category: uint24(100),
+                discountPercent: uint8(0),
+                packedBools: hook.test_store().ForTest_packBools(false, false, true, false, false, false),
+                splitPercent: 0
+            })
             );
         // Clear the voting units mapping for tier 1 (ForTest_setTier only overwrites the packed struct).
         hook.test_store().ForTest_setTierVotingUnits(address(hook), 1, 0);
@@ -438,18 +438,18 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                     address(hook),
                     i,
                     JBStored721Tier({
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        price: uint104(i * 10),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        remainingSupply: uint32(10 * i - 5 * i),
-                        // forge-lint: disable-next-line(unsafe-typecast)
-                        initialSupply: uint32(10 * i),
-                        reserveFrequency: uint16(0),
-                        category: uint24(100),
-                        discountPercent: uint8(0),
-                        packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false, false),
-                        splitPercent: 0
-                    })
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    price: uint104(i * 10),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    remainingSupply: uint32(10 * i - 5 * i),
+                    // forge-lint: disable-next-line(unsafe-typecast)
+                    initialSupply: uint32(10 * i),
+                    reserveFrequency: uint16(0),
+                    category: uint24(100),
+                    discountPercent: uint8(0),
+                    packedBools: hook.test_store().ForTest_packBools(false, false, false, false, false, false),
+                    splitPercent: 0
+                })
                 );
             // Calculate the theoretical weight for the current tier. 10 the price multiplier.
             theoreticalWeight += (10 * i - 5 * i) * i * 10;
