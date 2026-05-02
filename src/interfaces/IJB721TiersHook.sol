@@ -135,6 +135,12 @@ interface IJB721TiersHook is IJB721Hook {
     /// @return The address of the NFT's first owner.
     function firstOwnerOf(uint256 tokenId) external view returns (address);
 
+    /// @notice The owner of an NFT at a past block.
+    /// @param tokenId The token ID of the NFT to get the historical owner of.
+    /// @param blockNumber The block number to look up.
+    /// @return The owner of the token at `blockNumber`, or zero if the token was not owned then.
+    function ownerOfAt(uint256 tokenId, uint256 blockNumber) external view returns (address);
+
     /// @notice The amount of NFT credits the address has.
     /// @param addr The address to get the NFT credits balance of.
     /// @return The amount of credits the address has.

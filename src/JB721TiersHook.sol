@@ -17,6 +17,7 @@ import {JBPermissionIds} from "@bananapus/permission-ids-v6/src/JBPermissionIds.
 import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {Checkpoints} from "@openzeppelin/contracts/utils/structs/Checkpoints.sol";
 import {JB721Hook} from "./abstract/JB721Hook.sol";
 import {IJB721Checkpoints} from "./interfaces/IJB721Checkpoints.sol";
 import {IJB721CheckpointsDeployer} from "./interfaces/IJB721CheckpointsDeployer.sol";
@@ -37,6 +38,8 @@ import {JB721TiersSetDiscountPercentConfig} from "./structs/JB721TiersSetDiscoun
 /// information specified by the payer. The project's owner can enable NFT cash outs through this hook, allowing
 /// holders to burn their NFTs to reclaim funds from the project (in proportion to the NFT's price).
 contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook {
+    using Checkpoints for Checkpoints.Trace160;
+
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
@@ -101,6 +104,10 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @custom:param The token ID of the NFT to get the stored first owner of.
     mapping(uint256 tokenId => address) internal _firstOwnerOf;
 
+    /// @notice Checkpointed token owners for historical reward eligibility.
+    /// @custom:param tokenId The token ID to get historical owner checkpoints for.
+    mapping(uint256 tokenId => Checkpoints.Trace160) internal _ownerCheckpointsOf;
+
     /// @notice Packed context for the pricing of this contract's tiers.
     /// @dev Packed into a uint256:
     /// - currency in bits 0-31 (32 bits), and
@@ -158,6 +165,16 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     function firstOwnerOf(uint256 tokenId) external view override returns (address) {
         address first = _firstOwnerOf[tokenId];
         return first != address(0) ? first : _ownerOf(tokenId);
+    }
+
+    /// @notice The owner of an NFT at a past block.
+    /// @param tokenId The token ID of the NFT to get the historical owner of.
+    /// @param blockNumber The block number to look up.
+    /// @return The owner of the token at `blockNumber`, or zero if the token was not owned then.
+    function ownerOfAt(uint256 tokenId, uint256 blockNumber) external view override returns (address) {
+        // Checkpoints.Trace160 keys are uint96; block numbers cannot practically reach 2^96.
+        // forge-lint: disable-next-line(unsafe-typecast)
+        return address(uint160(_ownerCheckpointsOf[tokenId].upperLookupRecent(uint96(blockNumber))));
     }
 
     /// @notice Context for the pricing of this hook's tiers.
@@ -788,6 +805,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // Record the transfer.
         // slither-disable-next-line reentrency-events,calls-loop
         STORE.recordTransferForTier({tierId: tierId, from: from, to: to});
+
+        // Record token-level ownership so downstream distributors can prove snapshot eligibility.
+        _ownerCheckpointsOf[tokenId].push(uint96(block.number), uint160(to));
 
         // Deploy the checkpoint module lazily on the first transfer.
         if (address(CHECKPOINTS) == address(0)) {

@@ -40,12 +40,23 @@ contract MockJBProjectsCount {
         return _count;
     }
 
+    function createFor(address projectOwner) external returns (uint256 projectId) {
+        projectId = _count + 1;
+        _count = projectId;
+        _owner = projectOwner;
+    }
+
     function setCount(uint256 newCount) external {
         _count = newCount;
     }
 
     function ownerOf(uint256) external view returns (address) {
         return _owner;
+    }
+
+    function safeTransferFrom(address from, address to, uint256) external {
+        require(_owner == from, "BAD_FROM");
+        _owner = to;
     }
 }
 
