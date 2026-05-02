@@ -163,7 +163,7 @@ contract Fork_721Hook_Test is Test {
     receive() external payable {}
 
     function setUp() public {
-        vm.createSelectFork("ethereum");
+        vm.createSelectFork("ethereum", 21_700_000);
 
         _deployJBCore();
         _deploy721Hook();
@@ -239,7 +239,7 @@ contract Fork_721Hook_Test is Test {
             jbRulesets,
             store,
             IJBSplits(address(jbSplits)),
-            IJB721CheckpointsDeployer(address(new JB721CheckpointsDeployer())),
+            IJB721CheckpointsDeployer(address(new JB721CheckpointsDeployer(store))),
             address(0)
         );
         addressRegistry = new JBAddressRegistry();

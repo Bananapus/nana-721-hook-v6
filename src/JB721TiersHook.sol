@@ -656,6 +656,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         if (tokenIds.length != 0) {
             // totalAmountPaid is the full amount available before recordMint deducted tier prices.
             uint256 totalAmountPaid = (payer == beneficiary) ? value + payCredits : value;
+            // slither-disable-next-line reentrancy-events
             _mintTokens({
                 tokenIds: tokenIds, tierIds: tierIdsToMint, beneficiary: beneficiary, totalAmountPaid: totalAmountPaid
             });
@@ -791,10 +792,12 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
         // Deploy the checkpoint module lazily on the first transfer.
         if (address(CHECKPOINTS) == address(0)) {
-            CHECKPOINTS = CHECKPOINTS_DEPLOYER.deploy({hook: address(this), store: STORE});
+            // slither-disable-next-line calls-loop,reentrancy-events
+            CHECKPOINTS = CHECKPOINTS_DEPLOYER.deploy(address(this));
         }
 
         // Notify the checkpoint module to update checkpointed voting power.
+        // slither-disable-next-line calls-loop,reentrancy-events
         CHECKPOINTS.onTransfer({from: from, to: to, tokenId: tokenId});
     }
 }

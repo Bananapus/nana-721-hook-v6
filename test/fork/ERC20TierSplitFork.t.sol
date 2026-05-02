@@ -202,7 +202,7 @@ contract ERC20TierSplitFork is Test {
             jbRulesets,
             store,
             IJBSplits(address(jbSplits)),
-            IJB721CheckpointsDeployer(address(new JB721CheckpointsDeployer())),
+            IJB721CheckpointsDeployer(address(new JB721CheckpointsDeployer(store))),
             address(0)
         );
         addressRegistry = new JBAddressRegistry();

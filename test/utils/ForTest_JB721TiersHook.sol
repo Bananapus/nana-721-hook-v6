@@ -92,7 +92,7 @@ contract ForTest_JB721TiersHook is JB721TiersHook {
             rulesets,
             store,
             splits,
-            IJB721CheckpointsDeployer(address(new JB721CheckpointsDeployer())),
+            IJB721CheckpointsDeployer(address(new JB721CheckpointsDeployer(store))),
             _trustedForwarder
         )
     {

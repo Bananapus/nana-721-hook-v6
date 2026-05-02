@@ -12,6 +12,7 @@ import {JBPayDataHookRulesetMetadata} from "../../src/structs/JBPayDataHookRules
 import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
 import {JB721InitTiersConfig} from "../../src/structs/JB721InitTiersConfig.sol";
 import {JB721TiersHookFlags} from "../../src/structs/JB721TiersHookFlags.sol";
+import {JBPermissioned} from "@bananapus/core-v6/src/abstract/JBPermissioned.sol";
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 import {IJBPermissions} from "@bananapus/core-v6/src/interfaces/IJBPermissions.sol";
 import {IJBController} from "@bananapus/core-v6/src/interfaces/IJBController.sol";
@@ -80,45 +81,27 @@ contract Test_ProjectDeployerAuth is UnitTestSetup {
         );
     }
 
-    function test_launchRulesetsFor_revertsBeforeDeployingHookIfProjectDeployerMissingControllerPermission() external {
+    function test_launchRulesetsFor_letsControllerEnforceForwardedPermissions() external {
         (JBDeploy721TiersHookConfig memory hookConfig, JBLaunchRulesetsConfig memory launchConfig) =
             _launchConfig(testProjectId);
 
         StrictController controller = new StrictController(owner);
 
-        _mockProjectDeployerPermission(JBPermissionIds.LAUNCH_RULESETS, false);
-
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                JB721TiersHookProjectDeployer.JB721TiersHookProjectDeployer_ControllerPermissionMissing.selector,
-                owner,
-                testProjectId,
-                JBPermissionIds.LAUNCH_RULESETS
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(StrictController.UnexpectedCaller.selector, address(projectDeployer)));
         projectDeployer.launchRulesetsFor(
             testProjectId, hookConfig, launchConfig, "", IJBController(address(controller)), bytes32(0)
         );
     }
 
-    function test_queueRulesetsOf_revertsBeforeDeployingHookIfProjectDeployerMissingControllerPermission() external {
+    function test_queueRulesetsOf_letsControllerEnforceForwardedPermissions() external {
         (JBDeploy721TiersHookConfig memory hookConfig, JBQueueRulesetsConfig memory queueConfig) =
             _queueConfig(testProjectId);
 
         StrictController controller = new StrictController(owner);
 
-        _mockProjectDeployerPermission(JBPermissionIds.QUEUE_RULESETS, false);
-
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                JB721TiersHookProjectDeployer.JB721TiersHookProjectDeployer_ControllerPermissionMissing.selector,
-                owner,
-                testProjectId,
-                JBPermissionIds.QUEUE_RULESETS
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(StrictController.UnexpectedCaller.selector, address(projectDeployer)));
         projectDeployer.queueRulesetsOf(
             testProjectId, hookConfig, queueConfig, IJBController(address(controller)), bytes32(0)
         );
@@ -132,79 +115,35 @@ contract Test_ProjectDeployerAuth is UnitTestSetup {
         StrictController controller = new StrictController(owner);
 
         // Grant LAUNCH_RULESETS and SET_TERMINALS, deny QUEUE_RULESETS.
-        vm.mockCall(
-            mockJBPermissions,
-            abi.encodeWithSelector(
-                IJBPermissions.hasPermission.selector,
-                operator,
-                account,
-                testProjectId,
-                JBPermissionIds.QUEUE_RULESETS,
-                true,
-                true
-            ),
-            abi.encode(false)
-        );
-        vm.mockCall(
-            mockJBPermissions,
-            abi.encodeWithSelector(
-                IJBPermissions.hasPermission.selector,
-                operator,
-                account,
-                testProjectId,
-                JBPermissionIds.LAUNCH_RULESETS,
-                true,
-                true
-            ),
-            abi.encode(true)
-        );
-        vm.mockCall(
-            mockJBPermissions,
-            abi.encodeWithSelector(
-                IJBPermissions.hasPermission.selector,
-                operator,
-                account,
-                testProjectId,
-                JBPermissionIds.SET_TERMINALS,
-                true,
-                true
-            ),
-            abi.encode(true)
-        );
+        _mockOperatorPermission(account, JBPermissionIds.QUEUE_RULESETS, false);
+        _mockOperatorPermission(account, JBPermissionIds.LAUNCH_RULESETS, true);
+        _mockOperatorPermission(account, JBPermissionIds.SET_TERMINALS, true);
 
-        _mockProjectDeployerPermission(JBPermissionIds.LAUNCH_RULESETS, false);
-
-        // The operator permission check passes with LAUNCH_RULESETS, then the helper fails explicitly because it has
-        // not been permissioned for the controller call it is about to make.
+        // The operator permission check passes with LAUNCH_RULESETS, then the forwarded controller call enforces the
+        // deployer's own permission.
         vm.prank(operator);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                JB721TiersHookProjectDeployer.JB721TiersHookProjectDeployer_ControllerPermissionMissing.selector,
-                account,
-                testProjectId,
-                JBPermissionIds.LAUNCH_RULESETS
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(StrictController.UnexpectedCaller.selector, address(projectDeployer)));
         projectDeployer.launchRulesetsFor(
             testProjectId, hookConfig, launchConfig, "", IJBController(address(controller)), bytes32(0)
         );
     }
 
-    function test_launchRulesetsFor_revertsBeforeDeployingHookIfProjectDeployerMissingUriPermission() external {
+    function test_launchRulesetsFor_operatorNeedsSetProjectUriPermission() external {
         (JBDeploy721TiersHookConfig memory hookConfig, JBLaunchRulesetsConfig memory launchConfig) =
             _launchConfig(testProjectId);
 
         StrictController controller = new StrictController(owner);
 
-        _mockProjectDeployerPermission(JBPermissionIds.LAUNCH_RULESETS, true);
-        _mockProjectDeployerPermission(JBPermissionIds.SET_TERMINALS, true);
-        _mockProjectDeployerPermission(JBPermissionIds.SET_PROJECT_URI, false);
+        _mockOperatorPermission(owner, JBPermissionIds.LAUNCH_RULESETS, true);
+        _mockOperatorPermission(owner, JBPermissionIds.SET_TERMINALS, true);
+        _mockOperatorPermission(owner, JBPermissionIds.SET_PROJECT_URI, false);
 
-        vm.prank(owner);
+        vm.prank(operator);
         vm.expectRevert(
             abi.encodeWithSelector(
-                JB721TiersHookProjectDeployer.JB721TiersHookProjectDeployer_ControllerPermissionMissing.selector,
+                JBPermissioned.JBPermissioned_Unauthorized.selector,
                 owner,
+                operator,
                 testProjectId,
                 JBPermissionIds.SET_PROJECT_URI
             )
@@ -214,17 +153,11 @@ contract Test_ProjectDeployerAuth is UnitTestSetup {
         );
     }
 
-    function _mockProjectDeployerPermission(uint256 permissionId, bool allowed) internal {
+    function _mockOperatorPermission(address account, uint256 permissionId, bool allowed) internal {
         vm.mockCall(
             mockJBPermissions,
             abi.encodeWithSelector(
-                IJBPermissions.hasPermission.selector,
-                address(projectDeployer),
-                owner,
-                testProjectId,
-                permissionId,
-                true,
-                true
+                IJBPermissions.hasPermission.selector, operator, account, testProjectId, permissionId, true, true
             ),
             abi.encode(allowed)
         );

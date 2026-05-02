@@ -23,10 +23,6 @@ import {JBLaunchRulesetsConfig} from "./structs/JBLaunchRulesetsConfig.sol";
 import {JBPayDataHookRulesetConfig} from "./structs/JBPayDataHookRulesetConfig.sol";
 import {JBQueueRulesetsConfig} from "./structs/JBQueueRulesetsConfig.sol";
 
-interface IJBControllerProjectUri {
-    function setUriOf(uint256 projectId, string calldata uri) external;
-}
-
 /// @title JB721TiersHookProjectDeployer
 /// @notice Deploys a project and a 721 tiers hook for it. Can be used to queue rulesets for the project if given
 /// `JBPermissionIds.QUEUE_RULESETS` or `JBPermissionIds.LAUNCH_RULESETS`.
@@ -36,14 +32,6 @@ contract JB721TiersHookProjectDeployer is
     IERC721Receiver,
     IJB721TiersHookProjectDeployer
 {
-    //*********************************************************************//
-    // --------------------------- custom errors ------------------------- //
-    //*********************************************************************//
-
-    error JB721TiersHookProjectDeployer_ControllerPermissionMissing(
-        address account, uint256 projectId, uint256 permissionId
-    );
-
     //*********************************************************************//
     // --------------- public immutable stored properties ---------------- //
     //*********************************************************************//
@@ -160,20 +148,8 @@ contract JB721TiersHookProjectDeployer is
             account: projectOwner, projectId: projectId, permissionId: JBPermissionIds.SET_TERMINALS
         });
 
-        _requireControllerPermissionFrom({
-            account: projectOwner, projectId: projectId, permissionId: JBPermissionIds.LAUNCH_RULESETS
-        });
-
-        _requireControllerPermissionFrom({
-            account: projectOwner, projectId: projectId, permissionId: JBPermissionIds.SET_TERMINALS
-        });
-
         if (bytes(projectUri).length != 0) {
             _requirePermissionFrom({
-                account: projectOwner, projectId: projectId, permissionId: JBPermissionIds.SET_PROJECT_URI
-            });
-
-            _requireControllerPermissionFrom({
                 account: projectOwner, projectId: projectId, permissionId: JBPermissionIds.SET_PROJECT_URI
             });
         }
@@ -226,12 +202,6 @@ contract JB721TiersHookProjectDeployer is
             permissionId: JBPermissionIds.QUEUE_RULESETS
         });
 
-        _requireControllerPermissionFrom({
-            account: DIRECTORY.PROJECTS().ownerOf(projectId),
-            projectId: projectId,
-            permissionId: JBPermissionIds.QUEUE_RULESETS
-        });
-
         // Deploy the hook.
         hook = HOOK_DEPLOYER.deployHookFor({
             projectId: projectId,
@@ -249,25 +219,8 @@ contract JB721TiersHookProjectDeployer is
     }
 
     //*********************************************************************//
-    // -------------------------- internal views ------------------------- //
+    // ----------------------- external views ---------------------------- //
     //*********************************************************************//
-
-    /// @dev ERC-2771 specifies the context as being a single address (20 bytes).
-    function _contextSuffixLength() internal view virtual override(ERC2771Context, Context) returns (uint256) {
-        return ERC2771Context._contextSuffixLength();
-    }
-
-    /// @notice The calldata. Preferred to use over `msg.data`.
-    /// @return calldata The `msg.data` of this call.
-    function _msgData() internal view override(ERC2771Context, Context) returns (bytes calldata) {
-        return ERC2771Context._msgData();
-    }
-
-    /// @notice The message's sender. Preferred to use over `msg.sender`.
-    /// @return sender The address which sent this call.
-    function _msgSender() internal view override(ERC2771Context, Context) returns (address sender) {
-        return ERC2771Context._msgSender();
-    }
 
     /// @notice Accepts project NFT reservations minted by `JBProjects.createFor`.
     function onERC721Received(address, address from, uint256, bytes calldata) external view returns (bytes4) {
@@ -278,25 +231,6 @@ contract JB721TiersHookProjectDeployer is
     //*********************************************************************//
     // ----------------------- internal helpers -------------------------- //
     //*********************************************************************//
-
-    /// @notice Require this helper to have the permission that the controller will check on the forwarded call.
-    /// @param account The project owner account whose permission must be granted.
-    /// @param projectId The project ID whose permission is required.
-    /// @param permissionId The permission ID required by the downstream controller call.
-    function _requireControllerPermissionFrom(address account, uint256 projectId, uint256 permissionId) internal view {
-        if (!PERMISSIONS.hasPermission({
-                operator: address(this),
-                account: account,
-                projectId: projectId,
-                permissionId: permissionId,
-                includeRoot: true,
-                includeWildcardProjectId: true
-            })) {
-            revert JB721TiersHookProjectDeployer_ControllerPermissionMissing({
-                account: account, projectId: projectId, permissionId: permissionId
-            });
-        }
-    }
 
     /// @notice Launches a project.
     /// @param projectId The ID of the reserved project.
@@ -361,14 +295,11 @@ contract JB721TiersHookProjectDeployer is
         // slither-disable-next-line unused-return
         controller.launchRulesetsFor({
             projectId: projectId,
+            projectUri: launchProjectConfig.projectUri,
             rulesetConfigurations: rulesetConfigurations,
             terminalConfigurations: launchProjectConfig.terminalConfigurations,
             memo: launchProjectConfig.memo
         });
-        if (bytes(launchProjectConfig.projectUri).length != 0) {
-            IJBControllerProjectUri(address(controller))
-                .setUriOf({projectId: projectId, uri: launchProjectConfig.projectUri});
-        }
     }
 
     /// @notice Launches rulesets for a project.
@@ -437,14 +368,11 @@ contract JB721TiersHookProjectDeployer is
         // Launch the rulesets.
         uint256 rulesetId = controller.launchRulesetsFor({
             projectId: projectId,
+            projectUri: projectUri,
             rulesetConfigurations: rulesetConfigurations,
             terminalConfigurations: launchRulesetsConfig.terminalConfigurations,
             memo: launchRulesetsConfig.memo
         });
-
-        if (bytes(projectUri).length != 0) {
-            IJBControllerProjectUri(address(controller)).setUriOf({projectId: projectId, uri: projectUri});
-        }
 
         return rulesetId;
     }
@@ -514,5 +442,26 @@ contract JB721TiersHookProjectDeployer is
         return controller.queueRulesetsOf({
             projectId: projectId, rulesetConfigurations: rulesetConfigurations, memo: queueRulesetsConfig.memo
         });
+    }
+
+    //*********************************************************************//
+    // -------------------------- internal views ------------------------- //
+    //*********************************************************************//
+
+    /// @dev ERC-2771 specifies the context as being a single address (20 bytes).
+    function _contextSuffixLength() internal view virtual override(ERC2771Context, Context) returns (uint256) {
+        return ERC2771Context._contextSuffixLength();
+    }
+
+    /// @notice The calldata. Preferred to use over `msg.data`.
+    /// @return calldata The `msg.data` of this call.
+    function _msgData() internal view override(ERC2771Context, Context) returns (bytes calldata) {
+        return ERC2771Context._msgData();
+    }
+
+    /// @notice The message's sender. Preferred to use over `msg.sender`.
+    /// @return sender The address which sent this call.
+    function _msgSender() internal view override(ERC2771Context, Context) returns (address sender) {
+        return ERC2771Context._msgSender();
     }
 }

@@ -14,10 +14,14 @@ interface IJB721CheckpointsDeployer {
     // forge-lint: disable-next-line(mixed-case-function)
     function IMPLEMENTATION() external view returns (address);
 
+    /// @notice The store that holds tier and voting data for each hook's NFTs.
+    /// @return The store contract.
+    // forge-lint: disable-next-line(mixed-case-function)
+    function STORE() external view returns (IJB721TiersHookStore);
+
     /// @notice Deploys a new deterministic checkpoint clone for the given hook.
     /// @dev Uses CREATE2 with the hook address as salt so the clone address is the same across chains.
     /// @param hook The hook address the module will serve.
-    /// @param store The store that holds tier data for the hook's NFTs.
     /// @return module The newly deployed and initialized checkpoint module.
-    function deploy(address hook, IJB721TiersHookStore store) external returns (IJB721Checkpoints module);
+    function deploy(address hook) external returns (IJB721Checkpoints module);
 }

@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {Votes} from "@openzeppelin/contracts/governance/utils/Votes.sol";
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {Checkpoints} from "@openzeppelin/contracts/utils/structs/Checkpoints.sol";
-import {IJB721Checkpoints} from "./interfaces/IJB721Checkpoints.sol";
-import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 
-interface IJB721FirstOwnerOf {
-    function firstOwnerOf(uint256 tokenId) external view returns (address);
-}
+import {IJB721Checkpoints} from "./interfaces/IJB721Checkpoints.sol";
+import {IJB721TiersHook} from "./interfaces/IJB721TiersHook.sol";
+import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 
 /// @title JB721Checkpoints
 /// @notice Provides IVotes-compatible checkpointed voting power for a JB721TiersHook. Deployed as an EIP-1167 clone
@@ -29,36 +27,47 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     error JB721Checkpoints_Unauthorized();
 
     //*********************************************************************//
-    // --------------------- private stored properties ------------------ //
+    // --------------- public immutable stored properties ---------------- //
     //*********************************************************************//
 
-    /// @notice Whether this contract has been initialized.
-    bool private _initialized;
-
-    /// @notice Checkpointed token owners for historical reward eligibility after mint.
-    /// @custom:param tokenId The token ID to get historical owner checkpoints for.
-    mapping(uint256 tokenId => Checkpoints.Trace160) internal _ownerCheckpointsOf;
+    /// @notice The store that holds tier and voting data for the hook's NFTs.
+    IJB721TiersHookStore public immutable override STORE;
 
     //*********************************************************************//
-    // ---------------------- public stored properties ------------------- //
+    // --------------------- public stored properties -------------------- //
     //*********************************************************************//
 
     /// @notice The hook that this module tracks voting power for.
     address public override HOOK;
 
-    /// @notice The store that holds tier and voting data for the hook's NFTs.
-    IJB721TiersHookStore public override STORE;
+    //*********************************************************************//
+    // -------------------- internal stored properties ------------------- //
+    //*********************************************************************//
 
     /// @notice The block in which each token was minted.
-    mapping(uint256 tokenId => uint96) public override mintBlockOf;
+    /// @custom:param tokenId The token ID to get the mint block for.
+    mapping(uint256 tokenId => uint96) internal _mintBlockOf;
+
+    /// @notice Checkpointed token owners for historical reward eligibility after first transfer.
+    /// @custom:param tokenId The token ID to get historical owner checkpoints for.
+    mapping(uint256 tokenId => Checkpoints.Trace160) internal _ownerCheckpointsOf;
+
+    //*********************************************************************//
+    // -------------------- private stored properties -------------------- //
+    //*********************************************************************//
+
+    /// @notice Whether this contract has been initialized.
+    bool private _initialized;
 
     //*********************************************************************//
     // -------------------------- constructor ---------------------------- //
     //*********************************************************************//
 
-    /// @dev Parameterless. The implementation contract is initialized in the constructor to prevent direct use.
-    /// Clones are initialized via `initialize()`.
-    constructor() EIP712("JB721Checkpoints", "1") {
+    /// @dev The implementation contract is initialized in the constructor to prevent direct use. Clones are initialized
+    /// via `initialize()`.
+    /// @param store The store that holds tier data for each hook's NFTs.
+    constructor(IJB721TiersHookStore store) EIP712("JB721Checkpoints", "1") {
+        STORE = store;
         _initialized = true;
     }
 
@@ -66,15 +75,15 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     // ---------------------- external transactions ---------------------- //
     //*********************************************************************//
 
-    /// @notice Initializes a cloned module with its hook and store references.
+    /// @notice Initializes a cloned module with its hook reference.
     /// @dev Can only be called once. Called by the deployer after cloning.
     /// @param hook The hook this module serves.
-    /// @param store The store that holds tier data for the hook's NFTs.
-    function initialize(address hook, IJB721TiersHookStore store) external override {
+    function initialize(address hook) external override {
         if (_initialized) revert JB721Checkpoints_AlreadyInitialized();
         _initialized = true;
+        // `hook` cannot be zero when called through the deployer because `msg.sender` must equal `hook`.
+        // slither-disable-next-line missing-zero-check
         HOOK = hook;
-        STORE = store;
     }
 
     /// @notice Called by the hook after every NFT transfer to update checkpointed voting power.
@@ -85,12 +94,13 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     function onTransfer(address from, address to, uint256 tokenId) external override {
         if (msg.sender != HOOK) revert JB721Checkpoints_Unauthorized();
 
-        // Track mint existence cheaply. Full owner checkpoints are only needed once ownership changes after mint.
         if (from == address(0)) {
+            // Store only the mint block, not a full owner checkpoint, to keep mints cheaper.
             // forge-lint: disable-next-line(unsafe-typecast)
-            mintBlockOf[tokenId] = uint96(block.number);
+            _mintBlockOf[tokenId] = uint96(block.number);
         } else {
             // forge-lint: disable-next-line(unsafe-typecast)
+            // slither-disable-next-line unused-return
             _ownerCheckpointsOf[tokenId].push(uint96(block.number), uint160(to));
         }
 
@@ -102,18 +112,21 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     }
 
     //*********************************************************************//
-    // -------------------------- public views --------------------------- //
+    // ----------------------- external views ---------------------------- //
     //*********************************************************************//
 
     /// @notice The owner of an NFT at a past block.
+    /// @dev Mints store only their block. Until a token's first non-mint transfer, ownership is inferred from the
+    /// hook's `firstOwnerOf`.
     /// @param tokenId The token ID of the NFT to get the historical owner of.
     /// @param blockNumber The block number to look up.
-    /// @return The owner of the token at `blockNumber`, or zero if the token was not owned then.
+    /// @return The owner of the token at `blockNumber`, or zero if the token had not been minted yet.
     function ownerOfAt(uint256 tokenId, uint256 blockNumber) external view override returns (address) {
-        uint96 mintBlock = mintBlockOf[tokenId];
+        uint96 mintBlock = _mintBlockOf[tokenId];
 
         // forge-lint: disable-next-line(unsafe-typecast)
         uint96 blockNumber96 = uint96(blockNumber);
+        // slither-disable-next-line incorrect-equality
         if (mintBlock == 0 || blockNumber96 < mintBlock) return address(0);
 
         Checkpoints.Trace160 storage checkpoints = _ownerCheckpointsOf[tokenId];
@@ -121,14 +134,14 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
 
         // Before the first transfer/burn checkpoint, the mint owner is implicit in the hook's first-owner tracking.
         if (checkpointCount == 0 || checkpoints.at(0)._key > blockNumber96) {
-            return IJB721FirstOwnerOf(HOOK).firstOwnerOf(tokenId);
+            return IJB721TiersHook(HOOK).firstOwnerOf(tokenId);
         }
 
         return address(uint160(checkpoints.upperLookupRecent(blockNumber96)));
     }
 
     //*********************************************************************//
-    // ------------------------ internal functions ----------------------- //
+    // ----------------------- internal views ---------------------------- //
     //*********************************************************************//
 
     /// @notice Returns the total voting units held by an account (across all tiers).

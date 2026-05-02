@@ -502,6 +502,28 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         assertEq(hook.firstOwnerOf(tokenId), previousOwner);
     }
 
+    function test_ownerOfAt_shouldReturnZeroBeforeMint(address previousOwner) public {
+        vm.assume(previousOwner != address(0));
+        vm.assume(previousOwner != trustedForwarder);
+
+        defaultTierConfig.flags.allowOwnerMint = true;
+        defaultTierConfig.reserveFrequency = 0;
+        ForTest_JB721TiersHook hook = _initializeForTestHook(10);
+
+        uint16[] memory tiersToMint = new uint16[](1);
+        tiersToMint[0] = 1;
+
+        uint256 tokenId = _generateTokenId(tiersToMint[0], 1);
+        uint256 blockBeforeMint = block.number;
+
+        vm.roll(block.number + 1);
+        vm.prank(owner);
+        hook.mintFor(tiersToMint, previousOwner);
+
+        assertEq(hook.CHECKPOINTS().ownerOfAt(tokenId, blockBeforeMint), address(0));
+        assertEq(hook.CHECKPOINTS().ownerOfAt(tokenId, block.number), previousOwner);
+    }
+
     function test_ownerOfAt_shouldReturnHistoricalOwners(address newOwner, address previousOwner) public {
         vm.assume(newOwner != previousOwner);
         vm.assume(newOwner != address(0));
@@ -521,14 +543,13 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         hook.mintFor(tiersToMint, previousOwner);
         uint256 mintBlock = block.number;
 
+        assertEq(hook.CHECKPOINTS().ownerOfAt(tokenId, mintBlock), previousOwner);
+
         vm.roll(block.number + 1);
         vm.prank(previousOwner);
         IERC721(hook).transferFrom(previousOwner, newOwner, tokenId);
         uint256 transferBlock = block.number;
 
-        assertEq(hook.CHECKPOINTS().mintBlockOf(tokenId), mintBlock);
-        assertEq(hook.CHECKPOINTS().ownerOfAt(tokenId, mintBlock - 1), address(0));
-        assertEq(hook.CHECKPOINTS().ownerOfAt(tokenId, mintBlock), previousOwner);
         assertEq(hook.CHECKPOINTS().ownerOfAt(tokenId, transferBlock - 1), previousOwner);
         assertEq(hook.CHECKPOINTS().ownerOfAt(tokenId, transferBlock), newOwner);
     }

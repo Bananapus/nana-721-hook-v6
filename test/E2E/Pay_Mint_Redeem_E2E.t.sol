@@ -78,7 +78,7 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
             jbRulesets,
             store,
             IJBSplits(address(jbSplits)),
-            IJB721CheckpointsDeployer(address(new JB721CheckpointsDeployer())),
+            IJB721CheckpointsDeployer(address(new JB721CheckpointsDeployer(store))),
             trustedForwarder
         );
         addressRegistry = new JBAddressRegistry();

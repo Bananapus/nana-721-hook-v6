@@ -14,6 +14,7 @@ import {IJBController} from "@bananapus/core-v6/src/interfaces/IJBController.sol
 import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 import {IJBPermissions} from "@bananapus/core-v6/src/interfaces/IJBPermissions.sol";
+import {JBRulesetConfig} from "@bananapus/core-v6/src/structs/JBRulesetConfig.sol";
 import {JBTerminalConfig} from "@bananapus/core-v6/src/structs/JBTerminalConfig.sol";
 import {JBAccountingContext} from "@bananapus/core-v6/src/structs/JBAccountingContext.sol";
 import {JBConstants} from "@bananapus/core-v6/src/libraries/JBConstants.sol";
@@ -48,9 +49,36 @@ contract MockController {
 
     receive() external payable {}
 
-    function setUriOf(uint256 projectId, string calldata uri) external {
+    function launchRulesetsFor(
+        uint256 projectId,
+        string calldata projectUri,
+        JBRulesetConfig[] calldata rulesetConfigurations,
+        JBTerminalConfig[] calldata,
+        string calldata
+    )
+        external
+        returns (uint256)
+    {
+        lastProjectId = projectId;
+        lastRulesetConfigCount = rulesetConfigurations.length;
         lastUriProjectId = projectId;
-        lastUri = uri;
+        lastUri = projectUri;
+        launchRulesetsForCalled = true;
+        return 42;
+    }
+
+    function queueRulesetsOf(
+        uint256 projectId,
+        JBRulesetConfig[] calldata rulesetConfigurations,
+        string calldata
+    )
+        external
+        returns (uint256)
+    {
+        lastProjectId = projectId;
+        lastRulesetConfigCount = rulesetConfigurations.length;
+        queueRulesetsOfCalled = true;
+        return 42;
     }
 
     // The fallback accepts any call and returns uint256(42) as the ruleset ID.
@@ -58,7 +86,7 @@ contract MockController {
         // Decode the selector to track which function was called.
         bytes4 selector = msg.sig;
 
-        // launchRulesetsFor(uint256,JBRulesetConfig[],JBTerminalConfig[],string)
+        // launchRulesetsFor(uint256,string,JBRulesetConfig[],JBTerminalConfig[],string)
         if (selector == IJBController.launchRulesetsFor.selector) {
             launchRulesetsForCalled = true;
         }

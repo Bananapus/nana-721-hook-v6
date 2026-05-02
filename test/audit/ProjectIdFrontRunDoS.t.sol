@@ -100,7 +100,7 @@ contract MockController {
         return _launchedId;
     }
 
-    function launchRulesetsFor(uint256 projectId) external {
+    function launchRulesetsFor(uint256 projectId) external view {
         require(projectId == _launchedId, "BAD_PROJECT_ID");
     }
 }

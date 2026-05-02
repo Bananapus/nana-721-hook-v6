@@ -42,7 +42,7 @@ contract SameCurrencyDecimalMismatch is UnitTestSetup {
                 IJBRulesets(mockJBRulesets),
                 store,
                 IJBSplits(mockJBSplits),
-                IJB721CheckpointsDeployer(address(new JB721CheckpointsDeployer())),
+                IJB721CheckpointsDeployer(address(new JB721CheckpointsDeployer(store))),
                 trustedForwarder
             );
             address hookAddr = makeAddr("hook18to6");
@@ -117,7 +117,7 @@ contract SameCurrencyDecimalMismatch is UnitTestSetup {
                 IJBRulesets(mockJBRulesets),
                 store,
                 IJBSplits(mockJBSplits),
-                IJB721CheckpointsDeployer(address(new JB721CheckpointsDeployer())),
+                IJB721CheckpointsDeployer(address(new JB721CheckpointsDeployer(store))),
                 trustedForwarder
             );
             address hookAddr = makeAddr("hook18to18");
@@ -187,7 +187,7 @@ contract SameCurrencyDecimalMismatch is UnitTestSetup {
                 IJBRulesets(mockJBRulesets),
                 store,
                 IJBSplits(mockJBSplits),
-                IJB721CheckpointsDeployer(address(new JB721CheckpointsDeployer())),
+                IJB721CheckpointsDeployer(address(new JB721CheckpointsDeployer(store))),
                 trustedForwarder
             );
             address hookAddr = makeAddr("hook6to18");
