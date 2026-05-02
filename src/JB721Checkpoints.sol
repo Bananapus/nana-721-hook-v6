@@ -3,8 +3,13 @@ pragma solidity 0.8.28;
 
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {Votes} from "@openzeppelin/contracts/governance/utils/Votes.sol";
+import {Checkpoints} from "@openzeppelin/contracts/utils/structs/Checkpoints.sol";
 import {IJB721Checkpoints} from "./interfaces/IJB721Checkpoints.sol";
 import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
+
+interface IJB721FirstOwnerOf {
+    function firstOwnerOf(uint256 tokenId) external view returns (address);
+}
 
 /// @title JB721Checkpoints
 /// @notice Provides IVotes-compatible checkpointed voting power for a JB721TiersHook. Deployed as an EIP-1167 clone
@@ -14,6 +19,8 @@ import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 /// (`_cachedThis`) is uninitialized on clones, so `domainSeparatorV4()` always rebuilds using the clone's
 /// `address(this)` — correct behavior, tiny gas overhead.
 contract JB721Checkpoints is Votes, IJB721Checkpoints {
+    using Checkpoints for Checkpoints.Trace160;
+
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
@@ -28,6 +35,10 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// @notice Whether this contract has been initialized.
     bool private _initialized;
 
+    /// @notice Checkpointed token owners for historical reward eligibility after mint.
+    /// @custom:param tokenId The token ID to get historical owner checkpoints for.
+    mapping(uint256 tokenId => Checkpoints.Trace160) internal _ownerCheckpointsOf;
+
     //*********************************************************************//
     // ---------------------- public stored properties ------------------- //
     //*********************************************************************//
@@ -37,6 +48,9 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
 
     /// @notice The store that holds tier and voting data for the hook's NFTs.
     IJB721TiersHookStore public override STORE;
+
+    /// @notice The block in which each token was minted.
+    mapping(uint256 tokenId => uint96) public override mintBlockOf;
 
     //*********************************************************************//
     // -------------------------- constructor ---------------------------- //
@@ -71,11 +85,46 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     function onTransfer(address from, address to, uint256 tokenId) external override {
         if (msg.sender != HOOK) revert JB721Checkpoints_Unauthorized();
 
+        // Track mint existence cheaply. Full owner checkpoints are only needed once ownership changes after mint.
+        if (from == address(0)) {
+            // forge-lint: disable-next-line(unsafe-typecast)
+            mintBlockOf[tokenId] = uint96(block.number);
+        } else {
+            // forge-lint: disable-next-line(unsafe-typecast)
+            _ownerCheckpointsOf[tokenId].push(uint96(block.number), uint160(to));
+        }
+
         // Look up this token's tier to get its voting units.
         uint256 votingUnits = STORE.tierOfTokenId({hook: HOOK, tokenId: tokenId, includeResolvedUri: false}).votingUnits;
 
         // Move checkpointed voting power from the previous owner to the new owner.
         _transferVotingUnits({from: from, to: to, amount: votingUnits});
+    }
+
+    //*********************************************************************//
+    // -------------------------- public views --------------------------- //
+    //*********************************************************************//
+
+    /// @notice The owner of an NFT at a past block.
+    /// @param tokenId The token ID of the NFT to get the historical owner of.
+    /// @param blockNumber The block number to look up.
+    /// @return The owner of the token at `blockNumber`, or zero if the token was not owned then.
+    function ownerOfAt(uint256 tokenId, uint256 blockNumber) external view override returns (address) {
+        uint96 mintBlock = mintBlockOf[tokenId];
+
+        // forge-lint: disable-next-line(unsafe-typecast)
+        uint96 blockNumber96 = uint96(blockNumber);
+        if (mintBlock == 0 || blockNumber96 < mintBlock) return address(0);
+
+        Checkpoints.Trace160 storage checkpoints = _ownerCheckpointsOf[tokenId];
+        uint256 checkpointCount = checkpoints.length();
+
+        // Before the first transfer/burn checkpoint, the mint owner is implicit in the hook's first-owner tracking.
+        if (checkpointCount == 0 || checkpoints.at(0)._key > blockNumber96) {
+            return IJB721FirstOwnerOf(HOOK).firstOwnerOf(tokenId);
+        }
+
+        return address(uint160(checkpoints.upperLookupRecent(blockNumber96)));
     }
 
     //*********************************************************************//

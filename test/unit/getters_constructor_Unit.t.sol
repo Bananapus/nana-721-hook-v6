@@ -526,10 +526,11 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         IERC721(hook).transferFrom(previousOwner, newOwner, tokenId);
         uint256 transferBlock = block.number;
 
-        assertEq(hook.ownerOfAt(tokenId, mintBlock - 1), address(0));
-        assertEq(hook.ownerOfAt(tokenId, mintBlock), previousOwner);
-        assertEq(hook.ownerOfAt(tokenId, transferBlock - 1), previousOwner);
-        assertEq(hook.ownerOfAt(tokenId, transferBlock), newOwner);
+        assertEq(hook.CHECKPOINTS().mintBlockOf(tokenId), mintBlock);
+        assertEq(hook.CHECKPOINTS().ownerOfAt(tokenId, mintBlock - 1), address(0));
+        assertEq(hook.CHECKPOINTS().ownerOfAt(tokenId, mintBlock), previousOwner);
+        assertEq(hook.CHECKPOINTS().ownerOfAt(tokenId, transferBlock - 1), previousOwner);
+        assertEq(hook.CHECKPOINTS().ownerOfAt(tokenId, transferBlock), newOwner);
     }
 
     function test_firstOwnerOf_shouldReturnZeroAddressIfNotMinted(uint256 tokenId) public {

@@ -41,10 +41,17 @@ contract MockProjects {
 contract MockController {
     uint256 public lastProjectId;
     uint256 public lastRulesetConfigCount;
+    uint256 public lastUriProjectId;
     bool public launchRulesetsForCalled;
     bool public queueRulesetsOfCalled;
+    string public lastUri;
 
     receive() external payable {}
+
+    function setUriOf(uint256 projectId, string calldata uri) external {
+        lastUriProjectId = projectId;
+        lastUri = uri;
+    }
 
     // The fallback accepts any call and returns uint256(42) as the ruleset ID.
     fallback() external payable {
@@ -226,7 +233,7 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
         // Call as the project owner.
         vm.prank(owner);
         (uint256 rulesetId, IJB721TiersHook deployedHook) = deployer.launchRulesetsFor(
-            testProjectId, hookConfig, launchConfig, IJBController(address(mockCtrl)), bytes32(0)
+            testProjectId, hookConfig, launchConfig, "", IJBController(address(mockCtrl)), bytes32(0)
         );
 
         // Verify the ruleset ID returned by the mock controller.
@@ -246,6 +253,20 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
         assertEq(ownerProjectId, testProjectId, "Hook should be owned by project");
     }
 
+    /// @notice launchRulesetsFor can set the existing project's metadata URI while launching rulesets.
+    function test_launchRulesetsFor_setsProjectUri() external {
+        (JBDeploy721TiersHookConfig memory hookConfig, JBLaunchRulesetsConfig memory launchConfig) =
+            _buildLaunchRulesetsConfigs();
+
+        vm.prank(owner);
+        deployer.launchRulesetsFor(
+            testProjectId, hookConfig, launchConfig, "ipfs://project", IJBController(address(mockCtrl)), bytes32(0)
+        );
+
+        assertEq(mockCtrl.lastUriProjectId(), testProjectId, "URI should be set for the project");
+        assertEq(mockCtrl.lastUri(), "ipfs://project", "URI should be forwarded");
+    }
+
     /// @notice launchRulesetsFor with a deterministic salt produces a hook at a predictable address.
     function test_launchRulesetsFor_deterministicSalt() external {
         (JBDeploy721TiersHookConfig memory hookConfig, JBLaunchRulesetsConfig memory launchConfig) =
@@ -254,15 +275,17 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
         bytes32 salt = bytes32(uint256(0xdead));
 
         vm.prank(owner);
-        (, IJB721TiersHook hook1) =
-            deployer.launchRulesetsFor(testProjectId, hookConfig, launchConfig, IJBController(address(mockCtrl)), salt);
+        (, IJB721TiersHook hook1) = deployer.launchRulesetsFor(
+            testProjectId, hookConfig, launchConfig, "", IJBController(address(mockCtrl)), salt
+        );
 
         // Deploy a second hook with a different salt to verify addresses differ.
         bytes32 salt2 = bytes32(uint256(0xbeef));
 
         vm.prank(owner);
-        (, IJB721TiersHook hook2) =
-            deployer.launchRulesetsFor(testProjectId, hookConfig, launchConfig, IJBController(address(mockCtrl)), salt2);
+        (, IJB721TiersHook hook2) = deployer.launchRulesetsFor(
+            testProjectId, hookConfig, launchConfig, "", IJBController(address(mockCtrl)), salt2
+        );
 
         assertTrue(address(hook1) != address(hook2), "Different salts should produce different hook addresses");
     }
@@ -279,7 +302,7 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
         vm.prank(unauthorized);
         vm.expectRevert();
         deployer.launchRulesetsFor(
-            testProjectId, hookConfig, launchConfig, IJBController(address(mockCtrl)), bytes32(0)
+            testProjectId, hookConfig, launchConfig, "", IJBController(address(mockCtrl)), bytes32(0)
         );
     }
 

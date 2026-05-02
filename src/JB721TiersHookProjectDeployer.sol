@@ -130,6 +130,7 @@ contract JB721TiersHookProjectDeployer is
     /// @param deployTiersHookConfig Configuration which dictates the behavior of the 721 tiers hook which is being
     /// deployed.
     /// @param launchRulesetsConfig Configuration which dictates the project's new rulesets.
+    /// @param projectUri Metadata URI to associate with the project. Pass an empty string to leave it unchanged.
     /// @param controller The controller that the project's rulesets will be queued with.
     /// @param salt A salt to use for the deterministic deployment.
     /// @return rulesetId The ID of the successfully created ruleset.
@@ -138,6 +139,7 @@ contract JB721TiersHookProjectDeployer is
         uint256 projectId,
         JBDeploy721TiersHookConfig calldata deployTiersHookConfig,
         JBLaunchRulesetsConfig calldata launchRulesetsConfig,
+        string calldata projectUri,
         IJBController controller,
         bytes32 salt
     )
@@ -147,23 +149,34 @@ contract JB721TiersHookProjectDeployer is
     {
         // Get the project's projects contract.
         IJBProjects PROJECTS = DIRECTORY.PROJECTS();
+        address projectOwner = PROJECTS.ownerOf(projectId);
 
         // Enforce permissions.
         _requirePermissionFrom({
-            account: PROJECTS.ownerOf(projectId), projectId: projectId, permissionId: JBPermissionIds.LAUNCH_RULESETS
+            account: projectOwner, projectId: projectId, permissionId: JBPermissionIds.LAUNCH_RULESETS
         });
 
         _requirePermissionFrom({
-            account: PROJECTS.ownerOf(projectId), projectId: projectId, permissionId: JBPermissionIds.SET_TERMINALS
+            account: projectOwner, projectId: projectId, permissionId: JBPermissionIds.SET_TERMINALS
         });
 
         _requireControllerPermissionFrom({
-            account: PROJECTS.ownerOf(projectId), projectId: projectId, permissionId: JBPermissionIds.LAUNCH_RULESETS
+            account: projectOwner, projectId: projectId, permissionId: JBPermissionIds.LAUNCH_RULESETS
         });
 
         _requireControllerPermissionFrom({
-            account: PROJECTS.ownerOf(projectId), projectId: projectId, permissionId: JBPermissionIds.SET_TERMINALS
+            account: projectOwner, projectId: projectId, permissionId: JBPermissionIds.SET_TERMINALS
         });
+
+        if (bytes(projectUri).length != 0) {
+            _requirePermissionFrom({
+                account: projectOwner, projectId: projectId, permissionId: JBPermissionIds.SET_PROJECT_URI
+            });
+
+            _requireControllerPermissionFrom({
+                account: projectOwner, projectId: projectId, permissionId: JBPermissionIds.SET_PROJECT_URI
+            });
+        }
 
         // Deploy the hook.
         hook = HOOK_DEPLOYER.deployHookFor({
@@ -177,7 +190,11 @@ contract JB721TiersHookProjectDeployer is
 
         // Launch the rulesets.
         rulesetId = _launchRulesetsFor({
-            projectId: projectId, launchRulesetsConfig: launchRulesetsConfig, dataHook: hook, controller: controller
+            projectId: projectId,
+            launchRulesetsConfig: launchRulesetsConfig,
+            projectUri: projectUri,
+            dataHook: hook,
+            controller: controller
         });
     }
 
@@ -357,12 +374,14 @@ contract JB721TiersHookProjectDeployer is
     /// @notice Launches rulesets for a project.
     /// @param projectId The ID of the project to launch rulesets for.
     /// @param launchRulesetsConfig Configuration which dictates the behavior of the project's rulesets.
+    /// @param projectUri Metadata URI to associate with the project. Pass an empty string to leave it unchanged.
     /// @param dataHook The data hook to use for the project.
     /// @param controller The controller that the project's rulesets will be queued with.
     /// @return rulesetId The ID of the successfully created ruleset.
     function _launchRulesetsFor(
         uint256 projectId,
         JBLaunchRulesetsConfig memory launchRulesetsConfig,
+        string memory projectUri,
         IJB721TiersHook dataHook,
         IJBController controller
     )
@@ -416,12 +435,18 @@ contract JB721TiersHookProjectDeployer is
         }
 
         // Launch the rulesets.
-        return controller.launchRulesetsFor({
+        uint256 rulesetId = controller.launchRulesetsFor({
             projectId: projectId,
             rulesetConfigurations: rulesetConfigurations,
             terminalConfigurations: launchRulesetsConfig.terminalConfigurations,
             memo: launchRulesetsConfig.memo
         });
+
+        if (bytes(projectUri).length != 0) {
+            IJBControllerProjectUri(address(controller)).setUriOf({projectId: projectId, uri: projectUri});
+        }
+
+        return rulesetId;
     }
 
     /// @notice Queues rulesets for a project.

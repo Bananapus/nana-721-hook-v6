@@ -98,7 +98,7 @@ contract Test_ProjectDeployerAuth is UnitTestSetup {
             )
         );
         projectDeployer.launchRulesetsFor(
-            testProjectId, hookConfig, launchConfig, IJBController(address(controller)), bytes32(0)
+            testProjectId, hookConfig, launchConfig, "", IJBController(address(controller)), bytes32(0)
         );
     }
 
@@ -186,7 +186,31 @@ contract Test_ProjectDeployerAuth is UnitTestSetup {
             )
         );
         projectDeployer.launchRulesetsFor(
-            testProjectId, hookConfig, launchConfig, IJBController(address(controller)), bytes32(0)
+            testProjectId, hookConfig, launchConfig, "", IJBController(address(controller)), bytes32(0)
+        );
+    }
+
+    function test_launchRulesetsFor_revertsBeforeDeployingHookIfProjectDeployerMissingUriPermission() external {
+        (JBDeploy721TiersHookConfig memory hookConfig, JBLaunchRulesetsConfig memory launchConfig) =
+            _launchConfig(testProjectId);
+
+        StrictController controller = new StrictController(owner);
+
+        _mockProjectDeployerPermission(JBPermissionIds.LAUNCH_RULESETS, true);
+        _mockProjectDeployerPermission(JBPermissionIds.SET_TERMINALS, true);
+        _mockProjectDeployerPermission(JBPermissionIds.SET_PROJECT_URI, false);
+
+        vm.prank(owner);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721TiersHookProjectDeployer.JB721TiersHookProjectDeployer_ControllerPermissionMissing.selector,
+                owner,
+                testProjectId,
+                JBPermissionIds.SET_PROJECT_URI
+            )
+        );
+        projectDeployer.launchRulesetsFor(
+            testProjectId, hookConfig, launchConfig, "ipfs://project", IJBController(address(controller)), bytes32(0)
         );
     }
 
@@ -288,6 +312,7 @@ contract Test_ProjectDeployerAuth is UnitTestSetup {
         });
 
         launchConfig = JBLaunchRulesetsConfig({
+            // forge-lint: disable-next-line(unsafe-typecast)
             projectId: uint56(projectId_),
             rulesetConfigurations: rulesetConfigs,
             terminalConfigurations: terminalConfigs,
@@ -303,7 +328,10 @@ contract Test_ProjectDeployerAuth is UnitTestSetup {
         JBLaunchRulesetsConfig memory launchConfig;
         (hookConfig, launchConfig) = _launchConfig(projectId_);
         queueConfig = JBQueueRulesetsConfig({
-            projectId: uint56(projectId_), rulesetConfigurations: launchConfig.rulesetConfigurations, memo: "queue"
+            // forge-lint: disable-next-line(unsafe-typecast)
+            projectId: uint56(projectId_),
+            rulesetConfigurations: launchConfig.rulesetConfigurations,
+            memo: "queue"
         });
     }
 }

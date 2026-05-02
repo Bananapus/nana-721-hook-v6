@@ -16,6 +16,17 @@ interface IJB721Checkpoints is IERC5805 {
     /// @param tokenId The token ID being transferred (used to look up tier voting units).
     function onTransfer(address from, address to, uint256 tokenId) external;
 
+    /// @notice The block in which each token was minted.
+    /// @param tokenId The token ID to look up.
+    /// @return The mint block, or 0 if the token has not been minted.
+    function mintBlockOf(uint256 tokenId) external view returns (uint96);
+
+    /// @notice The owner of an NFT at a past block.
+    /// @param tokenId The token ID of the NFT to get the historical owner of.
+    /// @param blockNumber The block number to look up.
+    /// @return The owner of the token at `blockNumber`, or zero if the token was not owned then.
+    function ownerOfAt(uint256 tokenId, uint256 blockNumber) external view returns (address);
+
     /// @notice Initializes a cloned module with its hook and store references.
     /// @dev Can only be called once. Called by the deployer after cloning.
     /// @param hook The hook this module serves.
