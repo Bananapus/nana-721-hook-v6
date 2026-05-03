@@ -502,7 +502,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         assertEq(hook.firstOwnerOf(tokenId), previousOwner);
     }
 
-    function test_ownerOfAt_shouldReturnZeroBeforeMint(address previousOwner) public {
+    function test_ownerOfAt_shouldReturnZeroForUnmintedToken(address previousOwner) public {
         vm.assume(previousOwner != address(0));
         vm.assume(previousOwner != trustedForwarder);
 
@@ -513,15 +513,11 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         uint16[] memory tiersToMint = new uint16[](1);
         tiersToMint[0] = 1;
 
-        uint256 tokenId = _generateTokenId(tiersToMint[0], 1);
-        uint256 blockBeforeMint = block.number;
-
-        vm.roll(block.number + 1);
         vm.prank(owner);
         hook.mintFor(tiersToMint, previousOwner);
 
-        assertEq(hook.CHECKPOINTS().ownerOfAt(tokenId, blockBeforeMint), address(0));
-        assertEq(hook.CHECKPOINTS().ownerOfAt(tokenId, block.number), previousOwner);
+        uint256 unmintedTokenId = _generateTokenId(tiersToMint[0], 2);
+        assertEq(hook.CHECKPOINTS().ownerOfAt(unmintedTokenId, block.number), address(0));
     }
 
     function test_ownerOfAt_shouldReturnHistoricalOwners(address newOwner, address previousOwner) public {

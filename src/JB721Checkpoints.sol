@@ -44,20 +44,9 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     // -------------------- internal stored properties ------------------- //
     //*********************************************************************//
 
-    /// @notice The block in which each token was minted.
-    /// @custom:param tokenId The token ID to get the mint block for.
-    mapping(uint256 tokenId => uint96) internal _mintBlockOf;
-
     /// @notice Checkpointed token owners for historical reward eligibility after first transfer.
     /// @custom:param tokenId The token ID to get historical owner checkpoints for.
     mapping(uint256 tokenId => Checkpoints.Trace160) internal _ownerCheckpointsOf;
-
-    //*********************************************************************//
-    // -------------------- private stored properties -------------------- //
-    //*********************************************************************//
-
-    /// @notice Whether this contract has been initialized.
-    bool private _initialized;
 
     //*********************************************************************//
     // -------------------------- constructor ---------------------------- //
@@ -68,7 +57,7 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// @param store The store that holds tier data for each hook's NFTs.
     constructor(IJB721TiersHookStore store) EIP712("JB721Checkpoints", "1") {
         STORE = store;
-        _initialized = true;
+        HOOK = address(1);
     }
 
     //*********************************************************************//
@@ -79,8 +68,7 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// @dev Can only be called once. Called by the deployer after cloning.
     /// @param hook The hook this module serves.
     function initialize(address hook) external override {
-        if (_initialized) revert JB721Checkpoints_AlreadyInitialized();
-        _initialized = true;
+        if (HOOK != address(0)) revert JB721Checkpoints_AlreadyInitialized();
         // `hook` cannot be zero when called through the deployer because `msg.sender` must equal `hook`.
         // slither-disable-next-line missing-zero-check
         HOOK = hook;
@@ -94,14 +82,10 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     function onTransfer(address from, address to, uint256 tokenId) external override {
         if (msg.sender != HOOK) revert JB721Checkpoints_Unauthorized();
 
-        if (from == address(0)) {
-            // Store only the mint block, not a full owner checkpoint, to keep mints cheaper.
-            // forge-lint: disable-next-line(unsafe-typecast)
-            _mintBlockOf[tokenId] = uint96(block.number);
-        } else {
+        if (from != address(0)) {
             // forge-lint: disable-next-line(unsafe-typecast)
             // slither-disable-next-line unused-return
-            _ownerCheckpointsOf[tokenId].push(uint96(block.number), uint160(to));
+            _ownerCheckpointsOf[tokenId].push({key: uint96(block.number), value: uint160(to)});
         }
 
         // Look up this token's tier to get its voting units.
@@ -116,18 +100,14 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     //*********************************************************************//
 
     /// @notice The owner of an NFT at a past block.
-    /// @dev Mints store only their block. Until a token's first non-mint transfer, ownership is inferred from the
-    /// hook's `firstOwnerOf`.
+    /// @dev Mints do not write per-token checkpoint storage. Until a token's first non-mint transfer, ownership is
+    /// inferred from the hook's `firstOwnerOf`.
     /// @param tokenId The token ID of the NFT to get the historical owner of.
     /// @param blockNumber The block number to look up.
-    /// @return The owner of the token at `blockNumber`, or zero if the token had not been minted yet.
+    /// @return The owner of the token at `blockNumber`, or zero if the token has no known owner.
     function ownerOfAt(uint256 tokenId, uint256 blockNumber) external view override returns (address) {
-        uint96 mintBlock = _mintBlockOf[tokenId];
-
         // forge-lint: disable-next-line(unsafe-typecast)
         uint96 blockNumber96 = uint96(blockNumber);
-        // slither-disable-next-line incorrect-equality
-        if (mintBlock == 0 || blockNumber96 < mintBlock) return address(0);
 
         Checkpoints.Trace160 storage checkpoints = _ownerCheckpointsOf[tokenId];
         uint256 checkpointCount = checkpoints.length();

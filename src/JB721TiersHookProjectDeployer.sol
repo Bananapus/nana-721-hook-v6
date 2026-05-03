@@ -108,7 +108,7 @@ contract JB721TiersHookProjectDeployer is
         JBOwnable(address(hook)).transferOwnershipToProject(projectId);
 
         // Transfer the project NFT to its intended owner.
-        PROJECTS.safeTransferFrom(address(this), owner, projectId);
+        PROJECTS.safeTransferFrom({from: address(this), to: owner, tokenId: projectId});
     }
 
     /// @notice Launches rulesets for a project with an attached 721 tiers hook.

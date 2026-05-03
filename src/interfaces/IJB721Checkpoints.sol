@@ -14,11 +14,11 @@ interface IJB721Checkpoints is IERC5805 {
     function HOOK() external view returns (address);
 
     /// @notice The owner of an NFT at a past block.
-    /// @dev Mints store only their block. Until a token's first non-mint transfer, ownership is inferred from the
-    /// hook's `firstOwnerOf`.
+    /// @dev Mints do not write per-token checkpoint storage. Until a token's first non-mint transfer, ownership is
+    /// inferred from the hook's `firstOwnerOf`.
     /// @param tokenId The token ID of the NFT to get the historical owner of.
     /// @param blockNumber The block number to look up.
-    /// @return The owner of the token at `blockNumber`, or zero if the token had not been minted yet.
+    /// @return The owner of the token at `blockNumber`, or zero if the token has no known owner.
     function ownerOfAt(uint256 tokenId, uint256 blockNumber) external view returns (address);
 
     /// @notice The store that holds tier and voting data for the hook's NFTs.
