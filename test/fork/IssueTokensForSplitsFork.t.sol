@@ -96,6 +96,8 @@ contract IssueTokensForSplitsFork is Test {
 
     address constant NATIVE_TOKEN = JBConstants.NATIVE_TOKEN;
 
+    uint256 constant FORK_BLOCK = 24_971_900;
+
     // =========================================================================
     // Actors
     // =========================================================================
@@ -141,7 +143,7 @@ contract IssueTokensForSplitsFork is Test {
     receive() external payable {}
 
     function setUp() public {
-        vm.createSelectFork("ethereum");
+        vm.createSelectFork({urlOrAlias: "ethereum", blockNumber: FORK_BLOCK});
 
         _deployJBCore();
         _deploy721Hook();
