@@ -13,7 +13,9 @@ import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 import {JBDeploy721TiersHookConfig} from "./structs/JBDeploy721TiersHookConfig.sol";
 
 /// @title JB721TiersHookDeployer
-/// @notice Deploys a `JB721TiersHook` for an existing project.
+/// @notice Factory that deploys EIP-1167 clones of `JB721TiersHook` for existing projects. Each clone is initialized
+/// with its own tiers, metadata, and flags, then ownership is transferred to the caller. The deployed hook is
+/// registered in the `IJBAddressRegistry` for cross-chain address verification.
 contract JB721TiersHookDeployer is ERC2771Context, IJB721TiersHookDeployer {
     //*********************************************************************//
     // --------------- public immutable stored properties ---------------- //
@@ -60,10 +62,11 @@ contract JB721TiersHookDeployer is ERC2771Context, IJB721TiersHookDeployer {
     // ---------------------- external transactions ---------------------- //
     //*********************************************************************//
 
-    /// @notice Deploys a 721 tiers hook for the specified project.
+    /// @notice Deploy a new 721 tiers hook for a project. Clones the implementation, initializes it with the provided
+    /// tiers and flags, transfers ownership to the caller, and registers the hook in the address registry.
     /// @param projectId The ID of the project to deploy the hook for.
-    /// @param deployTiersHookConfig The config to deploy the hook with, which determines its behavior.
-    /// @param salt A salt to use for the deterministic deployment.
+    /// @param deployTiersHookConfig The tiers, metadata, and flags to initialize the hook with.
+    /// @param salt A salt for deterministic (CREATE2) deployment. Pass `bytes32(0)` for non-deterministic deployment.
     /// @return newHook The address of the newly deployed hook.
     function deployHookFor(
         uint256 projectId,

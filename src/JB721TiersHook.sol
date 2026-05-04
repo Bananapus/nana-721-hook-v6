@@ -151,18 +151,19 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     // ------------------------- external views -------------------------- //
     //*********************************************************************//
 
-    /// @notice The first owner of an NFT.
-    /// @dev This is generally the address which paid for the NFT.
-    /// @param tokenId The token ID of the NFT to get the first owner of.
+    /// @notice The address that originally received an NFT (typically the payer). Tracked separately from the current
+    /// owner so it persists through transfers, useful for provenance and historical voting checkpoints.
+    /// @param tokenId The token ID of the NFT.
     /// @return The address of the NFT's first owner.
     function firstOwnerOf(uint256 tokenId) external view override returns (address) {
         address first = _firstOwnerOf[tokenId];
         return first != address(0) ? first : _ownerOf(tokenId);
     }
 
-    /// @notice Context for the pricing of this hook's tiers.
+    /// @notice The currency and decimal precision used for this hook's tier prices. For example, if tiers are priced
+    /// in ETH with 18 decimals, `currency` would be the ETH currency ID and `decimals` would be 18.
     /// @return currency The currency used for tier prices.
-    /// @return decimals The amount of decimals being used in tier prices.
+    /// @return decimals The number of decimals used in tier prices.
     function pricingContext() external view override returns (uint256 currency, uint256 decimals) {
         // Get a reference to the packed pricing context.
         uint256 packed = _packedPricingContext;
@@ -185,12 +186,12 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         return STORE.balanceOf({hook: address(this), owner: owner});
     }
 
-    /// @notice The data calculated before a payment is recorded in the terminal store.
-    /// @dev Overrides the base to calculate the split amount to forward based on tier split percentages.
-    /// @param context The payment context.
-    /// @return weight The weight to use for token minting, adjusted down when tier splits route funds away from the
-    /// project (unless `issueTokensForSplits` is set).
-    /// @return hookSpecifications The hook specifications, with the split amount to forward.
+    /// @notice Called by the terminal before recording a payment. Calculates how much of the payment should be routed
+    /// to tier-based splits vs. kept by the project, and adjusts the minting weight accordingly.
+    /// @dev Overrides the base to compute tier split amounts from each tier's `splitPercent`.
+    /// @param context The payment context from the terminal.
+    /// @return weight The adjusted weight for project token minting (reduced when splits route funds away).
+    /// @return hookSpecifications Specifies this hook as the pay hook, with the split amount to forward.
     function beforePayRecordedWith(JBBeforePayRecordedContext calldata context)
         public
         view
@@ -222,11 +223,10 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         });
     }
 
-    /// @notice The combined cash out weight of the NFTs with the specified token IDs.
-    /// @dev An NFT's cash out weight is its price.
-    /// @dev To get their relative cash out weight, divide the result by the `totalCashOutWeight(...)`.
-    /// @param tokenIds The token IDs of the NFTs to get the cumulative cash out weight of.
-    /// @return weight The cash out weight of the tokenIds.
+    /// @notice The combined cash-out weight of specific NFTs. Divide by `totalCashOutWeight()` to get the fraction of
+    /// surplus these NFTs can reclaim. Weight is based on the original tier price, not any discount paid.
+    /// @param tokenIds The token IDs of the NFTs to get the combined cash-out weight of.
+    /// @return weight The combined cash-out weight.
     function cashOutWeightOf(uint256[] memory tokenIds) public view virtual override returns (uint256) {
         return STORE.cashOutWeightOf({hook: address(this), tokenIds: tokenIds});
     }
@@ -328,9 +328,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         return JB721TiersHookLib.resolveTokenURI(STORE, address(this), baseURI, tokenId);
     }
 
-    /// @notice The combined cash out weight of all outstanding NFTs.
-    /// @dev An NFT's cash out weight is its price.
-    /// @return weight The total cash out weight.
+    /// @notice The total cash-out weight across all outstanding NFTs and pending reserves. This is the denominator
+    /// for cash-out calculations — an NFT's share of the surplus is its weight divided by this total.
+    /// @return weight The total cash-out weight.
     function totalCashOutWeight() public view virtual override returns (uint256) {
         return STORE.totalCashOutWeight(address(this));
     }
@@ -339,12 +339,12 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     // ---------------------- external transactions ---------------------- //
     //*********************************************************************//
 
-    /// @notice Add or delete tiers.
-    /// @dev Only the contract's owner or an operator with the `ADJUST_TIERS` permission from the owner can adjust the
-    /// tiers.
-    /// @dev Any added tiers must adhere to this hook's `JB721TiersHookFlags`.
-    /// @param tiersToAdd The tiers to add, as an array of `JB721TierConfig` structs`.
-    /// @param tierIdsToRemove The tiers to remove, as an array of tier IDs.
+    /// @notice Add new NFT tiers or remove existing ones. Added tiers get sequential IDs and must be sorted by
+    /// category. Removed tiers stop accepting new mints but existing NFTs remain valid.
+    /// @dev Only the collection owner or an operator with `ADJUST_721_TIERS` permission can call this.
+    /// @dev Added tiers must respect this hook's flags (e.g. `noNewTiersWithVotes`, `noNewTiersWithReserves`).
+    /// @param tiersToAdd The tiers to add, as an array of `JB721TierConfig` structs.
+    /// @param tierIdsToRemove The IDs of the tiers to remove.
     function adjustTiers(JB721TierConfig[] calldata tiersToAdd, uint256[] calldata tierIdsToRemove) external override {
         // Enforce permissions.
         _requirePermissionFrom({
@@ -363,9 +363,11 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         });
     }
 
-    /// @notice Manually mint NFTs from the provided tiers .
+    /// @notice Manually mint NFTs from specific tiers to a beneficiary, without requiring payment. Only tiers with
+    /// `allowOwnerMint` enabled can be minted this way.
+    /// @dev Only the collection owner or an operator with `MINT_721` permission can call this.
     /// @param tierIds The IDs of the tiers to mint from.
-    /// @param beneficiary The address to mint to.
+    /// @param beneficiary The address to mint the NFTs to.
     /// @return tokenIds The IDs of the newly minted tokens.
     function mintFor(
         uint16[] calldata tierIds,
@@ -389,9 +391,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         _mintTokens({tokenIds: tokenIds, tierIds: tierIds, beneficiary: beneficiary, totalAmountPaid: 0});
     }
 
-    /// @notice Mint pending reserved NFTs based on the provided information.
-    /// @dev "Pending" means that the NFTs have been reserved, but have not been minted yet.
-    /// @param reserveMintConfigs Contains information about how many reserved tokens to mint for each tier.
+    /// @notice Mint pending reserved NFTs across multiple tiers in a single call. Reserves accumulate automatically
+    /// as NFTs are sold (based on each tier's `reserveFrequency`) and anyone can trigger their minting.
+    /// @param reserveMintConfigs The tier IDs and counts specifying how many reserves to mint from each tier.
     function mintPendingReservesFor(JB721TiersMintReservesConfig[] calldata reserveMintConfigs) external override {
         for (uint256 i; i < reserveMintConfigs.length;) {
             // Get a reference to the params being iterated upon.
@@ -406,12 +408,12 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         }
     }
 
-    /// @notice Allows the collection's owner to set the discount for a tier, if the tier allows it.
-    /// @dev Only the contract's owner or an operator with the `SET_721_DISCOUNT_PERCENT` permission from the owner can
-    /// adjust the
-    /// tiers.
+    /// @notice Set a discount on a tier's price. Discounts reduce the price payers must pay, but don't affect the
+    /// NFT's cash-out weight (which always uses the original price). The tier must have `cannotIncreaseDiscountPercent`
+    /// set appropriately.
+    /// @dev Only the collection owner or an operator with `SET_721_DISCOUNT_PERCENT` permission can call this.
     /// @param tierId The ID of the tier to set the discount of.
-    /// @param discountPercent The discount percent to set.
+    /// @param discountPercent The discount percent to set (0–100).
     function setDiscountPercentOf(uint256 tierId, uint256 discountPercent) external override {
         // Enforce permissions.
         _requirePermissionFrom({
@@ -420,8 +422,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         _setDiscountPercentOf({tierId: tierId, discountPercent: discountPercent});
     }
 
-    /// @notice Allows the collection's owner to set the discount percent for multiple tiers.
-    /// @param configs The configs to set the discount percent for.
+    /// @notice Set discount percentages for multiple tiers in a single call.
+    /// @dev Only the collection owner or an operator with `SET_721_DISCOUNT_PERCENT` permission can call this.
+    /// @param configs An array of tier ID + discount percent pairs to apply.
     function setDiscountPercentsOf(JB721TiersSetDiscountPercentConfig[] calldata configs) external override {
         // Enforce permissions.
         _requirePermissionFrom({
@@ -510,8 +513,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     // ----------------------- public transactions ----------------------- //
     //*********************************************************************//
 
-    /// @notice Mint reserved pending reserved NFTs within the provided tier.
-    /// @dev "Pending" means that the NFTs have been reserved, but have not been minted yet.
+    /// @notice Mint pending reserved NFTs from a specific tier. Anyone can call this — reserves are minted to the
+    /// tier's reserve beneficiary (or the hook's default). Reverts if the ruleset has reserve minting paused.
     /// @param tierId The ID of the tier to mint reserved NFTs from.
     /// @param count The number of reserved NFTs to mint.
     function mintPendingReservesFor(uint256 tierId, uint256 count) public override {

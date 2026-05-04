@@ -24,8 +24,9 @@ import {JBPayDataHookRulesetConfig} from "./structs/JBPayDataHookRulesetConfig.s
 import {JBQueueRulesetsConfig} from "./structs/JBQueueRulesetsConfig.sol";
 
 /// @title JB721TiersHookProjectDeployer
-/// @notice Deploys a project and a 721 tiers hook for it. Can be used to queue rulesets for the project if given
-/// `JBPermissionIds.QUEUE_RULESETS` or `JBPermissionIds.LAUNCH_RULESETS`.
+/// @notice All-in-one deployer that creates a Juicebox project, deploys a 721 tiers hook, and configures its
+/// rulesets in a single transaction. Can also attach a hook to an existing project by launching or queuing rulesets
+/// with `LAUNCH_RULESETS` or `QUEUE_RULESETS` permission.
 contract JB721TiersHookProjectDeployer is
     ERC2771Context,
     JBPermissioned,

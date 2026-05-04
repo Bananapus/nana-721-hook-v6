@@ -20,10 +20,11 @@ import {IJB721Hook} from "../interfaces/IJB721Hook.sol";
 import {ERC721} from "./ERC721.sol";
 
 /// @title JB721Hook
-/// @notice When a project which uses this hook is paid, this hook may mint NFTs to the payer, depending on this hook's
-/// setup, the amount paid, and information specified by the payer. The project's owner can enable NFT cash outs
-/// through this hook, allowing the NFT holders to burn their NFTs to reclaim funds from the project (in proportion to
-/// the NFT's price).
+/// @notice Abstract base for Juicebox 721 hooks. Implements the pay hook and cash-out hook interfaces: when a project
+/// is paid through its terminal, this hook mints NFTs to the payer; when NFT holders cash out, this hook burns their
+/// NFTs and lets the terminal send them their share of the project's surplus (proportional to the NFT's price).
+/// @dev Subclasses (like `JB721TiersHook`) implement the actual minting logic via `_processPayment` and burn
+/// tracking via `_didBurn`.
 abstract contract JB721Hook is ERC721, IJB721Hook {
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
