@@ -354,6 +354,7 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
         // Launch the rulesets.
         return controller.launchRulesetsFor({
             projectId: projectId,
+            projectUri: "",
             rulesetConfigurations: rulesetConfigurations,
             terminalConfigurations: launchRulesetsConfig.terminalConfigurations,
             memo: launchRulesetsConfig.memo
