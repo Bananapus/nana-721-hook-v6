@@ -103,6 +103,8 @@ contract MockUSDC6 is ERC20 {
 contract ERC20TierSplitFork is Test {
     using JBRulesetMetadataResolver for JBRuleset;
 
+    uint256 constant FORK_BLOCK = 24_971_900;
+
     // Actors
     address multisig = address(0xBEEF);
     address payer = makeAddr("payer");
@@ -138,7 +140,7 @@ contract ERC20TierSplitFork is Test {
     receive() external payable {}
 
     function setUp() public {
-        vm.createSelectFork("ethereum");
+        vm.createSelectFork({urlOrAlias: "ethereum", blockNumber: FORK_BLOCK});
 
         _deployJBCore();
         _deploy721Hook();
@@ -202,7 +204,7 @@ contract ERC20TierSplitFork is Test {
             jbRulesets,
             store,
             IJBSplits(address(jbSplits)),
-            IJB721CheckpointsDeployer(address(new JB721CheckpointsDeployer())),
+            IJB721CheckpointsDeployer(address(new JB721CheckpointsDeployer(store))),
             address(0)
         );
         addressRegistry = new JBAddressRegistry();

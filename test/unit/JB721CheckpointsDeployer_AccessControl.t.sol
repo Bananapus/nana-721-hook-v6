@@ -14,9 +14,9 @@ contract Test_JB721CheckpointsDeployer_AccessControl is Test {
     address mockStore;
 
     function setUp() public {
-        deployer = new JB721CheckpointsDeployer();
         mockStore = makeAddr("mockStore");
         vm.etch(mockStore, new bytes(0x69));
+        deployer = new JB721CheckpointsDeployer(IJB721TiersHookStore(mockStore));
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -29,7 +29,7 @@ contract Test_JB721CheckpointsDeployer_AccessControl is Test {
 
         // Call deploy from the hook address, passing itself as the hook parameter.
         vm.prank(hookAddr);
-        IJB721Checkpoints module = deployer.deploy(hookAddr, IJB721TiersHookStore(mockStore));
+        IJB721Checkpoints module = deployer.deploy(hookAddr);
 
         // Verify the module was deployed (non-zero address).
         assertTrue(address(module) != address(0), "Module should be deployed");
@@ -46,7 +46,7 @@ contract Test_JB721CheckpointsDeployer_AccessControl is Test {
 
         vm.prank(attacker);
         vm.expectRevert(IJB721CheckpointsDeployer.JB721CheckpointsDeployer_Unauthorized.selector);
-        deployer.deploy(hookAddr, IJB721TiersHookStore(mockStore));
+        deployer.deploy(hookAddr);
     }
 
     /// @notice deploy() reverts when caller passes their own address as hook but is not the actual hook.
@@ -57,7 +57,7 @@ contract Test_JB721CheckpointsDeployer_AccessControl is Test {
         // Attacker tries to pass realHook as the hook parameter but calls from their own address.
         vm.prank(attacker);
         vm.expectRevert(IJB721CheckpointsDeployer.JB721CheckpointsDeployer_Unauthorized.selector);
-        deployer.deploy(realHook, IJB721TiersHookStore(mockStore));
+        deployer.deploy(realHook);
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -73,15 +73,15 @@ contract Test_JB721CheckpointsDeployer_AccessControl is Test {
         // Front-runner attempts to call deploy with the hook's address before the hook does.
         vm.prank(frontRunner);
         vm.expectRevert(IJB721CheckpointsDeployer.JB721CheckpointsDeployer_Unauthorized.selector);
-        deployer.deploy(hookAddr, IJB721TiersHookStore(mockStore));
+        deployer.deploy(hookAddr);
 
         // The legitimate hook can still deploy successfully after the failed front-run attempt.
         vm.prank(hookAddr);
-        IJB721Checkpoints module = deployer.deploy(hookAddr, IJB721TiersHookStore(mockStore));
+        IJB721Checkpoints module = deployer.deploy(hookAddr);
         assertTrue(address(module) != address(0), "Hook should deploy successfully after failed front-run");
     }
 
-    /// @notice An attacker who calls deploy(attacker, store) from their own address gets a clone
+    /// @notice An attacker who calls deploy(attacker) from their own address gets a clone
     ///         for themselves, but this does NOT affect the real hook's future deployment.
     function test_deploy_attackerDeploysOwnClone_doesNotAffectRealHook() public {
         address hookAddr = makeAddr("hook");
@@ -90,12 +90,12 @@ contract Test_JB721CheckpointsDeployer_AccessControl is Test {
         // Attacker deploys their own clone (msg.sender == attacker == hook param).
         // This succeeds because msg.sender == hook parameter.
         vm.prank(attacker);
-        IJB721Checkpoints attackerModule = deployer.deploy(attacker, IJB721TiersHookStore(mockStore));
+        IJB721Checkpoints attackerModule = deployer.deploy(attacker);
         assertTrue(address(attackerModule) != address(0), "Attacker can deploy their own clone");
 
         // The real hook can still deploy its own clone (different salt = different CREATE2 address).
         vm.prank(hookAddr);
-        IJB721Checkpoints hookModule = deployer.deploy(hookAddr, IJB721TiersHookStore(mockStore));
+        IJB721Checkpoints hookModule = deployer.deploy(hookAddr);
         assertTrue(address(hookModule) != address(0), "Real hook can still deploy its own clone");
 
         // The two clones are at different addresses.
@@ -111,6 +111,6 @@ contract Test_JB721CheckpointsDeployer_AccessControl is Test {
 
         vm.prank(caller);
         vm.expectRevert(IJB721CheckpointsDeployer.JB721CheckpointsDeployer_Unauthorized.selector);
-        deployer.deploy(hookAddr, IJB721TiersHookStore(mockStore));
+        deployer.deploy(hookAddr);
     }
 }

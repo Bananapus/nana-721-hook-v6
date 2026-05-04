@@ -22,6 +22,7 @@ contract Pass12L18 is Test {
         // Add 5 tiers so maxTierIdOf == 5.
         JB721TierConfig[] memory tiers = new JB721TierConfig[](5);
         for (uint256 i; i < 5; i++) {
+            // forge-lint: disable-next-line(unsafe-typecast)
             tiers[i] = _tier(uint24(i + 1));
         }
         store.recordAddTiers(tiers);
@@ -45,6 +46,7 @@ contract Pass12L18 is Test {
         // Add 5 tiers.
         JB721TierConfig[] memory tiers = new JB721TierConfig[](5);
         for (uint256 i; i < 5; i++) {
+            // forge-lint: disable-next-line(unsafe-typecast)
             tiers[i] = _tier(uint24(i + 1));
         }
         store.recordAddTiers(tiers);

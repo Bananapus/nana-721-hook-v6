@@ -12,6 +12,7 @@ import {JBPayDataHookRulesetMetadata} from "../../src/structs/JBPayDataHookRules
 import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
 import {JB721InitTiersConfig} from "../../src/structs/JB721InitTiersConfig.sol";
 import {JB721TiersHookFlags} from "../../src/structs/JB721TiersHookFlags.sol";
+import {JBPermissioned} from "@bananapus/core-v6/src/abstract/JBPermissioned.sol";
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 import {IJBPermissions} from "@bananapus/core-v6/src/interfaces/IJBPermissions.sol";
 import {IJBController} from "@bananapus/core-v6/src/interfaces/IJBController.sol";
@@ -80,7 +81,7 @@ contract Test_ProjectDeployerAuth is UnitTestSetup {
         );
     }
 
-    function test_launchRulesetsFor_revertsBecauseControllerSeesProjectDeployerAsCaller() external {
+    function test_launchRulesetsFor_letsControllerEnforceForwardedPermissions() external {
         (JBDeploy721TiersHookConfig memory hookConfig, JBLaunchRulesetsConfig memory launchConfig) =
             _launchConfig(testProjectId);
 
@@ -89,11 +90,11 @@ contract Test_ProjectDeployerAuth is UnitTestSetup {
         vm.prank(owner);
         vm.expectRevert(abi.encodeWithSelector(StrictController.UnexpectedCaller.selector, address(projectDeployer)));
         projectDeployer.launchRulesetsFor(
-            testProjectId, hookConfig, launchConfig, IJBController(address(controller)), bytes32(0)
+            testProjectId, hookConfig, launchConfig, "", IJBController(address(controller)), bytes32(0)
         );
     }
 
-    function test_queueRulesetsOf_revertsBecauseControllerSeesProjectDeployerAsCaller() external {
+    function test_queueRulesetsOf_letsControllerEnforceForwardedPermissions() external {
         (JBDeploy721TiersHookConfig memory hookConfig, JBQueueRulesetsConfig memory queueConfig) =
             _queueConfig(testProjectId);
 
@@ -114,52 +115,51 @@ contract Test_ProjectDeployerAuth is UnitTestSetup {
         StrictController controller = new StrictController(owner);
 
         // Grant LAUNCH_RULESETS and SET_TERMINALS, deny QUEUE_RULESETS.
-        vm.mockCall(
-            mockJBPermissions,
-            abi.encodeWithSelector(
-                IJBPermissions.hasPermission.selector,
-                operator,
-                account,
-                testProjectId,
-                JBPermissionIds.QUEUE_RULESETS,
-                true,
-                true
-            ),
-            abi.encode(false)
-        );
-        vm.mockCall(
-            mockJBPermissions,
-            abi.encodeWithSelector(
-                IJBPermissions.hasPermission.selector,
-                operator,
-                account,
-                testProjectId,
-                JBPermissionIds.LAUNCH_RULESETS,
-                true,
-                true
-            ),
-            abi.encode(true)
-        );
-        vm.mockCall(
-            mockJBPermissions,
-            abi.encodeWithSelector(
-                IJBPermissions.hasPermission.selector,
-                operator,
-                account,
-                testProjectId,
-                JBPermissionIds.SET_TERMINALS,
-                true,
-                true
-            ),
-            abi.encode(true)
-        );
+        _mockOperatorPermission(account, JBPermissionIds.QUEUE_RULESETS, false);
+        _mockOperatorPermission(account, JBPermissionIds.LAUNCH_RULESETS, true);
+        _mockOperatorPermission(account, JBPermissionIds.SET_TERMINALS, true);
 
-        // The permission check passes with LAUNCH_RULESETS. The call proceeds to the controller, which reverts
-        // because it sees the deployer contract as the caller rather than the original operator.
+        // The operator permission check passes with LAUNCH_RULESETS, then the forwarded controller call enforces the
+        // deployer's own permission.
         vm.prank(operator);
         vm.expectRevert(abi.encodeWithSelector(StrictController.UnexpectedCaller.selector, address(projectDeployer)));
         projectDeployer.launchRulesetsFor(
-            testProjectId, hookConfig, launchConfig, IJBController(address(controller)), bytes32(0)
+            testProjectId, hookConfig, launchConfig, "", IJBController(address(controller)), bytes32(0)
+        );
+    }
+
+    function test_launchRulesetsFor_operatorNeedsSetProjectUriPermission() external {
+        (JBDeploy721TiersHookConfig memory hookConfig, JBLaunchRulesetsConfig memory launchConfig) =
+            _launchConfig(testProjectId);
+
+        StrictController controller = new StrictController(owner);
+
+        _mockOperatorPermission(owner, JBPermissionIds.LAUNCH_RULESETS, true);
+        _mockOperatorPermission(owner, JBPermissionIds.SET_TERMINALS, true);
+        _mockOperatorPermission(owner, JBPermissionIds.SET_PROJECT_URI, false);
+
+        vm.prank(operator);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JBPermissioned.JBPermissioned_Unauthorized.selector,
+                owner,
+                operator,
+                testProjectId,
+                JBPermissionIds.SET_PROJECT_URI
+            )
+        );
+        projectDeployer.launchRulesetsFor(
+            testProjectId, hookConfig, launchConfig, "ipfs://project", IJBController(address(controller)), bytes32(0)
+        );
+    }
+
+    function _mockOperatorPermission(address account, uint256 permissionId, bool allowed) internal {
+        vm.mockCall(
+            mockJBPermissions,
+            abi.encodeWithSelector(
+                IJBPermissions.hasPermission.selector, operator, account, testProjectId, permissionId, true, true
+            ),
+            abi.encode(allowed)
         );
     }
 
@@ -245,6 +245,7 @@ contract Test_ProjectDeployerAuth is UnitTestSetup {
         });
 
         launchConfig = JBLaunchRulesetsConfig({
+            // forge-lint: disable-next-line(unsafe-typecast)
             projectId: uint56(projectId_),
             rulesetConfigurations: rulesetConfigs,
             terminalConfigurations: terminalConfigs,
@@ -260,7 +261,10 @@ contract Test_ProjectDeployerAuth is UnitTestSetup {
         JBLaunchRulesetsConfig memory launchConfig;
         (hookConfig, launchConfig) = _launchConfig(projectId_);
         queueConfig = JBQueueRulesetsConfig({
-            projectId: uint56(projectId_), rulesetConfigurations: launchConfig.rulesetConfigurations, memo: "queue"
+            // forge-lint: disable-next-line(unsafe-typecast)
+            projectId: uint56(projectId_),
+            rulesetConfigurations: launchConfig.rulesetConfigurations,
+            memo: "queue"
         });
     }
 }

@@ -240,7 +240,7 @@ contract UnitTestSetup is Test {
         );
 
         store = new JB721TiersHookStore();
-        JB721CheckpointsDeployer checkpointsDeployer = new JB721CheckpointsDeployer();
+        JB721CheckpointsDeployer checkpointsDeployer = new JB721CheckpointsDeployer(store);
         hookOrigin = new JB721TiersHook(
             IJBDirectory(mockJBDirectory),
             IJBPermissions(mockJBPermissions),

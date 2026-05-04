@@ -11,6 +11,7 @@ import {JBRulesetMetadata} from "@bananapus/core-v6/src/structs/JBRulesetMetadat
 import {JBOwnable} from "@bananapus/ownable-v6/src/JBOwnable.sol";
 import {JBPermissionIds} from "@bananapus/permission-ids-v6/src/JBPermissionIds.sol";
 import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
+import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 
 import {IJB721TiersHook} from "./interfaces/IJB721TiersHook.sol";
@@ -25,7 +26,12 @@ import {JBQueueRulesetsConfig} from "./structs/JBQueueRulesetsConfig.sol";
 /// @title JB721TiersHookProjectDeployer
 /// @notice Deploys a project and a 721 tiers hook for it. Can be used to queue rulesets for the project if given
 /// `JBPermissionIds.QUEUE_RULESETS` or `JBPermissionIds.LAUNCH_RULESETS`.
-contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721TiersHookProjectDeployer {
+contract JB721TiersHookProjectDeployer is
+    ERC2771Context,
+    JBPermissioned,
+    IERC721Receiver,
+    IJB721TiersHookProjectDeployer
+{
     //*********************************************************************//
     // --------------- public immutable stored properties ---------------- //
     //*********************************************************************//
@@ -82,8 +88,9 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
         override
         returns (uint256 projectId, IJB721TiersHook hook)
     {
-        // Get the project's ID, optimistically knowing it will be one greater than the current number of projects.
-        projectId = DIRECTORY.PROJECTS().count() + 1;
+        // Reserve the project ID up front so permissionless project creations cannot invalidate hook deployment.
+        IJBProjects PROJECTS = DIRECTORY.PROJECTS();
+        projectId = PROJECTS.createFor(address(this));
 
         // Deploy the hook.
         hook = HOOK_DEPLOYER.deployHookFor({
@@ -92,13 +99,16 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
             salt: salt == bytes32(0) ? bytes32(0) : keccak256(abi.encode(_msgSender(), salt))
         });
 
-        // Launch the project.
+        // Launch the rulesets for the reserved project.
         _launchProjectFor({
-            owner: owner, launchProjectConfig: launchProjectConfig, dataHook: hook, controller: controller
+            projectId: projectId, launchProjectConfig: launchProjectConfig, dataHook: hook, controller: controller
         });
 
         // Transfer the hook's ownership to the project.
         JBOwnable(address(hook)).transferOwnershipToProject(projectId);
+
+        // Transfer the project NFT to its intended owner.
+        PROJECTS.safeTransferFrom({from: address(this), to: owner, tokenId: projectId});
     }
 
     /// @notice Launches rulesets for a project with an attached 721 tiers hook.
@@ -108,6 +118,7 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
     /// @param deployTiersHookConfig Configuration which dictates the behavior of the 721 tiers hook which is being
     /// deployed.
     /// @param launchRulesetsConfig Configuration which dictates the project's new rulesets.
+    /// @param projectUri Metadata URI to associate with the project. Pass an empty string to leave it unchanged.
     /// @param controller The controller that the project's rulesets will be queued with.
     /// @param salt A salt to use for the deterministic deployment.
     /// @return rulesetId The ID of the successfully created ruleset.
@@ -116,6 +127,7 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
         uint256 projectId,
         JBDeploy721TiersHookConfig calldata deployTiersHookConfig,
         JBLaunchRulesetsConfig calldata launchRulesetsConfig,
+        string calldata projectUri,
         IJBController controller,
         bytes32 salt
     )
@@ -125,15 +137,22 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
     {
         // Get the project's projects contract.
         IJBProjects PROJECTS = DIRECTORY.PROJECTS();
+        address projectOwner = PROJECTS.ownerOf(projectId);
 
         // Enforce permissions.
         _requirePermissionFrom({
-            account: PROJECTS.ownerOf(projectId), projectId: projectId, permissionId: JBPermissionIds.LAUNCH_RULESETS
+            account: projectOwner, projectId: projectId, permissionId: JBPermissionIds.LAUNCH_RULESETS
         });
 
         _requirePermissionFrom({
-            account: PROJECTS.ownerOf(projectId), projectId: projectId, permissionId: JBPermissionIds.SET_TERMINALS
+            account: projectOwner, projectId: projectId, permissionId: JBPermissionIds.SET_TERMINALS
         });
+
+        if (bytes(projectUri).length != 0) {
+            _requirePermissionFrom({
+                account: projectOwner, projectId: projectId, permissionId: JBPermissionIds.SET_PROJECT_URI
+            });
+        }
 
         // Deploy the hook.
         hook = HOOK_DEPLOYER.deployHookFor({
@@ -147,7 +166,11 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
 
         // Launch the rulesets.
         rulesetId = _launchRulesetsFor({
-            projectId: projectId, launchRulesetsConfig: launchRulesetsConfig, dataHook: hook, controller: controller
+            projectId: projectId,
+            launchRulesetsConfig: launchRulesetsConfig,
+            projectUri: projectUri,
+            dataHook: hook,
+            controller: controller
         });
     }
 
@@ -196,24 +219,13 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
     }
 
     //*********************************************************************//
-    // -------------------------- internal views ------------------------- //
+    // ----------------------- external views ---------------------------- //
     //*********************************************************************//
 
-    /// @dev ERC-2771 specifies the context as being a single address (20 bytes).
-    function _contextSuffixLength() internal view virtual override(ERC2771Context, Context) returns (uint256) {
-        return ERC2771Context._contextSuffixLength();
-    }
-
-    /// @notice The calldata. Preferred to use over `msg.data`.
-    /// @return calldata The `msg.data` of this call.
-    function _msgData() internal view override(ERC2771Context, Context) returns (bytes calldata) {
-        return ERC2771Context._msgData();
-    }
-
-    /// @notice The message's sender. Preferred to use over `msg.sender`.
-    /// @return sender The address which sent this call.
-    function _msgSender() internal view override(ERC2771Context, Context) returns (address sender) {
-        return ERC2771Context._msgSender();
+    /// @notice Accepts project NFT reservations minted by `JBProjects.createFor`.
+    function onERC721Received(address, address from, uint256, bytes calldata) external view returns (bytes4) {
+        if (msg.sender != address(DIRECTORY.PROJECTS()) || from != address(0)) revert();
+        return IERC721Receiver.onERC721Received.selector;
     }
 
     //*********************************************************************//
@@ -221,12 +233,12 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
     //*********************************************************************//
 
     /// @notice Launches a project.
-    /// @param owner The address that will own the project.
+    /// @param projectId The ID of the reserved project.
     /// @param launchProjectConfig Configuration which dictates the behavior of the project which is being launched.
     /// @param dataHook The data hook to use for the project.
     /// @param controller The controller that the project's rulesets will be queued with.
     function _launchProjectFor(
-        address owner,
+        uint256 projectId,
         JBLaunchProjectConfig memory launchProjectConfig,
         IJB721TiersHook dataHook,
         IJBController controller
@@ -279,10 +291,10 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
             }
         }
 
-        // Launch the project.
+        // Launch the rulesets for the reserved project.
         // slither-disable-next-line unused-return
-        controller.launchProjectFor({
-            owner: owner,
+        controller.launchRulesetsFor({
+            projectId: projectId,
             projectUri: launchProjectConfig.projectUri,
             rulesetConfigurations: rulesetConfigurations,
             terminalConfigurations: launchProjectConfig.terminalConfigurations,
@@ -293,12 +305,14 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
     /// @notice Launches rulesets for a project.
     /// @param projectId The ID of the project to launch rulesets for.
     /// @param launchRulesetsConfig Configuration which dictates the behavior of the project's rulesets.
+    /// @param projectUri Metadata URI to associate with the project. Pass an empty string to leave it unchanged.
     /// @param dataHook The data hook to use for the project.
     /// @param controller The controller that the project's rulesets will be queued with.
     /// @return rulesetId The ID of the successfully created ruleset.
     function _launchRulesetsFor(
         uint256 projectId,
         JBLaunchRulesetsConfig memory launchRulesetsConfig,
+        string memory projectUri,
         IJB721TiersHook dataHook,
         IJBController controller
     )
@@ -352,12 +366,15 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
         }
 
         // Launch the rulesets.
-        return controller.launchRulesetsFor({
+        uint256 rulesetId = controller.launchRulesetsFor({
             projectId: projectId,
+            projectUri: projectUri,
             rulesetConfigurations: rulesetConfigurations,
             terminalConfigurations: launchRulesetsConfig.terminalConfigurations,
             memo: launchRulesetsConfig.memo
         });
+
+        return rulesetId;
     }
 
     /// @notice Queues rulesets for a project.
@@ -425,5 +442,26 @@ contract JB721TiersHookProjectDeployer is ERC2771Context, JBPermissioned, IJB721
         return controller.queueRulesetsOf({
             projectId: projectId, rulesetConfigurations: rulesetConfigurations, memo: queueRulesetsConfig.memo
         });
+    }
+
+    //*********************************************************************//
+    // -------------------------- internal views ------------------------- //
+    //*********************************************************************//
+
+    /// @dev ERC-2771 specifies the context as being a single address (20 bytes).
+    function _contextSuffixLength() internal view virtual override(ERC2771Context, Context) returns (uint256) {
+        return ERC2771Context._contextSuffixLength();
+    }
+
+    /// @notice The calldata. Preferred to use over `msg.data`.
+    /// @return calldata The `msg.data` of this call.
+    function _msgData() internal view override(ERC2771Context, Context) returns (bytes calldata) {
+        return ERC2771Context._msgData();
+    }
+
+    /// @notice The message's sender. Preferred to use over `msg.sender`.
+    /// @return sender The address which sent this call.
+    function _msgSender() internal view override(ERC2771Context, Context) returns (address sender) {
+        return ERC2771Context._msgSender();
     }
 }

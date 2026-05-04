@@ -43,6 +43,7 @@ interface IJB721TiersHookProjectDeployer {
     /// @param projectId The ID of the project that rulesets are being launched for.
     /// @param deployTiersHookConfig Configuration which dictates the behavior of the 721 tiers hook.
     /// @param launchRulesetsConfig Configuration which dictates the project's new rulesets.
+    /// @param projectUri Metadata URI to associate with the project. Pass an empty string to leave it unchanged.
     /// @param controller The controller that the project's rulesets will be queued with.
     /// @param salt A salt to use for the deterministic deployment.
     /// @return rulesetId The ID of the successfully created ruleset.
@@ -51,6 +52,7 @@ interface IJB721TiersHookProjectDeployer {
         uint256 projectId,
         JBDeploy721TiersHookConfig memory deployTiersHookConfig,
         JBLaunchRulesetsConfig memory launchRulesetsConfig,
+        string memory projectUri,
         IJBController controller,
         bytes32 salt
     )

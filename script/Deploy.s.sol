@@ -87,12 +87,12 @@ contract DeployScript is Script, Sphinx {
             (address _deployer, bool _deployerIsDeployed) = _isDeployed({
                 salt: CHECKPOINTS_DEPLOYER_SALT,
                 creationCode: type(JB721CheckpointsDeployer).creationCode,
-                arguments: ""
+                arguments: abi.encode(store)
             });
 
             // Deploy it if it has not been deployed yet.
             checkpointsDeployer = !_deployerIsDeployed
-                ? new JB721CheckpointsDeployer{salt: CHECKPOINTS_DEPLOYER_SALT}()
+                ? new JB721CheckpointsDeployer{salt: CHECKPOINTS_DEPLOYER_SALT}(store)
                 : JB721CheckpointsDeployer(_deployer);
         }
 
