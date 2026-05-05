@@ -233,7 +233,9 @@ contract JB721TiersHookProjectDeployer is
     // ----------------------- internal helpers -------------------------- //
     //*********************************************************************//
 
-    /// @notice Launches a project.
+    /// @notice Configure and launch rulesets for a newly created project. Converts `JBPayDataHookRulesetConfig` entries
+    /// into standard `JBRulesetConfig` entries with `useDataHookForPay` forced to `true` and the deployed hook set as
+    /// the data hook.
     /// @param projectId The ID of the reserved project.
     /// @param launchProjectConfig Configuration which dictates the behavior of the project which is being launched.
     /// @param dataHook The data hook to use for the project.
@@ -303,7 +305,8 @@ contract JB721TiersHookProjectDeployer is
         });
     }
 
-    /// @notice Launches rulesets for a project.
+    /// @notice Launch rulesets for an existing project. Same conversion logic as `_launchProjectFor` — each
+    /// `JBPayDataHookRulesetConfig` is transformed into a `JBRulesetConfig` with the hook wired as the data hook.
     /// @param projectId The ID of the project to launch rulesets for.
     /// @param launchRulesetsConfig Configuration which dictates the behavior of the project's rulesets.
     /// @param projectUri Metadata URI to associate with the project. Pass an empty string to leave it unchanged.
@@ -378,7 +381,9 @@ contract JB721TiersHookProjectDeployer is
         return rulesetId;
     }
 
-    /// @notice Queues rulesets for a project.
+    /// @notice Queue future rulesets for an existing project. Same conversion logic as the launch functions — each
+    /// `JBPayDataHookRulesetConfig` is transformed into a `JBRulesetConfig` with the hook wired as the data hook.
+    /// Queued rulesets take effect after the current ruleset expires.
     /// @param projectId The ID of the project to queue rulesets for.
     /// @param queueRulesetsConfig Configuration which dictates the behavior of the project's rulesets.
     /// @param dataHook The data hook to use for the project.

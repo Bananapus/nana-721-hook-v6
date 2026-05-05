@@ -271,7 +271,8 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
         PROJECT_ID = projectId;
     }
 
-    /// @notice Process a received payment.
-    /// @param context The payment context passed in by the terminal.
+    /// @notice Process a received payment by minting NFTs and/or updating credits. Subclasses implement the
+    /// specific minting logic (e.g., tier selection, credit tracking, split distribution).
+    /// @param context The payment context passed in by the terminal (includes amount, payer, beneficiary, metadata).
     function _processPayment(JBAfterPayRecordedContext calldata context) internal virtual;
 }
