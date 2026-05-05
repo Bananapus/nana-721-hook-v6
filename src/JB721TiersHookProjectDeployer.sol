@@ -40,7 +40,7 @@ contract JB721TiersHookProjectDeployer is
     /// @notice The directory of terminals and controllers for projects.
     IJBDirectory public immutable override DIRECTORY;
 
-    /// @notice The 721 tiers hook deployer.
+    /// @notice The deployer contract used to create new 721 tiers hook instances via clone.
     IJB721TiersHookDeployer public immutable override HOOK_DEPLOYER;
 
     //*********************************************************************//

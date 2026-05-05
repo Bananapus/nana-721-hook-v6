@@ -24,7 +24,7 @@ contract JB721TiersHookDeployer is ERC2771Context, IJB721TiersHookDeployer {
     /// @notice A registry which stores references to contracts and their deployers.
     IJBAddressRegistry public immutable ADDRESS_REGISTRY;
 
-    /// @notice A 721 tiers hook.
+    /// @notice The reference 721 tiers hook implementation that gets cloned for each new deployment.
     JB721TiersHook public immutable HOOK;
 
     /// @notice The contract that stores and manages data for this contract's NFTs.
