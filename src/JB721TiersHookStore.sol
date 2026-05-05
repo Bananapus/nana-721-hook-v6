@@ -16,7 +16,11 @@ import {JBBitmapWord} from "./structs/JBBitmapWord.sol";
 import {JBStored721Tier} from "./structs/JBStored721Tier.sol";
 
 /// @title JB721TiersHookStore
-/// @notice This contract stores and manages data for many `IJB721TiersHook`s and their NFTs.
+/// @notice The shared data store for all `JB721TiersHook` instances. Stores tier definitions, mint counts, reserve
+/// tracking, voting units, and removal bitmaps. Each hook registers its own tiers here; the store handles
+/// tier validation, minting logic (including reserve accounting), and cash-out weight calculations.
+/// @dev One store is shared across all hooks. Functions are keyed by hook address so each hook reads/writes
+/// only its own data. Tier IDs are sequential per hook and 1-indexed.
 contract JB721TiersHookStore is IJB721TiersHookStore {
     using JBBitmap for mapping(uint256 => uint256);
     using JBBitmap for JBBitmapWord;
@@ -155,48 +159,50 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     // ------------------------- external views -------------------------- //
     //*********************************************************************//
 
-    /// @notice Resolves the encoded IPFS URI for the tier of the 721 with the provided token ID from the provided 721
-    /// contract.
-    /// @param hook The 721 contract that the encoded IPFS URI belongs to.
-    /// @param tokenId The token ID of the 721 to get the encoded tier IPFS URI of.
-    /// @return The encoded IPFS URI.
+    /// @notice Get the encoded IPFS URI for the tier that a specific NFT belongs to. Used to resolve the NFT's
+    /// metadata when no custom `tokenUriResolver` is set.
+    /// @param hook The 721 hook contract the NFT belongs to.
+    /// @param tokenId The token ID of the NFT.
+    /// @return The encoded IPFS URI for the NFT's tier.
     // forge-lint: disable-next-line(mixed-case-function)
     function encodedTierIPFSUriOf(address hook, uint256 tokenId) external view override returns (bytes32) {
         return encodedIPFSUriOf[hook][tierIdOfToken(tokenId)];
     }
 
-    /// @notice Get the flags that dictate the behavior of the provided 721 contract.
-    /// @param hook The 721 contract to get the flags of.
-    /// @return The flags.
+    /// @notice Get the behavioral flags for a hook — such as whether transfers are pausable, whether NFT holders can
+    /// cash out, and whether token issuance occurs for split-routed payments.
+    /// @param hook The 721 hook contract to get the flags of.
+    /// @return The hook's flags.
     function flagsOf(address hook) external view override returns (JB721TiersHookFlags memory) {
         return _flagsOf[hook];
     }
 
-    /// @notice Check if the provided tier has been removed from the provided 721 contract.
-    /// @param hook The 721 contract the tier belongs to.
-    /// @param tierId The ID of the tier to check the removal status of.
-    /// @return A bool which is `true` if the tier has been removed, and `false` otherwise.
+    /// @notice Check whether a tier has been removed. Removed tiers can no longer be minted from, but existing NFTs
+    /// from that tier remain valid and can still be cashed out.
+    /// @param hook The 721 hook contract the tier belongs to.
+    /// @param tierId The ID of the tier to check.
+    /// @return `true` if the tier has been removed, `false` otherwise.
     function isTierRemoved(address hook, uint256 tierId) external view override returns (bool) {
         JBBitmapWord memory bitmapWord = _removedTiersBitmapWordOf[hook].readId(tierId);
 
         return bitmapWord.isTierIdRemoved(tierId);
     }
 
-    /// @notice Get the number of pending reserve NFTs for the provided tier ID of the provided 721 contract.
-    /// @dev "Pending" means that the NFTs have been reserved, but have not been minted yet.
-    /// @param hook The 721 contract to check for pending reserved NFTs.
-    /// @param tierId The ID of the tier to get the number of pending reserves for.
-    /// @return The number of pending reserved NFTs.
+    /// @notice How many reserved NFTs are waiting to be minted for a tier. Reserves accumulate automatically as
+    /// non-reserve NFTs are minted (based on the tier's `reserveFrequency`). Anyone can mint them via
+    /// `mintPendingReservesFor`.
+    /// @param hook The 721 hook contract to check.
+    /// @param tierId The ID of the tier to check.
+    /// @return The number of pending reserved NFTs that can be minted.
     function numberOfPendingReservesFor(address hook, uint256 tierId) external view override returns (uint256) {
         return _numberOfPendingReservesFor({hook: hook, tierId: tierId, storedTier: _storedTierOf[hook][tierId]});
     }
 
-    /// @notice Get the tier of the 721 with the provided token ID in the provided 721 contract.
-    /// @param hook The 721 contract that the tier belongs to.
-    /// @param tokenId The token ID of the 721 to get the tier of.
-    /// @param includeResolvedUri If set to `true`, if the contract has a token URI resolver, its content will be
-    /// resolved and included.
-    /// @return The tier.
+    /// @notice Look up which tier an NFT belongs to and return the full tier details (price, supply, metadata, etc.).
+    /// @param hook The 721 hook contract the NFT belongs to.
+    /// @param tokenId The token ID of the NFT.
+    /// @param includeResolvedUri If `true` and the hook has a `tokenUriResolver`, resolves the URI and includes it.
+    /// @return The tier that the NFT belongs to.
     function tierOfTokenId(
         address hook,
         uint256 tokenId,
@@ -255,14 +261,14 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         transfersPausable = (storedTier.packedBools & 0x2) != 0;
     }
 
-    /// @notice Gets an array of currently active 721 tiers for the provided 721 contract.
-    /// @param hook The 721 contract to get the tiers of.
-    /// @param categories An array tier categories to get tiers from. Send an empty array to get all categories.
-    /// @param includeResolvedUri If set to `true`, if the contract has a token URI resolver, its content will be
-    /// resolved and included.
-    /// @param startingId The ID of the first tier to get (sorted by category). Send 0 to get all active tiers.
-    /// @param size The number of tiers to include.
-    /// @return tiers An array of active 721 tiers.
+    /// @notice Get all active (non-removed) tiers for a hook, with optional filtering by category and pagination.
+    /// Tiers are returned sorted by category.
+    /// @param hook The 721 hook contract to get tiers from.
+    /// @param categories Filter to specific categories. Pass an empty array to include all categories.
+    /// @param includeResolvedUri If `true` and the hook has a `tokenUriResolver`, resolves URIs and includes them.
+    /// @param startingId Start from this tier ID (for pagination). Pass 0 to start from the beginning.
+    /// @param size The maximum number of tiers to return.
+    /// @return tiers An array of active tiers.
     function tiersOf(
         address hook,
         uint256[] calldata categories,
@@ -345,14 +351,12 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         }
     }
 
-    /// @notice Returns the number of voting units an addresses has within the specified tier of the specified 721
-    /// contract.
-    /// @dev NFTs have a tier-specific number of voting units. If the tier does not have a custom number of voting
-    /// units, the price is used.
-    /// @param hook The 721 contract that the tier belongs to.
-    /// @param account The address to get the voting units of within the tier.
-    /// @param tierId The ID of the tier to get voting units within.
-    /// @return The address' voting units within the tier.
+    /// @notice Get an address's voting power from a specific tier. Each NFT in the tier contributes either the tier's
+    /// custom `votingUnits` (if configured) or the tier's price. Multiply by the holder's balance in the tier.
+    /// @param hook The 721 hook contract that the tier belongs to.
+    /// @param account The address to get voting units for.
+    /// @param tierId The ID of the tier.
+    /// @return The address's total voting units within the tier.
     function tierVotingUnitsOf(
         address hook,
         address account,
@@ -379,9 +383,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         return balance * (useVotingUnits ? _tierVotingUnitsOf[hook][tierId] : storedTier.price);
     }
 
-    /// @notice Get the number of NFTs which have been minted from the provided 721 contract (across all tiers).
-    /// @param hook The 721 contract to get a total supply of.
-    /// @return supply The total number of NFTs minted from all tiers on the contract.
+    /// @notice The total number of NFTs currently in circulation for a hook (minted minus burned, across all tiers).
+    /// @param hook The 721 hook contract to get the total supply of.
+    /// @return supply The total number of outstanding NFTs.
     function totalSupplyOf(address hook) external view override returns (uint256 supply) {
         // Keep a reference to the greatest tier ID.
         uint256 maxTierId = maxTierIdOf[hook];
@@ -402,13 +406,12 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         }
     }
 
-    /// @notice Get the number of voting units the provided address has for the provided 721 contract (across all
-    /// tiers).
-    /// @dev NFTs have a tier-specific number of voting units. If the tier does not have a custom number of voting
-    /// units, the price is used.
-    /// @param hook The 721 contract to get the voting units within.
+    /// @notice Get an address's total voting power across all tiers of a hook. Sums up the voting units from every
+    /// tier where the address holds NFTs.
+    /// @dev Each tier contributes: `balance * (customVotingUnits || tierPrice)`.
+    /// @param hook The 721 hook contract to get voting units within.
     /// @param account The address to get the voting unit total of.
-    /// @return units The total voting units the address has within the 721 contract.
+    /// @return units The total voting units the address holds across all tiers.
     function votingUnitsOf(address hook, address account) external view virtual override returns (uint256 units) {
         // Keep a reference to the greatest tier ID.
         uint256 maxTierId = maxTierIdOf[hook];
@@ -446,11 +449,10 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     // -------------------------- public views --------------------------- //
     //*********************************************************************//
 
-    /// @notice Get the number of NFTs that the specified address has from the specified 721 contract (across all
-    /// tiers).
-    /// @param hook The 721 contract to get the balance within.
+    /// @notice How many NFTs an address owns from a hook, totaled across all tiers.
+    /// @param hook The 721 hook contract to check.
     /// @param owner The address to check the balance of.
-    /// @return balance The number of NFTs the owner has from the 721 contract.
+    /// @return balance The total number of NFTs the owner holds.
     function balanceOf(address hook, address owner) public view override returns (uint256 balance) {
         // Keep a reference to the greatest tier ID.
         uint256 maxTierId = maxTierIdOf[hook];
@@ -466,13 +468,13 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         }
     }
 
-    /// @notice The combined cash out weight of the NFTs with the provided token IDs.
-    /// @dev Cash out weight is based on 721 price.
-    /// @dev Divide this result by the `totalCashOutWeight` to get the portion of funds that can be reclaimed by
-    /// cashing out these NFTs.
-    /// @param hook The 721 contract that the NFTs belong to.
-    /// @param tokenIds The token IDs of the NFTs to get the cash out weight of.
-    /// @return weight The cash out weight.
+    /// @notice The combined cash-out weight of specific NFTs. Divide by `totalCashOutWeight` to get the fraction of
+    /// the project's surplus that cashing out these NFTs would reclaim.
+    /// @dev Weight is based on each NFT's original tier price (not the discounted price paid). Discounts are
+    /// transient purchase incentives and don't affect an NFT's share of the cash-out pool.
+    /// @param hook The 721 hook contract the NFTs belong to.
+    /// @param tokenIds The token IDs to get the combined cash-out weight of.
+    /// @return weight The combined cash-out weight.
     function cashOutWeightOf(address hook, uint256[] calldata tokenIds) public view override returns (uint256 weight) {
         // Add each 721's original price (from its tier) to the weight.
         // Uses the full tier price, not the discounted price — by design. Discounts are transient incentives
@@ -488,10 +490,11 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         }
     }
 
-    /// @notice The reserve beneficiary for the provided tier ID on the provided 721 contract.
-    /// @param hook The 721 contract that the tier belongs to.
-    /// @param tierId The ID of the tier to get the reserve beneficiary of.
-    /// @return The reserve beneficiary for the tier.
+    /// @notice The address that receives reserved NFTs for a tier. Falls back to the hook's default reserve
+    /// beneficiary if no tier-specific beneficiary is set.
+    /// @param hook The 721 hook contract.
+    /// @param tierId The ID of the tier.
+    /// @return The reserve beneficiary address for the tier.
     function reserveBeneficiaryOf(address hook, uint256 tierId) public view override returns (address) {
         // Get the stored reserve beneficiary.
         address storedReserveBeneficiaryOfTier = _reserveBeneficiaryOf[hook][tierId];
@@ -505,19 +508,18 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         return defaultReserveBeneficiaryOf[hook];
     }
 
-    /// @notice The tier ID for the 721 with the provided token ID.
-    /// @dev Tiers are 1-indexed from the `tiers` array, meaning the 0th element of the array is tier 1.
-    /// @param tokenId The token ID of the 721 to get the tier ID of.
-    /// @return The ID of the 721's tier.
+    /// @notice Derive which tier an NFT belongs to from its token ID. Token IDs encode the tier: `tokenId / 1e9`
+    /// gives the tier ID.
+    /// @param tokenId The token ID of the NFT.
+    /// @return The tier ID.
     function tierIdOfToken(uint256 tokenId) public pure override returns (uint256) {
         return tokenId / _ONE_BILLION;
     }
 
-    /// @notice Get the tier with the provided ID from the provided 721 contract.
-    /// @param hook The 721 contract to get the tier from.
+    /// @notice Get the full details of a specific tier by its ID — price, supply, reserve info, metadata, etc.
+    /// @param hook The 721 hook contract to get the tier from.
     /// @param id The ID of the tier to get.
-    /// @param includeResolvedUri If set to `true`, if the contract has a token URI resolver, its content will be
-    /// resolved and included.
+    /// @param includeResolvedUri If `true` and the hook has a `tokenUriResolver`, resolves the URI and includes it.
     /// @return The tier.
     function tierOf(address hook, uint256 id, bool includeResolvedUri) public view override returns (JB721Tier memory) {
         return _getTierFrom({
@@ -525,9 +527,10 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         });
     }
 
-    /// @notice The combined cash out weight for all NFTs from the provided 721 contract.
-    /// @param hook The 721 contract to get the total cash out weight of.
-    /// @return weight The total cash out weight.
+    /// @notice The total cash-out weight across all outstanding NFTs (including pending reserves). This is the
+    /// denominator used to determine what fraction of a project's surplus each NFT can reclaim on cash out.
+    /// @param hook The 721 hook contract to get the total cash-out weight of.
+    /// @return weight The total cash-out weight.
     // Changing defaultReserveBeneficiary retroactively affects totalCashOutWeight. By design —
     // cashOutWeight is calculated dynamically, not snapshotted. The defaultReserveBeneficiary determines which
     // tiers have pending reserves (via _numberOfPendingReservesFor), affecting the denominator. Changing it is
@@ -752,13 +755,15 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         }
     }
 
-    /// @notice Pack five bools into a single uint8.
-    /// @param allowOwnerMint Whether or not owner minting is allowed in new tiers.
-    /// @param transfersPausable Whether or not 721 transfers can be paused.
-    /// @param useVotingUnits Whether or not custom voting unit amounts are allowed in new tiers.
-    /// @param cantBeRemoved Whether or not attempts to remove the tier will revert.
-    /// @param cantIncreaseDiscountPercent Whether or not attempts to increase the discount percent will revert.
-    /// @param cantBuyWithCredits Whether or not the tier cannot be purchased using accumulated pay credits.
+    /// @notice Pack six tier-level boolean flags into a single uint8 for compact storage in `JBStored721Tier`.
+    /// @dev Bit layout: 0=allowOwnerMint, 1=transfersPausable, 2=useVotingUnits, 3=cantBeRemoved,
+    /// 4=cantIncreaseDiscountPercent, 5=cantBuyWithCredits.
+    /// @param allowOwnerMint Whether the project owner can mint from this tier directly (without paying).
+    /// @param transfersPausable Whether transfers of NFTs from this tier can be paused by the ruleset.
+    /// @param useVotingUnits Whether this tier uses a custom voting power value instead of defaulting to its price.
+    /// @param cantBeRemoved Whether this tier is permanently locked and cannot be removed once added.
+    /// @param cantIncreaseDiscountPercent Whether the discount percent can only stay the same or decrease.
+    /// @param cantBuyWithCredits Whether this tier cannot be purchased using accumulated pay credits.
     /// @return packed The packed bools.
     function _packBools(
         bool allowOwnerMint,
@@ -782,14 +787,16 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         }
     }
 
-    /// @notice Unpack six bools from a single uint8.
+    /// @notice Unpack six tier-level boolean flags from a single uint8 stored in `JBStored721Tier.packedBools`.
+    /// @dev Inverse of `_packBools`. Same bit layout: 0=allowOwnerMint, 1=transfersPausable, 2=useVotingUnits,
+    /// 3=cantBeRemoved, 4=cantIncreaseDiscountPercent, 5=cantBuyWithCredits.
     /// @param packed The packed bools.
-    /// @param allowOwnerMint Whether or not owner minting is allowed in new tiers.
-    /// @param transfersPausable Whether or not 721 transfers can be paused.
-    /// @param useVotingUnits Whether or not custom voting unit amounts are allowed in new tiers.
-    /// @param cantBeRemoved Whether or not the tier can be removed once added.
-    /// @param cantIncreaseDiscountPercent Whether or not the discount percent cannot be increased.
-    /// @param cantBuyWithCredits Whether or not the tier cannot be purchased using accumulated pay credits.
+    /// @param allowOwnerMint Whether the project owner can mint from this tier directly (without paying).
+    /// @param transfersPausable Whether transfers of NFTs from this tier can be paused by the ruleset.
+    /// @param useVotingUnits Whether this tier uses a custom voting power value instead of defaulting to its price.
+    /// @param cantBeRemoved Whether this tier is permanently locked and cannot be removed once added.
+    /// @param cantIncreaseDiscountPercent Whether the discount percent can only stay the same or decrease.
+    /// @param cantBuyWithCredits Whether this tier cannot be purchased using accumulated pay credits.
     function _unpackBools(uint8 packed)
         internal
         pure
@@ -816,7 +823,12 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     // ---------------------- external transactions ---------------------- //
     //*********************************************************************//
 
-    /// @notice Cleans an 721 contract's removed tiers from the tier sorting sequence.
+    /// @notice Walk through the tier sorting sequence and skip over any tiers that have been removed. This compacts
+    /// the linked list so that `tiersOf` iteration no longer visits removed tiers. Anyone can call this — it's a
+    /// maintenance operation with no access control.
+    /// @dev Call this after `recordRemoveTierIds` to keep tier iteration efficient. Without cleaning, removed tiers
+    /// remain in the linked list (they just can't be minted from). The function also updates
+    /// `_startingTierIdOfCategory` if the previous starting tier for a category was removed.
     /// @param hook The 721 contract to clean tiers for.
     function cleanTiers(address hook) external override {
         // Keep a reference to the last tier ID.
@@ -873,13 +885,16 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         emit CleanTiers({hook: hook, caller: msg.sender});
     }
 
-    /// @notice Record newly added tiers.
-    /// @dev WARNING: If any tier in `tiersToAdd` has `useReserveBeneficiaryAsDefault` set to `true`, its
+    /// @notice Validate and store new tiers for the calling hook. Each tier is assigned a sequential ID, inserted
+    /// into the category-sorted linked list, and has its reserve beneficiary, voting units, IPFS URI, and flags
+    /// persisted. Tiers must be provided sorted by category (ascending).
+    /// @dev Only callable by hook contracts (msg.sender is treated as the hook address).
+    /// WARNING: If any tier in `tiersToAdd` has `useReserveBeneficiaryAsDefault` set to `true`, its
     /// `reserveBeneficiary` will overwrite the hook's global `defaultReserveBeneficiaryOf`. This affects ALL existing
     /// tiers that do not have a tier-specific reserve beneficiary set via `_reserveBeneficiaryOf`. Callers should be
     /// aware of this side effect when using `adjustTiers` to add new tiers.
     /// @param tiersToAdd The tiers to add.
-    /// @return tierIds The IDs of the tiers being added.
+    /// @return tierIds The IDs of the tiers added.
     function recordAddTiers(JB721TierConfig[] calldata tiersToAdd)
         external
         override
@@ -1125,7 +1140,8 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         maxTierIdOf[msg.sender] = currentMaxTierIdOf + tiersToAdd.length;
     }
 
-    /// @notice Records 721 burns.
+    /// @notice Increment the burn counter for each token's tier. Does NOT affect `remainingSupply` — burned NFTs
+    /// cannot be re-minted. The burn count is used by `totalSupplyOf` to compute the circulating supply.
     /// @dev This function trusts `msg.sender` (the hook contract) to only call it after actually burning the
     /// tokens. It does not verify ownership or existence of the token IDs — the hook is responsible for
     /// performing those checks before calling this function.
@@ -1147,16 +1163,22 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         }
     }
 
-    /// @notice Record newly set flags.
+    /// @notice Store the behavioral flags for the calling hook. These flags govern whether new tiers can have voting
+    /// units, reserves, or owner minting enabled.
+    /// @dev Only callable by hook contracts. Overwrites any previously stored flags for the caller.
     /// @param flags The flags to set.
     function recordFlags(JB721TiersHookFlags calldata flags) external override {
         _flagsOf[msg.sender] = flags;
     }
 
-    /// @notice Record 721 mints from the provided tiers.
-    /// @param amount The amount being spent on NFTs. The total price must not exceed this amount.
+    /// @notice Record paid mints: deduct each tier's (discounted) price from `amount`, decrement supply, generate
+    /// token IDs, and enforce that enough supply remains to satisfy pending reserves. Returns the leftover amount
+    /// and the total cost of credit-restricted tiers so the hook can enforce pay-credit rules.
+    /// @dev Reverts if the tier is removed, unrecognized, sold out, or its price exceeds the remaining amount.
+    /// For owner mints, the tier must have `allowOwnerMint` set.
+    /// @param amount The amount to spend on NFTs. The total price must not exceed this amount.
     /// @param tierIds The IDs of the tiers to mint from.
-    /// @param isOwnerMint A flag indicating whether this function is being directly called by the 721 contract's owner.
+    /// @param isOwnerMint A flag indicating whether the 721 contract's owner is directly calling this function.
     /// @return tokenIds The token IDs of the NFTs which were minted.
     /// @return leftoverAmount The `amount` remaining after minting.
     /// @return restrictedCost Total cost of tiers with `cantBuyWithCredits` set. The caller can use this to enforce
@@ -1252,7 +1274,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         }
     }
 
-    /// @notice Record reserve 721 minting for the provided tier ID on the provided 721 contract.
+    /// @notice Generate token IDs for reserve NFT mints and decrement the tier's remaining supply. Reserves
+    /// accumulate as non-reserve NFTs are minted (one reserve per `reserveFrequency` mints). Reverts if `count`
+    /// exceeds the number of pending reserves.
     /// @param tierId The ID of the tier to mint reserves from.
     /// @param count The number of reserve NFTs to mint.
     /// @return tokenIds The token IDs of the reserve NFTs which were minted.
@@ -1292,10 +1316,12 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         }
     }
 
-    /// @notice Record tiers being removed.
+    /// @notice Mark one or more tiers as removed. Removed tiers cannot be minted from, but existing NFTs from those
+    /// tiers remain valid (can still be cashed out and transferred). Pending reserves can still be minted.
     /// @dev Removing a tier only marks it in a bitmap — it does not update the sorted tier linked list.
     /// Call `cleanTiers()` after removing tiers to update the sorting sequence and prevent stale tier iteration.
-    /// @param tierIds The IDs of the tiers being removed.
+    /// Reverts if the tier has `cantBeRemoved` set, or if the tier ID is 0 or exceeds `maxTierIdOf`.
+    /// @param tierIds The IDs of the tiers to remove.
     function recordRemoveTierIds(uint256[] calldata tierIds) external override {
         for (uint256 i; i < tierIds.length;) {
             // Set the tier being iterated upon (0-indexed).
@@ -1325,9 +1351,11 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         }
     }
 
-    /// @notice Records the setting of a discount for a tier.
+    /// @notice Update the discount percentage for a tier. Discounts reduce the price payers pay without affecting the
+    /// NFT's cash-out weight (which always uses the original price). Reverts if the tier is removed, if the percent
+    /// exceeds the denominator, or if the tier has `cantIncreaseDiscountPercent` set and the new value is higher.
     /// @param tierId The ID of the tier to record a discount for.
-    /// @param discountPercent The new discount percent being applied.
+    /// @param discountPercent The new discount percent to apply.
     function recordSetDiscountPercentOf(uint256 tierId, uint256 discountPercent) external override {
         // Make sure the tier hasn't been removed.
         JBBitmapWord memory bitmapWord = _removedTiersBitmapWordOf[msg.sender].readId(tierId);
@@ -1370,10 +1398,12 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         tokenUriResolverOf[msg.sender] = resolver;
     }
 
-    /// @notice Record an 721 transfer.
-    /// @param tierId The ID of the tier that the 721 being transferred belongs to.
-    /// @param from The address that the 721 is being transferred from.
-    /// @param to The address that the 721 is being transferred to.
+    /// @notice Update tier balance accounting when an NFT is transferred. Decrements the sender's balance and
+    /// increments the receiver's balance for the given tier. Handles mints (from == address(0)) and burns
+    /// (to == address(0)) as one-sided updates.
+    /// @param tierId The ID of the tier that the 721 to transfer belongs to.
+    /// @param from The address to transfer the 721 from.
+    /// @param to The address to transfer the 721 to.
     function recordTransferForTier(uint256 tierId, address from, address to) external override {
         // If this is not a mint,
         if (from != address(0)) {

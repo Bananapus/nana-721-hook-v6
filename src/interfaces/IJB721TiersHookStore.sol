@@ -203,19 +203,19 @@ interface IJB721TiersHookStore {
 
     /// @notice Record newly added tiers.
     /// @param tiersToAdd The tiers to add.
-    /// @return tierIds The IDs of the tiers being added.
+    /// @return tierIds The IDs of the tiers added.
     function recordAddTiers(JB721TierConfig[] calldata tiersToAdd) external returns (uint256[] memory tierIds);
 
-    /// @notice Record 721 burns.
+    /// @notice Records the burning of tiered 721 tokens, updating supply tracking for the affected tiers.
     /// @param tokenIds The token IDs of the NFTs to burn.
     function recordBurn(uint256[] calldata tokenIds) external;
 
-    /// @notice Record newly set flags.
+    /// @notice Stores updated ruleset metadata flags that control minting, transferring, and tier behavior.
     /// @param flags The flags to set.
     function recordFlags(JB721TiersHookFlags calldata flags) external;
 
     /// @notice Record 721 mints from the provided tiers.
-    /// @param amount The amount being spent on NFTs.
+    /// @param amount The amount to spend on NFTs.
     /// @param tierIds The IDs of the tiers to mint from.
     /// @param isOwnerMint Whether this is a direct owner mint.
     /// @return tokenIds The token IDs of the NFTs which were minted.
@@ -235,13 +235,13 @@ interface IJB721TiersHookStore {
     /// @return tokenIds The token IDs of the reserve NFTs which were minted.
     function recordMintReservesFor(uint256 tierId, uint256 count) external returns (uint256[] memory tokenIds);
 
-    /// @notice Record tiers being removed.
-    /// @param tierIds The IDs of the tiers being removed.
+    /// @notice Record tiers to remove.
+    /// @param tierIds The IDs of the tiers to remove.
     function recordRemoveTierIds(uint256[] calldata tierIds) external;
 
     /// @notice Record the setting of a discount for a tier.
     /// @param tierId The ID of the tier to set the discount of.
-    /// @param discountPercent The new discount percent being applied.
+    /// @param discountPercent The new discount percent to apply.
     function recordSetDiscountPercentOf(uint256 tierId, uint256 discountPercent) external;
 
     /// @notice Record a new encoded IPFS URI for a tier.
@@ -254,9 +254,9 @@ interface IJB721TiersHookStore {
     /// @param resolver The resolver to set.
     function recordSetTokenUriResolver(IJB721TokenUriResolver resolver) external;
 
-    /// @notice Record an 721 transfer.
-    /// @param tierId The ID of the tier that the 721 being transferred belongs to.
-    /// @param from The address that the 721 is being transferred from.
-    /// @param to The address that the 721 is being transferred to.
+    /// @notice Records a 721 token transfer, updating the first-owner tracking for the receiving address.
+    /// @param tierId The ID of the tier that the 721 to transfer belongs to.
+    /// @param from The address to transfer the 721 from.
+    /// @param to The address to transfer the 721 to.
     function recordTransferForTier(uint256 tierId, address from, address to) external;
 }

@@ -24,8 +24,9 @@ import {JBPayDataHookRulesetConfig} from "./structs/JBPayDataHookRulesetConfig.s
 import {JBQueueRulesetsConfig} from "./structs/JBQueueRulesetsConfig.sol";
 
 /// @title JB721TiersHookProjectDeployer
-/// @notice Deploys a project and a 721 tiers hook for it. Can be used to queue rulesets for the project if given
-/// `JBPermissionIds.QUEUE_RULESETS` or `JBPermissionIds.LAUNCH_RULESETS`.
+/// @notice All-in-one deployer that creates a Juicebox project, deploys a 721 tiers hook, and configures its
+/// rulesets in a single transaction. Can also attach a hook to an existing project by launching or queuing rulesets
+/// with `LAUNCH_RULESETS` or `QUEUE_RULESETS` permission.
 contract JB721TiersHookProjectDeployer is
     ERC2771Context,
     JBPermissioned,
@@ -39,7 +40,7 @@ contract JB721TiersHookProjectDeployer is
     /// @notice The directory of terminals and controllers for projects.
     IJBDirectory public immutable override DIRECTORY;
 
-    /// @notice The 721 tiers hook deployer.
+    /// @notice The deployer contract used to create new 721 tiers hook instances via clone.
     IJB721TiersHookDeployer public immutable override HOOK_DEPLOYER;
 
     //*********************************************************************//
@@ -70,9 +71,8 @@ contract JB721TiersHookProjectDeployer is
     /// @notice Launches a new project with a 721 tiers hook attached.
     /// @param owner The address to set as the owner of the project. The ERC-721 which confers this project's ownership
     /// will be sent to this address.
-    /// @param deployTiersHookConfig Configuration which dictates the behavior of the 721 tiers hook which is being
-    /// deployed.
-    /// @param launchProjectConfig Configuration which dictates the behavior of the project which is being launched.
+    /// @param deployTiersHookConfig Configuration which dictates the behavior of the 721 tiers hook to deploy.
+    /// @param launchProjectConfig Configuration which dictates the behavior of the project to launch.
     /// @param controller The controller that the project's rulesets will be queued with.
     /// @param salt A salt to use for the deterministic deployment.
     /// @return projectId The ID of the newly launched project.
@@ -114,9 +114,8 @@ contract JB721TiersHookProjectDeployer is
     /// @notice Launches rulesets for a project with an attached 721 tiers hook.
     /// @dev Only a project's owner or an operator with the `LAUNCH_RULESETS & SET_TERMINALS` permission can launch its
     /// rulesets.
-    /// @param projectId The ID of the project that rulesets are being launched for.
-    /// @param deployTiersHookConfig Configuration which dictates the behavior of the 721 tiers hook which is being
-    /// deployed.
+    /// @param projectId The ID of the project to launch rulesets for.
+    /// @param deployTiersHookConfig Configuration which dictates the behavior of the 721 tiers hook to deploy.
     /// @param launchRulesetsConfig Configuration which dictates the project's new rulesets.
     /// @param projectUri Metadata URI to associate with the project. Pass an empty string to leave it unchanged.
     /// @param controller The controller that the project's rulesets will be queued with.
@@ -176,9 +175,8 @@ contract JB721TiersHookProjectDeployer is
 
     /// @notice Queues rulesets for a project with an attached 721 tiers hook.
     /// @dev Only a project's owner or an operator with the `QUEUE_RULESETS` permission can queue its rulesets.
-    /// @param projectId The ID of the project that rulesets are being queued for.
-    /// @param deployTiersHookConfig Configuration which dictates the behavior of the 721 tiers hook which is being
-    /// deployed.
+    /// @param projectId The ID of the project to queue rulesets for.
+    /// @param deployTiersHookConfig Configuration which dictates the behavior of the 721 tiers hook to deploy.
     /// @param queueRulesetsConfig Configuration which dictates the project's newly queued rulesets.
     /// @param controller The controller that the project's rulesets will be queued with.
     /// @param salt A salt to use for the deterministic deployment.
@@ -232,9 +230,11 @@ contract JB721TiersHookProjectDeployer is
     // ----------------------- internal helpers -------------------------- //
     //*********************************************************************//
 
-    /// @notice Launches a project.
+    /// @notice Configure and launch rulesets for a newly created project. Converts `JBPayDataHookRulesetConfig` entries
+    /// into standard `JBRulesetConfig` entries with `useDataHookForPay` forced to `true` and the deployed hook set as
+    /// the data hook.
     /// @param projectId The ID of the reserved project.
-    /// @param launchProjectConfig Configuration which dictates the behavior of the project which is being launched.
+    /// @param launchProjectConfig Configuration which dictates the behavior of the project to launch.
     /// @param dataHook The data hook to use for the project.
     /// @param controller The controller that the project's rulesets will be queued with.
     function _launchProjectFor(
@@ -302,7 +302,8 @@ contract JB721TiersHookProjectDeployer is
         });
     }
 
-    /// @notice Launches rulesets for a project.
+    /// @notice Launch rulesets for an existing project. Same conversion logic as `_launchProjectFor` — each
+    /// `JBPayDataHookRulesetConfig` is transformed into a `JBRulesetConfig` with the hook wired as the data hook.
     /// @param projectId The ID of the project to launch rulesets for.
     /// @param launchRulesetsConfig Configuration which dictates the behavior of the project's rulesets.
     /// @param projectUri Metadata URI to associate with the project. Pass an empty string to leave it unchanged.
@@ -377,7 +378,9 @@ contract JB721TiersHookProjectDeployer is
         return rulesetId;
     }
 
-    /// @notice Queues rulesets for a project.
+    /// @notice Queue future rulesets for an existing project. Same conversion logic as the launch functions — each
+    /// `JBPayDataHookRulesetConfig` is transformed into a `JBRulesetConfig` with the hook wired as the data hook.
+    /// Queued rulesets take effect after the current ruleset expires.
     /// @param projectId The ID of the project to queue rulesets for.
     /// @param queueRulesetsConfig Configuration which dictates the behavior of the project's rulesets.
     /// @param dataHook The data hook to use for the project.
