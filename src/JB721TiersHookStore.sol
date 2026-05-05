@@ -894,7 +894,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// tiers that do not have a tier-specific reserve beneficiary set via `_reserveBeneficiaryOf`. Callers should be
     /// aware of this side effect when using `adjustTiers` to add new tiers.
     /// @param tiersToAdd The tiers to add.
-    /// @return tierIds The IDs of the tiers being added.
+    /// @return tierIds The IDs of the tiers added.
     function recordAddTiers(JB721TierConfig[] calldata tiersToAdd)
         external
         override
@@ -1176,9 +1176,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// and the total cost of credit-restricted tiers so the hook can enforce pay-credit rules.
     /// @dev Reverts if the tier is removed, unrecognized, sold out, or its price exceeds the remaining amount.
     /// For owner mints, the tier must have `allowOwnerMint` set.
-    /// @param amount The amount being spent on NFTs. The total price must not exceed this amount.
+    /// @param amount The amount to spend on NFTs. The total price must not exceed this amount.
     /// @param tierIds The IDs of the tiers to mint from.
-    /// @param isOwnerMint A flag indicating whether this function is being directly called by the 721 contract's owner.
+    /// @param isOwnerMint A flag indicating whether the 721 contract's owner is directly calling this function.
     /// @return tokenIds The token IDs of the NFTs which were minted.
     /// @return leftoverAmount The `amount` remaining after minting.
     /// @return restrictedCost Total cost of tiers with `cantBuyWithCredits` set. The caller can use this to enforce
@@ -1321,7 +1321,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @dev Removing a tier only marks it in a bitmap — it does not update the sorted tier linked list.
     /// Call `cleanTiers()` after removing tiers to update the sorting sequence and prevent stale tier iteration.
     /// Reverts if the tier has `cantBeRemoved` set, or if the tier ID is 0 or exceeds `maxTierIdOf`.
-    /// @param tierIds The IDs of the tiers being removed.
+    /// @param tierIds The IDs of the tiers to remove.
     function recordRemoveTierIds(uint256[] calldata tierIds) external override {
         for (uint256 i; i < tierIds.length;) {
             // Set the tier being iterated upon (0-indexed).
@@ -1355,7 +1355,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// NFT's cash-out weight (which always uses the original price). Reverts if the tier is removed, if the percent
     /// exceeds the denominator, or if the tier has `cantIncreaseDiscountPercent` set and the new value is higher.
     /// @param tierId The ID of the tier to record a discount for.
-    /// @param discountPercent The new discount percent being applied.
+    /// @param discountPercent The new discount percent to apply.
     function recordSetDiscountPercentOf(uint256 tierId, uint256 discountPercent) external override {
         // Make sure the tier hasn't been removed.
         JBBitmapWord memory bitmapWord = _removedTiersBitmapWordOf[msg.sender].readId(tierId);
@@ -1401,9 +1401,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @notice Update tier balance accounting when an NFT is transferred. Decrements the sender's balance and
     /// increments the receiver's balance for the given tier. Handles mints (from == address(0)) and burns
     /// (to == address(0)) as one-sided updates.
-    /// @param tierId The ID of the tier that the 721 being transferred belongs to.
-    /// @param from The address that the 721 is being transferred from.
-    /// @param to The address that the 721 is being transferred to.
+    /// @param tierId The ID of the tier that the 721 to transfer belongs to.
+    /// @param from The address to transfer the 721 from.
+    /// @param to The address to transfer the 721 to.
     function recordTransferForTier(uint256 tierId, address from, address to) external override {
         // If this is not a mint,
         if (from != address(0)) {

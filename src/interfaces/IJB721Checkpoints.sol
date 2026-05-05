@@ -36,6 +36,6 @@ interface IJB721Checkpoints is IERC5805 {
     /// Auto-self-delegates on first receive so checkpoints work without manual delegation.
     /// @param from The previous owner (address(0) on mint).
     /// @param to The new owner (address(0) on burn).
-    /// @param tokenId The token ID being transferred (used to look up tier voting units).
+    /// @param tokenId The token ID to transfer (used to look up tier voting units).
     function onTransfer(address from, address to, uint256 tokenId) external;
 }

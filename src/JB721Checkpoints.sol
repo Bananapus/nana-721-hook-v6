@@ -78,7 +78,7 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// @dev Only callable by the HOOK. Looks up the token's tier voting units from the store.
     /// @param from The previous owner (address(0) on mint).
     /// @param to The new owner (address(0) on burn).
-    /// @param tokenId The token ID being transferred.
+    /// @param tokenId The token ID to transfer.
     function onTransfer(address from, address to, uint256 tokenId) external override {
         if (msg.sender != HOOK) revert JB721Checkpoints_Unauthorized();
 

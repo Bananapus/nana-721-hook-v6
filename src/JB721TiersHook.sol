@@ -764,8 +764,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     }
 
     /// @notice Before transferring an NFT, register its first owner (if necessary).
-    /// @param to The address the NFT is being transferred to.
-    /// @param tokenId The token ID of the NFT being transferred.
+    /// @param to The address to transfer the NFT to.
+    /// @param tokenId The token ID of the NFT to transfer.
     function _update(address to, uint256 tokenId, address auth) internal virtual override returns (address from) {
         // Get only the tier ID and transfersPausable flag (lightweight — avoids full struct construction).
         // slither-disable-next-line calls-loop

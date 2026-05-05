@@ -71,9 +71,8 @@ contract JB721TiersHookProjectDeployer is
     /// @notice Launches a new project with a 721 tiers hook attached.
     /// @param owner The address to set as the owner of the project. The ERC-721 which confers this project's ownership
     /// will be sent to this address.
-    /// @param deployTiersHookConfig Configuration which dictates the behavior of the 721 tiers hook which is being
-    /// deployed.
-    /// @param launchProjectConfig Configuration which dictates the behavior of the project which is being launched.
+    /// @param deployTiersHookConfig Configuration which dictates the behavior of the 721 tiers hook to deploy.
+    /// @param launchProjectConfig Configuration which dictates the behavior of the project to launch.
     /// @param controller The controller that the project's rulesets will be queued with.
     /// @param salt A salt to use for the deterministic deployment.
     /// @return projectId The ID of the newly launched project.
@@ -115,9 +114,8 @@ contract JB721TiersHookProjectDeployer is
     /// @notice Launches rulesets for a project with an attached 721 tiers hook.
     /// @dev Only a project's owner or an operator with the `LAUNCH_RULESETS & SET_TERMINALS` permission can launch its
     /// rulesets.
-    /// @param projectId The ID of the project that rulesets are being launched for.
-    /// @param deployTiersHookConfig Configuration which dictates the behavior of the 721 tiers hook which is being
-    /// deployed.
+    /// @param projectId The ID of the project to launch rulesets for.
+    /// @param deployTiersHookConfig Configuration which dictates the behavior of the 721 tiers hook to deploy.
     /// @param launchRulesetsConfig Configuration which dictates the project's new rulesets.
     /// @param projectUri Metadata URI to associate with the project. Pass an empty string to leave it unchanged.
     /// @param controller The controller that the project's rulesets will be queued with.
@@ -177,9 +175,8 @@ contract JB721TiersHookProjectDeployer is
 
     /// @notice Queues rulesets for a project with an attached 721 tiers hook.
     /// @dev Only a project's owner or an operator with the `QUEUE_RULESETS` permission can queue its rulesets.
-    /// @param projectId The ID of the project that rulesets are being queued for.
-    /// @param deployTiersHookConfig Configuration which dictates the behavior of the 721 tiers hook which is being
-    /// deployed.
+    /// @param projectId The ID of the project to queue rulesets for.
+    /// @param deployTiersHookConfig Configuration which dictates the behavior of the 721 tiers hook to deploy.
     /// @param queueRulesetsConfig Configuration which dictates the project's newly queued rulesets.
     /// @param controller The controller that the project's rulesets will be queued with.
     /// @param salt A salt to use for the deterministic deployment.
@@ -237,7 +234,7 @@ contract JB721TiersHookProjectDeployer is
     /// into standard `JBRulesetConfig` entries with `useDataHookForPay` forced to `true` and the deployed hook set as
     /// the data hook.
     /// @param projectId The ID of the reserved project.
-    /// @param launchProjectConfig Configuration which dictates the behavior of the project which is being launched.
+    /// @param launchProjectConfig Configuration which dictates the behavior of the project to launch.
     /// @param dataHook The data hook to use for the project.
     /// @param controller The controller that the project's rulesets will be queued with.
     function _launchProjectFor(

@@ -8,7 +8,7 @@ pragma solidity ^0.8.0;
 /// @custom:member noNewTiersWithOwnerMinting A boolean indicating whether attempts to add new tiers with
 /// `allowOwnerMint` set to true will revert.
 /// @custom:member preventOverspending A boolean indicating whether payments attempting to spend more than the price of
-/// the NFTs being minted will revert.
+/// the NFTs to mint will revert.
 /// @custom:member issueTokensForSplits A boolean indicating whether payers receive token credit for the portion of
 /// their payment that is routed to tier splits. When false (default), weight is reduced proportionally.
 struct JB721TiersHookFlags {

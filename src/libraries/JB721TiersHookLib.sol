@@ -113,7 +113,7 @@ library JB721TiersHookLib {
     /// @param splits The splits contract to read tier split groups from.
     /// @param projectId The project ID of the hook.
     /// @param hookAddress The hook address (for computing split group IDs).
-    /// @param token The token being distributed.
+    /// @param token The token to distribute.
     /// @param amount The total amount to distribute.
     /// @param decimals The token decimals.
     /// @param encodedSplitData The encoded per-tier breakdown from hookMetadata.

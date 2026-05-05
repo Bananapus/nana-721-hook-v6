@@ -40,7 +40,7 @@ interface IJB721TiersHookProjectDeployer {
         returns (uint256 projectId, IJB721TiersHook hook);
 
     /// @notice Launches rulesets for a project with an attached 721 tiers hook.
-    /// @param projectId The ID of the project that rulesets are being launched for.
+    /// @param projectId The ID of the project to launch rulesets for.
     /// @param deployTiersHookConfig Configuration which dictates the behavior of the 721 tiers hook.
     /// @param launchRulesetsConfig Configuration which dictates the project's new rulesets.
     /// @param projectUri Metadata URI to associate with the project. Pass an empty string to leave it unchanged.
@@ -60,7 +60,7 @@ interface IJB721TiersHookProjectDeployer {
         returns (uint256 rulesetId, IJB721TiersHook hook);
 
     /// @notice Queues rulesets for a project with an attached 721 tiers hook.
-    /// @param projectId The ID of the project that rulesets are being queued for.
+    /// @param projectId The ID of the project to queue rulesets for.
     /// @param deployTiersHookConfig Configuration which dictates the behavior of the 721 tiers hook.
     /// @param queueRulesetsConfig Configuration which dictates the project's newly queued rulesets.
     /// @param controller The controller that the project's rulesets will be queued with.

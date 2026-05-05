@@ -23,7 +23,7 @@ pragma solidity ^0.8.0;
 /// between its tokens.
 /// @custom:member holdFees A flag indicating if fees should be held during this ruleset.
 /// @custom:member useTotalSurplusForCashOut A flag indicating if cash outs should use the project's balance held
-/// in all terminals instead of the project's local terminal balance from which the cash out is being fulfilled.
+/// in all terminals instead of the project's local terminal balance from which the cash out is fulfilled.
 /// @custom:member useDataHookForCashOuts A flag indicating if the data hook should be used for cash out transactions
 /// during
 /// this ruleset.

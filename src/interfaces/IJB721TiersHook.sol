@@ -21,7 +21,7 @@ interface IJB721TiersHook is IJB721Hook {
     /// @notice Emitted when an `addToBalanceOf` call reverts during leftover distribution. The funds remain
     /// stranded in the hook contract.
     /// @param projectId The project ID whose terminal reverted.
-    /// @param token The token being sent.
+    /// @param token The token to send.
     /// @param amount The amount that failed to send.
     /// @param reason The revert reason bytes.
     event AddToBalanceReverted(uint256 indexed projectId, address token, uint256 amount, bytes reason);
@@ -108,7 +108,7 @@ interface IJB721TiersHook is IJB721Hook {
     /// project's balance.
     /// @param projectId The project ID the split belongs to.
     /// @param split The split that reverted.
-    /// @param amount The amount that was being paid out.
+    /// @param amount The amount that was paid out.
     /// @param reason The revert reason bytes.
     /// @param caller The address that called the function.
     event SplitPayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
@@ -142,7 +142,7 @@ interface IJB721TiersHook is IJB721Hook {
 
     /// @notice Context for the pricing of this hook's tiers.
     /// @return currency The currency used for tier prices.
-    /// @return decimals The amount of decimals being used in tier prices.
+    /// @return decimals The number of decimals used in tier prices.
     function pricingContext() external view returns (uint256 currency, uint256 decimals);
 
     /// @notice The checkpoint module that manages IVotes-compatible checkpointed voting power for this hook's NFTs.
