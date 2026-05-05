@@ -206,11 +206,11 @@ interface IJB721TiersHookStore {
     /// @return tierIds The IDs of the tiers being added.
     function recordAddTiers(JB721TierConfig[] calldata tiersToAdd) external returns (uint256[] memory tierIds);
 
-    /// @notice Record 721 burns.
+    /// @notice Records the burning of tiered 721 tokens, updating supply tracking for the affected tiers.
     /// @param tokenIds The token IDs of the NFTs to burn.
     function recordBurn(uint256[] calldata tokenIds) external;
 
-    /// @notice Record newly set flags.
+    /// @notice Stores updated ruleset metadata flags that control minting, transferring, and tier behavior.
     /// @param flags The flags to set.
     function recordFlags(JB721TiersHookFlags calldata flags) external;
 
@@ -254,7 +254,7 @@ interface IJB721TiersHookStore {
     /// @param resolver The resolver to set.
     function recordSetTokenUriResolver(IJB721TokenUriResolver resolver) external;
 
-    /// @notice Record an 721 transfer.
+    /// @notice Records a 721 token transfer, updating the first-owner tracking for the receiving address.
     /// @param tierId The ID of the tier that the 721 being transferred belongs to.
     /// @param from The address that the 721 is being transferred from.
     /// @param to The address that the 721 is being transferred to.
