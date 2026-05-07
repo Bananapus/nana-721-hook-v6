@@ -7,7 +7,7 @@ import {IJB721TiersHookStore} from "./IJB721TiersHookStore.sol";
 /// @notice Deploys JB721Checkpoints clones for JB721TiersHook instances.
 interface IJB721CheckpointsDeployer {
     /// @notice Thrown when the caller is not the hook that the checkpoint module is deployed for.
-    error JB721CheckpointsDeployer_Unauthorized();
+    error JB721CheckpointsDeployer_Unauthorized(address caller, address hook);
 
     /// @notice The implementation contract that clones are based on.
     /// @return The implementation address.

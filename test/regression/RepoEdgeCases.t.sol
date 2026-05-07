@@ -7,7 +7,7 @@ import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
 import {JB721TiersHookStore} from "../../src/JB721TiersHookStore.sol";
 import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 
-contract RepoFindings is UnitTestSetup {
+contract RepoRegressions is UnitTestSetup {
     address payable internal splitBeneficiary = payable(makeAddr("splitBeneficiary"));
 
     function _payMetadata(

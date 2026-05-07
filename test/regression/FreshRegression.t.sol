@@ -17,7 +17,7 @@ import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 import {JBConstants} from "@bananapus/core-v6/src/libraries/JBConstants.sol";
 
-contract FreshAudit is UnitTestSetup {
+contract FreshRegression is UnitTestSetup {
     function _buildPayMetadata(
         address hookAddress,
         bool allowOverspending,

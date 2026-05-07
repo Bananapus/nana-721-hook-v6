@@ -206,7 +206,9 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      */
     function _isAuthorized(address owner, address spender, uint256 tokenId) internal view virtual returns (bool) {
         return spender != address(0)
-            && (owner == spender || isApprovedForAll(owner, spender) || _getApproved(tokenId) == spender);
+            && (owner == spender
+                || isApprovedForAll({owner: owner, operator: spender})
+                || _getApproved(tokenId) == spender);
     }
 
     /**
@@ -218,7 +220,7 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      * assumption.
      */
     function _checkAuthorized(address owner, address spender, uint256 tokenId) internal view virtual {
-        if (!_isAuthorized(owner, spender, tokenId)) {
+        if (!_isAuthorized({owner: owner, spender: spender, tokenId: tokenId})) {
             if (owner == address(0)) {
                 revert ERC721NonexistentToken(tokenId);
             } else {
@@ -430,7 +432,7 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
             address owner = _requireOwned(tokenId);
 
             // We do not use _isAuthorized because single-token approvals should not be able to call approve
-            if (auth != address(0) && owner != auth && !isApprovedForAll(owner, auth)) {
+            if (auth != address(0) && owner != auth && !isApprovedForAll({owner: owner, operator: auth})) {
                 revert ERC721InvalidApprover(auth);
             }
 

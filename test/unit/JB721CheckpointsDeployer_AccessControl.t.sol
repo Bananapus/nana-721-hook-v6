@@ -7,7 +7,7 @@ import {IJB721CheckpointsDeployer} from "../../src/interfaces/IJB721CheckpointsD
 import {IJB721Checkpoints} from "../../src/interfaces/IJB721Checkpoints.sol";
 import {IJB721TiersHookStore} from "../../src/interfaces/IJB721TiersHookStore.sol";
 
-/// @notice H-1 audit fix: access control tests for JB721CheckpointsDeployer.deploy().
+/// @notice regression fix: access control tests for JB721CheckpointsDeployer.deploy().
 /// @dev The deployer must only allow the hook address itself (msg.sender == hook) to call deploy().
 contract Test_JB721CheckpointsDeployer_AccessControl is Test {
     JB721CheckpointsDeployer deployer;

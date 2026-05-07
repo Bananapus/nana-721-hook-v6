@@ -13,7 +13,7 @@ import {IJBTerminal} from "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-/// @notice Regression tests: a broken project terminal in _addToBalance now reverts the payment (M-4 fix).
+/// @notice Regression tests: a broken project terminal in _addToBalance now reverts the payment (fix).
 contract Test_BrokenTerminalDoesNotDos is UnitTestSetup {
     using stdStorage for StdStorage;
 
@@ -75,12 +75,12 @@ contract Test_BrokenTerminalDoesNotDos is UnitTestSetup {
     }
 
     // ──────────────────────────────────────────────────────────────────────
-    // ETH: broken own-project terminal in _addToBalance should revert (M-4)
+    // ETH: broken own-project terminal in _addToBalance should revert ()
     // ──────────────────────────────────────────────────────────────────────
 
     /// @notice When a split has no valid recipient (projectId==0, beneficiary==address(0)),
     /// funds route to the project's own terminal via _addToBalance. If that terminal reverts,
-    /// the payment now reverts with JB721TiersHookLib_SplitFallbackFailed (M-4 fix).
+    /// the payment now reverts with JB721TiersHookLib_SplitFallbackFailed (fix).
     function test_brokenOwnTerminal_eth_reverts() public {
         ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
         IJB721TiersHookStore hookStore = testHook.STORE();
@@ -170,17 +170,17 @@ contract Test_BrokenTerminalDoesNotDos is UnitTestSetup {
         vm.deal(mockTerminalAddress, 2 ether);
 
         vm.prank(mockTerminalAddress);
-        // The payment should now revert when the fallback addToBalanceOf call fails (M-4).
+        // The payment should now revert when the fallback addToBalanceOf call fails ().
         vm.expectRevert();
         testHook.afterPayRecordedWith{value: 1 ether}(payContext);
     }
 
     // ──────────────────────────────────────────────────────────────────────
-    // ERC-20: broken own-project terminal in _addToBalance should revert (M-4)
+    // ERC-20: broken own-project terminal in _addToBalance should revert ()
     // ──────────────────────────────────────────────────────────────────────
 
     /// @notice Same scenario as above but with ERC-20 tokens. On terminal failure, the
-    /// approval is reset to 0 for safety and the payment now reverts (M-4 fix).
+    /// approval is reset to 0 for safety and the payment now reverts (fix).
     function test_brokenOwnTerminal_erc20_reverts() public {
         BrokenTerminalERC20 usdc = new BrokenTerminalERC20("USD Coin", "USDC", 6);
         uint32 usdcCurrency = uint32(uint160(address(usdc)));
@@ -208,7 +208,7 @@ contract Test_BrokenTerminalDoesNotDos is UnitTestSetup {
         usdc.approve(address(testHook), 100e6);
 
         vm.prank(mockTerminalAddress);
-        // The payment should now revert when the fallback addToBalanceOf call fails (M-4).
+        // The payment should now revert when the fallback addToBalanceOf call fails ().
         vm.expectRevert();
         testHook.afterPayRecordedWith(payContext);
     }

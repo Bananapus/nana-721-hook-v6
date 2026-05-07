@@ -86,7 +86,7 @@ The most important state lives in the store: remaining supply, burned counts, re
   `test/invariants/TierLifecycleInvariant.t.sol`
   `test/invariants/TieredHookStoreInvariant.t.sol`
 - split-credit and deployer regressions:
-  `test/audit/CodexSplitCreditsMismatch.t.sol`
+  `test/regression/RegressionSplitCreditsMismatch.t.sol`
   `test/regression/ProjectDeployerRulesets.t.sol`
 
 ## Source Map

@@ -13,8 +13,8 @@ import {JB721TiersHookFlags} from "../../src/structs/JB721TiersHookFlags.sol";
 import {JB721TiersHookLib} from "../../src/libraries/JB721TiersHookLib.sol";
 import {LibClone} from "solady/src/utils/LibClone.sol";
 
-/// @notice Tests for 4 audit fixes: F-2, F-11, F-12, F-13.
-contract Test_AuditFixes_Unit is UnitTestSetup {
+/// @notice Tests for 4 regression fixes: .
+contract Test_RegressionFixes_Unit is UnitTestSetup {
     using stdStorage for StdStorage;
 
     address alice = makeAddr("alice");
@@ -59,7 +59,7 @@ contract Test_AuditFixes_Unit is UnitTestSetup {
     }
 
     // ═════════════════════════════════════════════════════════
-    // F-2: Proportional split metadata scaling
+    // Proportional split metadata scaling
     // ═════════════════════════════════════════════════════════
     //
     // When totalSplitAmount > context.amount.value (e.g., because pay credits cover the NFT cost
@@ -67,7 +67,7 @@ contract Test_AuditFixes_Unit is UnitTestSetup {
     // be proportionally scaled down so the terminal never attempts to forward more than the
     // actual payment value.
 
-    /// @notice F-2: When amount.value < totalSplitAmount, per-tier split amounts are scaled down proportionally.
+    /// @notice When amount.value < totalSplitAmount, per-tier split amounts are scaled down proportionally.
     function test_F2_splitMetadataScaledDown_whenAmountBelowSplitTotal() public {
         ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
         IJB721TiersHookStore hookStore = testHook.STORE();
@@ -141,7 +141,7 @@ contract Test_AuditFixes_Unit is UnitTestSetup {
         assertLe(resultAmounts[0] + resultAmounts[1], 2 ether, "Sum of scaled amounts must not exceed payment value");
     }
 
-    /// @notice F-2: When amount.value >= totalSplitAmount, no scaling occurs.
+    /// @notice When amount.value >= totalSplitAmount, no scaling occurs.
     function test_F2_noScaling_whenAmountExceedsSplitTotal() public {
         ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
         IJB721TiersHookStore hookStore = testHook.STORE();
@@ -181,7 +181,7 @@ contract Test_AuditFixes_Unit is UnitTestSetup {
     }
 
     // ═════════════════════════════════════════════════════════
-    // F-11: Revert when no terminal for leftover funds
+    // Revert when no terminal for leftover funds
     // ═════════════════════════════════════════════════════════
     //
     // When there are leftover funds after split distribution (splits don't consume 100%),
@@ -189,7 +189,7 @@ contract Test_AuditFixes_Unit is UnitTestSetup {
     // If primaryTerminalOf returns address(0), the library now reverts with
     // JB721TiersHookLib_NoTerminalForLeftover instead of silently losing funds.
 
-    /// @notice F-11: Revert when leftover funds exist but no primary terminal is available.
+    /// @notice Revert when leftover funds exist but no primary terminal is available.
     function test_F11_revertsWhenNoTerminalForLeftover() public {
         ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
         IJB721TiersHookStore hookStore = testHook.STORE();
@@ -280,7 +280,7 @@ contract Test_AuditFixes_Unit is UnitTestSetup {
         testHook.afterPayRecordedWith{value: 0.5 ether}(payContext);
     }
 
-    /// @notice F-11: No revert when splits consume 100% (no leftover).
+    /// @notice No revert when splits consume 100% (no leftover).
     function test_F11_noRevertWhenSplitsConsume100Percent() public {
         ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
         IJB721TiersHookStore hookStore = testHook.STORE();
@@ -355,14 +355,14 @@ contract Test_AuditFixes_Unit is UnitTestSetup {
     }
 
     // ═════════════════════════════════════════════════════════
-    // F-12: _initialized flag prevents re-initialization
+    // _initialized flag prevents re-initialization
     // ═════════════════════════════════════════════════════════
     //
     // The implementation contract sets _initialized = true in the constructor, so it cannot
     // be initialized. Clones start with _initialized = false, so they can be initialized once.
     // A second call to initialize() on a clone must revert.
 
-    /// @notice F-12: The implementation contract cannot be initialized (constructor sets _initialized = true).
+    /// @notice The implementation contract cannot be initialized (constructor sets _initialized = true).
     function test_F12_implementationCannotBeInitialized() public {
         // hookOrigin is the implementation contract deployed in setUp().
         // Its constructor already set _initialized = true.
@@ -389,7 +389,7 @@ contract Test_AuditFixes_Unit is UnitTestSetup {
         });
     }
 
-    /// @notice F-12: A clone can be initialized once, but not twice.
+    /// @notice A clone can be initialized once, but not twice.
     function test_F12_cloneInitializedOnce_secondCallReverts() public {
         // Deploy a fresh clone of the implementation.
         address cloneAddr = LibClone.clone(address(hookOrigin));
@@ -442,7 +442,7 @@ contract Test_AuditFixes_Unit is UnitTestSetup {
     }
 
     // ═════════════════════════════════════════════════════════
-    // F-13: _startingTierIdOfCategory updated in cleanTiers
+    // _startingTierIdOfCategory updated in cleanTiers
     // ═════════════════════════════════════════════════════════
     //
     // When the first tier in a category is removed, `cleanTiers` must update
@@ -450,7 +450,7 @@ contract Test_AuditFixes_Unit is UnitTestSetup {
     // Without this fix, tier lookups starting from the category pointer would begin at a
     // removed (invisible) tier, causing incorrect iteration behavior.
 
-    /// @notice F-13: After removing the first tier of a category and calling cleanTiers,
+    /// @notice After removing the first tier of a category and calling cleanTiers,
     ///         the category's starting tier ID is updated to the next valid tier.
     function test_F13_cleanTiersUpdatesStartingTierIdOfCategory() public {
         // Initialize a hook with no default tiers.
@@ -565,7 +565,7 @@ contract Test_AuditFixes_Unit is UnitTestSetup {
         assertEq(tier3.price, 30, "Tier 3 price should be 30");
     }
 
-    /// @notice F-13: Removing a non-starting tier does not affect _startingTierIdOfCategory.
+    /// @notice Removing a non-starting tier does not affect _startingTierIdOfCategory.
     function test_F13_removingNonStartingTierPreservesStartingId() public {
         JB721TiersHook testHook = _initHookDefaultTiers(0);
         IJB721TiersHookStore hookStore = testHook.STORE();

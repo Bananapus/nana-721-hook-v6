@@ -25,8 +25,8 @@
 ## Useful Proof Points
 
 - [`test/Fork.t.sol`](../test/Fork.t.sol) for live-integration assumptions.
-- [`test/TestAuditGaps.sol`](../test/TestAuditGaps.sol) for known edge cases the repo authors considered worth pinning down.
+- [`test/TestRegressionGaps.sol`](../test/TestRegressionGaps.sol) for known edge cases the repo authors considered worth pinning down.
 - [`test/TestCheckpoints.t.sol`](../test/TestCheckpoints.t.sol) when you need a narrow function-level proof before editing a broad runtime path.
 - [`test/invariants/TierLifecycleInvariant.t.sol`](../test/invariants/TierLifecycleInvariant.t.sol) and [`test/invariants/TieredHookStoreInvariant.t.sol`](../test/invariants/TieredHookStoreInvariant.t.sol) when a local patch may have broken store-level relationships.
-- [`test/audit/CodexRetroactiveReserveBeneficiaryDilution.t.sol`](../test/audit/CodexRetroactiveReserveBeneficiaryDilution.t.sol) when reserve-beneficiary or pending-reserve behavior changes.
+- [`test/regression/RetroactiveReserveBeneficiaryDilution.t.sol`](../test/regression/RetroactiveReserveBeneficiaryDilution.t.sol) when reserve-beneficiary or pending-reserve behavior changes.
 - [`script/Deploy.s.sol`](../script/Deploy.s.sol) when a deployment or launch question is really about config assembly rather than contract behavior.

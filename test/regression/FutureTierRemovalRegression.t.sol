@@ -8,9 +8,9 @@ import {JB721TiersHookStore} from "../../src/JB721TiersHookStore.sol";
 import {JB721TierConfig} from "../../src/structs/JB721TierConfig.sol";
 import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
 
-/// @notice L-18: Prevent future tier pre-removal.
+/// @notice Prevent future tier pre-removal.
 /// Removing a tier ID that does not yet exist should revert with `UnrecognizedTier`.
-contract Pass12L18 is Test {
+contract FutureTierRemovalRegressionTest is Test {
     JB721TiersHookStore internal store;
 
     function setUp() external {
@@ -18,7 +18,7 @@ contract Pass12L18 is Test {
     }
 
     /// @notice Removing a future tier ID (beyond maxTierIdOf) must revert.
-    function test_L18_fix_reverts_future_removal() external {
+    function test_futureTierRemoval_reverts_future_removal() external {
         // Add 5 tiers so maxTierIdOf == 5.
         JB721TierConfig[] memory tiers = new JB721TierConfig[](5);
         for (uint256 i; i < 5; i++) {
@@ -42,7 +42,7 @@ contract Pass12L18 is Test {
     }
 
     /// @notice Removing an existing tier still works as before.
-    function test_L18_existing_tier_removal_works() external {
+    function test_existingTierRemovalWorks() external {
         // Add 5 tiers.
         JB721TierConfig[] memory tiers = new JB721TierConfig[](5);
         for (uint256 i; i < 5; i++) {

@@ -292,7 +292,6 @@ contract JB721TiersHookProjectDeployer is
         }
 
         // Launch the rulesets for the reserved project.
-        // slither-disable-next-line unused-return
         controller.launchRulesetsFor({
             projectId: projectId,
             projectUri: launchProjectConfig.projectUri,

@@ -8,7 +8,7 @@ User journeys: [USER_JOURNEYS.md](./USER_JOURNEYS.md)
 Skills: [SKILLS.md](./SKILLS.md)  
 Risks: [RISKS.md](./RISKS.md)  
 Administration: [ADMINISTRATION.md](./ADMINISTRATION.md)  
-Audit instructions: [AUDIT_INSTRUCTIONS.md](./AUDIT_INSTRUCTIONS.md)
+Review instructions: [REVIEW_GUIDE.md](./REVIEW_GUIDE.md)
 
 ## Overview
 
@@ -73,7 +73,7 @@ That split is why UI bugs, economic bugs, and deployment bugs often land in diff
 1. `test/E2E/Pay_Mint_Redeem_E2E.t.sol`
 2. `test/invariants/TierLifecycleInvariant.t.sol`
 3. `test/invariants/TieredHookStoreInvariant.t.sol`
-4. `test/audit/CodexSplitCreditsMismatch.t.sol`
+4. `test/regression/RegressionSplitCreditsMismatch.t.sol`
 5. `test/regression/ProjectDeployerRulesets.t.sol`
 
 ## Install
@@ -112,7 +112,7 @@ src/
   libraries/
   structs/
 test/
-  unit, E2E, fork, invariant, audit, and regression coverage
+  unit, E2E, fork, invariant, review, and regression coverage
 script/
   Deploy.s.sol
   helpers/

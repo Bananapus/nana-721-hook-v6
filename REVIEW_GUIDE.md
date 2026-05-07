@@ -1,8 +1,8 @@
-# Audit Instructions
+# Review Guide
 
-This repo adds tiered NFT issuance and cash-out behavior to Juicebox projects. Audit it as a shared accounting layer whose mistakes can affect many downstream products.
+This repo adds tiered NFT issuance and cash-out behavior to Juicebox projects. Review it as a shared accounting layer whose mistakes can affect many downstream products.
 
-## Audit Objective
+## Review Objective
 
 Find issues that:
 
