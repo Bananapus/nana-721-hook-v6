@@ -44,7 +44,11 @@ contract Test_JB721CheckpointsDeployer_AccessControl is Test {
         address attacker = makeAddr("attacker");
 
         vm.prank(attacker);
-        vm.expectRevert(JB721CheckpointsDeployer.JB721CheckpointsDeployer_Unauthorized.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721CheckpointsDeployer.JB721CheckpointsDeployer_Unauthorized.selector, attacker, hookAddr
+            )
+        );
         deployer.deploy(hookAddr);
     }
 
@@ -55,7 +59,11 @@ contract Test_JB721CheckpointsDeployer_AccessControl is Test {
 
         // Attacker tries to pass realHook as the hook parameter but calls from their own address.
         vm.prank(attacker);
-        vm.expectRevert(JB721CheckpointsDeployer.JB721CheckpointsDeployer_Unauthorized.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721CheckpointsDeployer.JB721CheckpointsDeployer_Unauthorized.selector, attacker, realHook
+            )
+        );
         deployer.deploy(realHook);
     }
 
@@ -71,7 +79,11 @@ contract Test_JB721CheckpointsDeployer_AccessControl is Test {
 
         // Front-runner attempts to call deploy with the hook's address before the hook does.
         vm.prank(frontRunner);
-        vm.expectRevert(JB721CheckpointsDeployer.JB721CheckpointsDeployer_Unauthorized.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721CheckpointsDeployer.JB721CheckpointsDeployer_Unauthorized.selector, frontRunner, hookAddr
+            )
+        );
         deployer.deploy(hookAddr);
 
         // The legitimate hook can still deploy successfully after the failed front-run attempt.
@@ -109,7 +121,11 @@ contract Test_JB721CheckpointsDeployer_AccessControl is Test {
         vm.assume(caller != hookAddr);
 
         vm.prank(caller);
-        vm.expectRevert(JB721CheckpointsDeployer.JB721CheckpointsDeployer_Unauthorized.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721CheckpointsDeployer.JB721CheckpointsDeployer_Unauthorized.selector, caller, hookAddr
+            )
+        );
         deployer.deploy(hookAddr);
     }
 }
