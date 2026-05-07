@@ -335,7 +335,11 @@ contract TestCheckpoints is UnitTestSetup {
 
         IJB721Checkpoints module = tiersHook.CHECKPOINTS();
 
-        vm.expectRevert(JB721Checkpoints.JB721Checkpoints_Unauthorized.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721Checkpoints.JB721Checkpoints_Unauthorized.selector, address(this), address(tiersHook)
+            )
+        );
         module.onTransfer(address(0), address(1), 1);
     }
 }
