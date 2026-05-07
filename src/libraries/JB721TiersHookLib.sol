@@ -133,7 +133,9 @@ library JB721TiersHookLib {
             SafeERC20.safeTransferFrom({token: IERC20(token), from: msg.sender, to: address(this), value: amount});
             uint256 receivedAmount = IERC20(token).balanceOf(address(this)) - balanceBefore;
             if (receivedAmount != amount) {
-                revert JB721TiersHookLib_TokenTransferAmountMismatch(amount, receivedAmount);
+                revert JB721TiersHookLib_TokenTransferAmountMismatch({
+                    expectedAmount: amount, receivedAmount: receivedAmount
+                });
             }
         }
 
@@ -752,7 +754,9 @@ library JB721TiersHookLib {
             IJBTerminal terminal = directory.primaryTerminalOf({projectId: projectId, token: token});
             // Revert if there are leftover funds but no terminal to route them to.
             if (address(terminal) == address(0)) {
-                revert JB721TiersHookLib_NoTerminalForLeftover(projectId, token, leftoverAmount);
+                revert JB721TiersHookLib_NoTerminalForLeftover({
+                    projectId: projectId, token: token, leftoverAmount: leftoverAmount
+                });
             }
             if (isNativeToken) {
                 try terminal.addToBalanceOf{value: leftoverAmount}({
@@ -764,7 +768,9 @@ library JB721TiersHookLib {
                     metadata: bytes("")
                 }) {}
                 catch (bytes memory reason) {
-                    revert JB721TiersHookLib_SplitFallbackFailed(projectId, token, leftoverAmount, reason);
+                    revert JB721TiersHookLib_SplitFallbackFailed({
+                        projectId: projectId, token: token, amount: leftoverAmount, reason: reason
+                    });
                 }
             } else {
                 SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: leftoverAmount});
@@ -779,7 +785,9 @@ library JB721TiersHookLib {
                 catch (bytes memory reason) {
                     // Reset approval on failure.
                     SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
-                    revert JB721TiersHookLib_SplitFallbackFailed(projectId, token, leftoverAmount, reason);
+                    revert JB721TiersHookLib_SplitFallbackFailed({
+                        projectId: projectId, token: token, amount: leftoverAmount, reason: reason
+                    });
                 }
             }
         }

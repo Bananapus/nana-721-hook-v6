@@ -902,7 +902,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
         // Make sure the max number of tiers won't be exceeded.
         if (currentMaxTierIdOf + tiersToAdd.length > type(uint16).max) {
-            revert JB721TiersHookStore_MaxTiersExceeded(currentMaxTierIdOf + tiersToAdd.length, type(uint16).max);
+            revert JB721TiersHookStore_MaxTiersExceeded({
+                numberOfTiers: currentMaxTierIdOf + tiersToAdd.length, limit: type(uint16).max
+            });
         }
 
         // Keep a reference to the current last sorted tier ID (sorted by category).
@@ -928,7 +930,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             // Make sure the supply maximum is enforced. If it's greater than one billion, it would overflow into the
             // next tier.
             if (tierToAdd.initialSupply > _ONE_BILLION - 1) {
-                revert JB721TiersHookStore_InvalidQuantity(tierToAdd.initialSupply, _ONE_BILLION - 1);
+                revert JB721TiersHookStore_InvalidQuantity({quantity: tierToAdd.initialSupply, limit: _ONE_BILLION - 1});
             }
 
             // Make sure the tier's category is greater than or equal to the previously added tier's category.
@@ -938,7 +940,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
                 // Revert if the category is not equal or greater than the previously added tier's category.
                 if (tierToAdd.category < previousCategory) {
-                    revert JB721TiersHookStore_InvalidCategorySortOrder(tierToAdd.category, previousCategory);
+                    revert JB721TiersHookStore_InvalidCategorySortOrder({
+                        tierCategory: tierToAdd.category, previousTierCategory: previousCategory
+                    });
                 }
             }
 
@@ -951,32 +955,32 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                     && ((tierToAdd.flags.useVotingUnits && tierToAdd.votingUnits != 0)
                         || (!tierToAdd.flags.useVotingUnits && tierToAdd.price != 0))
             ) {
-                revert JB721TiersHookStore_VotingUnitsNotAllowed(tierId);
+                revert JB721TiersHookStore_VotingUnitsNotAllowed({tierId: tierId});
             }
 
             // Make sure the new tier doesn't have a reserve frequency if the 721 contract's flags don't allow it to,
             // OR if manual minting is allowed.
             if ((flags.noNewTiersWithReserves || tierToAdd.flags.allowOwnerMint) && tierToAdd.reserveFrequency != 0) {
-                revert JB721TiersHookStore_ReserveFrequencyNotAllowed(tierId);
+                revert JB721TiersHookStore_ReserveFrequencyNotAllowed({tierId: tierId});
             }
 
             // Make sure the new tier doesn't have owner minting enabled if the 721 contract's flags don't allow it to.
             if (flags.noNewTiersWithOwnerMinting && tierToAdd.flags.allowOwnerMint) {
-                revert JB721TiersHookStore_ManualMintingNotAllowed(tierId);
+                revert JB721TiersHookStore_ManualMintingNotAllowed({tierId: tierId});
             }
 
             // Make sure the discount percent is within the bound.
             if (tierToAdd.discountPercent > JB721Constants.DISCOUNT_DENOMINATOR) {
-                revert JB721TiersHookStore_DiscountPercentExceedsBounds(
-                    tierToAdd.discountPercent, JB721Constants.DISCOUNT_DENOMINATOR
-                );
+                revert JB721TiersHookStore_DiscountPercentExceedsBounds({
+                    percent: tierToAdd.discountPercent, limit: JB721Constants.DISCOUNT_DENOMINATOR
+                });
             }
 
             // Make sure the split percent is within the bound.
             if (tierToAdd.splitPercent > JBConstants.SPLITS_TOTAL_PERCENT) {
-                revert JB721TiersHookStore_SplitPercentExceedsBounds(
-                    tierToAdd.splitPercent, JBConstants.SPLITS_TOTAL_PERCENT
-                );
+                revert JB721TiersHookStore_SplitPercentExceedsBounds({
+                    percent: tierToAdd.splitPercent, limit: JBConstants.SPLITS_TOTAL_PERCENT
+                });
             }
 
             // Make sure the tier has a non-zero supply.
@@ -996,7 +1000,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                 tierToAdd.reserveFrequency > 0 && tierToAdd.reserveBeneficiary == address(0)
                     && defaultReserveBeneficiaryOf[msg.sender] == address(0)
             ) {
-                revert JB721TiersHookStore_MissingReserveBeneficiary(tierId);
+                revert JB721TiersHookStore_MissingReserveBeneficiary({tierId: tierId});
             }
 
             // Store the tier with that ID.
@@ -1211,7 +1215,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
             // Make sure the tier hasn't been removed.
             if (_isTierRemovedWithRefresh({hook: msg.sender, tierId: tierId, bitmapWord: bitmapWord})) {
-                revert JB721TiersHookStore_TierRemoved(tierId);
+                revert JB721TiersHookStore_TierRemoved({tierId: tierId});
             }
 
             // Keep a reference to the stored tier being iterated on.
@@ -1263,7 +1267,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                 storedTier.remainingSupply
                     < _numberOfPendingReservesFor({hook: msg.sender, tierId: tierId, storedTier: storedTier})
             ) {
-                revert JB721TiersHookStore_InsufficientSupplyRemaining(tierId);
+                revert JB721TiersHookStore_InsufficientSupplyRemaining({tierId: tierId});
             }
 
             unchecked {
@@ -1293,7 +1297,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
         // Can't mint more than the number of pending reserves.
         if (count > numberOfPendingReserves) {
-            revert JB721TiersHookStore_InsufficientPendingReserves(count, numberOfPendingReserves);
+            revert JB721TiersHookStore_InsufficientPendingReserves({
+                count: count, numberOfPendingReserves: numberOfPendingReserves
+            });
         }
 
         // Increment the number of reserve NFTs minted.
@@ -1328,7 +1334,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             // Reject tier IDs that don't exist yet — removing a future tier would cause it
             // to be born already removed when later added.
             if (tierId == 0 || tierId > maxTierIdOf[msg.sender]) {
-                revert JB721TiersHookStore_UnrecognizedTier(tierId);
+                revert JB721TiersHookStore_UnrecognizedTier({tierId: tierId});
             }
 
             // Get a reference to the stored tier.
@@ -1361,9 +1367,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
         // Make sure the discount percent is within the bound.
         if (discountPercent > JB721Constants.DISCOUNT_DENOMINATOR) {
-            revert JB721TiersHookStore_DiscountPercentExceedsBounds(
-                discountPercent, JB721Constants.DISCOUNT_DENOMINATOR
-            );
+            revert JB721TiersHookStore_DiscountPercentExceedsBounds({
+                percent: discountPercent, limit: JB721Constants.DISCOUNT_DENOMINATOR
+            });
         }
 
         // Get a reference to the stored tier.
@@ -1374,7 +1380,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
         // Make sure that increasing the discount is allowed for the tier.
         if (discountPercent > storedTier.discountPercent && cantIncreaseDiscountPercent) {
-            revert JB721TiersHookStore_DiscountPercentIncreaseNotAllowed(discountPercent, storedTier.discountPercent);
+            revert JB721TiersHookStore_DiscountPercentIncreaseNotAllowed({
+                percent: discountPercent, storedPercent: storedTier.discountPercent
+            });
         }
 
         // Set the discount.
