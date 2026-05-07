@@ -6,14 +6,14 @@ import {JB721TiersHookStore} from "../../src/JB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "../../src/interfaces/IJB721TokenUriResolver.sol";
 import {JB721TierConfig} from "../../src/structs/JB721TierConfig.sol";
 
-contract FutureTierPoC is UnitTestSetup {
+contract FutureTierRegression is UnitTestSetup {
     function test_futureTierRemovalPersistsIntoNewTierAndBricksMint() external {
         hook = _initHookDefaultTiers(0);
 
         uint256[] memory futureTierIds = new uint256[](1);
         futureTierIds[0] = 1;
 
-        // L-18 FIX: Removing a future (nonexistent) tier ID now reverts,
+        // FIX: Removing a future (nonexistent) tier ID now reverts,
         // preventing the "born removed" bug entirely.
         vm.prank(owner);
         vm.expectRevert(abi.encodeWithSelector(JB721TiersHookStore.JB721TiersHookStore_UnrecognizedTier.selector, 1));

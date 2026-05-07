@@ -35,7 +35,7 @@ library Hook721DeploymentLib {
 
         for (uint256 _i; _i < networks.length; _i++) {
             if (networks[_i].chainId == chainId) {
-                return getDeployment(path, networks[_i].name);
+                return getDeployment({path: path, network_name: networks[_i].name});
             }
         }
 
@@ -52,15 +52,31 @@ library Hook721DeploymentLib {
         returns (Hook721Deployment memory deployment)
     {
         deployment.hook_deployer = IJB721TiersHookDeployer(
-            _getDeploymentAddress(path, "nana-721-hook-v6", network_name, "JB721TiersHookDeployer")
+            _getDeploymentAddress({
+                path: path,
+                project_name: "nana-721-hook-v6",
+                network_name: network_name,
+                contractName: "JB721TiersHookDeployer"
+            })
         );
 
         deployment.project_deployer = IJB721TiersHookProjectDeployer(
-            _getDeploymentAddress(path, "nana-721-hook-v6", network_name, "JB721TiersHookProjectDeployer")
+            _getDeploymentAddress({
+                path: path,
+                project_name: "nana-721-hook-v6",
+                network_name: network_name,
+                contractName: "JB721TiersHookProjectDeployer"
+            })
         );
 
-        deployment.store =
-            IJB721TiersHookStore(_getDeploymentAddress(path, "nana-721-hook-v6", network_name, "JB721TiersHookStore"));
+        deployment.store = IJB721TiersHookStore(
+            _getDeploymentAddress({
+                path: path,
+                project_name: "nana-721-hook-v6",
+                network_name: network_name,
+                contractName: "JB721TiersHookStore"
+            })
+        );
     }
 
     /// @notice Get the address of a contract that was deployed by the Deploy script.

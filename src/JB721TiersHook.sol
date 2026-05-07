@@ -42,12 +42,10 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     //*********************************************************************//
 
     error JB721TiersHook_AlreadyInitialized(uint256 projectId);
-    error JB721TiersHook_CantBuyWithCredits();
     error JB721TiersHook_InvalidPricingDecimals(uint256 decimals);
-    error JB721TiersHook_MintReserveNftsPaused();
-    error JB721TiersHook_NoProjectId();
-    error JB721TiersHook_Overspending(uint256 leftoverAmount);
-    error JB721TiersHook_TierTransfersPaused();
+    error JB721TiersHook_MintReserveNftsPaused(uint256 projectId, uint256 tierId);
+    error JB721TiersHook_NoProjectId(uint256 projectId);
+    error JB721TiersHook_TierTransfersPaused(uint256 projectId, uint256 tokenId, address from, address to);
 
     //*********************************************************************//
     // --------------- public immutable stored properties ---------------- //
@@ -264,7 +262,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         _initialized = true;
 
         // Make sure a projectId is provided.
-        if (projectId == 0) revert JB721TiersHook_NoProjectId();
+        if (projectId == 0) revert JB721TiersHook_NoProjectId({projectId: projectId});
 
         // Initialize the superclass.
         JB721Hook._initialize({projectId: projectId, name: name, symbol: symbol});
@@ -279,7 +277,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // pack the pricing decimals in bits 32-39 (8 bits).
         packed |= uint256(tiersConfig.decimals) << 32;
         // Store the packed value.
-        // slither-disable-next-line events-maths
         _packedPricingContext = packed;
 
         // Store the base URI if provided.
@@ -385,7 +382,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         _requirePermissionFrom({account: owner(), projectId: PROJECT_ID, permissionId: JBPermissionIds.MINT_721});
 
         // Record the mint. The token IDs returned correspond to the tiers passed in.
-        // slither-disable-next-line reentrancy-events,unused-return
         (tokenIds,,) = STORE.recordMint({
             amount: type(uint256).max, // force the mint.
             tierIds: tierIds,
@@ -503,7 +499,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // `address(this)` is the sentinel value meaning "leave unchanged" (since `address(0)` clears the resolver).
         if (tokenUriResolver != IJB721TokenUriResolver(address(this))) {
             // Store the new URI resolver.
-            // slither-disable-next-line reentrancy-events
             _recordSetTokenUriResolver(tokenUriResolver);
         }
         if (encodedIPFSUriTierId != 0 && encodedIPFSUri != bytes32(0)) {
@@ -529,15 +524,13 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // Pending reserve mints must not be paused.
         if (JB721TiersRulesetMetadataResolver.mintPendingReservesPaused((JBRulesetMetadataResolver.metadata(ruleset))))
         {
-            revert JB721TiersHook_MintReserveNftsPaused();
+            revert JB721TiersHook_MintReserveNftsPaused({projectId: PROJECT_ID, tierId: tierId});
         }
 
         // Record the reserved mint for the tier.
-        // slither-disable-next-line reentrancy-events,calls-loop
         uint256[] memory tokenIds = STORE.recordMintReservesFor({tierId: tierId, count: count});
 
         // Keep a reference to the beneficiary.
-        // slither-disable-next-line calls-loop
         address reserveBeneficiary = STORE.reserveBeneficiaryOf({hook: address(this), tierId: tierId});
 
         // Cache _msgSender() before the loop to avoid repeated calls.
@@ -550,7 +543,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             emit MintReservedNft({tokenId: tokenId, tierId: tierId, beneficiary: reserveBeneficiary, caller: caller});
 
             // Mint the NFT.
-            // slither-disable-next-line reentrency-events
             _mint({to: reserveBeneficiary, tokenId: tokenId});
 
             unchecked {
@@ -572,7 +564,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @param projectId The ID of the project to check.
     /// @return The project's current ruleset.
     function _currentRulesetOf(uint256 projectId) internal view returns (JBRuleset memory) {
-        // slither-disable-next-line calls-loop
         return RULESETS.currentOf(projectId);
     }
 
@@ -625,7 +616,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                 caller: caller
             });
 
-            // slither-disable-next-line reentrancy-events
             _mint({to: beneficiary, tokenId: tokenIds[i]});
 
             unchecked {
@@ -665,7 +655,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         if (tokenIds.length != 0) {
             // totalAmountPaid is the full amount available before recordMint deducted tier prices.
             uint256 totalAmountPaid = (payer == beneficiary) ? value + payCredits : value;
-            // slither-disable-next-line reentrancy-events
             _mintTokens({
                 tokenIds: tokenIds, tierIds: tierIdsToMint, beneficiary: beneficiary, totalAmountPaid: totalAmountPaid
             });
@@ -689,7 +678,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                 });
             }
 
-            // slither-disable-next-line reentrancy-no-eth
             payCreditsOf[beneficiary] = newPayCredits;
         }
     }
@@ -757,7 +745,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @param tierId The ID of the tier to set the discount percent for.
     /// @param discountPercent The discount percent to set (0 = no discount, up to DISCOUNT_DENOMINATOR = free).
     function _setDiscountPercentOf(uint256 tierId, uint256 discountPercent) internal {
-        // slither-disable-next-line calls-loop
         JB721TiersHookLib.setDiscountPercentOf({
             store: STORE, tierId: tierId, discountPercent: discountPercent, caller: _msgSender()
         });
@@ -768,7 +755,6 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @param tokenId The token ID of the NFT to transfer.
     function _update(address to, uint256 tokenId, address auth) internal virtual override returns (address from) {
         // Get only the tier ID and transfersPausable flag (lightweight — avoids full struct construction).
-        // slither-disable-next-line calls-loop
         (uint256 tierId, bool transfersPausable) =
             STORE.tierTransferInfoOfTokenId({hook: address(this), tokenId: tokenId});
 
@@ -788,26 +774,26 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                         && JB721TiersRulesetMetadataResolver.transfersPaused(
                             (JBRulesetMetadataResolver.metadata(ruleset))
                         )
-                ) revert JB721TiersHook_TierTransfersPaused();
+                ) {
+                    revert JB721TiersHook_TierTransfersPaused({
+                        projectId: PROJECT_ID, tokenId: tokenId, from: from, to: to
+                    });
+                }
             }
 
             // If the token isn't already associated with a first owner, store the sender as the first owner.
-            // slither-disable-next-line calls-loop
             if (_firstOwnerOf[tokenId] == address(0)) _firstOwnerOf[tokenId] = from;
         }
 
         // Record the transfer.
-        // slither-disable-next-line reentrency-events,calls-loop
         STORE.recordTransferForTier({tierId: tierId, from: from, to: to});
 
         // Deploy the checkpoint module lazily on the first transfer.
         if (address(CHECKPOINTS) == address(0)) {
-            // slither-disable-next-line calls-loop,reentrancy-events
             CHECKPOINTS = CHECKPOINTS_DEPLOYER.deploy(address(this));
         }
 
         // Notify the checkpoint module to update checkpointed voting power.
-        // slither-disable-next-line calls-loop,reentrancy-events
         CHECKPOINTS.onTransfer({from: from, to: to, tokenId: tokenId});
     }
 }

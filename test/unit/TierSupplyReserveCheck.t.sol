@@ -79,7 +79,7 @@ contract M6_TierSupplyCheck is UnitTestSetup {
     /// After 6 paid mints → 4 remaining, 3 pending reserves.
     /// Without the fix, a 7th paid mint would pass (4 > 3) leaving only 3 remaining for 4 pending reserves.
     /// With the fix, the 7th mint decrements first (remaining→3), then checks 3 < ceil(7/2)=4 → reverts.
-    function test_M6_paidMintCannotStealReserveSlot() public {
+    function test_reserveProtection_paidMintCannotStealReserveSlot() public {
         // Configure: small supply, reserve every 2 mints.
         defaultTierConfig.price = uint104(10);
         defaultTierConfig.initialSupply = uint32(10);
@@ -115,7 +115,7 @@ contract M6_TierSupplyCheck is UnitTestSetup {
     // Test 2: Reserves remain fully mintable after paid mints
     // =========================================================================
     /// @notice After minting paid NFTs up to the allowed limit, all pending reserves should be mintable.
-    function test_M6_reservesFullyMintableAfterPaidMints() public {
+    function test_reserveProtection_reservesFullyMintableAfterPaidMints() public {
         defaultTierConfig.price = uint104(10);
         defaultTierConfig.initialSupply = uint32(10);
         defaultTierConfig.reserveFrequency = uint16(2);
@@ -148,7 +148,7 @@ contract M6_TierSupplyCheck is UnitTestSetup {
     /// @notice With reserveFrequency=5, after 16 paid mints of 20 supply:
     /// remaining=4, pending=ceil(16/5)=4. The 17th mint reverts (4 <= 1+4=5).
     /// All 4 pending reserves are still fully mintable.
-    function test_M6_noMintWhenRemainingEqualsReserves() public {
+    function test_reserveProtection_noMintWhenRemainingEqualsReserves() public {
         defaultTierConfig.price = uint104(10);
         defaultTierConfig.initialSupply = uint32(20);
         defaultTierConfig.reserveFrequency = uint16(5);
@@ -193,7 +193,7 @@ contract M6_TierSupplyCheck is UnitTestSetup {
     // Test 4: No reserves — full supply mintable
     // =========================================================================
     /// @notice Without reserves, all NFTs in a tier should be mintable (no off-by-one).
-    function test_M6_noReserves_fullSupplyMintable() public {
+    function test_reserveProtection_noReserves_fullSupplyMintable() public {
         defaultTierConfig.price = uint104(10);
         defaultTierConfig.initialSupply = uint32(5);
         defaultTierConfig.reserveFrequency = uint16(0);

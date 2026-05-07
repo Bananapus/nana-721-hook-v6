@@ -3,6 +3,7 @@ pragma solidity 0.8.28;
 
 /// @notice Global constants used across 721 hook contracts.
 library JB721Constants {
+    /// @notice The denominator used when applying tier discount percentages.
     uint16 public constant DISCOUNT_DENOMINATOR = 200;
 
     /// @notice The metadata ID used to identify the 721 beneficiary entry in payment metadata.

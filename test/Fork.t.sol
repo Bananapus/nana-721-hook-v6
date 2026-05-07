@@ -1848,17 +1848,17 @@ contract Fork_721Hook_Test is Test {
     }
 
     // =====================================================================
-    // SECTION 27: M6 RESERVE PROTECTION
+    // SECTION 27: RESERVE PROTECTION
     // =====================================================================
 
-    /// @notice M6: Cannot mint past pending reserves. If remaining supply would drop below
+    /// @notice Cannot mint past pending reserves. If remaining supply would drop below
     ///         pending reserves, the paid mint reverts.
     function test_fork_m6_reserveProtection() public {
         // Supply=4, reserveFrequency=1.
         // After 2 paid mints: remaining=2, pendingReserves = ceil(2/1) = 2+1 = 3? No:
         // Formula: nonReserveMints = initialSupply - remaining - reservesMinted = 4-2-0 = 2
         // pendingReserves = ceil(2/1) - 0 = 2
-        // remaining(2) >= pending(2) → OK (M6 checks remaining < pending, not <=)
+        // remaining(2) >= pending(2) → OK(remaining < pending, not <=)
         // After 3rd paid mint attempt: remaining would be 1
         // nonReserveMints = 4-1-0 = 3, pending = ceil(3/1) - 0 = 3
         // remaining(1) < pending(3) → REVERTS!

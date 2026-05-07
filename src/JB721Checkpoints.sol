@@ -23,8 +23,8 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
 
-    error JB721Checkpoints_AlreadyInitialized();
-    error JB721Checkpoints_Unauthorized();
+    error JB721Checkpoints_AlreadyInitialized(address hook);
+    error JB721Checkpoints_Unauthorized(address caller, address hook);
 
     //*********************************************************************//
     // --------------- public immutable stored properties ---------------- //
@@ -68,9 +68,8 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// @dev Can only be called once. Called by the deployer after cloning.
     /// @param hook The hook this module serves.
     function initialize(address hook) external override {
-        if (HOOK != address(0)) revert JB721Checkpoints_AlreadyInitialized();
+        if (HOOK != address(0)) revert JB721Checkpoints_AlreadyInitialized({hook: HOOK});
         // `hook` cannot be zero when called through the deployer because `msg.sender` must equal `hook`.
-        // slither-disable-next-line missing-zero-check
         HOOK = hook;
     }
 
@@ -80,11 +79,10 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// @param to The new owner (address(0) on burn).
     /// @param tokenId The token ID to transfer.
     function onTransfer(address from, address to, uint256 tokenId) external override {
-        if (msg.sender != HOOK) revert JB721Checkpoints_Unauthorized();
+        if (msg.sender != HOOK) revert JB721Checkpoints_Unauthorized({caller: msg.sender, hook: HOOK});
 
         if (from != address(0)) {
             // forge-lint: disable-next-line(unsafe-typecast)
-            // slither-disable-next-line unused-return
             _ownerCheckpointsOf[tokenId].push({key: uint96(block.number), value: uint160(to)});
         }
 

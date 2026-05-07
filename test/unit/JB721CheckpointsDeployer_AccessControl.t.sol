@@ -3,11 +3,10 @@ pragma solidity 0.8.28;
 
 import {Test} from "forge-std/Test.sol";
 import {JB721CheckpointsDeployer} from "../../src/JB721CheckpointsDeployer.sol";
-import {IJB721CheckpointsDeployer} from "../../src/interfaces/IJB721CheckpointsDeployer.sol";
 import {IJB721Checkpoints} from "../../src/interfaces/IJB721Checkpoints.sol";
 import {IJB721TiersHookStore} from "../../src/interfaces/IJB721TiersHookStore.sol";
 
-/// @notice H-1 audit fix: access control tests for JB721CheckpointsDeployer.deploy().
+/// @notice regression fix: access control tests for JB721CheckpointsDeployer.deploy().
 /// @dev The deployer must only allow the hook address itself (msg.sender == hook) to call deploy().
 contract Test_JB721CheckpointsDeployer_AccessControl is Test {
     JB721CheckpointsDeployer deployer;
@@ -45,7 +44,11 @@ contract Test_JB721CheckpointsDeployer_AccessControl is Test {
         address attacker = makeAddr("attacker");
 
         vm.prank(attacker);
-        vm.expectRevert(IJB721CheckpointsDeployer.JB721CheckpointsDeployer_Unauthorized.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721CheckpointsDeployer.JB721CheckpointsDeployer_Unauthorized.selector, attacker, hookAddr
+            )
+        );
         deployer.deploy(hookAddr);
     }
 
@@ -56,7 +59,11 @@ contract Test_JB721CheckpointsDeployer_AccessControl is Test {
 
         // Attacker tries to pass realHook as the hook parameter but calls from their own address.
         vm.prank(attacker);
-        vm.expectRevert(IJB721CheckpointsDeployer.JB721CheckpointsDeployer_Unauthorized.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721CheckpointsDeployer.JB721CheckpointsDeployer_Unauthorized.selector, attacker, realHook
+            )
+        );
         deployer.deploy(realHook);
     }
 
@@ -72,7 +79,11 @@ contract Test_JB721CheckpointsDeployer_AccessControl is Test {
 
         // Front-runner attempts to call deploy with the hook's address before the hook does.
         vm.prank(frontRunner);
-        vm.expectRevert(IJB721CheckpointsDeployer.JB721CheckpointsDeployer_Unauthorized.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721CheckpointsDeployer.JB721CheckpointsDeployer_Unauthorized.selector, frontRunner, hookAddr
+            )
+        );
         deployer.deploy(hookAddr);
 
         // The legitimate hook can still deploy successfully after the failed front-run attempt.
@@ -110,7 +121,11 @@ contract Test_JB721CheckpointsDeployer_AccessControl is Test {
         vm.assume(caller != hookAddr);
 
         vm.prank(caller);
-        vm.expectRevert(IJB721CheckpointsDeployer.JB721CheckpointsDeployer_Unauthorized.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721CheckpointsDeployer.JB721CheckpointsDeployer_Unauthorized.selector, caller, hookAddr
+            )
+        );
         deployer.deploy(hookAddr);
     }
 }

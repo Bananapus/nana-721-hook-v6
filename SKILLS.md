@@ -14,7 +14,7 @@
 | Tier accounting | [`src/JB721TiersHookStore.sol`](./src/JB721TiersHookStore.sol) |
 | Shared math and metadata helpers | [`src/libraries/`](./src/libraries/), [`src/interfaces/`](./src/interfaces/), [`src/structs/`](./src/structs/) |
 | Deployer flows | [`src/JB721TiersHookDeployer.sol`](./src/JB721TiersHookDeployer.sol), [`src/JB721TiersHookProjectDeployer.sol`](./src/JB721TiersHookProjectDeployer.sol) |
-| Lifecycle, invariant, and audit coverage | [`test/E2E/Pay_Mint_Redeem_E2E.t.sol`](./test/E2E/Pay_Mint_Redeem_E2E.t.sol), [`test/invariants/TierLifecycleInvariant.t.sol`](./test/invariants/TierLifecycleInvariant.t.sol), [`test/invariants/TieredHookStoreInvariant.t.sol`](./test/invariants/TieredHookStoreInvariant.t.sol), [`test/audit/CodexSplitCreditsMismatch.t.sol`](./test/audit/CodexSplitCreditsMismatch.t.sol) |
+| Lifecycle, invariant, and review coverage | [`test/E2E/Pay_Mint_Redeem_E2E.t.sol`](./test/E2E/Pay_Mint_Redeem_E2E.t.sol), [`test/invariants/TierLifecycleInvariant.t.sol`](./test/invariants/TierLifecycleInvariant.t.sol), [`test/invariants/TieredHookStoreInvariant.t.sol`](./test/invariants/TieredHookStoreInvariant.t.sol), [`test/regression/SplitCreditsMismatch.t.sol`](./test/regression/SplitCreditsMismatch.t.sol) |
 
 ## Repo Map
 

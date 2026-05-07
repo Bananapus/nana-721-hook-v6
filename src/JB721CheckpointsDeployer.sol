@@ -14,6 +14,12 @@ import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 /// initializes the clone with the hook and store references.
 contract JB721CheckpointsDeployer is IJB721CheckpointsDeployer {
     //*********************************************************************//
+    // --------------------------- custom errors ------------------------- //
+    //*********************************************************************//
+
+    error JB721CheckpointsDeployer_Unauthorized(address caller, address hook);
+
+    //*********************************************************************//
     // --------------- public immutable stored properties ---------------- //
     //*********************************************************************//
 
@@ -42,7 +48,9 @@ contract JB721CheckpointsDeployer is IJB721CheckpointsDeployer {
     /// @param hook The hook address the module will serve.
     /// @return module The newly deployed and initialized checkpoint module.
     function deploy(address hook) external override returns (IJB721Checkpoints module) {
-        if (msg.sender != hook) revert JB721CheckpointsDeployer_Unauthorized();
+        if (msg.sender != hook) {
+            revert JB721CheckpointsDeployer_Unauthorized({caller: msg.sender, hook: hook});
+        }
 
         module = IJB721Checkpoints(
             LibClone.cloneDeterministic({implementation: IMPLEMENTATION, salt: bytes32(uint256(uint160(hook)))})

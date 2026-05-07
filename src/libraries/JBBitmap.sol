@@ -32,7 +32,7 @@ library JBBitmap {
     /// @dev The `index` is the index that the bit would have if the bitmap were reshaped to a 1*n matrix.
     function isTierIdRemoved(mapping(uint256 => uint256) storage self, uint256 index) internal view returns (bool) {
         uint256 depth = _retrieveDepth(index);
-        return isTierIdRemoved(JBBitmapWord({currentWord: self[depth], currentDepth: depth}), index);
+        return isTierIdRemoved({self: JBBitmapWord({currentWord: self[depth], currentDepth: depth}), index: index});
     }
 
     /// @notice Set the bit at the given index to true, indicating that the corresponding tier has been removed.

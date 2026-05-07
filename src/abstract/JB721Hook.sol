@@ -30,10 +30,10 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
 
-    error JB721Hook_InvalidCashOut();
-    error JB721Hook_InvalidPay();
+    error JB721Hook_InvalidCashOut(address caller, uint256 contextProjectId, uint256 projectId, uint256 msgValue);
+    error JB721Hook_InvalidPay(address caller, uint256 contextProjectId, uint256 projectId);
     error JB721Hook_UnauthorizedToken(uint256 tokenId, address holder);
-    error JB721Hook_UnexpectedTokenCashedOut();
+    error JB721Hook_UnexpectedTokenCashedOut(uint256 cashOutCount);
 
     //*********************************************************************//
     // --------------- public immutable stored properties ---------------- //
@@ -94,7 +94,9 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
         )
     {
         // Make sure (fungible) project tokens aren't also being cashed out.
-        if (context.cashOutCount > 0) revert JB721Hook_UnexpectedTokenCashedOut();
+        if (context.cashOutCount > 0) {
+            revert JB721Hook_UnexpectedTokenCashedOut({cashOutCount: context.cashOutCount});
+        }
 
         // Fetch the cash out hook metadata using the corresponding metadata ID.
         (bool metadataExists, bytes memory metadata) = JBMetadataResolver.getDataFor({
@@ -185,7 +187,6 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     /// `context.beneficiary`. Part of `IJBCashOutHook`.
     /// @dev Reverts if the calling contract is not one of the project's terminals.
     /// @param context The cash out context passed in by the terminal.
-    // slither-disable-next-line locked-ether
     function afterCashOutRecordedWith(JBAfterCashOutRecordedContext calldata context)
         external
         payable
@@ -200,7 +201,11 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
         if (
             msg.value != 0 || !DIRECTORY.isTerminalOf({projectId: projectId, terminal: IJBTerminal(msg.sender)})
                 || context.projectId != projectId
-        ) revert JB721Hook_InvalidCashOut();
+        ) {
+            revert JB721Hook_InvalidCashOut({
+                caller: msg.sender, contextProjectId: context.projectId, projectId: projectId, msgValue: msg.value
+            });
+        }
 
         // Fetch the cash out hook metadata using the corresponding metadata ID.
         (bool metadataExists, bytes memory metadata) = JBMetadataResolver.getDataFor({
@@ -237,7 +242,6 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     /// `IJBPayHook`.
     /// @dev Reverts if the calling contract is not one of the project's terminals.
     /// @param context The payment context passed in by the terminal.
-    // slither-disable-next-line locked-ether
     function afterPayRecordedWith(JBAfterPayRecordedContext calldata context) external payable virtual override {
         uint256 projectId = PROJECT_ID;
 
@@ -247,7 +251,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
             !DIRECTORY.isTerminalOf({projectId: projectId, terminal: IJBTerminal(msg.sender)})
                 || context.projectId != projectId
         ) {
-            revert JB721Hook_InvalidPay();
+            revert JB721Hook_InvalidPay({caller: msg.sender, contextProjectId: context.projectId, projectId: projectId});
         }
 
         // Process the payment.

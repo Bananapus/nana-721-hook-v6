@@ -307,7 +307,9 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
         for (uint256 tier = 1; tier <= numberOfTiers; tier++) {
             uint256 mintable = hook.test_store().numberOfPendingReservesFor(address(hook), tier);
             vm.prank(owner);
-            vm.expectRevert(JB721TiersHook.JB721TiersHook_MintReserveNftsPaused.selector);
+            vm.expectRevert(
+                abi.encodeWithSelector(JB721TiersHook.JB721TiersHook_MintReserveNftsPaused.selector, projectId, tier)
+            );
             hook.mintPendingReservesFor(tier, mintable);
         }
     }

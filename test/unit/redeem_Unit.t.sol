@@ -219,7 +219,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
         vm.assume(tokenCount > 0);
 
         // Expect a revert on account of the token count being non-zero while the total supply is zero.
-        vm.expectRevert(abi.encodeWithSelector(JB721Hook.JB721Hook_UnexpectedTokenCashedOut.selector));
+        vm.expectRevert(abi.encodeWithSelector(JB721Hook.JB721Hook_UnexpectedTokenCashedOut.selector, tokenCount));
 
         hook.beforeCashOutRecordedWith(
             JBBeforeCashOutRecordedContext({
@@ -361,7 +361,11 @@ contract Test_cashOut_Unit is UnitTestSetup {
         );
 
         // Expect to revert on account of the project ID being incorrect.
-        vm.expectRevert(abi.encodeWithSelector(JB721Hook.JB721Hook_InvalidCashOut.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721Hook.JB721Hook_InvalidCashOut.selector, mockTerminalAddress, wrongProjectId, projectId, 0
+            )
+        );
 
         vm.prank(mockTerminalAddress);
         hook.afterCashOutRecordedWith(
@@ -396,7 +400,11 @@ contract Test_cashOut_Unit is UnitTestSetup {
         );
 
         // Expect to revert on account of the caller not being a terminal of the project.
-        vm.expectRevert(abi.encodeWithSelector(JB721Hook.JB721Hook_InvalidCashOut.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721Hook.JB721Hook_InvalidCashOut.selector, mockTerminalAddress, projectId, projectId, 0
+            )
+        );
 
         vm.prank(mockTerminalAddress);
         hook.afterCashOutRecordedWith(

@@ -86,9 +86,9 @@ contract ReentrantAdjustTiersSplitHook is IJBSplitHook {
 // Test Contract: Reentrancy on Split Distribution
 // =====================================================================
 
-/// @title TestAuditGaps_Reentrancy
+/// @title TestRegressionGaps_Reentrancy
 /// @notice Tests that malicious split hooks cannot exploit reentrancy during NFT split fund distribution.
-contract TestAuditGaps_Reentrancy is UnitTestSetup {
+contract TestRegressionGaps_Reentrancy is UnitTestSetup {
     using stdStorage for StdStorage;
 
     function setUp() public override {
@@ -418,9 +418,9 @@ contract TestAuditGaps_Reentrancy is UnitTestSetup {
 // Test Contract: Gas Limits with Hundreds of Tiers
 // =====================================================================
 
-/// @title TestAuditGaps_GasLimits
+/// @title TestRegressionGaps_GasLimits
 /// @notice Tests that operations with 100+ tiers do not hit gas limits or behave unexpectedly.
-contract TestAuditGaps_GasLimits is UnitTestSetup {
+contract TestRegressionGaps_GasLimits is UnitTestSetup {
     using stdStorage for StdStorage;
 
     /// @dev The block gas limit on mainnet is 30M. We use a generous limit for safety.

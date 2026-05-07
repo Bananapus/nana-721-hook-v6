@@ -22,7 +22,7 @@ contract Test_FutureTierRemoval is Test {
         assertEq(firstIds[0], 1);
 
         // Attempting to remove a future (nonexistent) tier ID should now revert
-        // thanks to the L-18 fix, preventing the "born removed" bug.
+        // thanks to the fix, preventing the "born removed" bug.
         uint256[] memory futureIds = new uint256[](1);
         futureIds[0] = 2;
         vm.expectRevert(abi.encodeWithSignature("JB721TiersHookStore_UnrecognizedTier(uint256)", 2));

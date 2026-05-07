@@ -8,8 +8,8 @@ import "../utils/UnitTestSetup.sol";
 // Import IERC2981 to compute its interface ID for the supportsInterface test.
 import {IERC2981} from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
-/// @notice Regression tests covering three audit findings for nana-721-hook-v6.
-contract AuditRegressions is UnitTestSetup {
+/// @notice Regression tests covering three regressions for nana-721-hook-v6.
+contract RegressionRegressions is UnitTestSetup {
     // -----------------------------------------------------------------------
     // 1. Double-initialization guard
     // -----------------------------------------------------------------------

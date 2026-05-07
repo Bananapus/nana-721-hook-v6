@@ -3,6 +3,7 @@ pragma solidity 0.8.28;
 
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "../utils/UnitTestSetup.sol";
+import {JB721TiersHookLib} from "../../src/libraries/JB721TiersHookLib.sol";
 
 contract Test_afterPayRecorded_Unit is UnitTestSetup {
     using stdStorage for StdStorage;
@@ -110,7 +111,9 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
         );
 
         // Expect a revert for overspending.
-        vm.expectRevert(abi.encodeWithSelector(JB721TiersHook.JB721TiersHook_Overspending.selector, tiers[0].price - 1));
+        vm.expectRevert(
+            abi.encodeWithSelector(JB721TiersHookLib.JB721TiersHook_Overspending.selector, tiers[0].price - 1)
+        );
 
         vm.prank(mockTerminalAddress);
         hook.afterPayRecordedWith(
@@ -969,7 +972,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
         vm.prank(terminal);
 
         // Expect a revert for the caller not being a terminal of the project.
-        vm.expectRevert(abi.encodeWithSelector(JB721Hook.JB721Hook_InvalidPay.selector));
+        vm.expectRevert(abi.encodeWithSelector(JB721Hook.JB721Hook_InvalidPay.selector, terminal, projectId, projectId));
 
         hook.afterPayRecordedWith(
             JBAfterPayRecordedContext({
@@ -1209,7 +1212,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
         // Generate the metadata.
         bytes memory hookMetadata = metadataHelper.createMetadata(ids, data);
         vm.prank(mockTerminalAddress);
-        vm.expectRevert(abi.encodeWithSelector(JB721TiersHook.JB721TiersHook_Overspending.selector, amount));
+        vm.expectRevert(abi.encodeWithSelector(JB721TiersHookLib.JB721TiersHook_Overspending.selector, amount));
         hook.afterPayRecordedWith(
             JBAfterPayRecordedContext({
                 payer: msg.sender,
@@ -1269,7 +1272,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
 
         // If prevent is enabled the call should revert. Otherwise, we should receive pay credits.
         if (prevent) {
-            vm.expectRevert(abi.encodeWithSelector(JB721TiersHook.JB721TiersHook_Overspending.selector, amount));
+            vm.expectRevert(abi.encodeWithSelector(JB721TiersHookLib.JB721TiersHook_Overspending.selector, amount));
         } else {
             uint256 payCredits = hook.payCreditsOf(beneficiary);
             uint256 stashedPayCredits = payCredits;
@@ -1407,7 +1410,11 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
         uint256 tokenId = _generateTokenId(1, 1);
 
         // Expect a revert on account of transfers being paused.
-        vm.expectRevert(JB721TiersHook.JB721TiersHook_TierTransfersPaused.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721TiersHook.JB721TiersHook_TierTransfersPaused.selector, projectId, tokenId, msg.sender, beneficiary
+            )
+        );
 
         vm.prank(msg.sender);
         IERC721(hook).transferFrom(msg.sender, beneficiary, tokenId);

@@ -31,7 +31,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
     error JB721TiersHookStore_CantMintManually(uint256 tierId);
     error JB721TiersHookStore_CantRemoveTier(uint256 tierId);
-    error JB721TiersHookStore_DeadlockedReserve();
+    error JB721TiersHookStore_DeadlockedReserve(uint256 tierId, uint256 initialSupply, uint256 reserveFrequency);
     error JB721TiersHookStore_DiscountPercentExceedsBounds(uint256 percent, uint256 limit);
     error JB721TiersHookStore_DiscountPercentIncreaseNotAllowed(uint256 percent, uint256 storedPercent);
     error JB721TiersHookStore_InsufficientPendingReserves(uint256 count, uint256 numberOfPendingReserves);
@@ -618,7 +618,6 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         // Cache packed bools to avoid stack-too-deep from destructuring all 6 bools.
         uint8 packed = storedTier.packedBools;
 
-        // slither-disable-next-line calls-loop
         return JB721Tier({
             // forge-lint: disable-next-line(unsafe-typecast)
             id: uint32(tierId),
@@ -838,11 +837,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         uint256 currentSortedTierId = _firstSortedTierIdOf({hook: hook, category: 0});
 
         // Keep track of the previous non-removed tier ID.
-        // slither-disable-next-line uninitialized-local
         uint256 previousSortedTierId;
 
         // Initialize a `JBBitmapWord` for tracking removed tiers.
-        // slither-disable-next-line uninitialized-local
         JBBitmapWord memory bitmapWord;
 
         // Make the sorted array.
@@ -919,7 +916,6 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         uint256 startSortedTierId = currentMaxTierIdOf == 0 ? 0 : _firstSortedTierIdOf({hook: msg.sender, category: 0});
 
         // Keep track of the previous tier's ID while iterating.
-        // slither-disable-next-line uninitialized-local
         uint256 previousTierId;
 
         // Keep a reference to the 721 contract's flags.
@@ -989,7 +985,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             // A tier with initialSupply == 1 and reserveFrequency > 0 deadlocks: the single mint is reserved,
             // leaving zero available for paid mints, but reserves only mint after a paid mint triggers them.
             if (tierToAdd.initialSupply == 1 && tierToAdd.reserveFrequency > 0) {
-                revert JB721TiersHookStore_DeadlockedReserve();
+                revert JB721TiersHookStore_DeadlockedReserve({
+                    tierId: tierId, initialSupply: tierToAdd.initialSupply, reserveFrequency: tierToAdd.reserveFrequency
+                });
             }
 
             // A tier with reserves must have a beneficiary — either tier-specific or a previously set default.
