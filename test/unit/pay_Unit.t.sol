@@ -972,7 +972,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
         vm.prank(terminal);
 
         // Expect a revert for the caller not being a terminal of the project.
-        vm.expectRevert(abi.encodeWithSelector(JB721Hook.JB721Hook_InvalidPay.selector));
+        vm.expectRevert(abi.encodeWithSelector(JB721Hook.JB721Hook_InvalidPay.selector, terminal, projectId, projectId));
 
         hook.afterPayRecordedWith(
             JBAfterPayRecordedContext({
@@ -1410,7 +1410,11 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
         uint256 tokenId = _generateTokenId(1, 1);
 
         // Expect a revert on account of transfers being paused.
-        vm.expectRevert(JB721TiersHook.JB721TiersHook_TierTransfersPaused.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721TiersHook.JB721TiersHook_TierTransfersPaused.selector, projectId, tokenId, msg.sender, beneficiary
+            )
+        );
 
         vm.prank(msg.sender);
         IERC721(hook).transferFrom(msg.sender, beneficiary, tokenId);
