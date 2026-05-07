@@ -18,8 +18,6 @@ import {JB721TiersSetDiscountPercentConfig} from "../structs/JB721TiersSetDiscou
 
 /// @notice A 721 tiers hook that mints tiered NFTs for payments and tracks their cash out weight.
 interface IJB721TiersHook is IJB721Hook {
-    error JB721TiersHook_Overspending(uint256 leftoverAmount);
-
     /// @notice Emitted when pay credits are added for an account.
     /// @param amount The amount of credits added.
     /// @param newTotalCredits The new total credits balance for the account.

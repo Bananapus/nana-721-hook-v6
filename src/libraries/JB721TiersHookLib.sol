@@ -16,7 +16,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {mulDiv} from "@prb/math/src/Common.sol";
 
-import {IJB721TiersHook} from "../interfaces/IJB721TiersHook.sol";
 import {IJB721TiersHookStore} from "../interfaces/IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "../interfaces/IJB721TokenUriResolver.sol";
 
@@ -33,6 +32,7 @@ library JB721TiersHookLib {
     //*********************************************************************//
 
     error JB721TiersHook_CantBuyWithCredits(uint256 restrictedCost, uint256 freshValue);
+    error JB721TiersHook_Overspending(uint256 leftoverAmount);
     error JB721TiersHookLib_NoTerminalForLeftover(uint256 projectId, address token, uint256 leftoverAmount);
     error JB721TiersHookLib_SplitFallbackFailed(uint256 projectId, address token, uint256 amount, bytes reason);
     error JB721TiersHookLib_TokenTransferAmountMismatch(uint256 expectedAmount, uint256 receivedAmount);
@@ -40,6 +40,11 @@ library JB721TiersHookLib {
     //*********************************************************************//
     // ------------------------------- events ---------------------------- //
     //*********************************************************************//
+
+    event AddTier(uint256 indexed tierId, JB721TierConfig tier, address caller);
+    event RemoveTier(uint256 indexed tierId, address caller);
+    event SetDiscountPercent(uint256 indexed tierId, uint256 discountPercent, address caller);
+    event SplitPayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
 
     //*********************************************************************//
     // ---------------------- external transactions ---------------------- //
@@ -68,7 +73,7 @@ library JB721TiersHookLib {
         // Remove tiers.
         if (tierIdsToRemove.length != 0) {
             for (uint256 i; i < tierIdsToRemove.length;) {
-                emit IJB721TiersHook.RemoveTier({tierId: tierIdsToRemove[i], caller: caller});
+                emit RemoveTier({tierId: tierIdsToRemove[i], caller: caller});
 
                 unchecked {
                     ++i;
@@ -82,7 +87,7 @@ library JB721TiersHookLib {
             uint256[] memory tierIdsAdded = store.recordAddTiers(tiersToAdd);
 
             for (uint256 i; i < tiersToAdd.length;) {
-                emit IJB721TiersHook.AddTier({tierId: tierIdsAdded[i], tier: tiersToAdd[i], caller: caller});
+                emit AddTier({tierId: tierIdsAdded[i], tier: tiersToAdd[i], caller: caller});
 
                 unchecked {
                     ++i;
@@ -227,7 +232,7 @@ library JB721TiersHookLib {
 
         // If overspending isn't allowed, revert.
         if (leftoverAmount != 0 && !allowOverspending) {
-            revert IJB721TiersHook.JB721TiersHook_Overspending({leftoverAmount: leftoverAmount});
+            revert JB721TiersHook_Overspending({leftoverAmount: leftoverAmount});
         }
 
         // Compute the new pay credits balance: leftover + unused credits (held in newPayCredits).
@@ -255,7 +260,7 @@ library JB721TiersHookLib {
         uint256[] memory tierIdsAdded = store.recordAddTiers(tiersToAdd);
 
         for (uint256 i; i < tiersToAdd.length;) {
-            emit IJB721TiersHook.AddTier({tierId: tierIdsAdded[i], tier: tiersToAdd[i], caller: caller});
+            emit AddTier({tierId: tierIdsAdded[i], tier: tiersToAdd[i], caller: caller});
 
             unchecked {
                 ++i;
@@ -285,7 +290,7 @@ library JB721TiersHookLib {
     )
         external
     {
-        emit IJB721TiersHook.SetDiscountPercent({tierId: tierId, discountPercent: discountPercent, caller: caller});
+        emit SetDiscountPercent({tierId: tierId, discountPercent: discountPercent, caller: caller});
         store.recordSetDiscountPercentOf({tierId: tierId, discountPercent: discountPercent});
     }
 
@@ -809,7 +814,7 @@ library JB721TiersHookLib {
                 try split.hook.processSplitWith{value: amount}(context) {
                     return true;
                 } catch (bytes memory reason) {
-                    emit IJB721TiersHook.SplitPayoutReverted({
+                    emit SplitPayoutReverted({
                         projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
                     });
                     return false;
@@ -823,7 +828,7 @@ library JB721TiersHookLib {
                 SafeERC20.safeTransfer({token: IERC20(token), to: address(split.hook), value: amount});
                 try split.hook.processSplitWith(context) {}
                 catch (bytes memory reason) {
-                    emit IJB721TiersHook.SplitPayoutReverted({
+                    emit SplitPayoutReverted({
                         projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
                     });
                 }
@@ -846,7 +851,7 @@ library JB721TiersHookLib {
                     }) {
                         return true;
                     } catch (bytes memory reason) {
-                        emit IJB721TiersHook.SplitPayoutReverted({
+                        emit SplitPayoutReverted({
                             projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
                         });
                         return false;
@@ -865,7 +870,7 @@ library JB721TiersHookLib {
                     } catch (bytes memory reason) {
                         // Reset approval on failure so tokens aren't left approved to the terminal.
                         SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
-                        emit IJB721TiersHook.SplitPayoutReverted({
+                        emit SplitPayoutReverted({
                             projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
                         });
                         return false;
@@ -884,7 +889,7 @@ library JB721TiersHookLib {
                     }) {
                         return true;
                     } catch (bytes memory reason) {
-                        emit IJB721TiersHook.SplitPayoutReverted({
+                        emit SplitPayoutReverted({
                             projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
                         });
                         return false;
@@ -904,7 +909,7 @@ library JB721TiersHookLib {
                     } catch (bytes memory reason) {
                         // Reset approval on failure so tokens aren't left approved to the terminal.
                         SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
-                        emit IJB721TiersHook.SplitPayoutReverted({
+                        emit SplitPayoutReverted({
                             projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
                         });
                         return false;

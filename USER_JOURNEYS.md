@@ -9,7 +9,7 @@ This repo adds tiered NFT logic to Juicebox payment and cash-out flows. It owns 
 - projects that want priced NFT tiers in their Juicebox flow
 - operators managing tier configuration and hook permissions
 - holders minting, transferring, and cashing out tiered NFTs
-- reviewers reviewing tier accounting, reserve behavior, and deployer wiring
+- auditors reviewing tier accounting, reserve behavior, and deployer wiring
 
 ## Key Surfaces
 

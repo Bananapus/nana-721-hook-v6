@@ -14,6 +14,12 @@ import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 /// initializes the clone with the hook and store references.
 contract JB721CheckpointsDeployer is IJB721CheckpointsDeployer {
     //*********************************************************************//
+    // --------------------------- custom errors ------------------------- //
+    //*********************************************************************//
+
+    error JB721CheckpointsDeployer_Unauthorized(address caller, address hook);
+
+    //*********************************************************************//
     // --------------- public immutable stored properties ---------------- //
     //*********************************************************************//
 
