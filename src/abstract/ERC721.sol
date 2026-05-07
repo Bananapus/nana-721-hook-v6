@@ -72,7 +72,7 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      */
     function balanceOf(address owner) public view virtual returns (uint256) {
         if (owner == address(0)) {
-            revert ERC721InvalidOwner(address(0));
+            revert ERC721InvalidOwner({owner: address(0)});
         }
         return _balances[owner];
     }
@@ -153,13 +153,13 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      */
     function transferFrom(address from, address to, uint256 tokenId) public virtual {
         if (to == address(0)) {
-            revert ERC721InvalidReceiver(address(0));
+            revert ERC721InvalidReceiver({receiver: address(0)});
         }
         // Setting an "auth" arguments enables the `_isAuthorized` check which verifies that the token exists
         // (from != 0). Therefore, it is not needed to verify that the return value is not 0 here.
         address previousOwner = _update({to: to, tokenId: tokenId, auth: _msgSender()});
         if (previousOwner != from) {
-            revert ERC721IncorrectOwner(from, tokenId, previousOwner);
+            revert ERC721IncorrectOwner({sender: from, tokenId: tokenId, owner: previousOwner});
         }
     }
 
@@ -222,9 +222,9 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
     function _checkAuthorized(address owner, address spender, uint256 tokenId) internal view virtual {
         if (!_isAuthorized({owner: owner, spender: spender, tokenId: tokenId})) {
             if (owner == address(0)) {
-                revert ERC721NonexistentToken(tokenId);
+                revert ERC721NonexistentToken({tokenId: tokenId});
             } else {
-                revert ERC721InsufficientApproval(spender, tokenId);
+                revert ERC721InsufficientApproval({operator: spender, tokenId: tokenId});
             }
         }
     }
@@ -282,7 +282,7 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
 
         _owners[tokenId] = to;
 
-        emit Transfer(from, to, tokenId);
+        emit Transfer({from: from, to: to, tokenId: tokenId});
 
         return from;
     }
@@ -301,11 +301,11 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      */
     function _mint(address to, uint256 tokenId) internal {
         if (to == address(0)) {
-            revert ERC721InvalidReceiver(address(0));
+            revert ERC721InvalidReceiver({receiver: address(0)});
         }
         address previousOwner = _update({to: to, tokenId: tokenId, auth: address(0)});
         if (previousOwner != address(0)) {
-            revert ERC721InvalidSender(address(0));
+            revert ERC721InvalidSender({sender: address(0)});
         }
     }
 
@@ -347,7 +347,7 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
     function _burn(uint256 tokenId) internal {
         address previousOwner = _update({to: address(0), tokenId: tokenId, auth: address(0)});
         if (previousOwner == address(0)) {
-            revert ERC721NonexistentToken(tokenId);
+            revert ERC721NonexistentToken({tokenId: tokenId});
         }
     }
 
@@ -364,13 +364,13 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      */
     function _transfer(address from, address to, uint256 tokenId) internal {
         if (to == address(0)) {
-            revert ERC721InvalidReceiver(address(0));
+            revert ERC721InvalidReceiver({receiver: address(0)});
         }
         address previousOwner = _update({to: to, tokenId: tokenId, auth: address(0)});
         if (previousOwner == address(0)) {
-            revert ERC721NonexistentToken(tokenId);
+            revert ERC721NonexistentToken({tokenId: tokenId});
         } else if (previousOwner != from) {
-            revert ERC721IncorrectOwner(from, tokenId, previousOwner);
+            revert ERC721IncorrectOwner({sender: from, tokenId: tokenId, owner: previousOwner});
         }
     }
 
@@ -433,11 +433,11 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
 
             // We do not use _isAuthorized because single-token approvals should not be able to call approve
             if (auth != address(0) && owner != auth && !isApprovedForAll({owner: owner, operator: auth})) {
-                revert ERC721InvalidApprover(auth);
+                revert ERC721InvalidApprover({approver: auth});
             }
 
             if (emitEvent) {
-                emit Approval(owner, to, tokenId);
+                emit Approval({owner: owner, approved: to, tokenId: tokenId});
             }
         }
 
@@ -454,10 +454,10 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
      */
     function _setApprovalForAll(address owner, address operator, bool approved) internal virtual {
         if (operator == address(0)) {
-            revert ERC721InvalidOperator(operator);
+            revert ERC721InvalidOperator({operator: operator});
         }
         _operatorApprovals[owner][operator] = approved;
-        emit ApprovalForAll(owner, operator, approved);
+        emit ApprovalForAll({owner: owner, operator: operator, approved: approved});
     }
 
     /**
@@ -469,7 +469,7 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
     function _requireOwned(uint256 tokenId) internal view returns (address) {
         address owner = _ownerOf(tokenId);
         if (owner == address(0)) {
-            revert ERC721NonexistentToken(tokenId);
+            revert ERC721NonexistentToken({tokenId: tokenId});
         }
         return owner;
     }
@@ -491,11 +491,11 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
                 bytes4 retval
             ) {
                 if (retval != IERC721Receiver.onERC721Received.selector) {
-                    revert ERC721InvalidReceiver(to);
+                    revert ERC721InvalidReceiver({receiver: to});
                 }
             } catch (bytes memory reason) {
                 if (reason.length == 0) {
-                    revert ERC721InvalidReceiver(to);
+                    revert ERC721InvalidReceiver({receiver: to});
                 } else {
                     /// @solidity memory-safe-assembly
                     assembly {
