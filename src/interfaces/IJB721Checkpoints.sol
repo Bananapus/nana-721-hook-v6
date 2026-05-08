@@ -33,7 +33,6 @@ interface IJB721Checkpoints is IERC5805 {
 
     /// @notice Called by the hook after every NFT transfer to update checkpointed voting power.
     /// @dev Looks up the token's tier voting units from the store internally.
-    /// Auto-self-delegates on first receive so checkpoints work without manual delegation.
     /// @param from The previous owner (address(0) on mint).
     /// @param to The new owner (address(0) on burn).
     /// @param tokenId The token ID to transfer (used to look up tier voting units).
