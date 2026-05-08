@@ -319,7 +319,251 @@ contract TestCheckpoints is UnitTestSetup {
     }
 
     // -------------------------------------------------------------------
-    // Test 9: Unauthorized onTransfer reverts
+    // Test 9: delegate(address, uint256[]) writes owner checkpoint
+    // -------------------------------------------------------------------
+    function test_delegateWithTokenIds_writesOwnerCheckpoint() public {
+        defaultTierConfig.flags.allowOwnerMint = true;
+        defaultTierConfig.reserveFrequency = 0;
+        defaultTierConfig.flags.useVotingUnits = true;
+        defaultTierConfig.votingUnits = 100;
+
+        ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
+
+        address user = makeAddr("user");
+
+        uint16[] memory tiersToMint = new uint16[](1);
+        tiersToMint[0] = 1;
+        vm.prank(owner);
+        tiersHook.mintFor(tiersToMint, user);
+
+        IJB721Checkpoints module = tiersHook.CHECKPOINTS();
+        uint256 tokenId = _generateTokenId(1, 1);
+
+        // Before enrollment, ownerOfAt returns address(0).
+        assertEq(module.ownerOfAt(tokenId, block.number), address(0), "Unenrolled token should return address(0)");
+
+        uint256 enrollBlock = block.number;
+        vm.roll(block.number + 1);
+
+        // Enroll via delegate(address, uint256[]).
+        uint256[] memory tokenIds = new uint256[](1);
+        tokenIds[0] = tokenId;
+        vm.prank(user);
+        module.delegate(user, tokenIds);
+
+        // ownerOfAt returns the owner for blocks >= enrollment.
+        assertEq(module.ownerOfAt(tokenId, enrollBlock + 1), user, "Enrolled token should return owner");
+    }
+
+    // -------------------------------------------------------------------
+    // Test 10: delegate(address, uint256[]) delegates voting power
+    // -------------------------------------------------------------------
+    function test_delegateWithTokenIds_delegates() public {
+        defaultTierConfig.flags.allowOwnerMint = true;
+        defaultTierConfig.reserveFrequency = 0;
+        defaultTierConfig.flags.useVotingUnits = true;
+        defaultTierConfig.votingUnits = 100;
+
+        ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
+
+        address user = makeAddr("user");
+        address delegatee = makeAddr("delegatee");
+
+        uint16[] memory tiersToMint = new uint16[](1);
+        tiersToMint[0] = 1;
+        vm.prank(owner);
+        tiersHook.mintFor(tiersToMint, user);
+
+        IJB721Checkpoints module = tiersHook.CHECKPOINTS();
+        uint256 tokenId = _generateTokenId(1, 1);
+
+        // Delegatee self-delegates first so they can receive.
+        vm.prank(delegatee);
+        module.delegate(delegatee);
+
+        // Enroll and delegate to a different address.
+        uint256[] memory tokenIds = new uint256[](1);
+        tokenIds[0] = tokenId;
+        vm.prank(user);
+        module.delegate(delegatee, tokenIds);
+
+        assertEq(module.delegates(user), delegatee, "Should delegate to specified delegatee");
+        assertEq(module.getVotes(delegatee), 100, "Delegatee should have user's votes");
+    }
+
+    // -------------------------------------------------------------------
+    // Test 11: delegate(address, uint256[]) reverts for non-owner
+    // -------------------------------------------------------------------
+    function test_delegateWithTokenIds_revertsForNonOwner() public {
+        defaultTierConfig.flags.allowOwnerMint = true;
+        defaultTierConfig.reserveFrequency = 0;
+        defaultTierConfig.flags.useVotingUnits = true;
+        defaultTierConfig.votingUnits = 100;
+
+        ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
+
+        address user = makeAddr("user");
+        address attacker = makeAddr("attacker");
+
+        uint16[] memory tiersToMint = new uint16[](1);
+        tiersToMint[0] = 1;
+        vm.prank(owner);
+        tiersHook.mintFor(tiersToMint, user);
+
+        IJB721Checkpoints module = tiersHook.CHECKPOINTS();
+        uint256 tokenId = _generateTokenId(1, 1);
+
+        uint256[] memory tokenIds = new uint256[](1);
+        tokenIds[0] = tokenId;
+
+        vm.expectRevert(abi.encodeWithSelector(JB721Checkpoints.JB721Checkpoints_NotOwner.selector, tokenId, attacker));
+        vm.prank(attacker);
+        module.delegate(attacker, tokenIds);
+    }
+
+    // -------------------------------------------------------------------
+    // Test 12: delegate(address, uint256[]) is idempotent for checkpoints
+    // -------------------------------------------------------------------
+    function test_delegateWithTokenIds_idempotentCheckpoints() public {
+        defaultTierConfig.flags.allowOwnerMint = true;
+        defaultTierConfig.reserveFrequency = 0;
+        defaultTierConfig.flags.useVotingUnits = true;
+        defaultTierConfig.votingUnits = 100;
+
+        ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
+
+        address user = makeAddr("user");
+
+        uint16[] memory tiersToMint = new uint16[](1);
+        tiersToMint[0] = 1;
+        vm.prank(owner);
+        tiersHook.mintFor(tiersToMint, user);
+
+        IJB721Checkpoints module = tiersHook.CHECKPOINTS();
+        uint256 tokenId = _generateTokenId(1, 1);
+
+        uint256[] memory tokenIds = new uint256[](1);
+        tokenIds[0] = tokenId;
+
+        // Enroll once.
+        vm.prank(user);
+        module.delegate(user, tokenIds);
+
+        uint256 enrollBlock = block.number;
+        vm.roll(block.number + 10);
+
+        // Enroll again — should not write a duplicate checkpoint.
+        vm.prank(user);
+        module.delegate(user, tokenIds);
+
+        // ownerOfAt at the enrollment block should still return user (first checkpoint).
+        assertEq(module.ownerOfAt(tokenId, enrollBlock), user, "First enrollment checkpoint should persist");
+        assertEq(module.ownerOfAt(tokenId, block.number), user, "Current block should return user");
+    }
+
+    // -------------------------------------------------------------------
+    // Test 13: ownerOfAt returns address(0) for unenrolled token
+    // -------------------------------------------------------------------
+    function test_ownerOfAt_returnsZeroForUnenrolledToken() public {
+        defaultTierConfig.flags.allowOwnerMint = true;
+        defaultTierConfig.reserveFrequency = 0;
+        defaultTierConfig.flags.useVotingUnits = true;
+        defaultTierConfig.votingUnits = 100;
+
+        ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
+
+        address user = makeAddr("user");
+
+        uint16[] memory tiersToMint = new uint16[](1);
+        tiersToMint[0] = 1;
+        vm.prank(owner);
+        tiersHook.mintFor(tiersToMint, user);
+
+        IJB721Checkpoints module = tiersHook.CHECKPOINTS();
+        uint256 tokenId = _generateTokenId(1, 1);
+
+        // Never enrolled, never transferred — ownerOfAt should return address(0).
+        assertEq(module.ownerOfAt(tokenId, block.number), address(0), "Unenrolled token should return address(0)");
+    }
+
+    // -------------------------------------------------------------------
+    // Test 14: ownerOfAt returns address(0) before enrollment block
+    // -------------------------------------------------------------------
+    function test_ownerOfAt_returnsZeroBeforeEnrollmentBlock() public {
+        defaultTierConfig.flags.allowOwnerMint = true;
+        defaultTierConfig.reserveFrequency = 0;
+        defaultTierConfig.flags.useVotingUnits = true;
+        defaultTierConfig.votingUnits = 100;
+
+        ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
+
+        address user = makeAddr("user");
+
+        uint16[] memory tiersToMint = new uint16[](1);
+        tiersToMint[0] = 1;
+        vm.prank(owner);
+        tiersHook.mintFor(tiersToMint, user);
+
+        IJB721Checkpoints module = tiersHook.CHECKPOINTS();
+        uint256 tokenId = _generateTokenId(1, 1);
+
+        uint256 blockBeforeEnroll = block.number;
+        vm.roll(block.number + 5);
+
+        // Enroll at block + 5.
+        uint256[] memory tokenIds = new uint256[](1);
+        tokenIds[0] = tokenId;
+        vm.prank(user);
+        module.delegate(user, tokenIds);
+
+        // Querying before enrollment block returns address(0).
+        assertEq(
+            module.ownerOfAt(tokenId, blockBeforeEnroll),
+            address(0),
+            "ownerOfAt before enrollment should return address(0)"
+        );
+
+        // Querying at/after enrollment block returns owner.
+        assertEq(module.ownerOfAt(tokenId, block.number), user, "ownerOfAt at enrollment block should return owner");
+    }
+
+    // -------------------------------------------------------------------
+    // Test 15: Transferred tokens still eligible without explicit enrollment
+    // -------------------------------------------------------------------
+    function test_ownerOfAt_worksForTransferredTokens() public {
+        defaultTierConfig.flags.allowOwnerMint = true;
+        defaultTierConfig.reserveFrequency = 0;
+        defaultTierConfig.flags.useVotingUnits = true;
+        defaultTierConfig.votingUnits = 100;
+
+        ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
+
+        address alice = makeAddr("alice");
+        address bob = makeAddr("bob");
+
+        uint16[] memory tiersToMint = new uint16[](1);
+        tiersToMint[0] = 1;
+        vm.prank(owner);
+        tiersHook.mintFor(tiersToMint, alice);
+
+        IJB721Checkpoints module = tiersHook.CHECKPOINTS();
+        uint256 tokenId = _generateTokenId(1, 1);
+
+        // Before transfer — unenrolled, returns address(0).
+        assertEq(module.ownerOfAt(tokenId, block.number), address(0), "Before transfer should return address(0)");
+
+        vm.roll(block.number + 1);
+
+        // Transfer writes a checkpoint via onTransfer (from != address(0)).
+        vm.prank(alice);
+        IERC721(address(tiersHook)).transferFrom(alice, bob, tokenId);
+
+        // After transfer — checkpoint exists, bob is the owner.
+        assertEq(module.ownerOfAt(tokenId, block.number), bob, "After transfer should return bob");
+    }
+
+    // -------------------------------------------------------------------
+    // Test 16: Unauthorized onTransfer reverts
     // -------------------------------------------------------------------
     function test_unauthorizedOnTransfer_reverts() public {
         defaultTierConfig.flags.allowOwnerMint = true;
