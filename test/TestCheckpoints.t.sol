@@ -416,9 +416,7 @@ contract TestCheckpoints is UnitTestSetup {
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = tokenId;
 
-        vm.expectRevert(
-            abi.encodeWithSelector(JB721Checkpoints.JB721Checkpoints_NotOwner.selector, tokenId, attacker)
-        );
+        vm.expectRevert(abi.encodeWithSelector(JB721Checkpoints.JB721Checkpoints_NotOwner.selector, tokenId, attacker));
         vm.prank(attacker);
         module.delegate(attacker, tokenIds);
     }
