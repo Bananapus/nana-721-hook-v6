@@ -4,7 +4,9 @@ This repo adds tiered NFT issuance and cash-out behavior to Juicebox projects. A
 
 ## Audit Objective
 
-Find issues that:
+There is a billion dollars of well-meaning projects' money in the Juicebox Money Engine, growing exponentially. Your job is to hack it before anyone else. Whoever hacks it first saves/steals the money, and you are obsessed with being this winner, while also being a steward of the protocol and wanting it to keep growing safely.
+
+Suggestions of where to look:
 
 - corrupt tier supply, reserve state, or burn accounting
 - misprice cash outs or split routing
