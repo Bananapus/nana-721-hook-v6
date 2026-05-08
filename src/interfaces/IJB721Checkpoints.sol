@@ -14,17 +14,25 @@ interface IJB721Checkpoints is IERC5805 {
     function HOOK() external view returns (address);
 
     /// @notice The owner of an NFT at a past block.
-    /// @dev Mints do not write per-token checkpoint storage. Until a token's first non-mint transfer, ownership is
-    /// inferred from the hook's `firstOwnerOf`.
+    /// @dev Returns `address(0)` for tokens that have never been enrolled (via `delegate(address, uint256[])`) or
+    /// transferred. Unenrolled tokens are ineligible for snapshot-based distribution.
     /// @param tokenId The token ID of the NFT to get the historical owner of.
     /// @param blockNumber The block number to look up.
-    /// @return The owner of the token at `blockNumber`, or zero if the token has no known owner.
+    /// @return The owner of the token at `blockNumber`, or zero if the token is unenrolled or has no known owner.
     function ownerOfAt(uint256 tokenId, uint256 blockNumber) external view returns (address);
 
     /// @notice The store that holds tier and voting data for the hook's NFTs.
     /// @return The store contract.
     // forge-lint: disable-next-line(mixed-case-function)
     function STORE() external view returns (IJB721TiersHookStore);
+
+    /// @notice Delegates voting power and enrolls tokens for distribution eligibility.
+    /// @dev Writes per-token owner checkpoints so `ownerOfAt` can prove ownership at past blocks.
+    /// Only the current token owner can enroll. Tokens without checkpoints are ineligible for snapshot-based
+    /// distribution.
+    /// @param delegatee The address to delegate voting power to. Use your own address for self-delegation.
+    /// @param tokenIds The token IDs to enroll for distribution eligibility.
+    function delegate(address delegatee, uint256[] calldata tokenIds) external;
 
     /// @notice Initializes a cloned module with its hook reference.
     /// @dev Can only be called once. Called by the deployer after cloning.

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
+import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {Votes} from "@openzeppelin/contracts/governance/utils/Votes.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {Checkpoints} from "@openzeppelin/contracts/utils/structs/Checkpoints.sol";
@@ -24,6 +25,7 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     //*********************************************************************//
 
     error JB721Checkpoints_AlreadyInitialized(address hook);
+    error JB721Checkpoints_NotOwner(uint256 tokenId, address caller);
     error JB721Checkpoints_Unauthorized(address caller, address hook);
 
     //*********************************************************************//
@@ -44,7 +46,7 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     // -------------------- internal stored properties ------------------- //
     //*********************************************************************//
 
-    /// @notice Checkpointed token owners for historical reward eligibility after first transfer.
+    /// @notice Checkpointed token owners for historical reward eligibility. Written on enrollment or transfer.
     /// @custom:param tokenId The token ID to get historical owner checkpoints for.
     mapping(uint256 tokenId => Checkpoints.Trace160) internal _ownerCheckpointsOf;
 
@@ -63,6 +65,37 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     //*********************************************************************//
     // ---------------------- external transactions ---------------------- //
     //*********************************************************************//
+
+    /// @notice Delegates voting power and enrolls tokens for distribution eligibility.
+    /// @dev Writes per-token owner checkpoints so `ownerOfAt` can prove ownership at past blocks.
+    /// Only the current token owner can enroll. Tokens without checkpoints are ineligible for snapshot-based
+    /// distribution. The existing `delegate(address)` from OZ Votes still works for pure delegation without enrollment.
+    /// @param delegatee The address to delegate voting power to. Use your own address for self-delegation.
+    /// @param tokenIds The token IDs to enroll for distribution eligibility.
+    function delegate(address delegatee, uint256[] calldata tokenIds) external override {
+        // Delegate voting power (reuses OZ Votes internals).
+        _delegate({account: msg.sender, delegatee: delegatee});
+
+        // Write per-token owner checkpoints for distribution eligibility.
+        for (uint256 i; i < tokenIds.length;) {
+            uint256 tokenId = tokenIds[i];
+
+            // Only the current owner can enroll their tokens.
+            if (IERC721(HOOK).ownerOf(tokenId) != msg.sender) {
+                revert JB721Checkpoints_NotOwner({tokenId: tokenId, caller: msg.sender});
+            }
+
+            // Write an owner checkpoint if the token has none yet.
+            if (_ownerCheckpointsOf[tokenId].length() == 0) {
+                // forge-lint: disable-next-line(unsafe-typecast)
+                _ownerCheckpointsOf[tokenId].push({key: uint96(block.number), value: uint160(msg.sender)});
+            }
+
+            unchecked {
+                ++i;
+            }
+        }
+    }
 
     /// @notice Initializes a cloned module with its hook reference.
     /// @dev Can only be called once. Called by the deployer after cloning.
@@ -98,11 +131,11 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     //*********************************************************************//
 
     /// @notice The owner of an NFT at a past block.
-    /// @dev Mints do not write per-token checkpoint storage. Until a token's first non-mint transfer, ownership is
-    /// inferred from the hook's `firstOwnerOf`.
+    /// @dev Returns `address(0)` for tokens that have never been enrolled (via `delegate(address, uint256[])`) or
+    /// transferred. Unenrolled tokens are ineligible for snapshot-based distribution.
     /// @param tokenId The token ID of the NFT to get the historical owner of.
     /// @param blockNumber The block number to look up.
-    /// @return The owner of the token at `blockNumber`, or zero if the token has no known owner.
+    /// @return The owner of the token at `blockNumber`, or zero if the token is unenrolled or has no known owner.
     function ownerOfAt(uint256 tokenId, uint256 blockNumber) external view override returns (address) {
         // forge-lint: disable-next-line(unsafe-typecast)
         uint96 blockNumber96 = uint96(blockNumber);
@@ -110,10 +143,11 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
         Checkpoints.Trace160 storage checkpoints = _ownerCheckpointsOf[tokenId];
         uint256 checkpointCount = checkpoints.length();
 
-        // Before the first transfer/burn checkpoint, the mint owner is implicit in the hook's first-owner tracking.
-        if (checkpointCount == 0 || checkpoints.at(0)._key > blockNumber96) {
-            return IJB721TiersHook(HOOK).firstOwnerOf(tokenId);
-        }
+        // No checkpoints = not enrolled and never transferred. Not eligible.
+        if (checkpointCount == 0) return address(0);
+
+        // Query is before the first checkpoint — token not yet enrolled/transferred at this block.
+        if (checkpoints.at(0)._key > blockNumber96) return address(0);
 
         return address(uint160(checkpoints.upperLookupRecent(blockNumber96)));
     }
