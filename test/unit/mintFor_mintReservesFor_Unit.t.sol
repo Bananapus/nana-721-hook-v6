@@ -267,7 +267,7 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
                             allowAddPriceFeed: false,
                             ownerMustSendPayouts: false,
                             holdFees: false,
-                            useTotalSurplusForCashOuts: false,
+                            scopeCashOutsToLocalBalances: true,
                             useDataHookForPay: true,
                             useDataHookForCashOut: true,
                             dataHook: address(0),
