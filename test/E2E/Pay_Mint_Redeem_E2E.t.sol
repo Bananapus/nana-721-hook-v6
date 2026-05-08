@@ -853,7 +853,7 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
             allowAddAccountingContext: false,
             allowAddPriceFeed: false,
             holdFees: false,
-            useTotalSurplusForCashOuts: false,
+            scopeCashOutsToLocalBalances: true,
             useDataHookForCashOut: true,
             metadata: 0x00
         });
@@ -948,7 +948,7 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
             allowAddAccountingContext: false,
             allowAddPriceFeed: false,
             holdFees: false,
-            useTotalSurplusForCashOuts: false,
+            scopeCashOutsToLocalBalances: true,
             useDataHookForCashOut: true,
             metadata: 0x00
         });

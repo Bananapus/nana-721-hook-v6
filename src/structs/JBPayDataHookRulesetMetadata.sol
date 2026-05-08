@@ -22,8 +22,8 @@ pragma solidity ^0.8.0;
 /// @custom:member allowAddPriceFeed A flag indicating if a project can add new price feeds to calculate exchange rates
 /// between its tokens.
 /// @custom:member holdFees A flag indicating if fees should be held during this ruleset.
-/// @custom:member useTotalSurplusForCashOut A flag indicating if cash outs should use the project's balance held
-/// in all terminals instead of the project's local terminal balance from which the cash out is fulfilled.
+/// @custom:member scopeCashOutsToLocalBalances A flag indicating if omnichain cash-out calculations should use only
+/// the local chain's terminal balance instead of the project's balance held in all terminals.
 /// @custom:member useDataHookForCashOuts A flag indicating if the data hook should be used for cash out transactions
 /// during
 /// this ruleset.
@@ -43,7 +43,7 @@ struct JBPayDataHookRulesetMetadata {
     bool allowAddPriceFeed;
     bool ownerMustSendPayouts;
     bool holdFees;
-    bool useTotalSurplusForCashOuts;
+    bool scopeCashOutsToLocalBalances;
     bool useDataHookForCashOut;
     uint16 metadata;
 }

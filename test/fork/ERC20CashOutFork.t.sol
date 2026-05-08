@@ -283,7 +283,7 @@ contract ERC20CashOutFork is Test {
             allowAddPriceFeed: false,
             ownerMustSendPayouts: false,
             holdFees: false,
-            useTotalSurplusForCashOuts: false,
+            scopeCashOutsToLocalBalances: true,
             useDataHookForCashOut: true,
             metadata: 0x00
         });

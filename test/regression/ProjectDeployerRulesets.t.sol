@@ -208,7 +208,7 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
             allowAddAccountingContext: false,
             allowAddPriceFeed: false,
             holdFees: false,
-            useTotalSurplusForCashOuts: false,
+            scopeCashOutsToLocalBalances: true,
             useDataHookForCashOut: false,
             metadata: 0x00
         });

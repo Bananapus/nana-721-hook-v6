@@ -65,7 +65,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
                 surplus: JBTokenAmount({
                     token: address(0), value: SURPLUS, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }),
-                useTotalSurplus: true,
+                scopeCashOutsToLocalBalances: false,
                 cashOutTaxRate: CASH_OUT_TAX_RATE,
                 beneficiaryIsFeeless: false,
                 metadata: hookMetadata
@@ -129,7 +129,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
                 surplus: JBTokenAmount({
                     token: address(0), value: surplus, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }),
-                useTotalSurplus: true,
+                scopeCashOutsToLocalBalances: false,
                 cashOutTaxRate: cashOutTaxRate,
                 beneficiaryIsFeeless: false,
                 metadata: abi.encode(bytes32(0), type(IJB721TiersHook).interfaceId, tokenList)
@@ -200,7 +200,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
             surplus: JBTokenAmount({
                 token: address(0), value: SURPLUS, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
             }),
-            useTotalSurplus: true,
+            scopeCashOutsToLocalBalances: false,
             cashOutTaxRate: JBConstants.MAX_CASH_OUT_TAX_RATE,
             beneficiaryIsFeeless: false,
             metadata: hookMetadata
@@ -232,7 +232,7 @@ contract Test_cashOut_Unit is UnitTestSetup {
                 surplus: JBTokenAmount({
                     token: address(0), value: 100, decimals: 18, currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }),
-                useTotalSurplus: true,
+                scopeCashOutsToLocalBalances: false,
                 cashOutTaxRate: 100,
                 beneficiaryIsFeeless: false,
                 metadata: new bytes(0)

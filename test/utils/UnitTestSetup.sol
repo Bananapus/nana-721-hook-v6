@@ -223,7 +223,7 @@ contract UnitTestSetup is Test {
                             allowAddPriceFeed: false,
                             ownerMustSendPayouts: false,
                             holdFees: false,
-                            useTotalSurplusForCashOuts: false,
+                            scopeCashOutsToLocalBalances: true,
                             useDataHookForPay: true,
                             useDataHookForCashOut: true,
                             dataHook: address(0),
@@ -772,7 +772,7 @@ contract UnitTestSetup is Test {
             allowAddAccountingContext: false,
             allowAddPriceFeed: false,
             holdFees: false,
-            useTotalSurplusForCashOuts: false,
+            scopeCashOutsToLocalBalances: true,
             useDataHookForCashOut: false,
             metadata: 0x00
         });
