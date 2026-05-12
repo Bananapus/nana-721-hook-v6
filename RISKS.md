@@ -32,7 +32,7 @@ This file covers the tiered-NFT accounting, reserve-mint, and cash-out risks in 
 - **Pay credits can accumulate without a cap.**
 - **Zero-price tiers are valid.**
 - **Discount math uses a denominator of 200, not 10,000.**
-- **Currency mismatch can silently skip minting when no prices contract is configured.**
+- **Currency mismatch skips minting when no prices contract is configured.** Funds land in project balance; see §8.3.
 - **`splitPercent` can reduce fungible-token minting weight.**
 - **Reserve minting is permissionless.**
 
@@ -93,9 +93,16 @@ This is intentional. Including pending reserves in the denominator prevents rese
 
 This is intentional. The cash-out weight represents treasury share, not purchase price.
 
-### 8.3 Currency mismatch can skip minting when no prices surface exists
+### 8.3 Unsupported-currency payments are accepted as project balance and skip NFT minting
 
-If currencies differ and `PRICES == address(0)`, payments can increase project balance without minting NFTs. That is an accepted degradation rather than a revert path.
+When a payment currency differs from the tier pricing currency and `PRICES == address(0)`, `JB721TiersHookLib.normalizePaymentValue` returns `valid = false` and `JB721TiersHook._processPayment` returns early — no NFT is minted, no credits accrue, no splits are forwarded, and the terminal keeps the payment in the project's balance.
+
+This is intentional, not fail-open, for two reasons:
+
+1. **Acceptance is opt-in by the project owner.** The terminal only finalizes the payment if the owner has explicitly added the currency to the terminal's accounting contexts via `addAccountingContextsFor`. The owner is saying "this project accepts funds in this currency." The 721 hook's job is to mint NFTs against payments it can price; the project's job is to receive funds in currencies it has opted into. These are decoupled by design.
+2. **Reverting would be less reversible than the current behavior.** Letting payments land at the project preserves donation-style flows (project keeps the funds and can refund manually if it wants). A revert would kill those flows globally, including legitimate cases like accepting a currency before its price feed is wired.
+
+Frontends and integrators should warn payers when they are about to pay in a currency the hook cannot price into tier units. Project owners who want NFT-bearing payments to fail atomically should either remove unsupported currencies from their terminal's accounting contexts or configure `PRICES` for all supported pairs.
 
 ### 8.4 Tiny split allocations can round down to zero
 
