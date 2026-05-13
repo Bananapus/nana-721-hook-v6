@@ -10,7 +10,9 @@ import {IJBSplitHook} from "@bananapus/core-v6/src/interfaces/IJBSplitHook.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {JBConstants} from "@bananapus/core-v6/src/libraries/JBConstants.sol";
 
 /// @notice A mock split hook that records calls and accepts ETH/ERC20.
 contract MockSplitHook is IJBSplitHook {
@@ -30,6 +32,11 @@ contract MockSplitHook is IJBSplitHook {
         lastGroupId = context.groupId;
         lastSplit = context.split;
         callCount++;
+        // For ERC20 splits the caller approves us — pull the tokens via transferFrom so the test mock
+        // mirrors a real, well-behaved split hook. Native ETH arrives via `value:` and needs no action.
+        if (context.token != JBConstants.NATIVE_TOKEN) {
+            IERC20(context.token).transferFrom(msg.sender, address(this), context.amount);
+        }
     }
 
     function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {

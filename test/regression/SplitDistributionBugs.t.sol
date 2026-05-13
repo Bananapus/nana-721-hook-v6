@@ -15,7 +15,9 @@ import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 import {IJBTerminal} from "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {JBConstants} from "@bananapus/core-v6/src/libraries/JBConstants.sol";
 
 /// @notice Regression tests for split distribution bugs in JB721TiersHookLib.
 contract Test_SplitDistributionBugs is UnitTestSetup {
@@ -476,10 +478,11 @@ contract Test_SplitDistributionBugs is UnitTestSetup {
     // Reverting split hook (ERC-20) should not brick payments
     // ──────────────────────────────────────────────────────────────────────
 
-    /// @notice A reverting ERC-20 split hook should NOT block the payment. Tokens are transferred
-    /// via safeTransfer BEFORE the callback, so the function must return true regardless of
-    /// callback success. The hook receives the tokens even though its callback reverted.
-    function test_revertingSplitHook_erc20_tokensTransferredCallbackIgnored() public {
+    /// @notice A reverting ERC-20 split hook must NOT strand tokens. The library grants the hook an
+    /// allowance, calls its callback inside try/catch, then revokes the remaining allowance. If the hook
+    /// reverts (or simply does not pull), the un-consumed portion stays in the hook contract and routes
+    /// to the project's balance via `addToBalanceOf`.
+    function test_revertingSplitHook_erc20_routesToProjectBalance() public {
         MintableERC20 usdc = new MintableERC20("USD Coin", "USDC", 6);
         uint32 usdcCurrency = uint32(uint160(address(usdc)));
 
@@ -525,14 +528,106 @@ contract Test_SplitDistributionBugs is UnitTestSetup {
         vm.prank(mockTerminalAddress);
         usdc.approve(address(testHook), 100e6);
 
-        // Expect the SplitPayoutReverted event (emitted even though tokens were transferred).
+        // Mock primaryTerminalOf for the hook's own project so leftover routes via addToBalanceOf.
+        address projectTerminal = makeAddr("projectTerminal_erc20");
+        vm.etch(projectTerminal, new bytes(0x69));
+        mockAndExpect(
+            address(mockJBDirectory),
+            abi.encodeWithSelector(IJBDirectory.primaryTerminalOf.selector, projectId, address(usdc)),
+            abi.encode(projectTerminal)
+        );
+        vm.expectCall(
+            projectTerminal,
+            abi.encodeWithSelector(IJBTerminal.addToBalanceOf.selector, projectId, address(usdc), 100e6, false, "", "")
+        );
+        vm.mockCall(projectTerminal, abi.encodeWithSelector(IJBTerminal.addToBalanceOf.selector), abi.encode());
+
+        // Expect the SplitPayoutReverted event.
         vm.expectEmit(true, false, false, false);
         emit IJB721TiersHook.SplitPayoutReverted(projectId, splits[0], 100e6, "", mockTerminalAddress);
 
         vm.prank(mockTerminalAddress);
         testHook.afterPayRecordedWith(payContext);
 
-        assertEq(usdc.balanceOf(address(revertingHook)), 100e6, "Hook should receive ERC20 despite callback revert");
+        // The reverting hook must NOT receive tokens — it never pulled the allowance.
+        assertEq(usdc.balanceOf(address(revertingHook)), 0, "Reverting hook must not receive tokens");
+        // The allowance must be revoked so the hook cannot pull later.
+        assertEq(usdc.allowance(address(testHook), address(revertingHook)), 0, "Allowance must be revoked after revert");
+    }
+
+    /// @notice When an ERC-20 split hook pulls only part of its allowance and returns successfully, the hook keeps
+    /// what it took, the un-pulled remainder stays in the library, and the library routes that remainder to the
+    /// project's balance via `addToBalanceOf`. The user's payment does NOT revert — the hook simply gets less than
+    /// it was offered.
+    function test_partialPullSplitHook_erc20_remainderRoutesToProjectBalance() public {
+        MintableERC20 usdc = new MintableERC20("USD Coin", "USDC", 6);
+        uint32 usdcCurrency = uint32(uint160(address(usdc)));
+
+        JB721TiersHook testHook = _initHookDefaultTiers(0, false, usdcCurrency, 6);
+
+        JB721TierConfig[] memory tierConfigs = new JB721TierConfig[](1);
+        tierConfigs[0].price = 100e6;
+        tierConfigs[0].initialSupply = uint32(100);
+        tierConfigs[0].category = uint24(1);
+        tierConfigs[0].encodedIPFSUri = bytes32(uint256(0x1234));
+        tierConfigs[0].splitPercent = 1_000_000_000; // 100% to the split hook
+
+        vm.prank(address(testHook));
+        uint256[] memory tierIds = testHook.STORE().recordAddTiers(tierConfigs);
+
+        mockAndExpect(
+            address(mockJBDirectory),
+            abi.encodeWithSelector(IJBDirectory.isTerminalOf.selector, projectId, mockTerminalAddress),
+            abi.encode(true)
+        );
+
+        PartialPullSplitHook partialHook = new PartialPullSplitHook();
+
+        JBSplit[] memory splits = new JBSplit[](1);
+        splits[0] = JBSplit({
+            percent: uint32(JBConstants.SPLITS_TOTAL_PERCENT),
+            projectId: 0,
+            beneficiary: payable(address(0)),
+            preferAddToBalance: false,
+            lockedUntil: 0,
+            hook: IJBSplitHook(address(partialHook))
+        });
+
+        uint256 groupId = uint256(uint160(address(testHook))) | (uint256(tierIds[0]) << 160);
+        mockAndExpect(
+            mockJBSplits, abi.encodeWithSelector(IJBSplits.splitsOf.selector, projectId, 0, groupId), abi.encode(splits)
+        );
+
+        JBAfterPayRecordedContext memory payContext =
+            _buildErc20PayContext(address(testHook), address(usdc), usdcCurrency, 6, tierIds, 100e6);
+
+        usdc.mint(mockTerminalAddress, 100e6);
+        vm.prank(mockTerminalAddress);
+        usdc.approve(address(testHook), 100e6);
+
+        // The library must call addToBalanceOf with exactly the 50e6 that the hook did NOT pull.
+        address projectTerminal = makeAddr("projectTerminal_partialPull");
+        vm.etch(projectTerminal, new bytes(0x69));
+        mockAndExpect(
+            address(mockJBDirectory),
+            abi.encodeWithSelector(IJBDirectory.primaryTerminalOf.selector, projectId, address(usdc)),
+            abi.encode(projectTerminal)
+        );
+        vm.expectCall(
+            projectTerminal,
+            abi.encodeWithSelector(IJBTerminal.addToBalanceOf.selector, projectId, address(usdc), 50e6, false, "", "")
+        );
+        vm.mockCall(projectTerminal, abi.encodeWithSelector(IJBTerminal.addToBalanceOf.selector), abi.encode());
+
+        vm.prank(mockTerminalAddress);
+        testHook.afterPayRecordedWith(payContext);
+
+        // Hook kept exactly half of its allowance.
+        assertEq(usdc.balanceOf(address(partialHook)), 50e6, "Partial-pull hook keeps the amount it pulled");
+        // Allowance was revoked, so the hook cannot pull the remaining 50e6 in a later tx.
+        assertEq(
+            usdc.allowance(address(testHook), address(partialHook)), 0, "Allowance must be revoked after partial pull"
+        );
     }
 
     /// @notice Helper to build an ERC-20 afterPay context (reduces stack depth).
@@ -726,6 +821,19 @@ contract RevertOnReceive {
 contract RevertingSplitHook is IJBSplitHook {
     function processSplitWith(JBSplitHookContext calldata) external payable override {
         revert("I always revert");
+    }
+
+    function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {
+        return interfaceId == type(IJBSplitHook).interfaceId || interfaceId == type(IERC165).interfaceId;
+    }
+}
+
+/// @notice A split hook that pulls only half of its ERC-20 allowance and returns successfully.
+contract PartialPullSplitHook is IJBSplitHook {
+    function processSplitWith(JBSplitHookContext calldata context) external payable override {
+        if (context.token != JBConstants.NATIVE_TOKEN) {
+            IERC20(context.token).transferFrom(msg.sender, address(this), context.amount / 2);
+        }
     }
 
     function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {

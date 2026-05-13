@@ -691,12 +691,19 @@ library JB721TiersHookLib {
     //*********************************************************************//
 
     /// @notice Distributes funds for a single tier's split group.
-    /// @dev Edge case: if both `_sendPayoutToSplit` returns false (reverting hook/terminal/beneficiary) AND the
-    /// subsequent `addToBalanceOf` call also reverts for the leftover amount, native ETH will remain stranded in the
-    /// hook contract with no recovery path. This requires two independent external call failures for the same split
-    /// payout and is a pre-existing documented edge case. ERC-20 tokens are not affected because failed
-    /// `addToBalanceOf` calls reset the approval. ERC-20 tokens remain in the hook contract. There is no built-in
-    /// recovery mechanism.
+    /// @dev `_sendPayoutToSplit` returns the actual amount that left this contract — `payoutAmount` on full
+    /// success, `0` when the split fully fails (revert or missing recipient), or a partial value when an ERC-20
+    /// split hook pulled some but not all of its allowance. The unsent portion accumulates into `amount` and is
+    /// routed to the project's primary terminal via `addToBalanceOf` after the loop. If that fallback also
+    /// reverts and the token is native ETH, the unsent ETH is stuck in this contract with no recovery path.
+    /// For ERC-20 the approval is reset on `addToBalanceOf` failure so the terminal cannot pull later.
+    /// @param directory The directory used to resolve the primary terminal for the leftover fallback.
+    /// @param splitsContract The splits contract used to look up the tier's split group.
+    /// @param projectId The project ID whose primary terminal receives the leftover.
+    /// @param token The token being distributed. Use `JBConstants.NATIVE_TOKEN` for ETH.
+    /// @param groupId The split group ID identifying the tier whose splits to read.
+    /// @param amount The total amount available to distribute across the tier's splits.
+    /// @param decimals The decimals of `token`, forwarded into each split hook context.
     function _distributeSingleSplit(
         IJBDirectory directory,
         IJBSplits splitsContract,
@@ -722,23 +729,22 @@ library JB721TiersHookLib {
                 unchecked {
                     leftoverAmount -= payoutAmount;
                 }
-                // On failure, don't re-add to leftoverAmount — this prevents inflating later recipients.
-                // Failed amounts accumulate as the gap between `amount` and `leftoverAmount + total sent`.
-                // After the loop, we re-add leftoverPercentage-based residual naturally.
-                if (!_sendPayoutToSplit({
-                        directory: directory,
-                        split: tierSplits[j],
-                        token: token,
-                        amount: payoutAmount,
-                        projectId: projectId,
-                        groupId: groupId,
-                        decimals: decimals
-                    })) {
-                    // Payout failed — route to project balance by returning to leftover after the loop.
-                    // We add back to `amount` (parameter, no longer used for its original purpose).
-                    unchecked {
-                        amount += payoutAmount;
-                    }
+                // `_sendPayoutToSplit` returns the actual amount that left this contract (0 on full failure,
+                // a partial value when a split hook pulled some but not all of its allowance, or `payoutAmount`
+                // on full success). Add the unsent portion to `amount` so it routes to the project's balance
+                // after the loop. The subtraction is safe — the function invariantly returns at most
+                // `payoutAmount` (allowance bounded for ERC-20, value bounded for ETH, else all-or-nothing).
+                unchecked {
+                    amount += payoutAmount
+                        - _sendPayoutToSplit({
+                            directory: directory,
+                            split: tierSplits[j],
+                            token: token,
+                            amount: payoutAmount,
+                            projectId: projectId,
+                            groupId: groupId,
+                            decimals: decimals
+                        });
                 }
             }
             unchecked {
@@ -793,9 +799,22 @@ library JB721TiersHookLib {
         }
     }
 
-    /// @notice Sends a payout to a split recipient.
-    /// @return sent Whether the funds were actually sent. Returns false if the split has no valid recipient
-    /// (no hook, no projectId, and no beneficiary), so the caller can route the funds elsewhere.
+    /// @notice Sends a payout to a single split recipient.
+    /// @dev Recipient resolution order: (1) `split.hook` if set; (2) `split.projectId` (uses
+    /// `split.preferAddToBalance` to choose between `addToBalanceOf` and `pay` on the primary terminal);
+    /// (3) `split.beneficiary` for a direct transfer. All-or-nothing for terminal and beneficiary paths;
+    /// the split-hook path supports partial pulls via allowance for ERC-20 and balance-delta for ETH.
+    /// @param directory The directory used to resolve the primary terminal when the split targets a project.
+    /// @param split The split definition (recipient + percent + flags).
+    /// @param token The token being distributed. Use `JBConstants.NATIVE_TOKEN` for ETH.
+    /// @param amount The amount to send to this recipient.
+    /// @param projectId The project ID emitting the payout (used in events and the hook context).
+    /// @param groupId The split group ID forwarded into the split hook context.
+    /// @param decimals The decimals of `token`, forwarded into the split hook context.
+    /// @return sent The amount that actually left this contract. Equals `amount` on a fully successful payout,
+    /// `0` on full failure (revert, missing recipient, transfer rejected), and a partial value when a split
+    /// hook pulled some but not all of its ERC-20 allowance (or returned some native ETH back to this
+    /// contract). The caller routes `amount - sent` to the project's leftover balance.
     function _sendPayoutToSplit(
         IJBDirectory directory,
         JBSplit memory split,
@@ -806,7 +825,7 @@ library JB721TiersHookLib {
         uint256 decimals
     )
         private
-        returns (bool sent)
+        returns (uint256 sent)
     {
         bool isNativeToken = token == JBConstants.NATIVE_TOKEN;
 
@@ -817,36 +836,47 @@ library JB721TiersHookLib {
             });
 
             if (isNativeToken) {
-                // Wrap in try-catch so a reverting hook doesn't brick all project payments.
-                // On revert, ETH stays with the caller and we return false.
-                try split.hook.processSplitWith{value: amount}(context) {
-                    return true;
-                } catch (bytes memory reason) {
+                // ETH is pushed via `{value: amount}`. On revert, the value transfer is rolled back along with
+                // the hook's frame so ETH stays here (balance unchanged → return 0). On success the hook usually
+                // keeps the full amount, but if it sends some ETH back via low-level call the balance-delta
+                // reports the actual amount that left this contract — the unsent portion routes to the project.
+                uint256 ethBefore = address(this).balance;
+                try split.hook.processSplitWith{value: amount}(context) {}
+                catch (bytes memory reason) {
                     emit SplitPayoutReverted({
                         projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
                     });
-                    return false;
                 }
+                return ethBefore - address(this).balance;
             } else {
-                // ERC20: transfer tokens first, then call the hook callback.
-                // We must return true regardless of whether the callback reverts because the
-                // tokens have already left this contract via safeTransfer. Returning false would
-                // cause the caller to skip subtracting this amount from leftoverAmount, leading
-                // to a double-spend when the leftover is later sent to the project's balance.
-                SafeERC20.safeTransfer({token: IERC20(token), to: address(split.hook), value: amount});
+                // ERC20: grant the hook an allowance, then call the hook callback. The hook pulls tokens via
+                // `transferFrom` from inside `processSplitWith`. After the call we revoke any unconsumed
+                // allowance and report the actual amount pulled via balance-delta. Mirrors the controller's
+                // allowance pattern for reserved-token splits.
+                //
+                // Three outcomes:
+                //   - Hook reverts (catch): balance unchanged → return 0. Caller routes the full `amount` to
+                //     the project's balance.
+                //   - Hook pulls partial `X < amount` and returns successfully: balance dropped by `X` →
+                //     return `X`. Caller routes `amount - X` to the project's balance. The hook keeps `X`.
+                //   - Hook pulls the full amount: return `amount`. Caller treats the split as fully distributed.
+                uint256 balanceBefore = IERC20(token).balanceOf(address(this));
+                SafeERC20.forceApprove({token: IERC20(token), spender: address(split.hook), value: amount});
                 try split.hook.processSplitWith(context) {}
                 catch (bytes memory reason) {
                     emit SplitPayoutReverted({
                         projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
                     });
                 }
-                return true;
+                SafeERC20.forceApprove({token: IERC20(token), spender: address(split.hook), value: 0});
+                return balanceBefore - IERC20(token).balanceOf(address(this));
             }
         } else if (split.projectId != 0) {
             IJBTerminal terminal = directory.primaryTerminalOf({projectId: split.projectId, token: token});
-            if (address(terminal) == address(0)) return false;
+            if (address(terminal) == address(0)) return 0;
 
-            // Wrap terminal calls in try-catch to prevent a failing terminal from bricking payments.
+            // Terminal calls are all-or-nothing: the terminal pulls the full amount or the call reverts.
+            // Wrap in try-catch so a failing terminal does not brick the whole payment.
             if (split.preferAddToBalance) {
                 if (isNativeToken) {
                     try terminal.addToBalanceOf{value: amount}({
@@ -857,12 +887,12 @@ library JB721TiersHookLib {
                         memo: "",
                         metadata: bytes("")
                     }) {
-                        return true;
+                        return amount;
                     } catch (bytes memory reason) {
                         emit SplitPayoutReverted({
                             projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
                         });
-                        return false;
+                        return 0;
                     }
                 } else {
                     SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: amount});
@@ -874,14 +904,14 @@ library JB721TiersHookLib {
                         memo: "",
                         metadata: bytes("")
                     }) {
-                        return true;
+                        return amount;
                     } catch (bytes memory reason) {
                         // Reset approval on failure so tokens aren't left approved to the terminal.
                         SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
                         emit SplitPayoutReverted({
                             projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
                         });
-                        return false;
+                        return 0;
                     }
                 }
             } else {
@@ -895,12 +925,12 @@ library JB721TiersHookLib {
                         memo: "",
                         metadata: bytes("")
                     }) {
-                        return true;
+                        return amount;
                     } catch (bytes memory reason) {
                         emit SplitPayoutReverted({
                             projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
                         });
-                        return false;
+                        return 0;
                     }
                 } else {
                     SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: amount});
@@ -913,37 +943,45 @@ library JB721TiersHookLib {
                         memo: "",
                         metadata: bytes("")
                     }) {
-                        return true;
+                        return amount;
                     } catch (bytes memory reason) {
                         // Reset approval on failure so tokens aren't left approved to the terminal.
                         SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
                         emit SplitPayoutReverted({
                             projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
                         });
-                        return false;
+                        return 0;
                     }
                 }
             }
         } else if (split.beneficiary != address(0)) {
             if (isNativeToken) {
                 (bool success,) = split.beneficiary.call{value: amount}("");
-                if (!success) return false;
+                if (!success) return 0;
             } else {
                 // Use the same low-level call + returndata check as SafeERC20.safeTransfer, but return
-                // false on failure instead of reverting. This handles non-standard tokens (e.g. USDT)
+                // 0 on failure instead of reverting. This handles non-standard tokens (e.g. USDT)
                 // that return void, while routing failed transfers to the project's balance instead
                 // of bricking all payments.
                 (bool callSuccess, bytes memory returndata) =
                     address(token).call(abi.encodeCall(IERC20.transfer, (split.beneficiary, amount)));
-                if (!callSuccess || (returndata.length != 0 && !abi.decode(returndata, (bool)))) return false;
+                if (!callSuccess || (returndata.length != 0 && !abi.decode(returndata, (bool)))) return 0;
             }
-            return true;
+            return amount;
         }
-        // No projectId and no beneficiary — return false so the funds go to the project's balance.
-        return false;
+        // No projectId and no beneficiary — return 0 so the funds go to the project's balance.
+        return 0;
     }
 
     /// @notice Sets split groups in JBSplits for tiers that have splits configured.
+    /// @dev Walks `tiersToAdd` in parallel with `tierIdsAdded`. Tiers with an empty `splits` array are skipped,
+    /// so only tiers that opt into split distribution allocate a group. The group ID is packed as
+    /// `hookAddress | (tierId << 160)` so each tier owns a distinct group within the hook's namespace.
+    /// @param splits The splits contract that stores the per-tier groups.
+    /// @param projectId The project ID owning the splits.
+    /// @param hookAddress The 721 hook address; forms the low 160 bits of each group ID.
+    /// @param tiersToAdd The tier configurations being recorded; each may carry its own `splits` array.
+    /// @param tierIdsAdded The tier IDs assigned at recording time, in the same order as `tiersToAdd`.
     function _setSplitGroupsFor(
         IJBSplits splits,
         uint256 projectId,
