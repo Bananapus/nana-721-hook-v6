@@ -209,6 +209,7 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
             allowAddPriceFeed: false,
             holdFees: false,
             scopeCashOutsToLocalBalances: true,
+            pauseCrossProjectFeeFreeInflows: false,
             useDataHookForCashOut: false,
             metadata: 0x00
         });

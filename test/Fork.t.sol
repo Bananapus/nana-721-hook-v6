@@ -302,6 +302,7 @@ contract Fork_721Hook_Test is Test {
             ownerMustSendPayouts: false,
             holdFees: false,
             scopeCashOutsToLocalBalances: true,
+            pauseCrossProjectFeeFreeInflows: false,
             useDataHookForCashOut: useDataHookForCashOut,
             metadata: metadata721
         });
@@ -2282,6 +2283,7 @@ contract Fork_721Hook_Test is Test {
             ownerMustSendPayouts: false,
             holdFees: false,
             scopeCashOutsToLocalBalances: true,
+            pauseCrossProjectFeeFreeInflows: false,
             useDataHookForPay: false,
             useDataHookForCashOut: false,
             dataHook: address(0),
