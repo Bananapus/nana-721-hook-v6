@@ -224,6 +224,7 @@ contract UnitTestSetup is Test {
                             ownerMustSendPayouts: false,
                             holdFees: false,
                             scopeCashOutsToLocalBalances: true,
+                            pauseCrossProjectFeeFreeInflows: false,
                             useDataHookForPay: true,
                             useDataHookForCashOut: true,
                             dataHook: address(0),
@@ -773,6 +774,7 @@ contract UnitTestSetup is Test {
             allowAddPriceFeed: false,
             holdFees: false,
             scopeCashOutsToLocalBalances: true,
+            pauseCrossProjectFeeFreeInflows: false,
             useDataHookForCashOut: false,
             metadata: 0x00
         });

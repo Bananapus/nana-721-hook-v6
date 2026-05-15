@@ -12,6 +12,15 @@ This file describes the verified change from `nana-721-hook-v5` to the current `
 - `JB721TiersHookProjectDeployer`
 - `JB721TiersHookLib`
 
+## 0.0.50 — Bump nana-core-v6 to 0.0.53
+
+`@bananapus/core-v6@0.0.53` ([nana-core-v6 PR #145](https://github.com/Bananapus/nana-core-v6/pull/145)) drops the `via_ir` requirement on `JBCashOutHookSpecsLib`, which lets this package consume the cross-project cashout work (`payAfterCashOutTokensOf` / `addToBalanceAfterCashOutTokensOf`) without needing `via_ir = true` in its own foundry profile. `JB721TiersHookStore.tiersOf` is not via-ir-tolerant under solc 0.8.28 (its category loop trips the Yul stack ceiling), so this dep release is what makes the bump possible at all.
+
+- `JBPayDataHookRulesetMetadata` mirrors the new core `pauseCrossProjectFeeFreeInflows` field (bit 80 in the packed metadata word). Forwarded into the canonical `JBRulesetMetadata` at the three call sites in `JB721TiersHookProjectDeployer` (`_launchProjectFor`, `_launchRulesetsFor`, `_queueRulesetsFor`).
+- All `JBRulesetMetadata` test literals patched to include `pauseCrossProjectFeeFreeInflows: false`.
+
+`package.json`: version `0.0.49 → 0.0.50`, core dep `^0.0.48 → ^0.0.53`.
+
 ## Summary
 
 - v6 adds tier-level split routing. `JB721TierConfig` and the surrounding minting logic now support `splitPercent` and `splits`.

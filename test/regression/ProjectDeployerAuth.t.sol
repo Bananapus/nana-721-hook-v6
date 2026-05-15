@@ -231,6 +231,7 @@ contract Test_ProjectDeployerAuth is UnitTestSetup {
             allowAddPriceFeed: false,
             holdFees: false,
             scopeCashOutsToLocalBalances: true,
+            pauseCrossProjectFeeFreeInflows: false,
             useDataHookForCashOut: false,
             metadata: 0x00
         });
