@@ -24,8 +24,6 @@ pragma solidity ^0.8.0;
 /// @custom:member holdFees A flag indicating if fees should be held during this ruleset.
 /// @custom:member scopeCashOutsToLocalBalances A flag indicating if omnichain cash-out calculations should use only
 /// the local chain's terminal balance instead of the project's balance held in all terminals.
-/// @custom:member pauseCrossProjectFeeFreeInflows If `true`, the project cannot be targeted by
-/// `payAfterCashOutTokensOf` / `addToBalanceAfterCashOutTokensOf` calls during this ruleset.
 /// @custom:member useDataHookForCashOuts A flag indicating if the data hook should be used for cash out transactions
 /// during
 /// this ruleset.
@@ -46,7 +44,6 @@ struct JBPayDataHookRulesetMetadata {
     bool ownerMustSendPayouts;
     bool holdFees;
     bool scopeCashOutsToLocalBalances;
-    bool pauseCrossProjectFeeFreeInflows;
     bool useDataHookForCashOut;
     uint16 metadata;
 }

@@ -263,7 +263,6 @@ contract ERC20TierSplitFork is Test {
             ownerMustSendPayouts: false,
             holdFees: false,
             scopeCashOutsToLocalBalances: true,
-            pauseCrossProjectFeeFreeInflows: false,
             useDataHookForCashOut: false,
             metadata: 0x00
         });
@@ -337,7 +336,6 @@ contract ERC20TierSplitFork is Test {
             ownerMustSendPayouts: false,
             holdFees: false,
             scopeCashOutsToLocalBalances: true,
-            pauseCrossProjectFeeFreeInflows: false,
             useDataHookForCashOut: false,
             metadata: 0x00
         });

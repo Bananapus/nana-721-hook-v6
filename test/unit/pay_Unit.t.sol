@@ -1353,7 +1353,6 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                             ownerMustSendPayouts: false,
                             holdFees: false,
                             scopeCashOutsToLocalBalances: true,
-                            pauseCrossProjectFeeFreeInflows: false,
                             useDataHookForPay: true,
                             useDataHookForCashOut: true,
                             dataHook: address(hook),
