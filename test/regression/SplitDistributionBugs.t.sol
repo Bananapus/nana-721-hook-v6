@@ -528,19 +528,18 @@ contract Test_SplitDistributionBugs is UnitTestSetup {
         vm.prank(mockTerminalAddress);
         usdc.approve(address(testHook), 100e6);
 
-        // Mock primaryTerminalOf for the hook's own project so leftover routes via addToBalanceOf.
-        address projectTerminal = makeAddr("projectTerminal_erc20");
-        vm.etch(projectTerminal, new bytes(0x69));
+        // Pulling project terminal: the allowance-delta gate requires the leftover terminal to
+        // actually consume the granted allowance, so use a real pulling mock rather than a vm.mockCall stub.
+        _PullingTerminalForRegression projectTerminal = new _PullingTerminalForRegression();
         mockAndExpect(
             address(mockJBDirectory),
             abi.encodeWithSelector(IJBDirectory.primaryTerminalOf.selector, projectId, address(usdc)),
-            abi.encode(projectTerminal)
+            abi.encode(address(projectTerminal))
         );
         vm.expectCall(
-            projectTerminal,
+            address(projectTerminal),
             abi.encodeWithSelector(IJBTerminal.addToBalanceOf.selector, projectId, address(usdc), 100e6, false, "", "")
         );
-        vm.mockCall(projectTerminal, abi.encodeWithSelector(IJBTerminal.addToBalanceOf.selector), abi.encode());
 
         // Expect the SplitPayoutReverted event.
         vm.expectEmit(true, false, false, false);
@@ -553,6 +552,14 @@ contract Test_SplitDistributionBugs is UnitTestSetup {
         assertEq(usdc.balanceOf(address(revertingHook)), 0, "Reverting hook must not receive tokens");
         // The allowance must be revoked so the hook cannot pull later.
         assertEq(usdc.allowance(address(testHook), address(revertingHook)), 0, "Allowance must be revoked after revert");
+        // The project terminal received the full leftover.
+        assertEq(usdc.balanceOf(address(projectTerminal)), 100e6, "Project terminal received the full leftover");
+        // No dangling allowance to the project terminal.
+        assertEq(
+            usdc.allowance(address(testHook), address(projectTerminal)),
+            0,
+            "Allowance to project terminal must be revoked"
+        );
     }
 
     /// @notice When an ERC-20 split hook pulls only part of its allowance and returns successfully, the hook keeps
@@ -605,19 +612,19 @@ contract Test_SplitDistributionBugs is UnitTestSetup {
         vm.prank(mockTerminalAddress);
         usdc.approve(address(testHook), 100e6);
 
-        // The library must call addToBalanceOf with exactly the 50e6 that the hook did NOT pull.
-        address projectTerminal = makeAddr("projectTerminal_partialPull");
-        vm.etch(projectTerminal, new bytes(0x69));
+        // The library must call addToBalanceOf with exactly the 50e6 that the hook did NOT pull. The
+        // allowance-delta gate requires the project terminal to actually consume this allowance, so use a
+        // pulling mock.
+        _PullingTerminalForRegression projectTerminal = new _PullingTerminalForRegression();
         mockAndExpect(
             address(mockJBDirectory),
             abi.encodeWithSelector(IJBDirectory.primaryTerminalOf.selector, projectId, address(usdc)),
-            abi.encode(projectTerminal)
+            abi.encode(address(projectTerminal))
         );
         vm.expectCall(
-            projectTerminal,
+            address(projectTerminal),
             abi.encodeWithSelector(IJBTerminal.addToBalanceOf.selector, projectId, address(usdc), 50e6, false, "", "")
         );
-        vm.mockCall(projectTerminal, abi.encodeWithSelector(IJBTerminal.addToBalanceOf.selector), abi.encode());
 
         vm.prank(mockTerminalAddress);
         testHook.afterPayRecordedWith(payContext);
@@ -838,6 +845,46 @@ contract PartialPullSplitHook is IJBSplitHook {
 
     function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {
         return interfaceId == type(IJBSplitHook).interfaceId || interfaceId == type(IERC165).interfaceId;
+    }
+}
+
+/// @notice A terminal mock that pulls the granted ERC-20 allowance on `addToBalanceOf` / `pay`. Used by tests
+/// that exercise the library's leftover routing under the allowance-delta fail-closed semantics: the
+/// project's primary terminal must actually consume the allowance, otherwise the library reverts.
+contract _PullingTerminalForRegression {
+    function addToBalanceOf(
+        uint256,
+        address token,
+        uint256 amount,
+        bool,
+        string calldata,
+        bytes calldata
+    )
+        external
+        payable
+    {
+        if (token != address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
+            IERC20(token).transferFrom(msg.sender, address(this), amount);
+        }
+    }
+
+    function pay(
+        uint256,
+        address token,
+        uint256 amount,
+        address,
+        uint256,
+        string calldata,
+        bytes calldata
+    )
+        external
+        payable
+        returns (uint256)
+    {
+        if (token != address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
+            IERC20(token).transferFrom(msg.sender, address(this), amount);
+        }
+        return 0;
     }
 }
 

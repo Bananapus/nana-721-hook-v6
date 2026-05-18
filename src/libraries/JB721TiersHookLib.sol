@@ -779,24 +779,106 @@ library JB721TiersHookLib {
                     });
                 }
             } else {
-                SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: leftoverAmount});
-                try terminal.addToBalanceOf({
-                    projectId: projectId,
-                    token: token,
-                    amount: leftoverAmount,
-                    shouldReturnHeldFees: false,
-                    memo: "",
-                    metadata: bytes("")
-                }) {}
-                catch (bytes memory reason) {
-                    // Reset approval on failure.
-                    SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
+                // Allowance-delta + unconditional cleanup: a terminal that returns successfully without pulling
+                // the full allowance would otherwise leave funds stranded in this library/hook and leak a
+                // non-zero allowance to the terminal. Fail closed: revert if either the call reverts OR the
+                // terminal under-consumed the granted allowance.
+                (uint256 consumed, bytes memory failureReason) = _approveAndAddToBalance({
+                    terminal: terminal, token: token, projectId: projectId, amount: leftoverAmount
+                });
+                if (failureReason.length != 0 || consumed != leftoverAmount) {
                     revert JB721TiersHookLib_SplitFallbackFailed({
-                        projectId: projectId, token: token, amount: leftoverAmount, reason: reason
+                        projectId: projectId, token: token, amount: leftoverAmount, reason: failureReason
                     });
                 }
             }
         }
+    }
+
+    /// @notice Approves `terminal` to spend `amount` of `token`, calls `addToBalanceOf`, then revokes any
+    /// unconsumed allowance and reports the actual amount consumed via the allowance delta.
+    /// @dev Allowance-delta consumption protects against terminals that return successfully without pulling
+    /// the full granted amount, and the unconditional final `forceApprove(..., 0)` ensures no stale allowance
+    /// is left behind on either the success or failure path.
+    /// @param terminal The terminal to call.
+    /// @param token The ERC-20 token. Native must not be passed here.
+    /// @param projectId The destination project ID.
+    /// @param amount The amount to grant as allowance and request the terminal to pull.
+    /// @return consumed The amount actually consumed by the terminal (0 on revert; otherwise
+    /// `amount - remainingAllowance` after the call).
+    /// @return failureReason The revert reason from the terminal call, or empty bytes if the call succeeded.
+    function _approveAndAddToBalance(
+        IJBTerminal terminal,
+        address token,
+        uint256 projectId,
+        uint256 amount
+    )
+        private
+        returns (uint256 consumed, bytes memory failureReason)
+    {
+        SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: amount});
+        bool succeeded;
+        try terminal.addToBalanceOf({
+            projectId: projectId,
+            token: token,
+            amount: amount,
+            shouldReturnHeldFees: false,
+            memo: "",
+            metadata: bytes("")
+        }) {
+            succeeded = true;
+        } catch (bytes memory reason) {
+            failureReason = reason;
+        }
+        if (succeeded) {
+            unchecked {
+                consumed = amount - IERC20(token).allowance(address(this), address(terminal));
+            }
+        }
+        SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
+    }
+
+    /// @notice Approves `terminal` to spend `amount` of `token`, calls `pay`, then revokes any unconsumed
+    /// allowance and reports the actual amount consumed via the allowance delta.
+    /// @dev Mirrors `_approveAndAddToBalance` for the `pay` entry point.
+    /// @param terminal The terminal to call.
+    /// @param token The ERC-20 token. Native must not be passed here.
+    /// @param projectId The destination project ID.
+    /// @param amount The amount to grant as allowance and request the terminal to pull.
+    /// @param beneficiary The beneficiary for the `pay` call.
+    /// @return consumed The amount actually consumed by the terminal.
+    /// @return failureReason The revert reason from the terminal call, or empty bytes on success.
+    function _approveAndPay(
+        IJBTerminal terminal,
+        address token,
+        uint256 projectId,
+        uint256 amount,
+        address payable beneficiary
+    )
+        private
+        returns (uint256 consumed, bytes memory failureReason)
+    {
+        SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: amount});
+        bool succeeded;
+        try terminal.pay({
+            projectId: projectId,
+            token: token,
+            amount: amount,
+            beneficiary: beneficiary,
+            minReturnedTokens: 0,
+            memo: "",
+            metadata: bytes("")
+        }) {
+            succeeded = true;
+        } catch (bytes memory reason) {
+            failureReason = reason;
+        }
+        if (succeeded) {
+            unchecked {
+                consumed = amount - IERC20(token).allowance(address(this), address(terminal));
+            }
+        }
+        SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
     }
 
     /// @notice Sends a payout to a single split recipient.
@@ -895,24 +977,24 @@ library JB721TiersHookLib {
                         return 0;
                     }
                 } else {
-                    SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: amount});
-                    try terminal.addToBalanceOf({
-                        projectId: split.projectId,
-                        token: token,
-                        amount: amount,
-                        shouldReturnHeldFees: false,
-                        memo: "",
-                        metadata: bytes("")
-                    }) {
-                        return amount;
-                    } catch (bytes memory reason) {
-                        // Reset approval on failure so tokens aren't left approved to the terminal.
-                        SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
+                    // Allowance-delta + unconditional cleanup. `sent` reflects the amount the terminal actually
+                    // pulled; the unconsumed remainder (if any) stays in this contract and is routed back to the
+                    // project's leftover balance by the caller. On revert, `sent` stays 0 and the SplitPayoutReverted
+                    // event records the failure reason.
+                    bytes memory failureReason;
+                    (sent, failureReason) = _approveAndAddToBalance({
+                        terminal: terminal, token: token, projectId: split.projectId, amount: amount
+                    });
+                    if (failureReason.length != 0) {
                         emit SplitPayoutReverted({
-                            projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
+                            projectId: projectId,
+                            split: split,
+                            amount: amount,
+                            reason: failureReason,
+                            caller: msg.sender
                         });
-                        return 0;
                     }
+                    return sent;
                 }
             } else {
                 if (isNativeToken) {
@@ -933,25 +1015,25 @@ library JB721TiersHookLib {
                         return 0;
                     }
                 } else {
-                    SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: amount});
-                    try terminal.pay({
-                        projectId: split.projectId,
+                    // Same allowance-delta pattern as the `preferAddToBalance` branch, for the `pay` entry point.
+                    bytes memory failureReason;
+                    (sent, failureReason) = _approveAndPay({
+                        terminal: terminal,
                         token: token,
+                        projectId: split.projectId,
                         amount: amount,
-                        beneficiary: split.beneficiary,
-                        minReturnedTokens: 0,
-                        memo: "",
-                        metadata: bytes("")
-                    }) {
-                        return amount;
-                    } catch (bytes memory reason) {
-                        // Reset approval on failure so tokens aren't left approved to the terminal.
-                        SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
+                        beneficiary: split.beneficiary
+                    });
+                    if (failureReason.length != 0) {
                         emit SplitPayoutReverted({
-                            projectId: projectId, split: split, amount: amount, reason: reason, caller: msg.sender
+                            projectId: projectId,
+                            split: split,
+                            amount: amount,
+                            reason: failureReason,
+                            caller: msg.sender
                         });
-                        return 0;
                     }
+                    return sent;
                 }
             }
         } else if (split.beneficiary != address(0)) {
