@@ -20,6 +20,45 @@ contract MockERC20 is ERC20 {
     }
 }
 
+/// @notice A minimal terminal mock that actually pulls the approved ERC-20 amount via `transferFrom` in its
+/// `pay`/`addToBalanceOf` entry points. Lets us assert the allowance-delta consumption path the library uses.
+contract MockPullingTerminal {
+    function pay(
+        uint256,
+        address token,
+        uint256 amount,
+        address,
+        uint256,
+        string calldata,
+        bytes calldata
+    )
+        external
+        payable
+        returns (uint256)
+    {
+        if (token != address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
+            ERC20(token).transferFrom(msg.sender, address(this), amount);
+        }
+        return 0;
+    }
+
+    function addToBalanceOf(
+        uint256,
+        address token,
+        uint256 amount,
+        bool,
+        string calldata,
+        bytes calldata
+    )
+        external
+        payable
+    {
+        if (token != address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
+            ERC20(token).transferFrom(msg.sender, address(this), amount);
+        }
+    }
+}
+
 contract Test_TierSplitRouting is UnitTestSetup {
     using stdStorage for StdStorage;
 
@@ -613,10 +652,10 @@ contract Test_TierSplitRouting is UnitTestSetup {
     function test_afterPayRecorded_erc20_splitToProject_addToBalance() public {
         (JB721TiersHook testHook, uint256[] memory tierIds, MockERC20 token) = _setupERC20TierSplit();
 
-        // Target project for split.
+        // Target project for split. Use a pulling terminal so the allowance-delta consumption path matches a
+        // real terminal: post-call allowance is zero and the hook reports the full split as sent.
         uint256 targetProjectId = 99;
-        address targetTerminal = makeAddr("targetTerminal");
-        vm.etch(targetTerminal, new bytes(0x69));
+        MockPullingTerminal targetTerminal = new MockPullingTerminal();
 
         // Mock splits: 100% to target project with preferAddToBalance.
         JBSplit[] memory splits = new JBSplit[](1);
@@ -639,11 +678,8 @@ contract Test_TierSplitRouting is UnitTestSetup {
         mockAndExpect(
             address(mockJBDirectory),
             abi.encodeWithSelector(IJBDirectory.primaryTerminalOf.selector, targetProjectId, address(token)),
-            abi.encode(targetTerminal)
+            abi.encode(address(targetTerminal))
         );
-
-        // Mock the addToBalanceOf call on the target terminal.
-        vm.mockCall(targetTerminal, abi.encodeWithSelector(IJBTerminal.addToBalanceOf.selector), abi.encode());
 
         // Give terminal the ERC20 tokens and approve the hook.
         token.mint(mockTerminalAddress, 100);
@@ -655,9 +691,10 @@ contract Test_TierSplitRouting is UnitTestSetup {
         vm.prank(mockTerminalAddress);
         testHook.afterPayRecordedWith(payContext);
 
-        // Hook approved the target terminal (library calls forceApprove before addToBalanceOf).
-        // Mock terminal doesn't pull, so hook still holds the tokens. Verify approval was set.
-        assertGe(token.allowance(address(testHook), targetTerminal), 50);
+        // Terminal pulled the full split, library revokes any unconsumed allowance, and the hook
+        // reports `sent == amount`. The target terminal now holds the split.
+        assertEq(token.allowance(address(testHook), address(targetTerminal)), 0, "allowance must be cleared");
+        assertEq(token.balanceOf(address(targetTerminal)), 50, "target terminal received full split");
         assertEq(testHook.balanceOf(beneficiary), 1);
     }
 
@@ -665,8 +702,7 @@ contract Test_TierSplitRouting is UnitTestSetup {
         (JB721TiersHook testHook, uint256[] memory tierIds, MockERC20 token) = _setupERC20TierSplit();
 
         uint256 targetProjectId = 99;
-        address targetTerminal = makeAddr("targetTerminal");
-        vm.etch(targetTerminal, new bytes(0x69));
+        MockPullingTerminal targetTerminal = new MockPullingTerminal();
 
         // Mock splits: 100% to target project with preferAddToBalance = false (pay).
         JBSplit[] memory splits = new JBSplit[](1);
@@ -689,11 +725,8 @@ contract Test_TierSplitRouting is UnitTestSetup {
         mockAndExpect(
             address(mockJBDirectory),
             abi.encodeWithSelector(IJBDirectory.primaryTerminalOf.selector, targetProjectId, address(token)),
-            abi.encode(targetTerminal)
+            abi.encode(address(targetTerminal))
         );
-
-        // Mock the pay call on the target terminal.
-        vm.mockCall(targetTerminal, abi.encodeWithSelector(IJBTerminal.pay.selector), abi.encode(0));
 
         // Give terminal the ERC20 tokens and approve the hook.
         token.mint(mockTerminalAddress, 100);
@@ -705,8 +738,9 @@ contract Test_TierSplitRouting is UnitTestSetup {
         vm.prank(mockTerminalAddress);
         testHook.afterPayRecordedWith(payContext);
 
-        // Hook approved the target terminal (library calls forceApprove before pay).
-        assertGe(token.allowance(address(testHook), targetTerminal), 50);
+        // Same allowance-delta consumption guarantees for `pay`.
+        assertEq(token.allowance(address(testHook), address(targetTerminal)), 0, "allowance must be cleared");
+        assertEq(token.balanceOf(address(targetTerminal)), 50, "target terminal received full split");
         assertEq(testHook.balanceOf(beneficiary), 1);
     }
 
@@ -729,16 +763,13 @@ contract Test_TierSplitRouting is UnitTestSetup {
             mockJBSplits, abi.encodeWithSelector(IJBSplits.splitsOf.selector, projectId, 0, groupId), abi.encode(splits)
         );
 
-        // Mock the project's primary terminal for the leftover addToBalance.
-        address projectTerminal = makeAddr("projectTerminal");
-        vm.etch(projectTerminal, new bytes(0x69));
+        // Pulling project terminal for the leftover routing.
+        MockPullingTerminal projectTerminal = new MockPullingTerminal();
         mockAndExpect(
             address(mockJBDirectory),
             abi.encodeWithSelector(IJBDirectory.primaryTerminalOf.selector, projectId, address(token)),
-            abi.encode(projectTerminal)
+            abi.encode(address(projectTerminal))
         );
-
-        vm.mockCall(projectTerminal, abi.encodeWithSelector(IJBTerminal.addToBalanceOf.selector), abi.encode());
 
         // Give terminal the ERC20 tokens and approve the hook.
         token.mint(mockTerminalAddress, 100);
@@ -750,8 +781,9 @@ contract Test_TierSplitRouting is UnitTestSetup {
         vm.prank(mockTerminalAddress);
         testHook.afterPayRecordedWith(payContext);
 
-        // Hook approved the project terminal (library calls forceApprove before addToBalanceOf).
-        assertGe(token.allowance(address(testHook), projectTerminal), 50);
+        // Leftover routing pulls the full amount and clears its own allowance.
+        assertEq(token.allowance(address(testHook), address(projectTerminal)), 0, "allowance must be cleared");
+        assertEq(token.balanceOf(address(projectTerminal)), 50, "project terminal received full leftover");
         assertEq(testHook.balanceOf(beneficiary), 1);
     }
 }
