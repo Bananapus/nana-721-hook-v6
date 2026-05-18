@@ -284,7 +284,6 @@ contract IssueTokensForSplitsFork is Test {
             ownerMustSendPayouts: false,
             holdFees: false,
             scopeCashOutsToLocalBalances: true,
-            pauseCrossProjectFeeFreeInflows: false,
             useDataHookForCashOut: true,
             metadata: 0x00
         });

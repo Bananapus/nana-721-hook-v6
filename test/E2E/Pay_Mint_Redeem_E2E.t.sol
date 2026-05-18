@@ -854,7 +854,6 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
             allowAddPriceFeed: false,
             holdFees: false,
             scopeCashOutsToLocalBalances: true,
-            pauseCrossProjectFeeFreeInflows: false,
             useDataHookForCashOut: true,
             metadata: 0x00
         });
@@ -950,7 +949,6 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
             allowAddPriceFeed: false,
             holdFees: false,
             scopeCashOutsToLocalBalances: true,
-            pauseCrossProjectFeeFreeInflows: false,
             useDataHookForCashOut: true,
             metadata: 0x00
         });
