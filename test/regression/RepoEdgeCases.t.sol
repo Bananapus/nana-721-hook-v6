@@ -57,7 +57,7 @@ contract RepoRegressions is UnitTestSetup {
             votingUnits: 0,
             reserveFrequency: 0,
             reserveBeneficiary: address(0),
-            encodedIPFSUri: bytes32(uint256(0x1234)),
+            encodedIpfsUri: bytes32(uint256(0x1234)),
             category: 1,
             discountPercent: 0,
             flags: JB721TierConfigFlags({
@@ -169,7 +169,7 @@ contract RepoRegressions is UnitTestSetup {
             votingUnits: 0,
             reserveFrequency: 2,
             reserveBeneficiary: address(0),
-            encodedIPFSUri: bytes32(uint256(0x1111)),
+            encodedIpfsUri: bytes32(uint256(0x1111)),
             category: 1,
             discountPercent: 0,
             flags: JB721TierConfigFlags({

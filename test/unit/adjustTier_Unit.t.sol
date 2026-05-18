@@ -544,7 +544,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[0],
+                encodedIpfsUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
                 flags: JB721TierConfigFlags({
@@ -568,7 +568,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 votingUnits: tierConfigs[i].votingUnits,
                 reserveFrequency: tierConfigs[i].reserveFrequency,
                 reserveBeneficiary: i == 0 ? address(0) : tierConfigs[i].reserveBeneficiary,
-                encodedIPFSUri: tierConfigs[i].encodedIPFSUri,
+                encodedIpfsUri: tierConfigs[i].encodedIpfsUri,
                 category: tierConfigs[i].category,
                 discountPercent: tierConfigs[i].discountPercent,
                 flags: JB721TierFlags({
@@ -683,7 +683,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[0],
+                encodedIpfsUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
                 flags: JB721TierConfigFlags({
@@ -707,7 +707,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 votingUnits: tierConfigs[i].votingUnits,
                 reserveFrequency: tierConfigs[i].reserveFrequency,
                 reserveBeneficiary: i == 0 ? address(0) : tierConfigs[i].reserveBeneficiary,
-                encodedIPFSUri: tierConfigs[i].encodedIPFSUri,
+                encodedIpfsUri: tierConfigs[i].encodedIpfsUri,
                 category: tierConfigs[i].category,
                 discountPercent: tierConfigs[i].discountPercent,
                 flags: JB721TierFlags({
@@ -758,7 +758,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                     // forge-lint: disable-next-line(unsafe-typecast)
                     reserveFrequency: uint16(i),
                     reserveBeneficiary: reserveBeneficiary,
-                    encodedIPFSUri: tokenUris[0],
+                    encodedIpfsUri: tokenUris[0],
                     category: uint24(100),
                     discountPercent: uint8(0),
                     flags: JB721TierConfigFlags({
@@ -782,7 +782,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                     votingUnits: tierConfigsRemaining[arrayIndex].votingUnits,
                     reserveFrequency: tierConfigsRemaining[arrayIndex].reserveFrequency,
                     reserveBeneficiary: i == 0 ? address(0) : tierConfigsRemaining[arrayIndex].reserveBeneficiary,
-                    encodedIPFSUri: tierConfigsRemaining[arrayIndex].encodedIPFSUri,
+                    encodedIpfsUri: tierConfigsRemaining[arrayIndex].encodedIpfsUri,
                     category: tierConfigsRemaining[arrayIndex].category,
                     discountPercent: tierConfigsRemaining[arrayIndex].discountPercent,
                     flags: JB721TierFlags({
@@ -814,7 +814,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 votingUnits: uint16(0),
                 reserveFrequency: uint16(0),
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[0],
+                encodedIpfsUri: tokenUris[0],
                 // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(100 + i),
                 discountPercent: uint8(0),
@@ -838,7 +838,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 votingUnits: tierConfigsToAdd[i].votingUnits,
                 reserveFrequency: tierConfigsToAdd[i].reserveFrequency,
                 reserveBeneficiary: address(0),
-                encodedIPFSUri: tierConfigsToAdd[i].encodedIPFSUri,
+                encodedIpfsUri: tierConfigsToAdd[i].encodedIpfsUri,
                 category: tierConfigsToAdd[i].category,
                 discountPercent: tierConfigsToAdd[i].discountPercent,
                 flags: JB721TierFlags({
@@ -897,7 +897,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[0],
+                encodedIpfsUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
                 flags: JB721TierConfigFlags({
@@ -921,7 +921,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 votingUnits: tierConfigs[i].votingUnits,
                 reserveFrequency: tierConfigs[i].reserveFrequency,
                 reserveBeneficiary: tierConfigs[i].reserveBeneficiary,
-                encodedIPFSUri: tierConfigs[i].encodedIPFSUri,
+                encodedIpfsUri: tierConfigs[i].encodedIpfsUri,
                 category: tierConfigs[i].category,
                 discountPercent: tierConfigs[i].discountPercent,
                 flags: JB721TierFlags({
@@ -971,7 +971,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[0],
+                encodedIpfsUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
                 flags: JB721TierConfigFlags({
@@ -994,7 +994,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 votingUnits: tierConfigsToAdd[i].votingUnits,
                 reserveFrequency: tierConfigsToAdd[i].reserveFrequency,
                 reserveBeneficiary: tierConfigsToAdd[i].reserveBeneficiary,
-                encodedIPFSUri: tierConfigsToAdd[i].encodedIPFSUri,
+                encodedIpfsUri: tierConfigsToAdd[i].encodedIpfsUri,
                 category: tierConfigsToAdd[i].category,
                 discountPercent: tierConfigsToAdd[i].discountPercent,
                 flags: JB721TierFlags({
@@ -1037,7 +1037,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[0],
+                encodedIpfsUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
                 flags: JB721TierConfigFlags({
@@ -1061,7 +1061,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 votingUnits: tierConfigs[i].votingUnits,
                 reserveFrequency: tierConfigs[i].reserveFrequency,
                 reserveBeneficiary: tierConfigs[i].reserveBeneficiary,
-                encodedIPFSUri: tierConfigs[i].encodedIPFSUri,
+                encodedIpfsUri: tierConfigs[i].encodedIpfsUri,
                 category: tierConfigs[i].category,
                 discountPercent: tierConfigs[i].discountPercent,
                 flags: JB721TierFlags({
@@ -1110,7 +1110,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i + 1),
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[0],
+                encodedIpfsUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
                 flags: JB721TierConfigFlags({
@@ -1133,7 +1133,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 votingUnits: tierConfigsToAdd[i].votingUnits,
                 reserveFrequency: tierConfigsToAdd[i].reserveFrequency,
                 reserveBeneficiary: tierConfigsToAdd[i].reserveBeneficiary,
-                encodedIPFSUri: tierConfigsToAdd[i].encodedIPFSUri,
+                encodedIpfsUri: tierConfigsToAdd[i].encodedIpfsUri,
                 category: tierConfigsToAdd[i].category,
                 discountPercent: tierConfigsToAdd[i].discountPercent,
                 flags: JB721TierFlags({
@@ -1171,7 +1171,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             votingUnits: uint16(0),
             reserveFrequency: uint16(0),
             reserveBeneficiary: reserveBeneficiary,
-            encodedIPFSUri: tokenUris[0],
+            encodedIpfsUri: tokenUris[0],
             category: uint24(100),
             discountPercent: uint8(0),
             flags: JB721TierConfigFlags({
@@ -1192,7 +1192,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             votingUnits: uint16(0),
             reserveFrequency: uint16(0),
             reserveBeneficiary: reserveBeneficiary,
-            encodedIPFSUri: tokenUris[0],
+            encodedIpfsUri: tokenUris[0],
             category: uint24(100),
             discountPercent: uint8(0),
             flags: JB721TierConfigFlags({
@@ -1251,7 +1251,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[0],
+                encodedIpfsUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
                 flags: JB721TierConfigFlags({
@@ -1275,7 +1275,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 votingUnits: tierConfigs[i].votingUnits,
                 reserveFrequency: tierConfigs[i].reserveFrequency,
                 reserveBeneficiary: tierConfigs[i].reserveBeneficiary,
-                encodedIPFSUri: tierConfigs[i].encodedIPFSUri,
+                encodedIpfsUri: tierConfigs[i].encodedIpfsUri,
                 category: tierConfigs[i].category,
                 discountPercent: tierConfigs[i].discountPercent,
                 flags: JB721TierFlags({
@@ -1323,7 +1323,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 votingUnits: uint16(0),
                 reserveFrequency: uint16(0),
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[0],
+                encodedIpfsUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
                 flags: JB721TierConfigFlags({
@@ -1346,7 +1346,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 votingUnits: tierConfigsToAdd[i].votingUnits,
                 reserveFrequency: tierConfigsToAdd[i].reserveFrequency,
                 reserveBeneficiary: tierConfigsToAdd[i].reserveBeneficiary,
-                encodedIPFSUri: tierConfigsToAdd[i].encodedIPFSUri,
+                encodedIpfsUri: tierConfigsToAdd[i].encodedIpfsUri,
                 category: tierConfigsToAdd[i].category,
                 discountPercent: tierConfigsToAdd[i].discountPercent,
                 flags: JB721TierFlags({
@@ -1391,7 +1391,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[0],
+                encodedIpfsUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
                 flags: JB721TierConfigFlags({
@@ -1437,7 +1437,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[0],
+                encodedIpfsUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
                 flags: JB721TierConfigFlags({
@@ -1489,7 +1489,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[0],
+                encodedIpfsUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
                 flags: JB721TierConfigFlags({
@@ -1535,7 +1535,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[0],
+                encodedIpfsUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
                 flags: JB721TierConfigFlags({
@@ -1587,7 +1587,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[0],
+                encodedIpfsUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
                 flags: JB721TierConfigFlags({
@@ -1665,7 +1665,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 // forge-lint: disable-next-line(unsafe-typecast)
                 reserveFrequency: uint16(i),
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[0],
+                encodedIpfsUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
                 flags: JB721TierConfigFlags({
@@ -1689,7 +1689,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
                 votingUnits: tierConfigs[i].price,
                 reserveFrequency: tierConfigs[i].reserveFrequency,
                 reserveBeneficiary: i == 0 ? address(0) : tierConfigs[i].reserveBeneficiary,
-                encodedIPFSUri: tierConfigs[i].encodedIPFSUri,
+                encodedIpfsUri: tierConfigs[i].encodedIpfsUri,
                 category: tierConfigs[i].category,
                 discountPercent: tierConfigs[i].discountPercent,
                 flags: JB721TierFlags({
@@ -1800,7 +1800,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             votingUnits: uint16(0),
             reserveFrequency: uint16(0),
             reserveBeneficiary: reserveBeneficiary,
-            encodedIPFSUri: tokenUris[0],
+            encodedIpfsUri: tokenUris[0],
             category: uint24(100),
             discountPercent: uint8(0),
             flags: JB721TierConfigFlags({
@@ -1858,7 +1858,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             votingUnits: uint16(0),
             reserveFrequency: uint16(0),
             reserveBeneficiary: reserveBeneficiary,
-            encodedIPFSUri: tokenUris[0],
+            encodedIpfsUri: tokenUris[0],
             category: uint24(100),
             discountPercent: uint8(0),
             flags: JB721TierConfigFlags({
@@ -1879,7 +1879,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
             votingUnits: uint16(0),
             reserveFrequency: uint16(0),
             reserveBeneficiary: reserveBeneficiary,
-            encodedIPFSUri: tokenUris[0],
+            encodedIpfsUri: tokenUris[0],
             category: uint24(100),
             discountPercent: uint8(0),
             flags: JB721TierConfigFlags({

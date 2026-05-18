@@ -175,7 +175,7 @@ contract Test_ProjectDeployerAuth is UnitTestSetup {
             votingUnits: uint16(0),
             reserveFrequency: uint16(0),
             reserveBeneficiary: reserveBeneficiary,
-            encodedIPFSUri: tokenUris[0],
+            encodedIpfsUri: tokenUris[0],
             category: uint24(1),
             discountPercent: uint8(0),
             flags: JB721TierConfigFlags({

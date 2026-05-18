@@ -71,7 +71,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @custom:param hook The 721 contract that the tier belongs to.
     /// @custom:param tierId The ID of the tier to get the encoded IPFS URI of.
     /// @custom:returns The encoded IPFS URI.
-    mapping(address hook => mapping(uint256 tierId => bytes32)) public override encodedIPFSUriOf;
+    mapping(address hook => mapping(uint256 tierId => bytes32)) public override encodedIpfsUriOf;
 
     /// @notice Returns the largest tier ID currently used on the provided 721 contract.
     /// @dev This may not include the last tier ID if it has been removed.
@@ -166,7 +166,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @return The encoded IPFS URI for the NFT's tier.
     // forge-lint: disable-next-line(mixed-case-function)
     function encodedTierIPFSUriOf(address hook, uint256 tokenId) external view override returns (bytes32) {
-        return encodedIPFSUriOf[hook][tierIdOfToken(tokenId)];
+        return encodedIpfsUriOf[hook][tierIdOfToken(tokenId)];
     }
 
     /// @notice Get the behavioral flags for a hook — such as whether transfers are pausable, whether NFT holders can
@@ -628,7 +628,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             // No reserve frequency if there is no reserve beneficiary.
             reserveFrequency: reserveBeneficiary == address(0) ? 0 : storedTier.reserveFrequency,
             reserveBeneficiary: reserveBeneficiary,
-            encodedIPFSUri: encodedIPFSUriOf[hook][tierId],
+            encodedIpfsUri: encodedIpfsUriOf[hook][tierId],
             category: storedTier.category,
             discountPercent: storedTier.discountPercent,
             flags: JB721TierFlags({
@@ -1051,9 +1051,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                 }
             }
 
-            // Set the `encodedIPFSUri` if needed.
-            if (tierToAdd.encodedIPFSUri != bytes32(0)) {
-                encodedIPFSUriOf[msg.sender][tierId] = tierToAdd.encodedIPFSUri;
+            // Set the `encodedIpfsUri` if needed.
+            if (tierToAdd.encodedIpfsUri != bytes32(0)) {
+                encodedIpfsUriOf[msg.sender][tierId] = tierToAdd.encodedIpfsUri;
             }
 
             if (startSortedTierId != 0) {
@@ -1392,10 +1392,10 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
     /// @notice Record a new encoded IPFS URI for a tier.
     /// @param tierId The ID of the tier to set the encoded IPFS URI of.
-    /// @param encodedIPFSUri The encoded IPFS URI to set for the tier.
+    /// @param encodedIpfsUri The encoded IPFS URI to set for the tier.
     // forge-lint: disable-next-line(mixed-case-function)
-    function recordSetEncodedIPFSUriOf(uint256 tierId, bytes32 encodedIPFSUri) external override {
-        encodedIPFSUriOf[msg.sender][tierId] = encodedIPFSUri;
+    function recordSetEncodedIpfsUriOf(uint256 tierId, bytes32 encodedIpfsUri) external override {
+        encodedIpfsUriOf[msg.sender][tierId] = encodedIpfsUri;
     }
 
     /// @notice Record a newly set token URI resolver.

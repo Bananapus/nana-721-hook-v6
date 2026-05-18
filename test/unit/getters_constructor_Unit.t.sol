@@ -66,7 +66,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
 
         // Use a non-null resolved URI.
         // forge-lint: disable-next-line(unsafe-typecast)
-        defaultTierConfig.encodedIPFSUri = bytes32(hex"69");
+        defaultTierConfig.encodedIpfsUri = bytes32(hex"69");
 
         (, JB721Tier[] memory tiers) = _createTiers(defaultTierConfig, numberOfTiers);
 
@@ -150,7 +150,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                     votingUnits: 0,
                     reserveFrequency: 0,
                     reserveBeneficiary: address(0),
-                    encodedIPFSUri: bytes32(0),
+                    encodedIpfsUri: bytes32(0),
                     category: uint24(100),
                     discountPercent: uint8(0),
                     flags: JB721TierFlags({
@@ -517,7 +517,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         hook.mintFor(tiersToMint, previousOwner);
 
         uint256 unmintedTokenId = _generateTokenId(tiersToMint[0], 2);
-        assertEq(hook.CHECKPOINTS().ownerOfAt(unmintedTokenId, block.number), address(0));
+        assertEq(hook.checkpoints().ownerOfAt(unmintedTokenId, block.number), address(0));
     }
 
     function test_ownerOfAt_shouldReturnHistoricalOwners(address newOwner, address previousOwner) public {
@@ -540,7 +540,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         uint256 mintBlock = block.number;
 
         // Unenrolled tokens return address(0) — enrollment is required for distribution eligibility.
-        assertEq(hook.CHECKPOINTS().ownerOfAt(tokenId, mintBlock), address(0));
+        assertEq(hook.checkpoints().ownerOfAt(tokenId, mintBlock), address(0));
 
         vm.roll(block.number + 1);
         vm.prank(previousOwner);
@@ -548,8 +548,8 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         uint256 transferBlock = block.number;
 
         // Transfer writes an owner checkpoint, so the token is now eligible.
-        assertEq(hook.CHECKPOINTS().ownerOfAt(tokenId, transferBlock - 1), address(0));
-        assertEq(hook.CHECKPOINTS().ownerOfAt(tokenId, transferBlock), newOwner);
+        assertEq(hook.checkpoints().ownerOfAt(tokenId, transferBlock - 1), address(0));
+        assertEq(hook.checkpoints().ownerOfAt(tokenId, transferBlock), newOwner);
     }
 
     function test_firstOwnerOf_shouldReturnZeroAddressIfNotMinted(uint256 tokenId) public {
@@ -565,7 +565,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         (, JB721Tier[] memory tiers) = _createTiers(defaultTierConfig, numberOfTiers);
 
         // Check: do the hook's parameters match the expected values?
-        assertEq(hook.PROJECT_ID(), projectId);
+        assertEq(hook.projectId(), projectId);
         assertEq(address(hook.DIRECTORY()), mockJBDirectory);
         assertEq(hook.name(), name);
         assertEq(hook.symbol(), symbol);
@@ -597,7 +597,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
                 votingUnits: uint16(0),
                 reserveFrequency: uint16(0),
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[0],
+                encodedIpfsUri: tokenUris[0],
                 category: uint24(100),
                 discountPercent: uint8(0),
                 flags: JB721TierConfigFlags({

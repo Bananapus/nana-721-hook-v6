@@ -11,7 +11,7 @@ interface IJB721Checkpoints is IERC5805 {
     /// @notice The hook that this module tracks voting power for.
     /// @return The hook address.
     // forge-lint: disable-next-line(mixed-case-function)
-    function HOOK() external view returns (address);
+    function hook() external view returns (address);
 
     /// @notice The owner of an NFT at a past block.
     /// @dev Returns `address(0)` for tokens that have never been enrolled (via `delegate(address, uint256[])`) or
@@ -36,8 +36,8 @@ interface IJB721Checkpoints is IERC5805 {
 
     /// @notice Initializes a cloned module with its hook reference.
     /// @dev Can only be called once. Called by the deployer after cloning.
-    /// @param hook The hook this module serves.
-    function initialize(address hook) external;
+    /// @param hookAddress The hook this module serves.
+    function initialize(address hookAddress) external;
 
     /// @notice Called by the hook after every NFT transfer to update checkpointed voting power.
     /// @dev Looks up the token's tier voting units from the store internally.

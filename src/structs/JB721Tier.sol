@@ -12,7 +12,7 @@ import {JB721TierFlags} from "./JB721TierFlags.sol";
 /// tier. With a `reserveFrequency` of 5, an extra NFT will be minted for the `reserveBeneficiary` for every 5 NFTs
 /// purchased.
 /// @custom:member reserveBeneficiary The address which receives any reserve NFTs from this tier.
-/// @custom:member encodedIPFSUri The IPFS URI to use for each NFT in this tier.
+/// @custom:member encodedIpfsUri The IPFS URI to use for each NFT in this tier.
 /// @custom:member category The category that NFTs in this tier belongs to. Used to group NFT tiers.
 /// @custom:member discountPercent The discount that should be applied to the tier.
 /// @custom:member flags Boolean flags for this tier (allowOwnerMint, transfersPausable, cantBeRemoved,
@@ -29,7 +29,7 @@ struct JB721Tier {
     uint104 votingUnits;
     uint16 reserveFrequency;
     address reserveBeneficiary;
-    bytes32 encodedIPFSUri;
+    bytes32 encodedIpfsUri;
     uint24 category;
     uint8 discountPercent;
     JB721TierFlags flags;

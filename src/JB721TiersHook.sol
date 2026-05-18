@@ -107,7 +107,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
     /// @notice The checkpoint module that manages IVotes-compatible checkpointed voting power for this hook's NFTs.
     /// @dev Lazily deployed on the first transfer. Pass this to JBTokenDistributor as the IVotes token.
-    IJB721Checkpoints public override CHECKPOINTS;
+    IJB721Checkpoints public override checkpoints;
 
     //*********************************************************************//
     // -------------------------- constructor ---------------------------- //
@@ -232,9 +232,9 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @notice Initialize a cloned copy of the hook. Sets the project association, ERC-721 name/symbol, pricing
     /// context (currency + decimals), metadata URIs, initial tiers, and behavioral flags. Can only be called once
     /// per clone — the implementation contract is pre-initialized in its constructor to prevent misuse.
-    /// @dev Called by `JB721TiersHookDeployer` immediately after cloning. Reverts with
-    /// `JB721TiersHook_AlreadyInitialized` if called more than once, or `JB721TiersHook_NoProjectId` if projectId is 0.
-    /// @param projectId The ID of the project this hook is associated with.
+    /// @dev Called by `JB721TiersHookDeployer` immediately after cloning. Reverts if called more than once or if the
+    /// project ID is zero.
+    /// @param initialProjectId The ID of the project this hook is associated with.
     /// @param name The name of the NFT collection.
     /// @param symbol The symbol representing the NFT collection.
     /// @param baseUri The URI to use as a base for full NFT `tokenUri`s.
@@ -244,7 +244,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// category (from least to greatest).
     /// @param flags A set of additional options which dictate how the hook behaves.
     function initialize(
-        uint256 projectId,
+        uint256 initialProjectId,
         string memory name,
         string memory symbol,
         string memory baseUri,
@@ -258,14 +258,14 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     {
         // Stop re-initialization. This protects both the implementation contract (initialized in constructor)
         // and clones (initialized via this function).
-        if (_initialized) revert JB721TiersHook_AlreadyInitialized(PROJECT_ID);
+        if (_initialized) revert JB721TiersHook_AlreadyInitialized({projectId: projectId});
         _initialized = true;
 
-        // Make sure a projectId is provided.
-        if (projectId == 0) revert JB721TiersHook_NoProjectId({projectId: projectId});
+        // Make sure a project ID is provided.
+        if (initialProjectId == 0) revert JB721TiersHook_NoProjectId({projectId: initialProjectId});
 
         // Initialize the superclass.
-        JB721Hook._initialize({projectId: projectId, name: name, symbol: symbol});
+        JB721Hook._initialize({initialProjectId: initialProjectId, name: name, symbol: symbol});
 
         // Validate pricing decimals are within a reasonable range.
         if (tiersConfig.decimals > 18) revert JB721TiersHook_InvalidPricingDecimals(tiersConfig.decimals);
@@ -326,7 +326,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @return The token URI from the `tokenUriResolver` if it is set. If it isn't set, the token URI for the NFT's
     /// tier.
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-        return JB721TiersHookLib.resolveTokenURI(STORE, address(this), baseURI, tokenId);
+        return
+            JB721TiersHookLib.resolveTokenURI({store: STORE, hook: address(this), baseUri: baseURI, tokenId: tokenId});
     }
 
     /// @notice The total cash-out weight across all outstanding NFTs and pending reserves. This is the denominator
@@ -348,15 +349,13 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @param tierIdsToRemove The IDs of the tiers to remove.
     function adjustTiers(JB721TierConfig[] calldata tiersToAdd, uint256[] calldata tierIdsToRemove) external override {
         // Enforce permissions.
-        _requirePermissionFrom({
-            account: owner(), projectId: PROJECT_ID, permissionId: JBPermissionIds.ADJUST_721_TIERS
-        });
+        _requirePermissionFrom({account: owner(), projectId: projectId, permissionId: JBPermissionIds.ADJUST_721_TIERS});
 
         // Delegate to the library (via DELEGATECALL) for tier removal, addition, event emission, and split setting.
         JB721TiersHookLib.adjustTiersFor({
             store: STORE,
             splits: SPLITS,
-            projectId: PROJECT_ID,
+            projectId: projectId,
             hookAddress: address(this),
             caller: _msgSender(),
             tiersToAdd: tiersToAdd,
@@ -379,7 +378,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         returns (uint256[] memory tokenIds)
     {
         // Enforce permissions.
-        _requirePermissionFrom({account: owner(), projectId: PROJECT_ID, permissionId: JBPermissionIds.MINT_721});
+        _requirePermissionFrom({account: owner(), projectId: projectId, permissionId: JBPermissionIds.MINT_721});
 
         // Record the mint. The token IDs returned correspond to the tiers passed in.
         (tokenIds,,) = STORE.recordMint({
@@ -417,7 +416,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     function setDiscountPercentOf(uint256 tierId, uint256 discountPercent) external override {
         // Enforce permissions.
         _requirePermissionFrom({
-            account: owner(), projectId: PROJECT_ID, permissionId: JBPermissionIds.SET_721_DISCOUNT_PERCENT
+            account: owner(), projectId: projectId, permissionId: JBPermissionIds.SET_721_DISCOUNT_PERCENT
         });
         _setDiscountPercentOf({tierId: tierId, discountPercent: discountPercent});
     }
@@ -428,7 +427,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     function setDiscountPercentsOf(JB721TiersSetDiscountPercentConfig[] calldata configs) external override {
         // Enforce permissions.
         _requirePermissionFrom({
-            account: owner(), projectId: PROJECT_ID, permissionId: JBPermissionIds.SET_721_DISCOUNT_PERCENT
+            account: owner(), projectId: projectId, permissionId: JBPermissionIds.SET_721_DISCOUNT_PERCENT
         });
 
         for (uint256 i; i < configs.length;) {
@@ -453,24 +452,22 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @param tokenUriResolver The new URI resolver. Pass `IJB721TokenUriResolver(address(this))` as a sentinel value
     /// to leave unchanged. `address(this)` is used instead of `address(0)` because `address(0)` is a valid value that
     /// clears the resolver.
-    /// @param encodedIPFSUriTierId The ID of the tier to set the encoded IPFS URI of.
-    /// @param encodedIPFSUri The encoded IPFS URI to set.
+    /// @param encodedIpfsUriTierId The ID of the tier to set the encoded IPFS URI of.
+    /// @param encodedIpfsUri The encoded IPFS URI to set.
     function setMetadata(
         string calldata name,
         string calldata symbol,
         string calldata baseUri,
         string calldata contractUri,
         IJB721TokenUriResolver tokenUriResolver,
-        uint256 encodedIPFSUriTierId,
-        bytes32 encodedIPFSUri
+        uint256 encodedIpfsUriTierId,
+        bytes32 encodedIpfsUri
     )
         external
         override
     {
         // Enforce permissions.
-        _requirePermissionFrom({
-            account: owner(), projectId: PROJECT_ID, permissionId: JBPermissionIds.SET_721_METADATA
-        });
+        _requirePermissionFrom({account: owner(), projectId: projectId, permissionId: JBPermissionIds.SET_721_METADATA});
 
         // Cache _msgSender() at function entry to avoid repeated calls.
         address caller = _msgSender();
@@ -501,11 +498,11 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             // Store the new URI resolver.
             _recordSetTokenUriResolver(tokenUriResolver);
         }
-        if (encodedIPFSUriTierId != 0 && encodedIPFSUri != bytes32(0)) {
-            emit SetEncodedIPFSUri({tierId: encodedIPFSUriTierId, encodedUri: encodedIPFSUri, caller: caller});
+        if (encodedIpfsUriTierId != 0 && encodedIpfsUri != bytes32(0)) {
+            emit SetEncodedIpfsUri({tierId: encodedIpfsUriTierId, encodedUri: encodedIpfsUri, caller: caller});
 
             // Store the new encoded IPFS URI.
-            STORE.recordSetEncodedIPFSUriOf({tierId: encodedIPFSUriTierId, encodedIPFSUri: encodedIPFSUri});
+            STORE.recordSetEncodedIpfsUriOf({tierId: encodedIpfsUriTierId, encodedIpfsUri: encodedIpfsUri});
         }
     }
 
@@ -519,12 +516,12 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @param count The number of reserved NFTs to mint.
     function mintPendingReservesFor(uint256 tierId, uint256 count) public override {
         // Get a reference to the project's current ruleset.
-        JBRuleset memory ruleset = _currentRulesetOf(PROJECT_ID);
+        JBRuleset memory ruleset = _currentRulesetOf(projectId);
 
         // Pending reserve mints must not be paused.
         if (JB721TiersRulesetMetadataResolver.mintPendingReservesPaused((JBRulesetMetadataResolver.metadata(ruleset))))
         {
-            revert JB721TiersHook_MintReserveNftsPaused({projectId: PROJECT_ID, tierId: tierId});
+            revert JB721TiersHook_MintReserveNftsPaused({projectId: projectId, tierId: tierId});
         }
 
         // Record the reserved mint for the tier.
@@ -694,7 +691,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         (value, valid) = JB721TiersHookLib.normalizePaymentValue({
             packedPricingContext: _packedPricingContext,
             prices: PRICES,
-            projectId: PROJECT_ID,
+            projectId: projectId,
             amountValue: context.amount.value,
             amountCurrency: context.amount.currency,
             amountDecimals: context.amount.decimals
@@ -722,7 +719,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             JB721TiersHookLib.distributeAll({
                 directory: DIRECTORY,
                 splits: SPLITS,
-                projectId: PROJECT_ID,
+                projectId: projectId,
                 hookAddress: address(this),
                 token: context.forwardedAmount.token,
                 amount: context.forwardedAmount.value,
@@ -766,7 +763,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             // If transfers are pausable, check if they're paused.
             if (transfersPausable) {
                 // Get a reference to the project's current ruleset.
-                JBRuleset memory ruleset = _currentRulesetOf(PROJECT_ID);
+                JBRuleset memory ruleset = _currentRulesetOf(projectId);
 
                 // If transfers are paused and the NFT isn't being transferred to the zero address, revert.
                 if (
@@ -776,7 +773,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
                         )
                 ) {
                     revert JB721TiersHook_TierTransfersPaused({
-                        projectId: PROJECT_ID, tokenId: tokenId, from: from, to: to
+                        projectId: projectId, tokenId: tokenId, from: from, to: to
                     });
                 }
             }
@@ -789,11 +786,11 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         STORE.recordTransferForTier({tierId: tierId, from: from, to: to});
 
         // Deploy the checkpoint module lazily on the first transfer.
-        if (address(CHECKPOINTS) == address(0)) {
-            CHECKPOINTS = CHECKPOINTS_DEPLOYER.deploy(address(this));
+        if (address(checkpoints) == address(0)) {
+            checkpoints = CHECKPOINTS_DEPLOYER.deploy(address(this));
         }
 
         // Notify the checkpoint module to update checkpointed voting power.
-        CHECKPOINTS.onTransfer({from: from, to: to, tokenId: tokenId});
+        checkpoints.onTransfer({from: from, to: to, tokenId: tokenId});
     }
 }

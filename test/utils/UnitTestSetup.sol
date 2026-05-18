@@ -190,7 +190,7 @@ contract UnitTestSetup is Test {
             tiers[i].price = uint104((i + 1) * 10); // The price is `tierId` * 10.
             tiers[i].initialSupply = uint32(100);
             tiers[i].reserveBeneficiary = reserveBeneficiary;
-            tiers[i].encodedIPFSUri = tokenUris[i];
+            tiers[i].encodedIpfsUri = tokenUris[i];
             tiers[i].category = uint24(100);
             tiers[i].flags.useVotingUnits = true;
         }
@@ -325,7 +325,7 @@ contract UnitTestSetup is Test {
         assertEq(first.votingUnits, second.votingUnits);
         assertEq(first.reserveFrequency, second.reserveFrequency);
         assertEq(first.reserveBeneficiary, second.reserveBeneficiary);
-        assertEq(first.encodedIPFSUri, second.encodedIPFSUri);
+        assertEq(first.encodedIpfsUri, second.encodedIpfsUri);
     }
 
     // Compare two arrays of `JB721Tier`s.
@@ -339,7 +339,7 @@ contract UnitTestSetup is Test {
             assertEq(first[i].votingUnits, second[i].votingUnits);
             assertEq(first[i].reserveFrequency, second[i].reserveFrequency);
             assertEq(first[i].reserveBeneficiary, second[i].reserveBeneficiary);
-            assertEq(first[i].encodedIPFSUri, second[i].encodedIPFSUri);
+            assertEq(first[i].encodedIpfsUri, second[i].encodedIpfsUri);
         }
     }
 
@@ -390,7 +390,7 @@ contract UnitTestSetup is Test {
                 && first.initialSupply == second.initialSupply && first.votingUnits == second.votingUnits
                 && first.reserveFrequency == second.reserveFrequency
                 && first.reserveBeneficiary == second.reserveBeneficiary
-                && first.encodedIPFSUri == second.encodedIPFSUri
+                && first.encodedIpfsUri == second.encodedIpfsUri
                 && keccak256(abi.encodePacked(first.resolvedUri)) == keccak256(abi.encodePacked(second.resolvedUri)));
     }
 
@@ -516,7 +516,7 @@ contract UnitTestSetup is Test {
                 votingUnits: tierConfig.votingUnits,
                 reserveFrequency: tierConfig.reserveFrequency,
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: i < tokenUris.length ? tokenUris[i] : tokenUris[0],
+                encodedIpfsUri: i < tokenUris.length ? tokenUris[i] : tokenUris[0],
                 category: categoryIncrement == 0
                     // forge-lint: disable-next-line(unsafe-typecast)
                     ? tierConfig.category == type(uint24).max ? uint24(i * 2 + 1) : tierConfig.category
@@ -545,7 +545,7 @@ contract UnitTestSetup is Test {
                 votingUnits: tierConfigs[i].votingUnits,
                 reserveFrequency: tierConfigs[i].reserveFrequency,
                 reserveBeneficiary: tierConfigs[i].reserveBeneficiary,
-                encodedIPFSUri: tierConfigs[i].encodedIPFSUri,
+                encodedIpfsUri: tierConfigs[i].encodedIpfsUri,
                 category: tierConfigs[i].category,
                 discountPercent: tierConfigs[i].discountPercent,
                 flags: JB721TierFlags({
@@ -556,7 +556,7 @@ contract UnitTestSetup is Test {
                     cantBuyWithCredits: tierConfigs[i].flags.cantBuyWithCredits
                 }),
                 splitPercent: tierConfigs[i].splitPercent,
-                resolvedUri: defaultTierConfig.encodedIPFSUri == bytes32(0)
+                resolvedUri: defaultTierConfig.encodedIpfsUri == bytes32(0)
                     ? ""
                     : string(abi.encodePacked("resolverURI", _generateTokenId(initialId + i + 1, 0)))
             });
@@ -721,7 +721,7 @@ contract UnitTestSetup is Test {
                 votingUnits: uint16(0),
                 reserveFrequency: uint16(0),
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[i],
+                encodedIpfsUri: tokenUris[i],
                 category: uint24(100),
                 discountPercent: uint8(0),
                 flags: JB721TierConfigFlags({

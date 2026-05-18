@@ -89,8 +89,8 @@ contract JB721TiersHookProjectDeployer is
         returns (uint256 projectId, IJB721TiersHook hook)
     {
         // Reserve the project ID up front so permissionless project creations cannot invalidate hook deployment.
-        IJBProjects PROJECTS = DIRECTORY.PROJECTS();
-        projectId = PROJECTS.createFor(address(this));
+        IJBProjects projects = DIRECTORY.PROJECTS();
+        projectId = projects.createFor(address(this));
 
         // Deploy the hook.
         hook = HOOK_DEPLOYER.deployHookFor({
@@ -108,7 +108,7 @@ contract JB721TiersHookProjectDeployer is
         JBOwnable(address(hook)).transferOwnershipToProject(projectId);
 
         // Transfer the project NFT to its intended owner.
-        PROJECTS.safeTransferFrom({from: address(this), to: owner, tokenId: projectId});
+        projects.safeTransferFrom({from: address(this), to: owner, tokenId: projectId});
     }
 
     /// @notice Launches rulesets for a project with an attached 721 tiers hook.
@@ -135,8 +135,8 @@ contract JB721TiersHookProjectDeployer is
         returns (uint256 rulesetId, IJB721TiersHook hook)
     {
         // Get the project's projects contract.
-        IJBProjects PROJECTS = DIRECTORY.PROJECTS();
-        address projectOwner = PROJECTS.ownerOf(projectId);
+        IJBProjects projects = DIRECTORY.PROJECTS();
+        address projectOwner = projects.ownerOf(projectId);
 
         // Enforce permissions.
         _requirePermissionFrom({

@@ -40,7 +40,7 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     //*********************************************************************//
 
     /// @notice The hook that this module tracks voting power for.
-    address public override HOOK;
+    address public override hook;
 
     //*********************************************************************//
     // -------------------- internal stored properties ------------------- //
@@ -59,7 +59,7 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// @param store The store that holds tier data for each hook's NFTs.
     constructor(IJB721TiersHookStore store) EIP712("JB721Checkpoints", "1") {
         STORE = store;
-        HOOK = address(1);
+        hook = address(1);
     }
 
     //*********************************************************************//
@@ -81,7 +81,7 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
             uint256 tokenId = tokenIds[i];
 
             // Only the current owner can enroll their tokens.
-            if (IERC721(HOOK).ownerOf(tokenId) != msg.sender) {
+            if (IERC721(hook).ownerOf(tokenId) != msg.sender) {
                 revert JB721Checkpoints_NotOwner({tokenId: tokenId, caller: msg.sender});
             }
 
@@ -99,20 +99,20 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
 
     /// @notice Initializes a cloned module with its hook reference.
     /// @dev Can only be called once. Called by the deployer after cloning.
-    /// @param hook The hook this module serves.
-    function initialize(address hook) external override {
-        if (HOOK != address(0)) revert JB721Checkpoints_AlreadyInitialized({hook: HOOK});
+    /// @param hookAddress The hook this module serves.
+    function initialize(address hookAddress) external override {
+        if (hook != address(0)) revert JB721Checkpoints_AlreadyInitialized({hook: hook});
         // `hook` cannot be zero when called through the deployer because `msg.sender` must equal `hook`.
-        HOOK = hook;
+        hook = hookAddress;
     }
 
     /// @notice Called by the hook after every NFT transfer to update checkpointed voting power.
-    /// @dev Only callable by the HOOK. Looks up the token's tier voting units from the store.
+    /// @dev Only callable by the hook. Looks up the token's tier voting units from the store.
     /// @param from The previous owner (address(0) on mint).
     /// @param to The new owner (address(0) on burn).
     /// @param tokenId The token ID to transfer.
     function onTransfer(address from, address to, uint256 tokenId) external override {
-        if (msg.sender != HOOK) revert JB721Checkpoints_Unauthorized({caller: msg.sender, hook: HOOK});
+        if (msg.sender != hook) revert JB721Checkpoints_Unauthorized({caller: msg.sender, hook: hook});
 
         if (from != address(0)) {
             // forge-lint: disable-next-line(unsafe-typecast)
@@ -120,7 +120,7 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
         }
 
         // Look up this token's tier to get its voting units.
-        uint256 votingUnits = STORE.tierOfTokenId({hook: HOOK, tokenId: tokenId, includeResolvedUri: false}).votingUnits;
+        uint256 votingUnits = STORE.tierOfTokenId({hook: hook, tokenId: tokenId, includeResolvedUri: false}).votingUnits;
 
         // Move checkpointed voting power from the previous owner to the new owner.
         _transferVotingUnits({from: from, to: to, amount: votingUnits});
@@ -161,6 +161,6 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// @param account The address to get the voting units of.
     /// @return The total voting units the account holds.
     function _getVotingUnits(address account) internal view override returns (uint256) {
-        return STORE.votingUnitsOf({hook: HOOK, account: account});
+        return STORE.votingUnitsOf({hook: hook, account: account});
     }
 }

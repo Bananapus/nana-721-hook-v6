@@ -365,7 +365,7 @@ contract Fork_721Hook_Test is Test {
                 votingUnits: uint32((i + 1) * 10),
                 reserveFrequency: 10,
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: IPFS_URI,
+                encodedIpfsUri: IPFS_URI,
                 category: uint24(100),
                 discountPercent: 0,
                 flags: JB721TierConfigFlags({
@@ -798,7 +798,7 @@ contract Fork_721Hook_Test is Test {
             votingUnits: 0,
             reserveFrequency: 5,
             reserveBeneficiary: reserveBeneficiary,
-            encodedIPFSUri: IPFS_URI,
+            encodedIpfsUri: IPFS_URI,
             category: 200,
             discountPercent: 0,
             flags: JB721TierConfigFlags({
@@ -833,7 +833,7 @@ contract Fork_721Hook_Test is Test {
             votingUnits: 0,
             reserveFrequency: 0,
             reserveBeneficiary: address(0),
-            encodedIPFSUri: IPFS_URI,
+            encodedIpfsUri: IPFS_URI,
             category: 200,
             discountPercent: 0,
             flags: JB721TierConfigFlags({
@@ -1143,7 +1143,7 @@ contract Fork_721Hook_Test is Test {
             votingUnits: 100,
             reserveFrequency: 0,
             reserveBeneficiary: address(0),
-            encodedIPFSUri: IPFS_URI,
+            encodedIpfsUri: IPFS_URI,
             category: 200,
             discountPercent: 0,
             flags: JB721TierConfigFlags({
@@ -1539,7 +1539,7 @@ contract Fork_721Hook_Test is Test {
             votingUnits: 0,
             reserveFrequency: 0,
             reserveBeneficiary: attacker,
-            encodedIPFSUri: IPFS_URI,
+            encodedIpfsUri: IPFS_URI,
             category: 200,
             discountPercent: 0,
             flags: JB721TierConfigFlags({
@@ -1788,7 +1788,7 @@ contract Fork_721Hook_Test is Test {
                 votingUnits: 0,
                 reserveFrequency: 0,
                 reserveBeneficiary: address(0),
-                encodedIPFSUri: IPFS_URI,
+                encodedIpfsUri: IPFS_URI,
                 category: uint24((i + 1) * 100), // Categories: 100, 200, 300
                 discountPercent: 0,
                 flags: JB721TierConfigFlags({
@@ -2066,7 +2066,7 @@ contract Fork_721Hook_Test is Test {
             votingUnits: 0,
             reserveFrequency: 0,
             reserveBeneficiary: address(0),
-            encodedIPFSUri: IPFS_URI,
+            encodedIpfsUri: IPFS_URI,
             category: category,
             discountPercent: 0,
             flags: JB721TierConfigFlags({

@@ -24,7 +24,7 @@ contract Test_L34_ReserveBeneficiaryOverwrite is UnitTestSetup {
         tier1Configs[0].price = 1 ether;
         tier1Configs[0].initialSupply = uint32(100);
         tier1Configs[0].category = uint24(1);
-        tier1Configs[0].encodedIPFSUri = bytes32(uint256(0x1234));
+        tier1Configs[0].encodedIpfsUri = bytes32(uint256(0x1234));
         tier1Configs[0].reserveFrequency = 5;
         tier1Configs[0].reserveBeneficiary = alice;
         tier1Configs[0].flags.useReserveBeneficiaryAsDefault = true;
@@ -43,7 +43,7 @@ contract Test_L34_ReserveBeneficiaryOverwrite is UnitTestSetup {
         tier2Configs[0].price = 2 ether;
         tier2Configs[0].initialSupply = uint32(100);
         tier2Configs[0].category = uint24(2);
-        tier2Configs[0].encodedIPFSUri = bytes32(uint256(0x5678));
+        tier2Configs[0].encodedIpfsUri = bytes32(uint256(0x5678));
         tier2Configs[0].reserveFrequency = 5;
         tier2Configs[0].reserveBeneficiary = bob;
         tier2Configs[0].flags.useReserveBeneficiaryAsDefault = false;
@@ -63,7 +63,7 @@ contract Test_L34_ReserveBeneficiaryOverwrite is UnitTestSetup {
         tier3Configs[0].price = 3 ether;
         tier3Configs[0].initialSupply = uint32(100);
         tier3Configs[0].category = uint24(3);
-        tier3Configs[0].encodedIPFSUri = bytes32(uint256(0x9ABC));
+        tier3Configs[0].encodedIpfsUri = bytes32(uint256(0x9ABC));
         tier3Configs[0].reserveFrequency = 5;
         tier3Configs[0].reserveBeneficiary = bob;
         tier3Configs[0].flags.useReserveBeneficiaryAsDefault = true;
@@ -94,7 +94,7 @@ contract Test_L34_ReserveBeneficiaryOverwrite is UnitTestSetup {
         tierConfigs[0].price = 1 ether;
         tierConfigs[0].initialSupply = uint32(100);
         tierConfigs[0].category = uint24(1);
-        tierConfigs[0].encodedIPFSUri = bytes32(uint256(0x1234));
+        tierConfigs[0].encodedIpfsUri = bytes32(uint256(0x1234));
         tierConfigs[0].reserveFrequency = 5;
         tierConfigs[0].reserveBeneficiary = alice;
         tierConfigs[0].flags.useReserveBeneficiaryAsDefault = true;
@@ -119,7 +119,7 @@ contract Test_L34_ReserveBeneficiaryOverwrite is UnitTestSetup {
         tier1Configs[0].price = 1 ether;
         tier1Configs[0].initialSupply = uint32(100);
         tier1Configs[0].category = uint24(1);
-        tier1Configs[0].encodedIPFSUri = bytes32(uint256(0x1234));
+        tier1Configs[0].encodedIpfsUri = bytes32(uint256(0x1234));
         tier1Configs[0].reserveFrequency = 5;
         tier1Configs[0].reserveBeneficiary = alice;
         tier1Configs[0].flags.useReserveBeneficiaryAsDefault = true;
@@ -132,7 +132,7 @@ contract Test_L34_ReserveBeneficiaryOverwrite is UnitTestSetup {
         tier2Configs[0].price = 2 ether;
         tier2Configs[0].initialSupply = uint32(100);
         tier2Configs[0].category = uint24(2);
-        tier2Configs[0].encodedIPFSUri = bytes32(uint256(0x5678));
+        tier2Configs[0].encodedIpfsUri = bytes32(uint256(0x5678));
         tier2Configs[0].reserveFrequency = 5;
         tier2Configs[0].reserveBeneficiary = alice;
         tier2Configs[0].flags.useReserveBeneficiaryAsDefault = true;

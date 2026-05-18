@@ -358,7 +358,7 @@ contract IssueTokensForSplitsFork is Test {
             reserveFrequency: 0,
             reserveBeneficiary: address(0),
             // forge-lint: disable-next-line(unsafe-typecast)
-            encodedIPFSUri: bytes32("tier1"),
+            encodedIpfsUri: bytes32("tier1"),
             category: 1,
             discountPercent: 0,
             flags: JB721TierConfigFlags({

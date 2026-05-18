@@ -152,7 +152,7 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
             votingUnits: uint16(0),
             reserveFrequency: uint16(0),
             reserveBeneficiary: reserveBeneficiary,
-            encodedIPFSUri: tokenUris[0],
+            encodedIpfsUri: tokenUris[0],
             category: uint24(100),
             discountPercent: uint8(0),
             flags: JB721TierConfigFlags({
@@ -273,8 +273,8 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
         // Verify the controller's launchRulesetsFor was called.
         assertTrue(mockCtrl.launchRulesetsForCalled(), "Controller launchRulesetsFor should be called");
 
-        // Verify the hook's PROJECT_ID is correct.
-        assertEq(deployedHook.PROJECT_ID(), testProjectId, "Hook PROJECT_ID should match");
+        // Verify the hook's project ID is correct.
+        assertEq(deployedHook.projectId(), testProjectId, "Hook project ID should match");
 
         // Verify the hook's ownership was transferred to the project.
         (, uint88 ownerProjectId,) = JBOwnable(address(deployedHook)).jbOwner();
@@ -357,8 +357,8 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
         // Verify the controller's queueRulesetsOf was called.
         assertTrue(mockCtrl.queueRulesetsOfCalled(), "Controller queueRulesetsOf should be called");
 
-        // Verify the hook's PROJECT_ID is correct.
-        assertEq(deployedHook.PROJECT_ID(), testProjectId, "Hook PROJECT_ID should match");
+        // Verify the hook's project ID is correct.
+        assertEq(deployedHook.projectId(), testProjectId, "Hook project ID should match");
 
         // Verify the hook's ownership was transferred to the project.
         (, uint88 ownerProjectId,) = JBOwnable(address(deployedHook)).jbOwner();

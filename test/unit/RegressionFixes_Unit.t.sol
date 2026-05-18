@@ -39,7 +39,7 @@ contract Test_RegressionFixes_Unit is UnitTestSetup {
         config.price = price;
         config.initialSupply = uint32(100);
         config.category = uint24(1);
-        config.encodedIPFSUri = bytes32(uint256(0x1234));
+        config.encodedIpfsUri = bytes32(uint256(0x1234));
         config.splitPercent = splitPercent;
     }
 
@@ -366,11 +366,11 @@ contract Test_RegressionFixes_Unit is UnitTestSetup {
     function test_F12_implementationCannotBeInitialized() public {
         // hookOrigin is the implementation contract deployed in setUp().
         // Its constructor already set _initialized = true.
-        // PROJECT_ID is 0 on the implementation (never initialized with a project ID).
+        // projectId is 0 on the implementation (never initialized with a project ID).
         vm.expectRevert(abi.encodeWithSelector(JB721TiersHook.JB721TiersHook_AlreadyInitialized.selector, 0));
 
         hookOrigin.initialize({
-            projectId: 42,
+            initialProjectId: 42,
             name: "Test",
             symbol: "TST",
             baseUri: "http://test.com/",
@@ -397,7 +397,7 @@ contract Test_RegressionFixes_Unit is UnitTestSetup {
 
         // First initialization should succeed.
         cloneHook.initialize({
-            projectId: 42,
+            initialProjectId: 42,
             name: "Clone",
             symbol: "CLN",
             baseUri: "http://clone.com/",
@@ -416,13 +416,13 @@ contract Test_RegressionFixes_Unit is UnitTestSetup {
         });
 
         // Verify clone was initialized with the correct project ID.
-        assertEq(cloneHook.PROJECT_ID(), 42, "Clone should have projectId 42");
+        assertEq(cloneHook.projectId(), 42, "Clone should have projectId 42");
 
         // Second initialization should revert with the project ID from the first init.
         vm.expectRevert(abi.encodeWithSelector(JB721TiersHook.JB721TiersHook_AlreadyInitialized.selector, 42));
 
         cloneHook.initialize({
-            projectId: 99,
+            initialProjectId: 99,
             name: "Bad",
             symbol: "BAD",
             baseUri: "http://bad.com/",
@@ -467,7 +467,7 @@ contract Test_RegressionFixes_Unit is UnitTestSetup {
             votingUnits: uint16(0),
             reserveFrequency: uint16(0),
             reserveBeneficiary: reserveBeneficiary,
-            encodedIPFSUri: tokenUris[0],
+            encodedIpfsUri: tokenUris[0],
             category: uint24(5),
             discountPercent: uint8(0),
             flags: JB721TierConfigFlags({
@@ -488,7 +488,7 @@ contract Test_RegressionFixes_Unit is UnitTestSetup {
             votingUnits: uint16(0),
             reserveFrequency: uint16(0),
             reserveBeneficiary: reserveBeneficiary,
-            encodedIPFSUri: tokenUris[1],
+            encodedIpfsUri: tokenUris[1],
             category: uint24(5),
             discountPercent: uint8(0),
             flags: JB721TierConfigFlags({
@@ -509,7 +509,7 @@ contract Test_RegressionFixes_Unit is UnitTestSetup {
             votingUnits: uint16(0),
             reserveFrequency: uint16(0),
             reserveBeneficiary: reserveBeneficiary,
-            encodedIPFSUri: tokenUris[2],
+            encodedIpfsUri: tokenUris[2],
             category: uint24(5),
             discountPercent: uint8(0),
             flags: JB721TierConfigFlags({
@@ -580,7 +580,7 @@ contract Test_RegressionFixes_Unit is UnitTestSetup {
                 votingUnits: uint16(0),
                 reserveFrequency: uint16(0),
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[i],
+                encodedIpfsUri: tokenUris[i],
                 category: uint24(5),
                 discountPercent: uint8(0),
                 flags: JB721TierConfigFlags({

@@ -804,7 +804,7 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
                 votingUnits: uint32((i + 1) * 10),
                 reserveFrequency: 10,
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[i],
+                encodedIpfsUri: tokenUris[i],
                 category: uint24(100),
                 discountPercent: uint8(0),
                 flags: JB721TierConfigFlags({
@@ -899,7 +899,7 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
             votingUnits: uint32(10),
             reserveFrequency: 10,
             reserveBeneficiary: reserveBeneficiary,
-            encodedIPFSUri: tokenUris[0],
+            encodedIpfsUri: tokenUris[0],
             category: uint24(100),
             discountPercent: _discountPercent,
             flags: JB721TierConfigFlags({

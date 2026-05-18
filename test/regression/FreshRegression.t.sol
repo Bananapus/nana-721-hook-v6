@@ -57,7 +57,7 @@ contract FreshRegression is UnitTestSetup {
             votingUnits: 0,
             reserveFrequency: 0,
             reserveBeneficiary: address(0),
-            encodedIPFSUri: bytes32(uint256(1)),
+            encodedIpfsUri: bytes32(uint256(1)),
             category: uint24(1),
             discountPercent: 0,
             flags: JB721TierConfigFlags({
@@ -171,7 +171,7 @@ contract FreshRegression is UnitTestSetup {
             votingUnits: 0,
             reserveFrequency: uint16(2),
             reserveBeneficiary: address(0),
-            encodedIPFSUri: bytes32(uint256(2)),
+            encodedIpfsUri: bytes32(uint256(2)),
             category: uint24(1),
             discountPercent: 0,
             flags: JB721TierConfigFlags({

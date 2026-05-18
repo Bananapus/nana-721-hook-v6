@@ -11,10 +11,8 @@ import {IJB721TiersHookProjectDeployer} from "../../src/interfaces/IJB721TiersHo
 import {IJB721TiersHookStore} from "../../src/interfaces/IJB721TiersHookStore.sol";
 
 struct Hook721Deployment {
-    // forge-lint: disable-next-line(mixed-case-variable)
-    IJB721TiersHookDeployer hook_deployer;
-    // forge-lint: disable-next-line(mixed-case-variable)
-    IJB721TiersHookProjectDeployer project_deployer;
+    IJB721TiersHookDeployer hookDeployer;
+    IJB721TiersHookProjectDeployer projectDeployer;
     IJB721TiersHookStore store;
 }
 
@@ -25,17 +23,16 @@ library Hook721DeploymentLib {
     Vm internal constant vm = Vm(VM_ADDRESS);
 
     function getDeployment(string memory path) internal returns (Hook721Deployment memory deployment) {
-        // get chainId for which we need to get the deployment.
+        // Match the current chain ID to the Sphinx network name used in deployment artifacts.
         uint256 chainId = block.chainid;
 
-        // Deploy to get the constants.
-        // TODO: get constants without deploy.
+        // `SphinxConstants` exposes Sphinx's supported chain ID to network name mapping.
         SphinxConstants sphinxConstants = new SphinxConstants();
         NetworkInfo[] memory networks = sphinxConstants.getNetworkInfoArray();
 
         for (uint256 _i; _i < networks.length; _i++) {
             if (networks[_i].chainId == chainId) {
-                return getDeployment({path: path, network_name: networks[_i].name});
+                return getDeployment({path: path, networkName: networks[_i].name});
             }
         }
 
@@ -44,27 +41,26 @@ library Hook721DeploymentLib {
 
     function getDeployment(
         string memory path,
-        // forge-lint: disable-next-line(mixed-case-variable)
-        string memory network_name
+        string memory networkName
     )
         internal
         view
         returns (Hook721Deployment memory deployment)
     {
-        deployment.hook_deployer = IJB721TiersHookDeployer(
+        deployment.hookDeployer = IJB721TiersHookDeployer(
             _getDeploymentAddress({
                 path: path,
-                project_name: "nana-721-hook-v6",
-                network_name: network_name,
+                projectName: "nana-721-hook-v6",
+                networkName: networkName,
                 contractName: "JB721TiersHookDeployer"
             })
         );
 
-        deployment.project_deployer = IJB721TiersHookProjectDeployer(
+        deployment.projectDeployer = IJB721TiersHookProjectDeployer(
             _getDeploymentAddress({
                 path: path,
-                project_name: "nana-721-hook-v6",
-                network_name: network_name,
+                projectName: "nana-721-hook-v6",
+                networkName: networkName,
                 contractName: "JB721TiersHookProjectDeployer"
             })
         );
@@ -72,8 +68,8 @@ library Hook721DeploymentLib {
         deployment.store = IJB721TiersHookStore(
             _getDeploymentAddress({
                 path: path,
-                project_name: "nana-721-hook-v6",
-                network_name: network_name,
+                projectName: "nana-721-hook-v6",
+                networkName: networkName,
                 contractName: "JB721TiersHookStore"
             })
         );
@@ -86,10 +82,8 @@ library Hook721DeploymentLib {
     /// @return The address of the contract.
     function _getDeploymentAddress(
         string memory path,
-        // forge-lint: disable-next-line(mixed-case-variable)
-        string memory project_name,
-        // forge-lint: disable-next-line(mixed-case-variable)
-        string memory network_name,
+        string memory projectName,
+        string memory networkName,
         string memory contractName
     )
         internal
@@ -98,7 +92,7 @@ library Hook721DeploymentLib {
     {
         string memory deploymentJson =
         // forge-lint: disable-next-line(unsafe-cheatcode)
-        vm.readFile(string.concat(path, project_name, "/", network_name, "/", contractName, ".json"));
-        return stdJson.readAddress(deploymentJson, ".address");
+        vm.readFile(string.concat(path, projectName, "/", networkName, "/", contractName, ".json"));
+        return stdJson.readAddress({json: deploymentJson, key: ".address"});
     }
 }
