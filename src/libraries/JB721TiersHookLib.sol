@@ -711,25 +711,53 @@ library JB721TiersHookLib {
         private
         returns (uint256 consumed, bytes memory failureReason)
     {
+        // Grant the terminal allowance to pull up to `amount` of `token` from this contract. `forceApprove`
+        // sets the allowance to exactly `amount` regardless of any prior allowance, so a leftover non-zero
+        // allowance from a previous failed call cannot inflate this one.
         SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: amount});
+
+        // Track whether the external call returned successfully. Initialized to `false` so a revert path
+        // leaves it unset and the consumption math below is skipped.
         bool succeeded;
+
+        // Call the terminal's `addToBalanceOf` inside try/catch so a reverting terminal can't brick the
+        // surrounding payment. The terminal is expected to `transferFrom` against the allowance set above.
         try terminal.addToBalanceOf({
             projectId: projectId,
             token: token,
             amount: amount,
+            // Don't release any held fees on this call — fee returns are handled separately.
             shouldReturnHeldFees: false,
+            // No memo or metadata is forwarded; the leftover routing is opaque to off-chain consumers.
             memo: "",
             metadata: bytes("")
         }) {
+            // The terminal returned without reverting. The actual amount it consumed is measured below
+            // via the allowance delta — `succeeded` only records that there was no revert to report.
             succeeded = true;
         } catch (bytes memory reason) {
+            // The terminal reverted. Capture the reason so the caller can surface it via the
+            // `SplitPayoutReverted` event (or, for the leftover fallback, the
+            // `JB721TiersHookLib_SplitFallbackFailed` error) without re-throwing here.
             failureReason = reason;
         }
+
+        // On success, compute how much the terminal actually pulled. The post-call allowance equals
+        // `amount - actuallyConsumed` (since `forceApprove` set the pre-call allowance to `amount`), so
+        // `consumed = amount - postAllowance`. On failure, `succeeded` is `false` and `consumed` stays at
+        // its default `0`, which lets the caller route the full `amount` to the project's leftover balance.
         if (succeeded) {
+            // Safe to use `unchecked`: `postAllowance` cannot exceed `amount` because the terminal can
+            // only decrement (via `transferFrom`) the allowance we just set to `amount`.
             unchecked {
                 consumed = amount - IERC20(token).allowance({owner: address(this), spender: address(terminal)});
             }
         }
+
+        // Unconditionally revoke any remaining allowance. This is the load-bearing safety step — without
+        // it, a terminal that returns successfully without pulling the full `amount` would leave a stale
+        // non-zero allowance that the terminal could drain later. Running on both the success and failure
+        // paths means no allowance ever leaks out of this function.
         SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
     }
 
@@ -753,26 +781,55 @@ library JB721TiersHookLib {
         private
         returns (uint256 consumed, bytes memory failureReason)
     {
+        // Grant the terminal allowance to pull up to `amount` of `token` from this contract. `forceApprove`
+        // sets the allowance to exactly `amount` regardless of any prior allowance, so a leftover non-zero
+        // allowance from a previous failed call cannot inflate this one.
         SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: amount});
+
+        // Track whether the external call returned successfully. Initialized to `false` so a revert path
+        // leaves it unset and the consumption math below is skipped.
         bool succeeded;
+
+        // Call the terminal's `pay` inside try/catch so a reverting terminal can't brick the surrounding
+        // payment. The terminal is expected to `transferFrom` against the allowance set above and mint
+        // project tokens to `beneficiary` in return.
         try terminal.pay({
             projectId: projectId,
             token: token,
             amount: amount,
             beneficiary: beneficiary,
+            // No minimum is enforced on the terminal-side mint — the split-level minimum (if any) is
+            // enforced by the caller before reaching this helper.
             minReturnedTokens: 0,
+            // No memo or metadata is forwarded; the leftover routing is opaque to off-chain consumers.
             memo: "",
             metadata: bytes("")
         }) {
+            // The terminal returned without reverting. The actual amount it consumed is measured below
+            // via the allowance delta — `succeeded` only records that there was no revert to report.
             succeeded = true;
         } catch (bytes memory reason) {
+            // The terminal reverted. Capture the reason so the caller can surface it via the
+            // `SplitPayoutReverted` event without re-throwing here.
             failureReason = reason;
         }
+
+        // On success, compute how much the terminal actually pulled. The post-call allowance equals
+        // `amount - actuallyConsumed` (since `forceApprove` set the pre-call allowance to `amount`), so
+        // `consumed = amount - postAllowance`. On failure, `succeeded` is `false` and `consumed` stays at
+        // its default `0`, which lets the caller route the full `amount` to the project's leftover balance.
         if (succeeded) {
+            // Safe to use `unchecked`: `postAllowance` cannot exceed `amount` because the terminal can
+            // only decrement (via `transferFrom`) the allowance we just set to `amount`.
             unchecked {
                 consumed = amount - IERC20(token).allowance({owner: address(this), spender: address(terminal)});
             }
         }
+
+        // Unconditionally revoke any remaining allowance. This is the load-bearing safety step — without
+        // it, a terminal that returns successfully without pulling the full `amount` would leave a stale
+        // non-zero allowance that the terminal could drain later. Running on both the success and failure
+        // paths means no allowance ever leaks out of this function.
         SafeERC20.forceApprove({token: IERC20(token), spender: address(terminal), value: 0});
     }
 
