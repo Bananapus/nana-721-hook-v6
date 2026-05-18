@@ -22,7 +22,7 @@ contract RetroactiveReserveBeneficiaryDilution is UnitTestSetup {
             votingUnits: 0,
             reserveFrequency: 2,
             reserveBeneficiary: address(0),
-            encodedIPFSUri: bytes32(uint256(0x1234)),
+            encodedIpfsUri: bytes32(uint256(0x1234)),
             category: 1,
             discountPercent: 0,
             flags: JB721TierConfigFlags({
@@ -56,7 +56,7 @@ contract RetroactiveReserveBeneficiaryDilution is UnitTestSetup {
             votingUnits: 0,
             reserveFrequency: 2,
             reserveBeneficiary: owner,
-            encodedIPFSUri: bytes32(uint256(0x1234)),
+            encodedIpfsUri: bytes32(uint256(0x1234)),
             category: 1,
             discountPercent: 0,
             flags: JB721TierConfigFlags({
@@ -97,7 +97,7 @@ contract RetroactiveReserveBeneficiaryDilution is UnitTestSetup {
             votingUnits: 0,
             reserveFrequency: 2,
             reserveBeneficiary: owner,
-            encodedIPFSUri: bytes32(uint256(0x1234)),
+            encodedIpfsUri: bytes32(uint256(0x1234)),
             category: 1,
             discountPercent: 0,
             flags: JB721TierConfigFlags({
@@ -120,7 +120,7 @@ contract RetroactiveReserveBeneficiaryDilution is UnitTestSetup {
             votingUnits: 0,
             reserveFrequency: 3,
             reserveBeneficiary: address(0),
-            encodedIPFSUri: bytes32(uint256(0x5678)),
+            encodedIpfsUri: bytes32(uint256(0x5678)),
             category: 2,
             discountPercent: 0,
             flags: JB721TierConfigFlags({

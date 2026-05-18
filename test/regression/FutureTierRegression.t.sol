@@ -29,11 +29,11 @@ contract FutureTierRegression is UnitTestSetup {
         hook.setMetadata("", "", "", "", IJB721TokenUriResolver(address(hook)), 1, poisonedUri);
 
         (JB721TierConfig[] memory tiersToAdd,) = _createTiers(defaultTierConfig, 1);
-        tiersToAdd[0].encodedIPFSUri = bytes32(0);
+        tiersToAdd[0].encodedIpfsUri = bytes32(0);
 
         vm.prank(owner);
         hook.adjustTiers(tiersToAdd, new uint256[](0));
 
-        assertEq(hook.STORE().encodedIPFSUriOf(address(hook), 1), poisonedUri, "future tier inherited stale uri");
+        assertEq(hook.STORE().encodedIpfsUriOf(address(hook), 1), poisonedUri, "future tier inherited stale uri");
     }
 }

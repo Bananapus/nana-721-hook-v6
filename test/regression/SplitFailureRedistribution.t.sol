@@ -21,7 +21,7 @@ contract SplitFailureRedistribution is UnitTestSetup {
         tierConfigs[0].price = 1 ether;
         tierConfigs[0].initialSupply = uint32(100);
         tierConfigs[0].category = uint24(1);
-        tierConfigs[0].encodedIPFSUri = bytes32(uint256(0x1234));
+        tierConfigs[0].encodedIpfsUri = bytes32(uint256(0x1234));
         tierConfigs[0].splitPercent = 1_000_000_000;
 
         vm.prank(address(testHook));

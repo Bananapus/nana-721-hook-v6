@@ -56,9 +56,9 @@ contract TestCheckpoints is UnitTestSetup {
 
         ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
 
-        // CHECKPOINTS should NOT be deployed after initialization (lazy deployment).
+        // Checkpoints should not be deployed after initialization (lazy deployment).
         assertTrue(
-            address(tiersHook.CHECKPOINTS()) == address(0),
+            address(tiersHook.checkpoints()) == address(0),
             "Checkpoint module should not be deployed after initialization"
         );
 
@@ -68,9 +68,9 @@ contract TestCheckpoints is UnitTestSetup {
         vm.prank(owner);
         tiersHook.mintFor(tiersToMint, owner);
 
-        // CHECKPOINTS should now be deployed after the first mint.
+        // Checkpoints should now be deployed after the first mint.
         assertTrue(
-            address(tiersHook.CHECKPOINTS()) != address(0), "Checkpoint module should be deployed after first mint"
+            address(tiersHook.checkpoints()) != address(0), "Checkpoint module should be deployed after first mint"
         );
     }
 
@@ -99,13 +99,13 @@ contract TestCheckpoints is UnitTestSetup {
 
         address user = makeAddr("user");
 
-        // Mint an NFT to user (CHECKPOINTS already deployed during init).
+        // Mint an NFT to user (checkpoints already deployed during init).
         uint16[] memory tiersToMint = new uint16[](1);
         tiersToMint[0] = 1;
         vm.prank(owner);
         tiersHook.mintFor(tiersToMint, user);
 
-        IJB721Checkpoints module = tiersHook.CHECKPOINTS();
+        IJB721Checkpoints module = tiersHook.checkpoints();
 
         // Without delegation, getVotes should be 0.
         assertEq(module.getVotes(user), 0, "Votes should be 0 before delegation");
@@ -130,13 +130,13 @@ contract TestCheckpoints is UnitTestSetup {
 
         address user = makeAddr("user");
 
-        // Mint an NFT to user (CHECKPOINTS already deployed during init).
+        // Mint an NFT to user (checkpoints already deployed during init).
         uint16[] memory tiersToMint = new uint16[](1);
         tiersToMint[0] = 1;
         vm.prank(owner);
         tiersHook.mintFor(tiersToMint, user);
 
-        IJB721Checkpoints module = tiersHook.CHECKPOINTS();
+        IJB721Checkpoints module = tiersHook.checkpoints();
 
         // Delegate should be address(0) — no auto-delegation.
         assertEq(module.delegates(user), address(0), "Delegate should be zero after mint");
@@ -156,13 +156,13 @@ contract TestCheckpoints is UnitTestSetup {
         address alice = makeAddr("alice");
         address bob = makeAddr("bob");
 
-        // Mint to alice (CHECKPOINTS already deployed during init).
+        // Mint to alice (checkpoints already deployed during init).
         uint16[] memory tiersToMint = new uint16[](1);
         tiersToMint[0] = 1;
         vm.prank(owner);
         tiersHook.mintFor(tiersToMint, alice);
 
-        IJB721Checkpoints module = tiersHook.CHECKPOINTS();
+        IJB721Checkpoints module = tiersHook.checkpoints();
 
         // Both delegate to themselves.
         vm.prank(alice);
@@ -201,7 +201,7 @@ contract TestCheckpoints is UnitTestSetup {
         vm.prank(owner);
         tiersHook.mintFor(tiersToMint, user);
 
-        IJB721Checkpoints module = tiersHook.CHECKPOINTS();
+        IJB721Checkpoints module = tiersHook.checkpoints();
 
         // User self-delegates so checkpoints are created going forward.
         vm.prank(user);
@@ -254,7 +254,7 @@ contract TestCheckpoints is UnitTestSetup {
         vm.prank(owner);
         tiersHook.mintFor(tier1, user);
 
-        IJB721Checkpoints module = tiersHook.CHECKPOINTS();
+        IJB721Checkpoints module = tiersHook.checkpoints();
 
         // User self-delegates.
         vm.prank(user);
@@ -288,14 +288,14 @@ contract TestCheckpoints is UnitTestSetup {
 
         address user = makeAddr("user");
 
-        // Mint 2 NFTs (first one deploys CHECKPOINTS lazily).
+        // Mint 2 NFTs (the first one deploys checkpoints lazily).
         uint16[] memory tiersToMint = new uint16[](2);
         tiersToMint[0] = 1;
         tiersToMint[1] = 1;
         vm.prank(owner);
         tiersHook.mintFor(tiersToMint, user);
 
-        IJB721Checkpoints module = tiersHook.CHECKPOINTS();
+        IJB721Checkpoints module = tiersHook.checkpoints();
 
         // User self-delegates.
         vm.prank(user);
@@ -336,7 +336,7 @@ contract TestCheckpoints is UnitTestSetup {
         vm.prank(owner);
         tiersHook.mintFor(tiersToMint, user);
 
-        IJB721Checkpoints module = tiersHook.CHECKPOINTS();
+        IJB721Checkpoints module = tiersHook.checkpoints();
         uint256 tokenId = _generateTokenId(1, 1);
 
         // Before enrollment, ownerOfAt returns address(0).
@@ -374,7 +374,7 @@ contract TestCheckpoints is UnitTestSetup {
         vm.prank(owner);
         tiersHook.mintFor(tiersToMint, user);
 
-        IJB721Checkpoints module = tiersHook.CHECKPOINTS();
+        IJB721Checkpoints module = tiersHook.checkpoints();
         uint256 tokenId = _generateTokenId(1, 1);
 
         // Delegatee self-delegates first so they can receive.
@@ -410,7 +410,7 @@ contract TestCheckpoints is UnitTestSetup {
         vm.prank(owner);
         tiersHook.mintFor(tiersToMint, user);
 
-        IJB721Checkpoints module = tiersHook.CHECKPOINTS();
+        IJB721Checkpoints module = tiersHook.checkpoints();
         uint256 tokenId = _generateTokenId(1, 1);
 
         uint256[] memory tokenIds = new uint256[](1);
@@ -439,7 +439,7 @@ contract TestCheckpoints is UnitTestSetup {
         vm.prank(owner);
         tiersHook.mintFor(tiersToMint, user);
 
-        IJB721Checkpoints module = tiersHook.CHECKPOINTS();
+        IJB721Checkpoints module = tiersHook.checkpoints();
         uint256 tokenId = _generateTokenId(1, 1);
 
         uint256[] memory tokenIds = new uint256[](1);
@@ -479,7 +479,7 @@ contract TestCheckpoints is UnitTestSetup {
         vm.prank(owner);
         tiersHook.mintFor(tiersToMint, user);
 
-        IJB721Checkpoints module = tiersHook.CHECKPOINTS();
+        IJB721Checkpoints module = tiersHook.checkpoints();
         uint256 tokenId = _generateTokenId(1, 1);
 
         // Never enrolled, never transferred — ownerOfAt should return address(0).
@@ -504,7 +504,7 @@ contract TestCheckpoints is UnitTestSetup {
         vm.prank(owner);
         tiersHook.mintFor(tiersToMint, user);
 
-        IJB721Checkpoints module = tiersHook.CHECKPOINTS();
+        IJB721Checkpoints module = tiersHook.checkpoints();
         uint256 tokenId = _generateTokenId(1, 1);
 
         uint256 blockBeforeEnroll = block.number;
@@ -546,7 +546,7 @@ contract TestCheckpoints is UnitTestSetup {
         vm.prank(owner);
         tiersHook.mintFor(tiersToMint, alice);
 
-        IJB721Checkpoints module = tiersHook.CHECKPOINTS();
+        IJB721Checkpoints module = tiersHook.checkpoints();
         uint256 tokenId = _generateTokenId(1, 1);
 
         // Before transfer — unenrolled, returns address(0).
@@ -577,7 +577,7 @@ contract TestCheckpoints is UnitTestSetup {
         vm.prank(owner);
         tiersHook.mintFor(tiersToMint, makeAddr("user"));
 
-        IJB721Checkpoints module = tiersHook.CHECKPOINTS();
+        IJB721Checkpoints module = tiersHook.checkpoints();
 
         vm.expectRevert(
             abi.encodeWithSelector(

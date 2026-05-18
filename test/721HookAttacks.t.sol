@@ -79,7 +79,7 @@ contract NFTHookAttacks is UnitTestSetup {
             votingUnits: 0,
             reserveFrequency: 0,
             reserveBeneficiary: reserveBeneficiary,
-            encodedIPFSUri: tokenUris[0],
+            encodedIpfsUri: tokenUris[0],
             category: 2,
             discountPercent: 0,
             flags: JB721TierConfigFlags({
@@ -369,7 +369,7 @@ contract NFTHookAttacks is UnitTestSetup {
             votingUnits: 0,
             reserveFrequency: 0,
             reserveBeneficiary: attacker,
-            encodedIPFSUri: tokenUris[0],
+            encodedIpfsUri: tokenUris[0],
             category: 1,
             discountPercent: 0,
             flags: JB721TierConfigFlags({

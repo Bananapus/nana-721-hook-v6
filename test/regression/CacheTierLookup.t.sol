@@ -25,21 +25,21 @@ contract Test_L35_CacheTierLookup is UnitTestSetup {
         tierConfigs[0].price = 1 ether;
         tierConfigs[0].initialSupply = uint32(100);
         tierConfigs[0].category = uint24(1);
-        tierConfigs[0].encodedIPFSUri = bytes32(uint256(0x1111));
+        tierConfigs[0].encodedIpfsUri = bytes32(uint256(0x1111));
         tierConfigs[0].splitPercent = 250_000_000; // 25%
 
         // Tier B: 2 ETH, 50% split -> 1 ETH
         tierConfigs[1].price = 2 ether;
         tierConfigs[1].initialSupply = uint32(100);
         tierConfigs[1].category = uint24(2);
-        tierConfigs[1].encodedIPFSUri = bytes32(uint256(0x2222));
+        tierConfigs[1].encodedIpfsUri = bytes32(uint256(0x2222));
         tierConfigs[1].splitPercent = 500_000_000; // 50%
 
         // Tier C: 0.5 ETH, 100% split -> 0.5 ETH
         tierConfigs[2].price = 0.5 ether;
         tierConfigs[2].initialSupply = uint32(100);
         tierConfigs[2].category = uint24(3);
-        tierConfigs[2].encodedIPFSUri = bytes32(uint256(0x3333));
+        tierConfigs[2].encodedIpfsUri = bytes32(uint256(0x3333));
         tierConfigs[2].splitPercent = 1_000_000_000; // 100%
 
         vm.prank(address(testHook));
@@ -86,13 +86,13 @@ contract Test_L35_CacheTierLookup is UnitTestSetup {
         tierConfigs[0].price = 1 ether;
         tierConfigs[0].initialSupply = uint32(100);
         tierConfigs[0].category = uint24(1);
-        tierConfigs[0].encodedIPFSUri = bytes32(uint256(0xAAAA));
+        tierConfigs[0].encodedIpfsUri = bytes32(uint256(0xAAAA));
         tierConfigs[0].splitPercent = 500_000_000; // 50%
 
         tierConfigs[1].price = 3 ether;
         tierConfigs[1].initialSupply = uint32(100);
         tierConfigs[1].category = uint24(2);
-        tierConfigs[1].encodedIPFSUri = bytes32(uint256(0xBBBB));
+        tierConfigs[1].encodedIpfsUri = bytes32(uint256(0xBBBB));
         tierConfigs[1].splitPercent = 0; // 0%
 
         vm.prank(address(testHook));
@@ -137,7 +137,7 @@ contract Test_L35_CacheTierLookup is UnitTestSetup {
         tierConfigs[0].price = 1 ether;
         tierConfigs[0].initialSupply = uint32(100);
         tierConfigs[0].category = uint24(1);
-        tierConfigs[0].encodedIPFSUri = bytes32(uint256(0xCCCC));
+        tierConfigs[0].encodedIpfsUri = bytes32(uint256(0xCCCC));
         tierConfigs[0].splitPercent = 300_000_000; // 30%
 
         vm.prank(address(testHook));

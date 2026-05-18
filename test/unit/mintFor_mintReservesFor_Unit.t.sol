@@ -373,7 +373,7 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
             votingUnits: 0,
             reserveFrequency: uint16(9),
             reserveBeneficiary: address(0),
-            encodedIPFSUri: bytes32(uint256(1)),
+            encodedIpfsUri: bytes32(uint256(1)),
             category: uint24(100),
             discountPercent: 0,
             flags: JB721TierConfigFlags({

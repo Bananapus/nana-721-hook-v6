@@ -57,7 +57,7 @@ contract TierStoreHandler is CommonBase, StdCheats, StdUtils {
             votingUnits: 0,
             reserveFrequency: reserveFrequency,
             reserveBeneficiary: address(0),
-            encodedIPFSUri: bytes32(0),
+            encodedIpfsUri: bytes32(0),
             category: category,
             discountPercent: 0,
             flags: JB721TierConfigFlags({

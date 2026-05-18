@@ -162,7 +162,7 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
                 votingUnits: storedTier.price,
                 reserveFrequency: storedTier.reserveFrequency,
                 reserveBeneficiary: reserveBeneficiaryOf(nft, currentSortIndex),
-                encodedIPFSUri: encodedIPFSUriOf[nft][currentSortIndex],
+                encodedIpfsUri: encodedIpfsUriOf[nft][currentSortIndex],
                 category: storedTier.category,
                 discountPercent: storedTier.discountPercent,
                 flags: JB721TierFlags({

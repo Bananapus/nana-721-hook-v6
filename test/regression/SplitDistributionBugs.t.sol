@@ -68,7 +68,7 @@ contract Test_SplitDistributionBugs is UnitTestSetup {
         tierConfigs[0].price = 1 ether;
         tierConfigs[0].initialSupply = uint32(100);
         tierConfigs[0].category = uint24(1);
-        tierConfigs[0].encodedIPFSUri = bytes32(uint256(0x1234));
+        tierConfigs[0].encodedIpfsUri = bytes32(uint256(0x1234));
         tierConfigs[0].splitPercent = 1_000_000_000; // 100%
 
         vm.prank(address(testHook));
@@ -170,7 +170,7 @@ contract Test_SplitDistributionBugs is UnitTestSetup {
         tierConfigs[0].price = 1 ether;
         tierConfigs[0].initialSupply = uint32(100);
         tierConfigs[0].category = uint24(1);
-        tierConfigs[0].encodedIPFSUri = bytes32(uint256(0x1234));
+        tierConfigs[0].encodedIpfsUri = bytes32(uint256(0x1234));
         tierConfigs[0].splitPercent = 1_000_000_000; // 100%
         tierConfigs[0].discountPercent = 100; // 50% discount (100/200)
 
@@ -218,7 +218,7 @@ contract Test_SplitDistributionBugs is UnitTestSetup {
         tierConfigs[0].price = 2 ether;
         tierConfigs[0].initialSupply = uint32(100);
         tierConfigs[0].category = uint24(1);
-        tierConfigs[0].encodedIPFSUri = bytes32(uint256(0x1234));
+        tierConfigs[0].encodedIpfsUri = bytes32(uint256(0x1234));
         tierConfigs[0].splitPercent = 500_000_000; // 50%
         tierConfigs[0].discountPercent = 50; // 25% discount (50/200)
 
@@ -270,7 +270,7 @@ contract Test_SplitDistributionBugs is UnitTestSetup {
         tierConfigs[0].price = 1 ether;
         tierConfigs[0].initialSupply = uint32(100);
         tierConfigs[0].category = uint24(1);
-        tierConfigs[0].encodedIPFSUri = bytes32(uint256(0x1234));
+        tierConfigs[0].encodedIpfsUri = bytes32(uint256(0x1234));
         tierConfigs[0].splitPercent = 1_000_000_000; // 100%
 
         vm.prank(address(testHook));
@@ -379,7 +379,7 @@ contract Test_SplitDistributionBugs is UnitTestSetup {
         tierConfigs[0].price = 1 ether;
         tierConfigs[0].initialSupply = uint32(100);
         tierConfigs[0].category = uint24(1);
-        tierConfigs[0].encodedIPFSUri = bytes32(uint256(0x1234));
+        tierConfigs[0].encodedIpfsUri = bytes32(uint256(0x1234));
         tierConfigs[0].splitPercent = 1_000_000_000; // 100%
 
         vm.prank(address(testHook));
@@ -492,7 +492,7 @@ contract Test_SplitDistributionBugs is UnitTestSetup {
         tierConfigs[0].price = 100e6;
         tierConfigs[0].initialSupply = uint32(100);
         tierConfigs[0].category = uint24(1);
-        tierConfigs[0].encodedIPFSUri = bytes32(uint256(0x1234));
+        tierConfigs[0].encodedIpfsUri = bytes32(uint256(0x1234));
         tierConfigs[0].splitPercent = 1_000_000_000; // 100%
 
         vm.prank(address(testHook));
@@ -576,7 +576,7 @@ contract Test_SplitDistributionBugs is UnitTestSetup {
         tierConfigs[0].price = 100e6;
         tierConfigs[0].initialSupply = uint32(100);
         tierConfigs[0].category = uint24(1);
-        tierConfigs[0].encodedIPFSUri = bytes32(uint256(0x1234));
+        tierConfigs[0].encodedIpfsUri = bytes32(uint256(0x1234));
         tierConfigs[0].splitPercent = 1_000_000_000; // 100% to the split hook
 
         vm.prank(address(testHook));
@@ -687,7 +687,7 @@ contract Test_SplitDistributionBugs is UnitTestSetup {
         tierConfigs[0].price = 1 ether;
         tierConfigs[0].initialSupply = uint32(100);
         tierConfigs[0].category = uint24(1);
-        tierConfigs[0].encodedIPFSUri = bytes32(uint256(0x1234));
+        tierConfigs[0].encodedIpfsUri = bytes32(uint256(0x1234));
         tierConfigs[0].splitPercent = 1_000_000_000; // 100%
 
         vm.prank(address(testHook));
@@ -802,7 +802,7 @@ contract Test_SplitDistributionBugs is UnitTestSetup {
         tierConfigs[0].price = 1 ether;
         tierConfigs[0].initialSupply = uint32(100);
         tierConfigs[0].category = uint24(1);
-        tierConfigs[0].encodedIPFSUri = bytes32(uint256(0x1234));
+        tierConfigs[0].encodedIpfsUri = bytes32(uint256(0x1234));
         tierConfigs[0].splitPercent = JBConstants.SPLITS_TOTAL_PERCENT + 1; // Over the limit.
 
         vm.prank(address(testHook));

@@ -65,7 +65,7 @@ contract Erc20SplitAllowanceConsumption is UnitTestSetup {
         config.price = price;
         config.initialSupply = uint32(100);
         config.category = uint24(1);
-        config.encodedIPFSUri = bytes32(uint256(0x1234));
+        config.encodedIpfsUri = bytes32(uint256(0x1234));
         config.splitPercent = splitPercent;
     }
 

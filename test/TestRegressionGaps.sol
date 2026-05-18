@@ -111,7 +111,7 @@ contract TestRegressionGaps_Reentrancy is UnitTestSetup {
         config.price = price;
         config.initialSupply = uint32(100);
         config.category = uint24(1);
-        config.encodedIPFSUri = bytes32(uint256(0x1234));
+        config.encodedIpfsUri = bytes32(uint256(0x1234));
         config.splitPercent = splitPercent;
     }
 
@@ -446,7 +446,7 @@ contract TestRegressionGaps_GasLimits is UnitTestSetup {
                 votingUnits: 0,
                 reserveFrequency: 0,
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[i % 10],
+                encodedIpfsUri: tokenUris[i % 10],
                 // forge-lint: disable-next-line(unsafe-typecast)
                 // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1), // Ascending categories
@@ -502,7 +502,7 @@ contract TestRegressionGaps_GasLimits is UnitTestSetup {
                 votingUnits: 0,
                 reserveFrequency: 0,
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[i % 10],
+                encodedIpfsUri: tokenUris[i % 10],
                 // forge-lint: disable-next-line(unsafe-typecast)
                 // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1),
@@ -560,7 +560,7 @@ contract TestRegressionGaps_GasLimits is UnitTestSetup {
                 votingUnits: 0,
                 reserveFrequency: 0,
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[i % 10],
+                encodedIpfsUri: tokenUris[i % 10],
                 // forge-lint: disable-next-line(unsafe-typecast)
                 // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1),
@@ -664,7 +664,7 @@ contract TestRegressionGaps_GasLimits is UnitTestSetup {
                 votingUnits: 0,
                 reserveFrequency: 0,
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[i % 10],
+                encodedIpfsUri: tokenUris[i % 10],
                 // forge-lint: disable-next-line(unsafe-typecast)
                 // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1),
@@ -716,7 +716,7 @@ contract TestRegressionGaps_GasLimits is UnitTestSetup {
                 votingUnits: 0,
                 reserveFrequency: 0,
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[i % 10],
+                encodedIpfsUri: tokenUris[i % 10],
                 // forge-lint: disable-next-line(unsafe-typecast)
                 // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1),
@@ -780,7 +780,7 @@ contract TestRegressionGaps_GasLimits is UnitTestSetup {
                 votingUnits: 0,
                 reserveFrequency: 0,
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[i % 10],
+                encodedIpfsUri: tokenUris[i % 10],
                 // forge-lint: disable-next-line(unsafe-typecast)
                 // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1),
@@ -855,7 +855,7 @@ contract TestRegressionGaps_GasLimits is UnitTestSetup {
                 votingUnits: 0,
                 reserveFrequency: 0,
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[i % 10],
+                encodedIpfsUri: tokenUris[i % 10],
                 // forge-lint: disable-next-line(unsafe-typecast)
                 // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1),
@@ -1054,7 +1054,7 @@ contract TestRegressionGaps_GasLimits is UnitTestSetup {
                 votingUnits: 0,
                 reserveFrequency: 0,
                 reserveBeneficiary: reserveBeneficiary,
-                encodedIPFSUri: tokenUris[i % 10],
+                encodedIpfsUri: tokenUris[i % 10],
                 // forge-lint: disable-next-line(unsafe-typecast)
                 category: uint24(i + 1),
                 discountPercent: 0,

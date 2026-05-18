@@ -119,7 +119,7 @@ contract SplitCreditsMismatch is UnitTestSetup {
             votingUnits: 0,
             reserveFrequency: 0,
             reserveBeneficiary: reserveBeneficiary,
-            encodedIPFSUri: bytes32(uint256(0x1234)),
+            encodedIpfsUri: bytes32(uint256(0x1234)),
             category: 1,
             discountPercent: 0,
             flags: JB721TierConfigFlags({

@@ -50,7 +50,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     //*********************************************************************//
 
     /// @notice The ID of the project that this contract is associated with.
-    uint256 public override PROJECT_ID;
+    uint256 public override projectId;
 
     //*********************************************************************//
     // -------------------------- constructor ---------------------------- //
@@ -194,16 +194,16 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
         override
     {
         // Keep a reference to the project ID.
-        uint256 projectId = PROJECT_ID;
+        uint256 localProjectId = projectId;
 
         // Make sure the caller is a terminal of the project, and that the call is being made on behalf of an
         // interaction with the correct project.
         if (
-            msg.value != 0 || !DIRECTORY.isTerminalOf({projectId: projectId, terminal: IJBTerminal(msg.sender)})
-                || context.projectId != projectId
+            msg.value != 0 || !DIRECTORY.isTerminalOf({projectId: localProjectId, terminal: IJBTerminal(msg.sender)})
+                || context.projectId != localProjectId
         ) {
             revert JB721Hook_InvalidCashOut({
-                caller: msg.sender, contextProjectId: context.projectId, projectId: projectId, msgValue: msg.value
+                caller: msg.sender, contextProjectId: context.projectId, projectId: localProjectId, msgValue: msg.value
             });
         }
 
@@ -243,15 +243,17 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     /// @dev Reverts if the calling contract is not one of the project's terminals.
     /// @param context The payment context passed in by the terminal.
     function afterPayRecordedWith(JBAfterPayRecordedContext calldata context) external payable virtual override {
-        uint256 projectId = PROJECT_ID;
+        uint256 localProjectId = projectId;
 
         // Make sure the caller is a terminal of the project, and that the call is being made on behalf of an
         // interaction with the correct project.
         if (
-            !DIRECTORY.isTerminalOf({projectId: projectId, terminal: IJBTerminal(msg.sender)})
-                || context.projectId != projectId
+            !DIRECTORY.isTerminalOf({projectId: localProjectId, terminal: IJBTerminal(msg.sender)})
+                || context.projectId != localProjectId
         ) {
-            revert JB721Hook_InvalidPay({caller: msg.sender, contextProjectId: context.projectId, projectId: projectId});
+            revert JB721Hook_InvalidPay({
+                caller: msg.sender, contextProjectId: context.projectId, projectId: localProjectId
+            });
         }
 
         // Process the payment.
@@ -267,12 +269,12 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     function _didBurn(uint256[] memory tokenIds) internal virtual;
 
     /// @notice Initializes the contract by associating it with a project and adding ERC721 details.
-    /// @param projectId The ID of the project that this contract is associated with.
+    /// @param initialProjectId The ID of the project that this contract is associated with.
     /// @param name The name of the NFT collection.
     /// @param symbol The symbol representing the NFT collection.
-    function _initialize(uint256 projectId, string memory name, string memory symbol) internal {
-        ERC721._initialize({name_: name, symbol_: symbol});
-        PROJECT_ID = projectId;
+    function _initialize(uint256 initialProjectId, string memory name, string memory symbol) internal {
+        ERC721._initialize({collectionName: name, collectionSymbol: symbol});
+        projectId = initialProjectId;
     }
 
     /// @notice Process a received payment by minting NFTs and/or updating credits. Subclasses implement the

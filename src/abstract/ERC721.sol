@@ -40,9 +40,9 @@ abstract contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Er
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
      */
-    function _initialize(string memory name_, string memory symbol_) internal {
-        _name = name_;
-        _symbol = symbol_;
+    function _initialize(string memory collectionName, string memory collectionSymbol) internal {
+        _name = collectionName;
+        _symbol = collectionSymbol;
     }
 
     /**

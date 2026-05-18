@@ -187,7 +187,7 @@ contract TierLifecycleHandler is Test {
             votingUnits: 0,
             reserveFrequency: 0,
             reserveBeneficiary: address(0),
-            encodedIPFSUri: bytes32(0),
+            encodedIpfsUri: bytes32(0),
             category: uint24(100),
             discountPercent: 0,
             flags: JB721TierConfigFlags({

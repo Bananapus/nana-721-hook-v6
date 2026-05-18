@@ -18,5 +18,5 @@ interface IJB721Hook is IJBRulesetDataHook, IJBPayHook, IJBCashOutHook {
 
     /// @notice The ID of the project that this contract is associated with.
     /// @return The project ID.
-    function PROJECT_ID() external view returns (uint256);
+    function projectId() external view returns (uint256);
 }

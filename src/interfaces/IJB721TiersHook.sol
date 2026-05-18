@@ -89,7 +89,7 @@ interface IJB721TiersHook is IJB721Hook {
     /// @param tierId The ID of the tier whose encoded IPFS URI was set.
     /// @param encodedUri The new encoded IPFS URI.
     /// @param caller The address that called the function.
-    event SetEncodedIPFSUri(uint256 indexed tierId, bytes32 encodedUri, address caller);
+    event SetEncodedIpfsUri(uint256 indexed tierId, bytes32 encodedUri, address caller);
 
     /// @notice Emitted when the token URI resolver is set.
     /// @param resolver The new token URI resolver.
@@ -140,8 +140,7 @@ interface IJB721TiersHook is IJB721Hook {
     /// @notice The checkpoint module that manages IVotes-compatible checkpointed voting power for this hook's NFTs.
     /// @dev Deployed lazily on first mint. Pass this to JBTokenDistributor as the IVotes token.
     /// @return The checkpoint module.
-    // forge-lint: disable-next-line(mixed-case-function)
-    function CHECKPOINTS() external view returns (IJB721Checkpoints);
+    function checkpoints() external view returns (IJB721Checkpoints);
 
     /// @notice The contract that exposes price feeds for currency conversions.
     /// @return The prices contract.
@@ -165,7 +164,7 @@ interface IJB721TiersHook is IJB721Hook {
     function adjustTiers(JB721TierConfig[] calldata tiersToAdd, uint256[] calldata tierIdsToRemove) external;
 
     /// @notice Initializes a cloned copy of the original `JB721TiersHook` contract.
-    /// @param projectId The ID of the project this hook is associated with.
+    /// @param initialProjectId The ID of the project this hook is associated with.
     /// @param name The name of the NFT collection.
     /// @param symbol The symbol representing the NFT collection.
     /// @param baseUri The URI to use as a base for full NFT `tokenUri`s.
@@ -174,7 +173,7 @@ interface IJB721TiersHook is IJB721Hook {
     /// @param tiersConfig The NFT tiers and pricing context to initialize the hook with.
     /// @param flags A set of additional options which dictate how the hook behaves.
     function initialize(
-        uint256 projectId,
+        uint256 initialProjectId,
         string memory name,
         string memory symbol,
         string memory baseUri,
@@ -217,16 +216,16 @@ interface IJB721TiersHook is IJB721Hook {
     /// @param tokenUriResolver The new URI resolver. Pass `IJB721TokenUriResolver(address(this))` as a sentinel value
     /// to leave unchanged. `address(this)` is used instead of `address(0)` because `address(0)` is a valid value that
     /// clears the resolver.
-    /// @param encodedIPFSUriTierId The ID of the tier to set the encoded IPFS URI of.
-    /// @param encodedIPFSUri The encoded IPFS URI to set.
+    /// @param encodedIpfsUriTierId The ID of the tier to set the encoded IPFS URI of.
+    /// @param encodedIpfsUri The encoded IPFS URI to set.
     function setMetadata(
         string calldata name,
         string calldata symbol,
         string calldata baseUri,
         string calldata contractUri,
         IJB721TokenUriResolver tokenUriResolver,
-        uint256 encodedIPFSUriTierId,
-        bytes32 encodedIPFSUri
+        uint256 encodedIpfsUriTierId,
+        bytes32 encodedIpfsUri
     )
         external;
 }

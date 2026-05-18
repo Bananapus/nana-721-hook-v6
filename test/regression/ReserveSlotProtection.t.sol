@@ -35,7 +35,7 @@ contract ReserveSlotProtection is Test {
             votingUnits: 0,
             reserveFrequency: 1,
             reserveBeneficiary: address(0xBEEF),
-            encodedIPFSUri: bytes32(0),
+            encodedIpfsUri: bytes32(0),
             category: 0,
             discountPercent: 0,
             flags: JB721TierConfigFlags({
@@ -80,7 +80,7 @@ contract ReserveSlotProtection is Test {
             votingUnits: 0,
             reserveFrequency: 1,
             reserveBeneficiary: address(0xBEEF),
-            encodedIPFSUri: bytes32(0),
+            encodedIpfsUri: bytes32(0),
             category: 0,
             discountPercent: 0,
             flags: JB721TierConfigFlags({
@@ -128,7 +128,7 @@ contract ReserveSlotProtection is Test {
             votingUnits: 0,
             reserveFrequency: 2,
             reserveBeneficiary: address(0xCAFE),
-            encodedIPFSUri: bytes32(0),
+            encodedIpfsUri: bytes32(0),
             category: 0,
             discountPercent: 0,
             flags: JB721TierConfigFlags({
@@ -175,7 +175,7 @@ contract ReserveSlotProtection is Test {
             votingUnits: 0,
             reserveFrequency: 1,
             reserveBeneficiary: address(0xBEEF),
-            encodedIPFSUri: bytes32(0),
+            encodedIpfsUri: bytes32(0),
             category: 0,
             discountPercent: 0,
             flags: JB721TierConfigFlags({
@@ -235,7 +235,7 @@ contract ReserveSlotProtection is Test {
             votingUnits: 0,
             reserveFrequency: 0,
             reserveBeneficiary: address(0),
-            encodedIPFSUri: bytes32(0),
+            encodedIpfsUri: bytes32(0),
             category: 0,
             discountPercent: 0,
             flags: JB721TierConfigFlags({

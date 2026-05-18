@@ -90,7 +90,7 @@ contract Test_BrokenTerminalDoesNotDos is UnitTestSetup {
         tierConfigs[0].price = 1 ether;
         tierConfigs[0].initialSupply = uint32(100);
         tierConfigs[0].category = uint24(1);
-        tierConfigs[0].encodedIPFSUri = bytes32(uint256(0x1234));
+        tierConfigs[0].encodedIpfsUri = bytes32(uint256(0x1234));
         tierConfigs[0].splitPercent = 1_000_000_000; // 100%
 
         vm.prank(address(testHook));
@@ -191,7 +191,7 @@ contract Test_BrokenTerminalDoesNotDos is UnitTestSetup {
         tierConfigs[0].price = 100e6;
         tierConfigs[0].initialSupply = uint32(100);
         tierConfigs[0].category = uint24(1);
-        tierConfigs[0].encodedIPFSUri = bytes32(uint256(0x1234));
+        tierConfigs[0].encodedIpfsUri = bytes32(uint256(0x1234));
         tierConfigs[0].splitPercent = 1_000_000_000; // 100%
 
         vm.prank(address(testHook));
