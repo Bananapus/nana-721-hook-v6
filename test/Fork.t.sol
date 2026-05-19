@@ -1098,7 +1098,6 @@ contract Fork_721Hook_Test is Test {
     /// @notice Owner can mint via mintFor when allowOwnerMint is set on tier.
     function test_fork_ownerMint() public {
         JB721TierConfig[] memory tierConfigs = _makeStandardTiers(1, 10, true); // allowOwnerMint=true
-        tierConfigs[0].reserveFrequency = 0; // No reserves (required: can't have both).
         JB721TiersHookFlags memory flags = _defaultFlags();
         (, address hook) = _launchProject(tierConfigs, flags, 5000, true, 0x00);
 
@@ -1110,6 +1109,14 @@ contract Fork_721Hook_Test is Test {
         IJB721TiersHook(hook).mintFor(tierIds, beneficiary);
 
         assertEq(IERC721(hook).balanceOf(beneficiary), 2, "owner minted 2 NFTs");
+
+        uint256 pending = store.numberOfPendingReservesFor(hook, 1);
+        assertEq(pending, 1, "owner mints should accrue pending reserves");
+
+        vm.prank(multisig);
+        IJB721TiersHook(hook).mintPendingReservesFor(1, 1);
+
+        assertEq(IERC721(hook).balanceOf(reserveBeneficiary), 1, "reserve beneficiary received reserve NFT");
     }
 
     /// @notice Non-owner cannot mintFor.
