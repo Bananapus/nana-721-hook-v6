@@ -401,7 +401,6 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
         uint256 numberOfTiers = 3;
 
         defaultTierConfig.flags.allowOwnerMint = true;
-        defaultTierConfig.reserveFrequency = 0;
         ForTest_JB721TiersHook hook = _initializeForTestHook(numberOfTiers);
 
         // Mint 6 NFTs, 2 from each tier.
@@ -426,6 +425,10 @@ contract Test_mintFor_mintReservesFor_Unit is UnitTestSetup {
         assertEq(hook.ownerOf(_generateTokenId(2, 2)), beneficiary);
         assertEq(hook.ownerOf(_generateTokenId(3, 1)), beneficiary);
         assertEq(hook.ownerOf(_generateTokenId(3, 2)), beneficiary);
+
+        assertEq(hook.test_store().numberOfPendingReservesFor(address(hook), 1), 1);
+        assertEq(hook.test_store().numberOfPendingReservesFor(address(hook), 2), 1);
+        assertEq(hook.test_store().numberOfPendingReservesFor(address(hook), 3), 1);
     }
 
     function test_mintFor_revertIfManualMintNotAllowed() public {

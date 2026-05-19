@@ -958,9 +958,8 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                 revert JB721TiersHookStore_VotingUnitsNotAllowed({tierId: tierId});
             }
 
-            // Make sure the new tier doesn't have a reserve frequency if the 721 contract's flags don't allow it to,
-            // OR if manual minting is allowed.
-            if ((flags.noNewTiersWithReserves || tierToAdd.flags.allowOwnerMint) && tierToAdd.reserveFrequency != 0) {
+            // Make sure the new tier doesn't have a reserve frequency if the 721 contract's flags don't allow it to.
+            if (flags.noNewTiersWithReserves && tierToAdd.reserveFrequency != 0) {
                 revert JB721TiersHookStore_ReserveFrequencyNotAllowed({tierId: tierId});
             }
 
