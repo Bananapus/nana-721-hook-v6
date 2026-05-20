@@ -49,7 +49,8 @@ This file covers the tiered-NFT accounting, reserve-mint, and cash-out risks in 
 - **`totalCashOutWeight` iterates all tier IDs.**
 - **`balanceOf`, `votingUnitsOf`, and `totalSupplyOf` also iterate all tiers.**
 - **Large tier catalogs are technically allowed but not the supported operating shape.**
-- **`tiersOf` still traverses removed tiers until cleanup runs.**
+- **`tiersOf` still traverses removed tiers until cleanup runs.** `cleanTiers` compacts removed tiers out of the
+  sorted traversal path, including removed trailing tiers when at least one active tier remains.
 - **Minting across many tiers in one payment can get expensive fast.**
 - **Reserve minting is loop-based and should be batched when large.**
 
@@ -83,6 +84,7 @@ This file covers the tiered-NFT accounting, reserve-mint, and cash-out risks in 
 - token IDs remain unique
 - credits track leftovers correctly
 - removed tiers stay excluded from active listings
+- `cleanTiers` moves the sorted-list end back when a trailing tier is removed
 - store balance views match ERC-721 balances
 - discount monotonicity is enforced when locked
 

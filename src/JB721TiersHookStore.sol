@@ -879,6 +879,20 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             currentSortedTierId = _nextSortedTierIdOf({hook: hook, id: currentSortedTierId, max: lastSortedTierId});
         }
 
+        if (previousSortedTierId != 0 && previousSortedTierId != lastSortedTierId) {
+            // All sorted IDs after `previousSortedTierId` were removed. Make the last active tier the traversal end so
+            // view functions do not keep walking a removed trailing suffix after cleanup.
+            if (_tierIdAfter[hook][previousSortedTierId] != 0) _tierIdAfter[hook][previousSortedTierId] = 0;
+
+            // Track the compacted end only when it is not the natural max tier ID. A zero value means
+            // `_lastSortedTierIdOf` can keep using `maxTierIdOf` as the implicit end.
+            uint256 maxTierId = maxTierIdOf[hook];
+            uint256 newLastTrackedSortedTierId = previousSortedTierId == maxTierId ? 0 : previousSortedTierId;
+            if (_lastTrackedSortedTierIdOf[hook] != newLastTrackedSortedTierId) {
+                _lastTrackedSortedTierIdOf[hook] = newLastTrackedSortedTierId;
+            }
+        }
+
         emit CleanTiers({hook: hook, caller: msg.sender});
     }
 

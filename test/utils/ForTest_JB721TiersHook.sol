@@ -32,6 +32,8 @@ interface IJB721TiersHookStore_ForTest is IJB721TiersHookStore {
     // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_dumpTiersList(address nft) external view returns (JB721Tier[] memory tiers);
     // forge-lint: disable-next-line(mixed-case-function)
+    function ForTest_lastSortedTierIdOf(address nft) external view returns (uint256 tierId);
+    // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_setTier(address hook, uint256 index, JBStored721Tier calldata newTier) external;
     // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_setTierVotingUnits(address hook, uint256 tierId, uint32 votingUnits) external;
@@ -189,6 +191,11 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
                 break;
             }
         }
+    }
+
+    // forge-lint: disable-next-line(mixed-case-function)
+    function ForTest_lastSortedTierIdOf(address nft) public view override returns (uint256 tierId) {
+        tierId = _lastSortedTierIdOf(nft);
     }
 
     // forge-lint: disable-next-line(mixed-case-function)
