@@ -1040,7 +1040,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                 _tierVotingUnitsOf[msg.sender][tierId] = uint32(tierToAdd.votingUnits);
             }
 
-            // If this is the first tier in a new category, store it as the first tier in that category.
+            // If this is the first tier in a category within this batch, store it as that category's traversal start.
+            // Same-category additions are inserted before older tiers in the category-sorted linked list, so a later
+            // batch must overwrite the previous start pointer to keep category-filtered `tiersOf` queries complete.
             // The `_startingTierIdOfCategory` of the category "0" will always be the same as the `_tierIdAfter` the 0th
             // tier.
             // Access the previous tier's category directly from calldata (0 when i == 0, matching the old
