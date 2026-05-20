@@ -43,7 +43,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
     error JB721TiersHook_AlreadyInitialized(uint256 projectId);
     error JB721TiersHook_InvalidPricingDecimals(uint256 decimals);
-    error JB721TiersHook_MissingSplitMetadata(uint256 forwardedAmount);
+    error JB721TiersHook_MissingSplitMetadata();
     error JB721TiersHook_MintReserveNftsPaused(uint256 projectId, uint256 tierId);
     error JB721TiersHook_NoProjectId(uint256 projectId);
     error JB721TiersHook_TierTransfersPaused(uint256 projectId, uint256 tokenId, address from, address to);
@@ -718,7 +718,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         // Distribute any forwarded funds to tier split groups.
         if (context.forwardedAmount.value != 0) {
             if (splitData.length == 0) {
-                revert JB721TiersHook_MissingSplitMetadata({forwardedAmount: context.forwardedAmount.value});
+                revert JB721TiersHook_MissingSplitMetadata();
             }
 
             JB721TiersHookLib.distributeAll({

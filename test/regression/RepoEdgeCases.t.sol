@@ -115,9 +115,7 @@ contract RepoRegressions is UnitTestSetup {
         );
 
         vm.deal(mockTerminalAddress, 1 ether);
-        vm.expectRevert(
-            abi.encodeWithSelector(JB721TiersHook.JB721TiersHook_MissingSplitMetadata.selector, uint256(1 ether))
-        );
+        vm.expectRevert(JB721TiersHook.JB721TiersHook_MissingSplitMetadata.selector);
 
         vm.prank(mockTerminalAddress);
         hook.afterPayRecordedWith{value: 1 ether}(
