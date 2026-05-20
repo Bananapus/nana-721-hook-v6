@@ -1054,13 +1054,7 @@ contract Test_afterPayRecorded_Unit is UnitTestSetup {
                 amount: JBTokenAmount({
                     token: token, decimals: 0, currency: 18, value: uint32(uint160(JBConstants.NATIVE_TOKEN))
                 }),
-                forwardedAmount: JBTokenAmount({
-                    token: JBConstants.NATIVE_TOKEN,
-                    decimals: 0,
-                    currency: 18,
-                    value: uint32(uint160(JBConstants.NATIVE_TOKEN))
-                }),
-                // forwarded to the hook.
+                forwardedAmount: JBTokenAmount({token: token, decimals: 0, currency: 18, value: 0}),
                 weight: 10 ** 18,
                 newlyIssuedTokenCount: 0,
                 beneficiary: msg.sender,
