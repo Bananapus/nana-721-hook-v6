@@ -43,8 +43,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
 
     error JB721TiersHook_AlreadyInitialized(uint256 projectId);
     error JB721TiersHook_InvalidPricingDecimals(uint256 decimals);
-    error JB721TiersHook_MissingSplitMetadata();
     error JB721TiersHook_MintReserveNftsPaused(uint256 projectId, uint256 tierId);
+    error JB721TiersHook_MissingSplitMetadata();
     error JB721TiersHook_NoProjectId(uint256 projectId);
     error JB721TiersHook_TierTransfersPaused(uint256 projectId, uint256 tokenId, address from, address to);
 
