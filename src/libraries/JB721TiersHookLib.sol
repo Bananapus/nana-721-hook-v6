@@ -34,8 +34,8 @@ library JB721TiersHookLib {
     error JB721TiersHook_CantBuyWithCredits(uint256 restrictedCost, uint256 freshValue);
     error JB721TiersHook_Overspending(uint256 leftoverAmount);
     error JB721TiersHookLib_NoTerminalForLeftover(uint256 projectId, address token, uint256 leftoverAmount);
-    error JB721TiersHookLib_SplitFallbackFailed(uint256 projectId, address token, uint256 amount, bytes reason);
     error JB721TiersHookLib_SplitAmountMismatch(uint256 expectedAmount, uint256 actualAmount);
+    error JB721TiersHookLib_SplitFallbackFailed(uint256 projectId, address token, uint256 amount, bytes reason);
     error JB721TiersHookLib_SplitMetadataLengthMismatch(uint256 tierIdCount, uint256 amountCount);
     error JB721TiersHookLib_TokenTransferAmountMismatch(uint256 expectedAmount, uint256 receivedAmount);
 
