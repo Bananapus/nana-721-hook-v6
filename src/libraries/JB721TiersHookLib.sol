@@ -129,6 +129,8 @@ library JB721TiersHookLib {
     )
         external
     {
+        // `encodedSplitData` is terminal-forwarded hook metadata. Each tier ID must have exactly one explicit amount so
+        // later split-group routing cannot pair a tier with the wrong value or silently ignore trailing data.
         (uint16[] memory tierIds, uint256[] memory amounts) = abi.decode(encodedSplitData, (uint16[], uint256[]));
         if (tierIds.length != amounts.length) {
             revert JB721TiersHookLib_SplitMetadataLengthMismatch({
@@ -136,6 +138,9 @@ library JB721TiersHookLib {
             });
         }
 
+        // The terminal tells the hook how much value was forwarded. Require the per-tier split metadata to account for
+        // all of it before any transfers happen, otherwise malformed metadata could over-distribute, under-distribute,
+        // or leave funds stuck in the hook.
         uint256 totalAmount;
         for (uint256 i; i < amounts.length;) {
             totalAmount += amounts[i];
