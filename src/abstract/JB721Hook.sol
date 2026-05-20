@@ -258,8 +258,11 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
             });
         }
 
+        // Native-token payments must arrive as ETH on this hook call. ERC-20 payments are already held/forwarded by
+        // the terminal, so any ETH sent alongside an ERC-20 context would be accidental value trapped in the hook.
         uint256 expectedMsgValue =
             context.forwardedAmount.token == JBConstants.NATIVE_TOKEN ? context.forwardedAmount.value : 0;
+        // Keep the terminal-reported forwarded amount and the actual ETH attached to the callback in lockstep.
         if (msg.value != expectedMsgValue) {
             revert JB721Hook_InvalidPayValue({
                 token: context.forwardedAmount.token, msgValue: msg.value, forwardedValue: context.forwardedAmount.value
