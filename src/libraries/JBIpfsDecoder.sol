@@ -29,8 +29,48 @@ library JBIpfsDecoder {
         return string(abi.encodePacked(baseUri, ipfsHash));
     }
 
-    /// @notice Convert a hex string to base58
-    /// @notice Written by Martin Ludfall - Licence: MIT
+    /// @notice Return a new array containing the elements of `input` in reverse order.
+    /// @dev Used by `_toBase58` after the base-58 digit accumulator is finalised — the conversion algorithm
+    /// emits least-significant digits first, but base-58 strings are read most-significant first.
+    /// @param input The array to reverse.
+    /// @return output A new array of the same length with elements in reverse order.
+    function _reverse(uint8[] memory input) private pure returns (uint8[] memory) {
+        uint256 inputLength = input.length;
+        uint8[] memory output = new uint8[](inputLength);
+        for (uint256 i; i < inputLength;) {
+            unchecked {
+                // Read from the tail of `input` and write to the head of `output`.
+                output[i] = input[input.length - 1 - i];
+                ++i;
+            }
+        }
+        return output;
+    }
+
+    /// @notice Map each base-58 digit (0–57) to its corresponding character in `ALPHABET`.
+    /// @dev Final stage of `_toBase58`: turns the numeric digit array into the canonical base-58 string bytes.
+    /// @param indices Each element must satisfy `0 <= indices[i] < 58`; out-of-range values revert via index OOB.
+    /// @return output ASCII bytes with `output[i] = ALPHABET[indices[i]]`.
+    function _toAlphabet(uint8[] memory indices) private pure returns (bytes memory) {
+        uint256 indicesLength = indices.length;
+        bytes memory output = new bytes(indicesLength);
+        for (uint256 i; i < indicesLength;) {
+            output[i] = ALPHABET[indices[i]];
+
+            unchecked {
+                ++i;
+            }
+        }
+        return output;
+    }
+
+    /// @notice Convert a hex byte string to its base-58 string representation.
+    /// @notice Written by Martin Ludfall — Licence: MIT.
+    /// @dev Classic "long division by 58" base conversion: iterate the source bytes high-to-low, carrying remainders
+    /// through the digit accumulator. After the loop, `digits[0..digitlength)` holds the base-58 representation in
+    /// little-endian order; the final composition reverses and maps to ASCII via `_toAlphabet(_reverse(...))`.
+    /// @param source The source bytes to convert (multibase-prefixed IPFS hash, in this library's usage).
+    /// @return The base-58 encoded string.
     function _toBase58(bytes memory source) private pure returns (string memory) {
         if (source.length == 0) return new string(0);
 
@@ -72,35 +112,16 @@ library JBIpfsDecoder {
         return string(_toAlphabet(_reverse(_truncate({array: digits, length: digitlength}))));
     }
 
+    /// @notice Copy the first `length` elements of `array` into a new, exactly-sized array.
+    /// @dev `_toBase58` allocates a fixed 46-byte scratch buffer but only fills `digitlength` of it; this trims the
+    /// trailing zeros so downstream stages (`_reverse`, `_toAlphabet`) see only the meaningful digits.
+    /// @param array The source array. Must have `array.length >= length`.
+    /// @param length Number of leading elements to copy.
+    /// @return output A new array of exactly `length` elements containing the prefix of `array`.
     function _truncate(uint8[] memory array, uint8 length) private pure returns (uint8[] memory) {
         uint8[] memory output = new uint8[](length);
         for (uint256 i; i < length;) {
             output[i] = array[i];
-
-            unchecked {
-                ++i;
-            }
-        }
-        return output;
-    }
-
-    function _reverse(uint8[] memory input) private pure returns (uint8[] memory) {
-        uint256 inputLength = input.length;
-        uint8[] memory output = new uint8[](inputLength);
-        for (uint256 i; i < inputLength;) {
-            unchecked {
-                output[i] = input[input.length - 1 - i];
-                ++i;
-            }
-        }
-        return output;
-    }
-
-    function _toAlphabet(uint8[] memory indices) private pure returns (bytes memory) {
-        uint256 indicesLength = indices.length;
-        bytes memory output = new bytes(indicesLength);
-        for (uint256 i; i < indicesLength;) {
-            output[i] = ALPHABET[indices[i]];
 
             unchecked {
                 ++i;
