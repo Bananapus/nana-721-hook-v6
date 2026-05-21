@@ -6,6 +6,7 @@ import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
 import {IJBPayHook} from "@bananapus/core-v6/src/interfaces/IJBPayHook.sol";
 import {IJBRulesetDataHook} from "@bananapus/core-v6/src/interfaces/IJBRulesetDataHook.sol";
 import {IJBTerminal} from "@bananapus/core-v6/src/interfaces/IJBTerminal.sol";
+import {JBConstants} from "@bananapus/core-v6/src/libraries/JBConstants.sol";
 import {JBMetadataResolver} from "@bananapus/core-v6/src/libraries/JBMetadataResolver.sol";
 import {JBAfterCashOutRecordedContext} from "@bananapus/core-v6/src/structs/JBAfterCashOutRecordedContext.sol";
 import {JBAfterPayRecordedContext} from "@bananapus/core-v6/src/structs/JBAfterPayRecordedContext.sol";
@@ -32,6 +33,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
 
     error JB721Hook_InvalidCashOut(address caller, uint256 contextProjectId, uint256 projectId, uint256 msgValue);
     error JB721Hook_InvalidPay(address caller, uint256 contextProjectId, uint256 projectId);
+    error JB721Hook_InvalidPayValue(address token, uint256 msgValue, uint256 forwardedValue);
     error JB721Hook_UnauthorizedToken(uint256 tokenId, address holder);
     error JB721Hook_UnexpectedTokenCashedOut(uint256 cashOutCount);
 
@@ -253,6 +255,17 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
         ) {
             revert JB721Hook_InvalidPay({
                 caller: msg.sender, contextProjectId: context.projectId, projectId: localProjectId
+            });
+        }
+
+        // Native-token payments must arrive as ETH on this hook call. ERC-20 payments are already held/forwarded by
+        // the terminal, so any ETH sent alongside an ERC-20 context would be accidental value trapped in the hook.
+        uint256 expectedMsgValue =
+            context.forwardedAmount.token == JBConstants.NATIVE_TOKEN ? context.forwardedAmount.value : 0;
+        // Keep the terminal-reported forwarded amount and the actual ETH attached to the callback in lockstep.
+        if (msg.value != expectedMsgValue) {
+            revert JB721Hook_InvalidPayValue({
+                token: context.forwardedAmount.token, msgValue: msg.value, forwardedValue: context.forwardedAmount.value
             });
         }
 

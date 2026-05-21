@@ -19,7 +19,7 @@ contract TierLifecycleInvariant_Local is StdInvariant, UnitTestSetup {
 
         handler = new TierLifecycleHandler(hook, store, owner, mockJBController);
 
-        bytes4[] memory selectors = new bytes4[](10);
+        bytes4[] memory selectors = new bytes4[](11);
         selectors[0] = TierLifecycleHandler.payAndMintNFT.selector;
         selectors[1] = TierLifecycleHandler.cashOutNFT.selector;
         selectors[2] = TierLifecycleHandler.addTier.selector;
@@ -28,9 +28,10 @@ contract TierLifecycleInvariant_Local is StdInvariant, UnitTestSetup {
         selectors[5] = TierLifecycleHandler.setDiscount.selector;
         selectors[6] = TierLifecycleHandler.ownerMint.selector;
         selectors[7] = TierLifecycleHandler.advanceTime.selector;
+        selectors[8] = TierLifecycleHandler.cleanTiersOp.selector;
         // Double-weight common operations
-        selectors[8] = TierLifecycleHandler.payAndMintNFT.selector;
         selectors[9] = TierLifecycleHandler.payAndMintNFT.selector;
+        selectors[10] = TierLifecycleHandler.payAndMintNFT.selector;
 
         targetSelector(FuzzSelector({addr: address(handler), selectors: selectors}));
         targetContract(address(handler));

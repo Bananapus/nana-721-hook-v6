@@ -449,6 +449,7 @@ contract ERC20TierSplitFork is Test {
 
         // Split beneficiary should have received 30% of 100 USDC = 30 USDC.
         assertEq(usdc.balanceOf(splitBeneficiary), 30e6, "split beneficiary should have 30 USDC");
+        assertEq(usdc.balanceOf(hook), 0, "hook must not retain forwarded USDC");
         // NFT minted to beneficiary.
         assertEq(IERC721(hook).balanceOf(beneficiary), 1, "beneficiary should own 1 NFT");
         assertEq(IERC721(hook).ownerOf(_tokenId(1, 1)), beneficiary, "beneficiary owns tier 1 NFT");
@@ -526,6 +527,7 @@ contract ERC20TierSplitFork is Test {
         // Target project should have received 30 USDC via addToBalance.
         uint256 targetBalanceAfter = jbTerminalStore.balanceOf(address(jbMultiTerminal), targetProjectId, address(usdc));
         assertEq(targetBalanceAfter - targetBalanceBefore, 30e6, "target project should have 30 USDC more");
+        assertEq(usdc.balanceOf(hook), 0, "hook must not retain forwarded USDC");
         // NFT minted.
         assertEq(IERC721(hook).balanceOf(beneficiary), 1, "beneficiary should own 1 NFT");
     }
@@ -591,6 +593,7 @@ contract ERC20TierSplitFork is Test {
 
         // Split beneficiary should have received 50% of 1 ETH = 0.5 ETH.
         assertEq(splitBeneficiary.balance - splitBalanceBefore, 0.5 ether, "split beneficiary should have 0.5 ETH");
+        assertEq(hook.balance, 0, "hook must not retain forwarded ETH");
         // NFT minted.
         assertEq(IERC721(hook).balanceOf(beneficiary), 1, "beneficiary should own 1 NFT");
         assertEq(IERC721(hook).ownerOf(_tokenId(1, 1)), beneficiary, "beneficiary owns tier 1 NFT");

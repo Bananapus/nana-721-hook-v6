@@ -879,6 +879,20 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             currentSortedTierId = _nextSortedTierIdOf({hook: hook, id: currentSortedTierId, max: lastSortedTierId});
         }
 
+        if (previousSortedTierId != 0 && previousSortedTierId != lastSortedTierId) {
+            // All sorted IDs after `previousSortedTierId` were removed. Make the last active tier the traversal end so
+            // view functions do not keep walking a removed trailing suffix after cleanup.
+            if (_tierIdAfter[hook][previousSortedTierId] != 0) _tierIdAfter[hook][previousSortedTierId] = 0;
+
+            // Track the compacted end only when it is not the natural max tier ID. A zero value means
+            // `_lastSortedTierIdOf` can keep using `maxTierIdOf` as the implicit end.
+            uint256 maxTierId = maxTierIdOf[hook];
+            uint256 newLastTrackedSortedTierId = previousSortedTierId == maxTierId ? 0 : previousSortedTierId;
+            if (_lastTrackedSortedTierIdOf[hook] != newLastTrackedSortedTierId) {
+                _lastTrackedSortedTierIdOf[hook] = newLastTrackedSortedTierId;
+            }
+        }
+
         emit CleanTiers({hook: hook, caller: msg.sender});
     }
 
@@ -1026,7 +1040,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                 _tierVotingUnitsOf[msg.sender][tierId] = uint32(tierToAdd.votingUnits);
             }
 
-            // If this is the first tier in a new category, store it as the first tier in that category.
+            // If this is the first tier in a category within this batch, store it as that category's traversal start.
+            // Same-category additions are inserted before older tiers in the category-sorted linked list, so a later
+            // batch must overwrite the previous start pointer to keep category-filtered `tiersOf` queries complete.
             // The `_startingTierIdOfCategory` of the category "0" will always be the same as the `_tierIdAfter` the 0th
             // tier.
             // Access the previous tier's category directly from calldata (0 when i == 0, matching the old

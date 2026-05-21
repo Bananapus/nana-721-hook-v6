@@ -77,6 +77,8 @@ contract TierLifecycleHandler is Test {
     // forge-lint: disable-next-line(mixed-case-variable)
     uint256 public callCount_advanceTime;
 
+    uint256 public callCount_cleanTiers;
+
     constructor(JB721TiersHook _hook, JB721TiersHookStore _store, address _owner, address _mockController) {
         hook = _hook;
         store = _store;
@@ -287,6 +289,14 @@ contract TierLifecycleHandler is Test {
         uint256 delta = bound(seed, 1 hours, 30 days);
         vm.warp(block.timestamp + delta);
         callCount_advanceTime++;
+    }
+
+    /// @notice Compact the tier linked list. Anyone can call cleanTiers; the invariants must hold after arbitrary
+    /// interleavings of cleanTiers with the other operations.
+    function cleanTiersOp(uint256) external {
+        try store.cleanTiers(hookAddress) {
+            callCount_cleanTiers++;
+        } catch {}
     }
 
     // View helpers

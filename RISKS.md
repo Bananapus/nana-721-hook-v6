@@ -49,7 +49,8 @@ This file covers the tiered-NFT accounting, reserve-mint, and cash-out risks in 
 - **`totalCashOutWeight` iterates all tier IDs.**
 - **`balanceOf`, `votingUnitsOf`, and `totalSupplyOf` also iterate all tiers.**
 - **Large tier catalogs are technically allowed but not the supported operating shape.**
-- **`tiersOf` still traverses removed tiers until cleanup runs.**
+- **`tiersOf` still traverses removed tiers until cleanup runs.** `cleanTiers` compacts removed tiers out of the
+  sorted traversal path, including removed trailing tiers when at least one active tier remains.
 - **Minting across many tiers in one payment can get expensive fast.**
 - **Reserve minting is loop-based and should be batched when large.**
 
@@ -65,11 +66,14 @@ This file covers the tiered-NFT accounting, reserve-mint, and cash-out risks in 
 ## 6. Integration Risks
 
 - **Hook weight can override fungible-token minting.**
-- **Metadata encoding is fragile.**
+- **Metadata encoding is fragile.** Pay-hook metadata carries `(beneficiary, payer, splitData, splitCreditWeight)`.
+  The local hook consumes the first three values and downstream composers may consume the appended split-credit value.
 - **`beforeCashOutRecordedWith` rejects mixed fungible-token cash outs.**
 - **Split group IDs are tightly coupled to the hook address.**
 - **ERC-20 split distribution depends on terminal allowance behavior.**
-- **Forwarded funds with empty hook metadata can skip distribution and remain in the hook.**
+- **Forwarded funds must match split metadata.** The pay hook rejects native `msg.value` mismatches, non-native calls
+  carrying ETH, missing split metadata for nonzero forwarded amounts, and split metadata whose amounts do not sum to
+  the forwarded amount.
 - **Token URI resolver calls can block metadata reads if the resolver reverts.**
 
 ## 7. Invariants To Verify
@@ -80,6 +84,7 @@ This file covers the tiered-NFT accounting, reserve-mint, and cash-out risks in 
 - token IDs remain unique
 - credits track leftovers correctly
 - removed tiers stay excluded from active listings
+- `cleanTiers` moves the sorted-list end back when a trailing tier is removed
 - store balance views match ERC-721 balances
 - discount monotonicity is enforced when locked
 
@@ -123,3 +128,11 @@ When the default reserve beneficiary is updated, any pending (unminted) reserves
 ### 8.8 Discounted credit mints retain full cash-out weight
 
 Tokens minted at a discounted price via credits still carry the full undiscounted tier price as their cash-out weight. This means a holder who purchased at a discount receives the same treasury share as a holder who paid full price. Project owners should factor this into discount percentage decisions, as aggressive discounts can create favorable cash-out economics for discounted buyers.
+
+### 8.9 Tier removal does not cancel already accrued reserve or cash-out weight
+
+Removing a tier prevents future paid and owner mints from that tier, but existing NFTs keep their cash-out weight and pending reserves remain part of `totalCashOutWeight()`. Project owners should treat tier removal as a listing control, not as a way to erase reserve obligations or cash-out denominator effects.
+
+### 8.10 Future tier URI entries are controlled by metadata permissions
+
+`setMetadata` can set an encoded URI for a tier ID before that tier is added. If a later tier is created with an empty encoded URI at that ID, it inherits the pre-set value. This is permissioned by `SET_721_METADATA`, so delegates with metadata authority can affect future tier presentation as well as existing metadata.

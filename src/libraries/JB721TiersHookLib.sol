@@ -34,7 +34,9 @@ library JB721TiersHookLib {
     error JB721TiersHook_CantBuyWithCredits(uint256 restrictedCost, uint256 freshValue);
     error JB721TiersHook_Overspending(uint256 leftoverAmount);
     error JB721TiersHookLib_NoTerminalForLeftover(uint256 projectId, address token, uint256 leftoverAmount);
+    error JB721TiersHookLib_SplitAmountMismatch(uint256 expectedAmount, uint256 actualAmount);
     error JB721TiersHookLib_SplitFallbackFailed(uint256 projectId, address token, uint256 amount, bytes reason);
+    error JB721TiersHookLib_SplitMetadataLengthMismatch(uint256 tierIdCount, uint256 amountCount);
     error JB721TiersHookLib_TokenTransferAmountMismatch(uint256 expectedAmount, uint256 receivedAmount);
 
     //*********************************************************************//
@@ -127,6 +129,29 @@ library JB721TiersHookLib {
     )
         external
     {
+        // `encodedSplitData` is terminal-forwarded hook metadata. Each tier ID must have exactly one explicit amount so
+        // later split-group routing cannot pair a tier with the wrong value or silently ignore trailing data.
+        (uint16[] memory tierIds, uint256[] memory amounts) = abi.decode(encodedSplitData, (uint16[], uint256[]));
+        if (tierIds.length != amounts.length) {
+            revert JB721TiersHookLib_SplitMetadataLengthMismatch({
+                tierIdCount: tierIds.length, amountCount: amounts.length
+            });
+        }
+
+        // The terminal tells the hook how much value was forwarded. Require the per-tier split metadata to account for
+        // all of it before any transfers happen, otherwise malformed metadata could over-distribute, under-distribute,
+        // or leave funds stuck in the hook.
+        uint256 totalAmount;
+        for (uint256 i; i < amounts.length;) {
+            totalAmount += amounts[i];
+            unchecked {
+                ++i;
+            }
+        }
+        if (totalAmount != amount) {
+            revert JB721TiersHookLib_SplitAmountMismatch({expectedAmount: amount, actualAmount: totalAmount});
+        }
+
         // For ERC20 tokens, pull from terminal using the allowance it granted via _beforeTransferTo.
         if (token != JBConstants.NATIVE_TOKEN) {
             uint256 balanceBefore = IERC20(token).balanceOf(address(this));
@@ -138,8 +163,6 @@ library JB721TiersHookLib {
                 });
             }
         }
-
-        (uint16[] memory tierIds, uint256[] memory amounts) = abi.decode(encodedSplitData, (uint16[], uint256[]));
 
         for (uint256 i; i < tierIds.length;) {
             if (amounts[i] == 0) {

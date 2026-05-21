@@ -5,6 +5,7 @@ import "../utils/UnitTestSetup.sol";
 
 import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
 import {JB721TiersHookStore} from "../../src/JB721TiersHookStore.sol";
+import {JB721TiersHookLib} from "../../src/libraries/JB721TiersHookLib.sol";
 import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 
 contract RepoRegressions is UnitTestSetup {
@@ -33,6 +34,141 @@ contract RepoRegressions is UnitTestSetup {
             decimals: 18,
             currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
         });
+    }
+
+    function _tokenAmount(address token, uint256 value) internal pure returns (JBTokenAmount memory) {
+        return JBTokenAmount({token: token, value: value, decimals: 18, currency: uint32(uint160(token))});
+    }
+
+    function test_afterPayRecorded_revertsOnNativeMsgValueMismatch() public {
+        mockAndExpect(
+            mockJBDirectory,
+            abi.encodeWithSelector(IJBDirectory.isTerminalOf.selector, projectId, mockTerminalAddress),
+            abi.encode(true)
+        );
+
+        vm.deal(mockTerminalAddress, 2 ether);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721Hook.JB721Hook_InvalidPayValue.selector,
+                JBConstants.NATIVE_TOKEN,
+                uint256(2 ether),
+                uint256(1 ether)
+            )
+        );
+
+        vm.prank(mockTerminalAddress);
+        hook.afterPayRecordedWith{value: 2 ether}(
+            JBAfterPayRecordedContext({
+                payer: beneficiary,
+                projectId: projectId,
+                rulesetId: 0,
+                amount: _nativeTokenAmount(2 ether),
+                forwardedAmount: _nativeTokenAmount(1 ether),
+                weight: 10e18,
+                newlyIssuedTokenCount: 0,
+                beneficiary: beneficiary,
+                hookMetadata: bytes(""),
+                payerMetadata: bytes("")
+            })
+        );
+    }
+
+    function test_afterPayRecorded_revertsOnStrayNativeForErc20Forward() public {
+        address token = makeAddr("token");
+
+        mockAndExpect(
+            mockJBDirectory,
+            abi.encodeWithSelector(IJBDirectory.isTerminalOf.selector, projectId, mockTerminalAddress),
+            abi.encode(true)
+        );
+
+        vm.deal(mockTerminalAddress, 1 ether);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721Hook.JB721Hook_InvalidPayValue.selector, token, uint256(1 ether), uint256(1 ether)
+            )
+        );
+
+        vm.prank(mockTerminalAddress);
+        hook.afterPayRecordedWith{value: 1 ether}(
+            JBAfterPayRecordedContext({
+                payer: beneficiary,
+                projectId: projectId,
+                rulesetId: 0,
+                amount: _tokenAmount(token, 1 ether),
+                forwardedAmount: _tokenAmount(token, 1 ether),
+                weight: 10e18,
+                newlyIssuedTokenCount: 0,
+                beneficiary: beneficiary,
+                hookMetadata: bytes(""),
+                payerMetadata: bytes("")
+            })
+        );
+    }
+
+    function test_afterPayRecorded_revertsOnForwardedAmountWithoutSplitMetadata() public {
+        mockAndExpect(
+            mockJBDirectory,
+            abi.encodeWithSelector(IJBDirectory.isTerminalOf.selector, projectId, mockTerminalAddress),
+            abi.encode(true)
+        );
+
+        vm.deal(mockTerminalAddress, 1 ether);
+        vm.expectRevert(JB721TiersHook.JB721TiersHook_MissingSplitMetadata.selector);
+
+        vm.prank(mockTerminalAddress);
+        hook.afterPayRecordedWith{value: 1 ether}(
+            JBAfterPayRecordedContext({
+                payer: beneficiary,
+                projectId: projectId,
+                rulesetId: 0,
+                amount: _nativeTokenAmount(1 ether),
+                forwardedAmount: _nativeTokenAmount(1 ether),
+                weight: 10e18,
+                newlyIssuedTokenCount: 0,
+                beneficiary: beneficiary,
+                hookMetadata: bytes(""),
+                payerMetadata: bytes("")
+            })
+        );
+    }
+
+    function test_afterPayRecorded_revertsWhenSplitMetadataDoesNotConserveForwardedAmount() public {
+        uint16[] memory splitTierIds = new uint16[](1);
+        splitTierIds[0] = 1;
+        uint256[] memory splitAmounts = new uint256[](1);
+        splitAmounts[0] = 0.5 ether;
+        bytes memory splitData = abi.encode(splitTierIds, splitAmounts);
+
+        mockAndExpect(
+            mockJBDirectory,
+            abi.encodeWithSelector(IJBDirectory.isTerminalOf.selector, projectId, mockTerminalAddress),
+            abi.encode(true)
+        );
+
+        vm.deal(mockTerminalAddress, 1 ether);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                JB721TiersHookLib.JB721TiersHookLib_SplitAmountMismatch.selector, uint256(1 ether), uint256(0.5 ether)
+            )
+        );
+
+        vm.prank(mockTerminalAddress);
+        hook.afterPayRecordedWith{value: 1 ether}(
+            JBAfterPayRecordedContext({
+                payer: beneficiary,
+                projectId: projectId,
+                rulesetId: 0,
+                amount: _nativeTokenAmount(1 ether),
+                forwardedAmount: _nativeTokenAmount(1 ether),
+                weight: 10e18,
+                newlyIssuedTokenCount: 0,
+                beneficiary: beneficiary,
+                hookMetadata: abi.encode(beneficiary, beneficiary, splitData),
+                payerMetadata: bytes("")
+            })
+        );
     }
 
     function test_payCredits_can_underfund_split_bearing_tier_mints() public {

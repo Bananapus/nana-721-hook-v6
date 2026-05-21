@@ -548,7 +548,9 @@ contract Test_RegressionFixes_Unit is UnitTestSetup {
         hookStore.cleanTiers(address(testHook));
 
         // After cleanTiers: verify tiers are correctly iterable.
-        JB721Tier[] memory tiersAfterClean = hookStore.tiersOf(address(testHook), new uint256[](0), false, 0, 10);
+        JB721Tier[] memory tiersAfterClean = hookStore.tiersOf({
+            hook: address(testHook), categories: new uint256[](0), includeResolvedUri: false, startingId: 0, size: 10
+        });
         assertEq(tiersAfterClean.length, 2, "Should have 2 tiers after clean");
 
         // The remaining tiers should be IDs 2 and 3 (sorted by ID ascending within the same category).
@@ -609,7 +611,9 @@ contract Test_RegressionFixes_Unit is UnitTestSetup {
         hookStore.cleanTiers(address(testHook));
 
         // After clean: 2 tiers remain (IDs 1 and 3).
-        JB721Tier[] memory tiersAfterClean = hookStore.tiersOf(address(testHook), new uint256[](0), false, 0, 10);
+        JB721Tier[] memory tiersAfterClean = hookStore.tiersOf({
+            hook: address(testHook), categories: new uint256[](0), includeResolvedUri: false, startingId: 0, size: 10
+        });
         assertEq(tiersAfterClean.length, 2, "Should have 2 tiers after removing middle tier");
 
         // Both remaining tiers should be accessible.
@@ -620,5 +624,60 @@ contract Test_RegressionFixes_Unit is UnitTestSetup {
         JB721Tier memory tier3 = hookStore.tierOf(address(testHook), 3, false);
         assertEq(tier3.id, 3, "Tier 3 should still be accessible");
         assertEq(tier3.price, 30, "Tier 3 price should be 30");
+    }
+
+    /// @notice Cleaning a removed max tier should move the sorted-list end back to the last active tier.
+    function test_cleanTiersCompactsRemovedTrailingTier() public {
+        ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
+        IJB721TiersHookStore_ForTest hookStore = testHook.test_store();
+
+        JB721TierConfig[] memory tierConfigs = new JB721TierConfig[](3);
+        for (uint256 i; i < tierConfigs.length;) {
+            tierConfigs[i] = JB721TierConfig({
+                price: uint104((i + 1) * 10),
+                initialSupply: uint32(100),
+                votingUnits: uint16(0),
+                reserveFrequency: uint16(0),
+                reserveBeneficiary: reserveBeneficiary,
+                encodedIpfsUri: tokenUris[i],
+                category: uint24(5),
+                discountPercent: uint8(0),
+                flags: JB721TierConfigFlags({
+                    allowOwnerMint: false,
+                    useReserveBeneficiaryAsDefault: false,
+                    transfersPausable: false,
+                    useVotingUnits: false,
+                    cantBeRemoved: false,
+                    cantIncreaseDiscountPercent: false,
+                    cantBuyWithCredits: false
+                }),
+                splitPercent: 0,
+                splits: new JBSplit[](0)
+            });
+            unchecked {
+                ++i;
+            }
+        }
+
+        vm.prank(address(testHook));
+        hookStore.recordAddTiers(tierConfigs);
+
+        uint256[] memory tiersToRemove = new uint256[](1);
+        tiersToRemove[0] = 3;
+        vm.prank(address(testHook));
+        hookStore.recordRemoveTierIds(tiersToRemove);
+
+        hookStore.cleanTiers(address(testHook));
+
+        // Tier 3 is still the historical max tier ID, but it should no longer be the sorted-list end.
+        assertEq(hookStore.maxTierIdOf(address(testHook)), 3, "max tier ID remains historical");
+        assertEq(hookStore.ForTest_lastSortedTierIdOf(address(testHook)), 2, "last sorted tier should be active");
+
+        JB721Tier[] memory tiersAfterClean = hookStore.tiersOf({
+            hook: address(testHook), categories: new uint256[](0), includeResolvedUri: false, startingId: 0, size: 10
+        });
+        assertEq(tiersAfterClean.length, 2, "only active tiers should be returned");
+        assertEq(tiersAfterClean[0].id, 1, "first active tier");
+        assertEq(tiersAfterClean[1].id, 2, "second active tier");
     }
 }
