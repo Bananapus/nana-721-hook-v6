@@ -1,18 +1,16 @@
 {
   "name": "@bananapus/721-hook-v6",
-  "version": "0.0.54",
+  "version": "0.0.55",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Bananapus/nana-721-hook-v6"
   },
   "files": [
-    "foundry.lock",
     "foundry.toml",
     "references/",
     "remappings.txt",
     "script/",
-    "sphinx.lock",
     "src/",
     "test/utils/"
   ],
