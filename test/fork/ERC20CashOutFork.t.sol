@@ -410,7 +410,8 @@ contract ERC20CashOutFork is Test {
             cashOutCount: 0,
             minTokensReclaimed: 0,
             beneficiary: payable(beneficiary),
-            metadata: cashOutMeta
+            metadata: cashOutMeta,
+            referralProjectId: 0
         });
 
         uint256 usdcAfter = usdc.balanceOf(beneficiary);
@@ -497,7 +498,8 @@ contract ERC20CashOutFork is Test {
             cashOutCount: 0,
             minTokensReclaimed: 0,
             beneficiary: payable(beneficiary),
-            metadata: cashOutMeta
+            metadata: cashOutMeta,
+            referralProjectId: 0
         });
 
         uint256 reclaimed = usdc.balanceOf(beneficiary) - usdcBefore;
@@ -615,7 +617,8 @@ contract ERC20CashOutFork is Test {
             cashOutCount: 0,
             minTokensReclaimed: 0,
             beneficiary: payable(beneficiary),
-            metadata: cashOutMeta
+            metadata: cashOutMeta,
+            referralProjectId: 0
         });
 
         // Verify NFTs are burned.

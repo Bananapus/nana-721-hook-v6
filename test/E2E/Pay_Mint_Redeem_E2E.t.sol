@@ -611,7 +611,8 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
             cashOutCount: 0,
             minTokensReclaimed: 0,
             beneficiary: payable(beneficiary),
-            metadata: hookMetadata
+            metadata: hookMetadata,
+            referralProjectId: 0
         });
 
         // Check: was the beneficiary's NFT balance decreased by 1?
@@ -737,7 +738,8 @@ contract Test_TiersHook_E2E is TestBaseWorkflow {
             cashOutCount: 0,
             minTokensReclaimed: 0,
             beneficiary: payable(beneficiary),
-            metadata: hookMetadata
+            metadata: hookMetadata,
+            referralProjectId: 0
         });
 
         // Check: did the beneficiary's NFT balance decrease by 5 (to 0)?
