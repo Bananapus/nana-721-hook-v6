@@ -73,7 +73,7 @@ That split is why UI bugs, economic bugs, and deployment bugs often land in diff
 1. `test/E2E/Pay_Mint_Redeem_E2E.t.sol`
 2. `test/invariants/TierLifecycleInvariant.t.sol`
 3. `test/invariants/TieredHookStoreInvariant.t.sol`
-4. `test/regression/RegressionSplitCreditsMismatch.t.sol`
+4. `test/regression/SplitCreditsMismatch.t.sol`
 5. `test/regression/ProjectDeployerRulesets.t.sol`
 
 ## Install

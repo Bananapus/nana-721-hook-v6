@@ -194,7 +194,7 @@ contract Test_adjustTier_Unit is UnitTestSetup {
         // Initialize the hook with default tiers.
         JB721TiersHook hook = _initHookDefaultTiers(initialNumberOfTiers);
 
-        JB721Tier[] memory intialTiers = hook.STORE().tiersOf(address(hook), new uint256[](0), false, 0, 100);
+        JB721Tier[] memory initialTiers = hook.STORE().tiersOf(address(hook), new uint256[](0), false, 0, 100);
 
         // Create the new tiers to add.
         (JB721TierConfig[] memory tierConfigs, JB721Tier[] memory tiersAdded) =
@@ -208,10 +208,10 @@ contract Test_adjustTier_Unit is UnitTestSetup {
         JB721Tier[] memory storedTiers = hook.STORE().tiersOf(address(hook), new uint256[](0), false, 0, 100);
 
         // Check: was the expected number of tiers returned?
-        assertEq(storedTiers.length, intialTiers.length + tiersAdded.length, "Length mismatch.");
+        assertEq(storedTiers.length, initialTiers.length + tiersAdded.length, "Length mismatch.");
 
         // Check: are all tiers in the new tiers (unsorted)?
-        assertTrue(_isIn(intialTiers, storedTiers), "original tiers not found"); // Original tiers
+        assertTrue(_isIn(initialTiers, storedTiers), "original tiers not found"); // Original tiers
         assertTrue(_isIn(tiersAdded, storedTiers), "new tiers not found"); // New tiers
 
         // Check: are all the tiers sorted?
@@ -1785,10 +1785,10 @@ contract Test_adjustTier_Unit is UnitTestSetup {
         JB721TiersHook hook = _initHookDefaultTiers(0);
 
         // Try to get `size` tiers
-        JB721Tier[] memory intialTiers = hook.STORE().tiersOf(address(hook), new uint256[](0), false, 0, size);
+        JB721Tier[] memory initialTiers = hook.STORE().tiersOf(address(hook), new uint256[](0), false, 0, size);
 
         // Check: does the array have a length of 0?
-        assertEq(intialTiers.length, 0, "Length mismatch.");
+        assertEq(initialTiers.length, 0, "Length mismatch.");
     }
 
     function test_setDiscountPercentOf_revertIfCannotIncreaseDiscount() public {
