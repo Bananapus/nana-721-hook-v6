@@ -7,7 +7,7 @@ import {JBPayDataHookRulesetConfig} from "./JBPayDataHookRulesetConfig.sol";
 /// @custom:member rulesetConfigurations The ruleset configurations to queue.
 /// @custom:member memo A memo to pass along to the emitted event.
 struct JBQueueRulesetsConfig {
-    uint56 projectId;
+    uint64 projectId;
     JBPayDataHookRulesetConfig[] rulesetConfigurations;
     string memo;
 }
