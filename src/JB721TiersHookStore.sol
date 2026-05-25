@@ -296,7 +296,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         // Keep a reference to the tier being iterated upon.
         JBStored721Tier memory storedTier;
 
-        // Initialize a `JBBitmapWord` to track if whether tiers have been removed.
+        // Initialize a `JBBitmapWord` to track whether tiers have been removed.
         JBBitmapWord memory bitmapWord;
 
         // Keep a reference to an iterator variable to represent the category being iterated upon.
@@ -578,7 +578,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @notice Get the first tier ID from an 721 contract (when sorted by category) within a provided category.
     /// @param hook The 721 contract to get the first sorted tier ID of.
     /// @param category The category to get the first sorted tier ID within. Send 0 for the first ID across all tiers,
-    /// which might not be in the 0th category if the 0th category does not exist.
+    /// which may belong to any category.
     /// @return id The first sorted tier ID within the provided category.
     function _firstSortedTierIdOf(address hook, uint256 category) internal view returns (uint256 id) {
         id = category == 0 ? _tierIdAfter[hook][0] : _startingTierIdOfCategory[hook][category];
@@ -952,7 +952,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             if (i != 0) {
                 uint256 previousCategory = tiersToAdd[i - 1].category;
 
-                // Revert if the category is not equal or greater than the previously added tier's category.
+                // Revert if the category is less than the previously added tier's category.
                 if (tierToAdd.category < previousCategory) {
                     revert JB721TiersHookStore_InvalidCategorySortOrder({
                         tierCategory: tierToAdd.category, previousTierCategory: previousCategory
@@ -1043,8 +1043,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             // If this is the first tier in a category within this batch, store it as that category's traversal start.
             // Same-category additions are inserted before older tiers in the category-sorted linked list, so a later
             // batch must overwrite the previous start pointer to keep category-filtered `tiersOf` queries complete.
-            // The `_startingTierIdOfCategory` of the category "0" will always be the same as the `_tierIdAfter` the 0th
-            // tier.
+            // Category 0 starts at the same tier as the default traversal.
             // Access the previous tier's category directly from calldata (0 when i == 0, matching the old
             // uninitialized-memory behavior).
             if ((i == 0 ? 0 : tiersToAdd[i - 1].category) != tierToAdd.category && tierToAdd.category != 0) {
@@ -1104,9 +1103,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
                         // If the previous tier's `_tierIdAfter` was set to something else, update it.
                         if (previousTierId != tierId - 1 || _tierIdAfter[msg.sender][previousTierId] != 0) {
-                            // Set the the previous tier's `_tierIdAfter` to the tier being added, or 0 if the tier ID
-                            // is
-                            // incremented.
+                            // Point the previous tier at the tier being added, or store 0 when the next ID is implicit.
                             _tierIdAfter[msg.sender][previousTierId] = previousTierId == tierId - 1 ? 0 : tierId;
                         }
 

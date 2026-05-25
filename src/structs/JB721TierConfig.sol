@@ -6,7 +6,7 @@ import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 import {JB721TierConfigFlags} from "./JB721TierConfigFlags.sol";
 
 /// @notice Config for a single NFT tier within a `JB721TiersHook`.
-/// @custom:member price The price to buy an NFT in this tier, in terms of the currency in its `JBInitTiersConfig`.
+/// @custom:member price The price to buy an NFT in this tier, in terms of the currency in its `JB721InitTiersConfig`.
 /// @custom:member initialSupply The total number of NFTs which can be minted from this tier.
 /// @custom:member votingUnits The number of votes that each NFT in this tier gets if `useVotingUnits` is true.
 /// @custom:member reserveFrequency The frequency at which an extra NFT is minted for the `reserveBeneficiary` from this
@@ -15,7 +15,7 @@ import {JB721TierConfigFlags} from "./JB721TierConfigFlags.sol";
 /// @custom:member reserveBeneficiary The address which receives any reserve NFTs from this tier. Overrides the default
 /// reserve beneficiary if one is set.
 /// @custom:member encodedIpfsUri The IPFS URI to use for each NFT in this tier.
-/// @custom:member category The category that NFTs in this tier belongs to. Used to group NFT tiers.
+/// @custom:member category The category that NFTs in this tier belong to. Used to group NFT tiers.
 /// @custom:member discountPercent The discount that should be applied to the tier.
 /// @custom:member flags Boolean flags for this tier config (allowOwnerMint, useReserveBeneficiaryAsDefault,
 /// transfersPausable, useVotingUnits, cantBeRemoved, cantIncreaseDiscountPercent, cantBuyWithCredits).

@@ -61,8 +61,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     /// @param directory A directory of terminals and controllers for projects.
     constructor(IJBDirectory directory) {
         DIRECTORY = directory;
-        // Store the address of the original hook deploy. Clones will each use the address of the instance they're based
-        // on.
+        // Store the implementation address. Clones use their own address when they initialize.
         METADATA_ID_TARGET = address(this);
     }
 
@@ -168,7 +167,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     /// @notice Indicates if this contract adheres to the specified interface.
     /// @dev See {IERC165-supportsInterface}.
     /// @param interfaceId The ID of the interface to check for adherence to.
-    // ERC-2981 royalty support was removed — no royaltyInfo implementation exists.
+    // No ERC-2981 royalty interface is exposed.
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721, IERC165) returns (bool) {
         return interfaceId == type(IJB721Hook).interfaceId || interfaceId == type(IJBRulesetDataHook).interfaceId
             || interfaceId == type(IJBPayHook).interfaceId || interfaceId == type(IJBCashOutHook).interfaceId
@@ -262,7 +261,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
         // the terminal, so any ETH sent alongside an ERC-20 context would be accidental value trapped in the hook.
         uint256 expectedMsgValue =
             context.forwardedAmount.token == JBConstants.NATIVE_TOKEN ? context.forwardedAmount.value : 0;
-        // Keep the terminal-reported forwarded amount and the actual ETH attached to the callback in lockstep.
+        // Keep the terminal-reported forwarded amount and the ETH attached to the callback in lockstep.
         if (msg.value != expectedMsgValue) {
             revert JB721Hook_InvalidPayValue({
                 token: context.forwardedAmount.token, msgValue: msg.value, forwardedValue: context.forwardedAmount.value

@@ -71,7 +71,7 @@ contract ReserveSlotProtection is Test {
         store.recordMint({amount: 1 ether, tierIds: tierIds, isOwnerMint: false});
     }
 
-    /// @notice Proves that the reserve beneficiary can still mint their reserved slot after fix.
+    /// @notice The reserve beneficiary can still mint their reserved slot after paid slots are exhausted.
     function test_reserveBeneficiaryCanMintAfterPaidSlotsExhausted() public {
         JB721TierConfig[] memory tiers = new JB721TierConfig[](1);
         tiers[0] = JB721TierConfig({

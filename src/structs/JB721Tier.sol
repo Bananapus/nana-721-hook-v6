@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {JB721TierFlags} from "./JB721TierFlags.sol";
 
 /// @custom:member id The tier's ID.
-/// @custom:member price The price to buy an NFT in this tier, in terms of the currency in its `JBInitTiersConfig`.
+/// @custom:member price The price to buy an NFT in this tier, in terms of the currency in its `JB721InitTiersConfig`.
 /// @custom:member remainingSupply The remaining number of NFTs which can be minted from this tier.
 /// @custom:member initialSupply The total number of NFTs which can be minted from this tier.
 /// @custom:member votingUnits The number of votes that each NFT in this tier gets.
@@ -13,14 +13,13 @@ import {JB721TierFlags} from "./JB721TierFlags.sol";
 /// purchased.
 /// @custom:member reserveBeneficiary The address which receives any reserve NFTs from this tier.
 /// @custom:member encodedIpfsUri The IPFS URI to use for each NFT in this tier.
-/// @custom:member category The category that NFTs in this tier belongs to. Used to group NFT tiers.
+/// @custom:member category The category that NFTs in this tier belong to. Used to group NFT tiers.
 /// @custom:member discountPercent The discount that should be applied to the tier.
 /// @custom:member flags Boolean flags for this tier (allowOwnerMint, transfersPausable, cantBeRemoved,
 /// cantIncreaseDiscountPercent, cantBuyWithCredits).
 /// @custom:member splitPercent The percentage of the tier's price that gets routed to the project's split group when
 /// an NFT from this tier is minted. Out of `JBConstants.SPLITS_TOTAL_PERCENT`.
-/// @custom:member resolvedUri A resolved token URI for NFTs in this tier. Only available if the NFT this tier belongs
-/// to has a resolver.
+/// @custom:member resolvedUri A resolved token URI for NFTs in this tier. Only available if the hook has a resolver.
 struct JB721Tier {
     uint32 id;
     uint104 price;
