@@ -126,13 +126,19 @@ contract TestJB721TiersRulesetMetadataResolver is Test {
     }
 
     function testFuzz_transfersPaused_bitIsolation(uint256 data) public {
-        bool result = JB721TiersRulesetMetadataResolver.transfersPaused(data);
-        assertEq(result, (data & 1) == 1, "transfersPaused should check bit 0");
+        assertEq(
+            JB721TiersRulesetMetadataResolver.transfersPaused(data),
+            (data & 1) == 1,
+            "transfersPaused should check bit 0"
+        );
     }
 
     function testFuzz_mintPendingReservesPaused_bitIsolation(uint256 data) public {
-        bool result = JB721TiersRulesetMetadataResolver.mintPendingReservesPaused(data);
-        assertEq(result, ((data >> 1) & 1) == 1, "mintPendingReservesPaused should check bit 1");
+        assertEq(
+            JB721TiersRulesetMetadataResolver.mintPendingReservesPaused(data),
+            ((data >> 1) & 1) == 1,
+            "mintPendingReservesPaused should check bit 1"
+        );
     }
 
     function testFuzz_pack_onlyUsesLow2Bits(bool a, bool b) public {

@@ -69,7 +69,7 @@ contract MockJBProjectsCount {
     }
 }
 
-/// @dev A mock controller whose fallback bumps the projects mock count by 1 (simulating real behaviour)
+/// @dev A mock controller whose fallback bumps the projects mock count by 1 (simulating real behavior)
 /// and returns a truthy value for any function call.
 contract MockLaunchController {
     MockJBProjectsCount private _projects;

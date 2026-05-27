@@ -268,7 +268,7 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
         assertEq(rulesetId, 42, "Should return the ruleset ID from the controller");
 
         // Verify a hook was deployed (non-zero address).
-        assertTrue(address(deployedHook) != address(0), "Hook should be deployed");
+        assertNotEq(address(deployedHook), address(0), "Hook should be deployed");
 
         // Verify the controller's launchRulesetsFor was called.
         assertTrue(mockCtrl.launchRulesetsForCalled(), "Controller launchRulesetsFor should be called");
@@ -315,7 +315,7 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
             testProjectId, hookConfig, launchConfig, "", IJBController(address(mockCtrl)), salt2
         );
 
-        assertTrue(address(hook1) != address(hook2), "Different salts should produce different hook addresses");
+        assertNotEq(address(hook1), address(hook2), "Different salts should produce different hook addresses");
     }
 
     /// @notice launchRulesetsFor reverts when the caller lacks QUEUE_RULESETS permission.
@@ -352,7 +352,7 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
         assertEq(rulesetId, 42, "Should return the ruleset ID from the controller");
 
         // Verify a hook was deployed (non-zero address).
-        assertTrue(address(deployedHook) != address(0), "Hook should be deployed");
+        assertNotEq(address(deployedHook), address(0), "Hook should be deployed");
 
         // Verify the controller's queueRulesetsOf was called.
         assertTrue(mockCtrl.queueRulesetsOfCalled(), "Controller queueRulesetsOf should be called");
@@ -376,7 +376,7 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
         );
 
         // The hook address should not be zero -- this indirectly validates the dataHook was wired.
-        assertTrue(address(deployedHook) != address(0), "Hook should be deployed and wired as data hook");
+        assertNotEq(address(deployedHook), address(0), "Hook should be deployed and wired as data hook");
     }
 
     /// @notice queueRulesetsOf reverts when the caller lacks QUEUE_RULESETS permission.
@@ -404,6 +404,6 @@ contract Test_ProjectDeployerRulesets is UnitTestSetup {
         );
 
         assertEq(rulesetId, 42, "Should return the ruleset ID");
-        assertTrue(address(deployedHook) != address(0), "Hook should be deployed");
+        assertNotEq(address(deployedHook), address(0), "Hook should be deployed");
     }
 }
