@@ -30,6 +30,8 @@ import "../utils/UnitTestSetup.sol";
 contract MockJBProjectsCount {
     uint256 private _count;
     address private _owner;
+    uint256 public creationFee;
+    address payable public creationFeeReceiver;
 
     function setup(uint256 initialCount, address projectOwner) external {
         _count = initialCount;
@@ -40,10 +42,17 @@ contract MockJBProjectsCount {
         return _count;
     }
 
-    function createFor(address projectOwner) external returns (uint256 projectId) {
+    function createFor(address projectOwner) external payable returns (uint256 projectId) {
+        require(msg.value == creationFee, "BAD_CREATION_FEE");
         projectId = _count + 1;
         _count = projectId;
         _owner = projectOwner;
+        if (creationFee != 0) creationFeeReceiver.transfer(creationFee);
+    }
+
+    function setCreationFee(uint256 fee, address payable receiver) external {
+        creationFee = fee;
+        creationFeeReceiver = receiver;
     }
 
     function setCount(uint256 newCount) external {
@@ -121,5 +130,30 @@ contract Test_ProjectDeployer_Unit is UnitTestSetup {
 
         // Check: does the project have the correct project ID (the previous ID incremented by 1)?
         assertEq(previousProjectId, projectId - 1);
+    }
+
+    function test_launchProjectFor_forwardsCreationFee(bytes32 salt) external {
+        (JBDeploy721TiersHookConfig memory deploy721TiersHookConfig, JBLaunchProjectConfig memory launchProjectConfig) =
+            createData();
+
+        MockJBProjectsCount projectsImpl = new MockJBProjectsCount();
+        vm.etch(mockJBProjects, address(projectsImpl).code);
+        MockJBProjectsCount(mockJBProjects).setup(0, owner);
+        vm.mockCall(mockJBDirectory, abi.encodeWithSelector(IJBDirectory.PROJECTS.selector), abi.encode(mockJBProjects));
+
+        uint256 creationFee = 0.0001 ether;
+        address payable creationFeeReceiver = payable(makeAddr("creationFeeReceiver"));
+        MockJBProjectsCount(mockJBProjects).setCreationFee({fee: creationFee, receiver: creationFeeReceiver});
+
+        MockLaunchController mockController = new MockLaunchController(MockJBProjectsCount(mockJBProjects));
+
+        vm.deal(address(this), creationFee);
+        (uint256 projectId,) = deployer.launchProjectFor{value: creationFee}(
+            owner, deploy721TiersHookConfig, launchProjectConfig, IJBController(address(mockController)), salt
+        );
+
+        assertEq(projectId, 1);
+        assertEq(creationFeeReceiver.balance, creationFee);
+        assertEq(address(deployer).balance, 0);
     }
 }

@@ -42,7 +42,7 @@
 
 | Function | Required Permissions |
 | --- | --- |
-| `launchProjectFor(...)` | None (creates a new project) |
+| `launchProjectFor(...)` | None (creates a new project; caller must forward any configured project creation fee) |
 | `launchRulesetsFor(...)` | `LAUNCH_RULESETS` + `SET_TERMINALS` |
 | `queueRulesetsOf(...)` | `QUEUE_RULESETS` |
 

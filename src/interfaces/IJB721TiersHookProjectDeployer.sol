@@ -29,6 +29,7 @@ interface IJB721TiersHookProjectDeployer {
     /// @param salt A salt to use for the deterministic deployment.
     /// @return projectId The ID of the newly launched project.
     /// @return hook The 721 tiers hook that was deployed for the project.
+    /// @dev Forwards `msg.value` to `JBProjects.createFor` to cover any configured project creation fee.
     function launchProjectFor(
         address owner,
         JBDeploy721TiersHookConfig memory deployTiersHookConfig,
@@ -37,6 +38,7 @@ interface IJB721TiersHookProjectDeployer {
         bytes32 salt
     )
         external
+        payable
         returns (uint256 projectId, IJB721TiersHook hook);
 
     /// @notice Launches rulesets for a project with an attached 721 tiers hook.
