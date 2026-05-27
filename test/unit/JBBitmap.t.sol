@@ -151,9 +151,12 @@ contract TestJBBitmap is Test {
 
     function testFuzz_refreshBitmapNeeded_consistency(uint16 indexA, uint16 indexB) public {
         JBBitmapWord memory word = bitmap.readId(indexA);
-        bool needed = word.refreshBitmapNeeded(indexB);
         // Refresh is needed iff depths differ.
-        assertEq(needed, (uint256(indexA) >> 8) != (uint256(indexB) >> 8), "refresh iff different depth");
+        assertEq(
+            word.refreshBitmapNeeded(indexB),
+            (uint256(indexA) >> 8) != (uint256(indexB) >> 8),
+            "refresh iff different depth"
+        );
     }
 
     function testFuzz_removeTier_multipleBits(uint8 a, uint8 b, uint8 c) public {
