@@ -12,7 +12,7 @@ library JBIpfsDecoder {
 
     /// @notice Just a kind reminder to our readers.
     /// @dev Used in `base58ToString`
-    bytes internal constant ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+    bytes internal constant _ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
     /// @notice Decode an IPFS hash from a bytes32 and concatenate it with a base URI.
     /// @param baseUri The base URI to prepend to the decoded IPFS hash.
@@ -47,15 +47,15 @@ library JBIpfsDecoder {
         return output;
     }
 
-    /// @notice Map each base-58 digit (0–57) to its corresponding character in `ALPHABET`.
+    /// @notice Map each base-58 digit (0–57) to its corresponding character in `_ALPHABET`.
     /// @dev Final stage of `_toBase58`: turns the numeric digit array into the canonical base-58 string bytes.
     /// @param indices Each element must satisfy `0 <= indices[i] < 58`; out-of-range values revert via index OOB.
-    /// @return output ASCII bytes with `output[i] = ALPHABET[indices[i]]`.
+    /// @return output ASCII bytes with `output[i] = _ALPHABET[indices[i]]`.
     function _toAlphabet(uint8[] memory indices) private pure returns (bytes memory) {
         uint256 indicesLength = indices.length;
         bytes memory output = new bytes(indicesLength);
         for (uint256 i; i < indicesLength;) {
-            output[i] = ALPHABET[indices[i]];
+            output[i] = _ALPHABET[indices[i]];
 
             unchecked {
                 ++i;
