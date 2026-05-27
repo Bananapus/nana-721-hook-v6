@@ -31,7 +31,7 @@ contract Test_JB721CheckpointsDeployer_AccessControl is Test {
         IJB721Checkpoints module = deployer.deploy(hookAddr);
 
         // Verify the module was deployed (non-zero address).
-        assertTrue(address(module) != address(0), "Module should be deployed");
+        assertNotEq(address(module), address(0), "Module should be deployed");
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -89,7 +89,7 @@ contract Test_JB721CheckpointsDeployer_AccessControl is Test {
         // The legitimate hook can still deploy successfully after the failed front-run attempt.
         vm.prank(hookAddr);
         IJB721Checkpoints module = deployer.deploy(hookAddr);
-        assertTrue(address(module) != address(0), "Hook should deploy successfully after failed front-run");
+        assertNotEq(address(module), address(0), "Hook should deploy successfully after failed front-run");
     }
 
     /// @notice An attacker who calls deploy(attacker) from their own address gets a clone
@@ -102,17 +102,16 @@ contract Test_JB721CheckpointsDeployer_AccessControl is Test {
         // This succeeds because msg.sender == hook parameter.
         vm.prank(attacker);
         IJB721Checkpoints attackerModule = deployer.deploy(attacker);
-        assertTrue(address(attackerModule) != address(0), "Attacker can deploy their own clone");
+        assertNotEq(address(attackerModule), address(0), "Attacker can deploy their own clone");
 
         // The real hook can still deploy its own clone (different salt = different CREATE2 address).
         vm.prank(hookAddr);
         IJB721Checkpoints hookModule = deployer.deploy(hookAddr);
-        assertTrue(address(hookModule) != address(0), "Real hook can still deploy its own clone");
+        assertNotEq(address(hookModule), address(0), "Real hook can still deploy its own clone");
 
         // The two clones are at different addresses.
-        assertTrue(
-            address(attackerModule) != address(hookModule),
-            "Attacker clone and hook clone should be different addresses"
+        assertNotEq(
+            address(attackerModule), address(hookModule), "Attacker clone and hook clone should be different addresses"
         );
     }
 
