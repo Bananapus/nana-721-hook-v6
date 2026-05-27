@@ -77,6 +77,7 @@ contract JB721TiersHookProjectDeployer is
     /// @param salt A salt to use for the deterministic deployment.
     /// @return projectId The ID of the newly launched project.
     /// @return hook The 721 tiers hook that was deployed for the project.
+    /// @dev Forwards `msg.value` to `JBProjects.createFor` to cover any configured project creation fee.
     function launchProjectFor(
         address owner,
         JBDeploy721TiersHookConfig calldata deployTiersHookConfig,
@@ -85,12 +86,13 @@ contract JB721TiersHookProjectDeployer is
         bytes32 salt
     )
         external
+        payable
         override
         returns (uint256 projectId, IJB721TiersHook hook)
     {
         // Reserve the project ID up front so permissionless project creations cannot invalidate hook deployment.
         IJBProjects projects = DIRECTORY.PROJECTS();
-        projectId = projects.createFor(address(this));
+        projectId = projects.createFor{value: msg.value}(address(this));
 
         // Deploy the hook.
         hook = HOOK_DEPLOYER.deployHookFor({

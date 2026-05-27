@@ -27,6 +27,7 @@ This repo adds tiered NFT logic to Juicebox payment and cash-out flows. It owns 
 **Preconditions**
 - the project knows its tier structure and hook expectations
 - the deployer path matches whether the project already exists
+- if `JBProjects` has a creation fee, the launch caller sends that exact native-token amount
 
 **Main Flow**
 1. Deploy a hook clone or launch a project with the hook already attached.
