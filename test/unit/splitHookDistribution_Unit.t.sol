@@ -605,7 +605,7 @@ contract Test_SplitHookDistribution is UnitTestSetup {
         (, uint64 pid, address payable ben, bool pref,, IJBSplitHook hk) = splitHook.lastSplit();
         assertEq(pid, 42);
         assertEq(ben, bob);
-        assertEq(pref, true);
+        assertTrue(pref);
         assertEq(address(hk), address(splitHook));
     }
 }
