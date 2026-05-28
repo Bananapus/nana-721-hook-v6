@@ -1,7 +1,5 @@
 # Invariants of `@bananapus/721-hook-v6`
 
-Last updated: 2026-05-28.
-
 Scope: the contracts shipped from this repo — `JB721TiersHook` (clone implementation), `JB721TiersHookStore` (shared accounting backend), `JB721TiersHookDeployer` and `JB721TiersHookProjectDeployer` (clone factories), `JB721Checkpoints` (lazy IVotes module) and its deployer, plus the libraries under `src/libraries/`. The hook is a per-clone Ownable (`JBOwnable`) data-hook for Juicebox V6 used by Croptop, Banny, Defifa, and general revnets to sell category-sorted tiered NFTs through the Juicebox pay / cash-out flow.
 
 Companion docs: [ARCHITECTURE.md](./ARCHITECTURE.md), [RISKS.md](./RISKS.md), [USER_JOURNEYS.md](./USER_JOURNEYS.md), [ADMINISTRATION.md](./ADMINISTRATION.md), [AUDIT_INSTRUCTIONS.md](./AUDIT_INSTRUCTIONS.md), [SKILLS.md](./SKILLS.md), [CHANGELOG.md](./CHANGELOG.md).

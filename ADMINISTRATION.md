@@ -33,6 +33,7 @@
 - `adjustTiers(...)`
 - `mintFor(...)`
 - `setDiscountPercentOf(...)`
+- `setDiscountPercentsOf(...)` (batch variant)
 - `setMetadata(...)`
 - deployer setup and hook ownership transfer paths
 
