@@ -58,7 +58,7 @@ This file covers the tiered-NFT accounting, reserve-mint, and cash-out risks in 
 
 - **`adjustTiers` is permissioned and respects append-only restrictions.**
 - **`mintFor` is permissioned and still depends on per-tier owner-mint flags.**
-- **`setDiscountPercentOf` is permissioned and can be one-way constrained.**
+- **`setDiscountPercentOf` is permissioned and can be one-way constrained.** The `cantIncreaseDiscountPercent` per-tier flag makes the discount monotonically non-increasing once set.
 - **`setMetadata` is permissioned and changes name, symbol, URIs, resolver, and tier URIs.**
 - **Transfer pause is tier-sensitive.**
 - **`mintPendingReservesFor` and `cleanTiers` are permissionless by design.**
@@ -119,7 +119,7 @@ If both the primary split path and the fallback `addToBalanceOf` path fail, the 
 
 ### 8.6 Credit-funded tier purchases may underfund split obligations
 
-Pay credits can be used to buy tiers that carry a `splitPercent`. When credits satisfy part of the tier price, the fresh ETH forwarded to splits may be less than the split obligation implied by the full tier price. Project owners who consider this a problem should enable the `preventBuyingTierWithCredits` flag on affected tiers. This is accepted behavior.
+Pay credits can be used to buy tiers that carry a `splitPercent`. When credits satisfy part of the tier price, the fresh ETH forwarded to splits may be less than the split obligation implied by the full tier price. Project owners who consider this a problem should enable the `cantBuyWithCredits` flag on affected tiers. This is accepted behavior.
 
 ### 8.7 Changing the default reserve beneficiary redirects pending reserves
 

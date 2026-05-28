@@ -2,11 +2,11 @@
 
 `@bananapus/721-hook-v6` is the tiered NFT issuance layer for Juicebox V6. It lets a project mint ERC-721s on payment, attach tier-specific pricing and supply rules, mint reserves, and integrate custom token URI resolvers.
 
-Docs: <https://docs.juicebox.money>
 Architecture: [ARCHITECTURE.md](./ARCHITECTURE.md)  
 User journeys: [USER_JOURNEYS.md](./USER_JOURNEYS.md)  
 Skills: [SKILLS.md](./SKILLS.md)  
 Risks: [RISKS.md](./RISKS.md)  
+Invariants: [INVARIANTS.md](./INVARIANTS.md)  
 Administration: [ADMINISTRATION.md](./ADMINISTRATION.md)  
 Audit instructions: [AUDIT_INSTRUCTIONS.md](./AUDIT_INSTRUCTIONS.md)
 
