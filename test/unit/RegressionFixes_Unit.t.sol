@@ -13,7 +13,8 @@ import {JB721TiersHookFlags} from "../../src/structs/JB721TiersHookFlags.sol";
 import {JB721TiersHookLib} from "../../src/libraries/JB721TiersHookLib.sol";
 import {LibClone} from "solady/src/utils/LibClone.sol";
 
-/// @notice Tests for 4 regression fixes: .
+/// @notice Regression tests for split metadata scaling, leftover routing, clone initialization, and category
+/// starting-tier maintenance.
 contract Test_RegressionFixes_Unit is UnitTestSetup {
     using stdStorage for StdStorage;
 
@@ -68,7 +69,7 @@ contract Test_RegressionFixes_Unit is UnitTestSetup {
     // actual payment value.
 
     /// @notice When amount.value < totalSplitAmount, per-tier split amounts are scaled down proportionally.
-    function test_F2_splitMetadataScaledDown_whenAmountBelowSplitTotal() public {
+    function test_splitMetadataScaledDown_whenAmountBelowSplitTotal() public {
         ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
         IJB721TiersHookStore hookStore = testHook.STORE();
 
@@ -142,7 +143,7 @@ contract Test_RegressionFixes_Unit is UnitTestSetup {
     }
 
     /// @notice When amount.value >= totalSplitAmount, no scaling occurs.
-    function test_F2_noScaling_whenAmountExceedsSplitTotal() public {
+    function test_noScaling_whenAmountExceedsSplitTotal() public {
         ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
         IJB721TiersHookStore hookStore = testHook.STORE();
 
@@ -190,7 +191,7 @@ contract Test_RegressionFixes_Unit is UnitTestSetup {
     // JB721TiersHookLib_NoTerminalForLeftover instead of silently losing funds.
 
     /// @notice Revert when leftover funds exist but no primary terminal is available.
-    function test_F11_revertsWhenNoTerminalForLeftover() public {
+    function test_revertsWhenNoTerminalForLeftover() public {
         ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
         IJB721TiersHookStore hookStore = testHook.STORE();
 
@@ -281,7 +282,7 @@ contract Test_RegressionFixes_Unit is UnitTestSetup {
     }
 
     /// @notice No revert when splits consume 100% (no leftover).
-    function test_F11_noRevertWhenSplitsConsume100Percent() public {
+    function test_noRevertWhenSplitsConsume100Percent() public {
         ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
         IJB721TiersHookStore hookStore = testHook.STORE();
 
@@ -363,7 +364,7 @@ contract Test_RegressionFixes_Unit is UnitTestSetup {
     // A second call to initialize() on a clone must revert.
 
     /// @notice The implementation contract cannot be initialized (constructor sets _initialized = true).
-    function test_F12_implementationCannotBeInitialized() public {
+    function test_implementationCannotBeInitialized() public {
         // hookOrigin is the implementation contract deployed in setUp().
         // Its constructor already set _initialized = true.
         // projectId is 0 on the implementation (never initialized with a project ID).
@@ -390,7 +391,7 @@ contract Test_RegressionFixes_Unit is UnitTestSetup {
     }
 
     /// @notice A clone can be initialized once, but not twice.
-    function test_F12_cloneInitializedOnce_secondCallReverts() public {
+    function test_cloneInitializedOnce_secondCallReverts() public {
         // Deploy a fresh clone of the implementation.
         address cloneAddr = LibClone.clone(address(hookOrigin));
         JB721TiersHook cloneHook = JB721TiersHook(cloneAddr);
@@ -452,7 +453,7 @@ contract Test_RegressionFixes_Unit is UnitTestSetup {
 
     /// @notice After removing the first tier of a category and calling cleanTiers,
     ///         the category's starting tier ID is updated to the next valid tier.
-    function test_F13_cleanTiersUpdatesStartingTierIdOfCategory() public {
+    function test_cleanTiersUpdatesStartingTierIdOfCategory() public {
         // Initialize a hook with no default tiers.
         JB721TiersHook testHook = _initHookDefaultTiers(0);
         IJB721TiersHookStore hookStore = testHook.STORE();
@@ -568,7 +569,7 @@ contract Test_RegressionFixes_Unit is UnitTestSetup {
     }
 
     /// @notice Removing a non-starting tier does not affect _startingTierIdOfCategory.
-    function test_F13_removingNonStartingTierPreservesStartingId() public {
+    function test_removingNonStartingTierPreservesStartingId() public {
         JB721TiersHook testHook = _initHookDefaultTiers(0);
         IJB721TiersHookStore hookStore = testHook.STORE();
 
