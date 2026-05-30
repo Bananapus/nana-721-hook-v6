@@ -126,9 +126,7 @@ contract TestTierEligibleUnits is UnitTestSetup {
         IERC721(address(tiersHook)).transferFrom(bob, alice, tokenId);
         uint256 secondTransferBlock = block.number;
         vm.roll(block.number + 1);
-        assertEq(
-            module.getPastTierVotingUnits(1, secondTransferBlock), 100, "second transfer should not change total"
-        );
+        assertEq(module.getPastTierVotingUnits(1, secondTransferBlock), 100, "second transfer should not change total");
     }
 
     // -------------------------------------------------------------------
@@ -188,6 +186,26 @@ contract TestTierEligibleUnits is UnitTestSetup {
         vm.roll(block.number + 1);
 
         assertEq(module.getPastTierVotingUnits(1, b), 100, "re-enroll must not double count");
+    }
+
+    // -------------------------------------------------------------------
+    // Current/future block lookups match Votes.getPastTotalSupply semantics.
+    // -------------------------------------------------------------------
+    function test_getPastTierVotingUnits_revertsForCurrentBlock() public {
+        defaultTierConfig.flags.allowOwnerMint = true;
+        defaultTierConfig.reserveFrequency = 0;
+        defaultTierConfig.flags.useVotingUnits = true;
+        defaultTierConfig.votingUnits = 100;
+
+        ForTest_JB721TiersHook tiersHook = _initializeHook(1);
+        address alice = makeAddr("alice");
+
+        _mint(tiersHook, 1, alice);
+        IJB721Checkpoints module = tiersHook.checkpoints();
+        _enroll(module, alice, _generateTokenId(1, 1));
+
+        vm.expectRevert();
+        module.getPastTierVotingUnits(1, block.number);
     }
 
     // -------------------------------------------------------------------

@@ -157,17 +157,9 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     //*********************************************************************//
 
     /// @inheritdoc IJB721Checkpoints
-    function getPastTierVotingUnits(
-        uint256 tierId,
-        uint256 blockNumber
-    )
-        external
-        view
-        override
-        returns (uint256)
-    {
+    function getPastTierVotingUnits(uint256 tierId, uint256 blockNumber) external view override returns (uint256) {
         // forge-lint: disable-next-line(unsafe-typecast)
-        return _tierEligibleUnitsOf[tierId].upperLookupRecent(uint96(blockNumber));
+        return _tierEligibleUnitsOf[tierId].upperLookupRecent(uint96(_validateTimepoint(blockNumber)));
     }
 
     /// @notice The owner of an NFT at a past block.
@@ -214,8 +206,7 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// burn).
     function _updateTierEligibleUnits(uint256 tierId, int256 delta) private {
         Checkpoints.Trace160 storage trace = _tierEligibleUnitsOf[tierId];
-        uint256 updated =
-            delta >= 0 ? trace.latest() + uint256(delta) : trace.latest() - uint256(-delta);
+        uint256 updated = delta >= 0 ? trace.latest() + uint256(delta) : trace.latest() - uint256(-delta);
         // forge-lint: disable-next-line(unsafe-typecast)
         trace.push({key: uint96(block.number), value: uint160(updated)});
     }
