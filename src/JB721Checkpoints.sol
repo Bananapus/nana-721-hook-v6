@@ -95,10 +95,10 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
             if (_ownerCheckpointsOf[tokenId].length() == 0) {
                 // forge-lint: disable-next-line(unsafe-typecast)
                 _ownerCheckpointsOf[tokenId].push({key: uint96(block.number), value: uint160(msg.sender)});
-                // forge-lint: disable-next-line(unsafe-typecast)
                 _updateTierEligibleUnits({
                     tierId: STORE.tierIdOfToken(tokenId),
-                    delta: int256(STORE.tierVotingUnitsOfTokenId({hook: hook, tokenId: tokenId}))
+                    amount: STORE.tierVotingUnitsOfTokenId({hook: hook, tokenId: tokenId}),
+                    increase: true
                 });
             }
 
@@ -140,11 +140,13 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
             if (to == address(0)) {
                 // Burn: remove the tier's units only if the token was already eligible.
                 if (wasEligible) {
-                    _updateTierEligibleUnits({tierId: STORE.tierIdOfToken(tokenId), delta: -int256(votingUnits)});
+                    _updateTierEligibleUnits({
+                        tierId: STORE.tierIdOfToken(tokenId), amount: votingUnits, increase: false
+                    });
                 }
             } else if (!wasEligible) {
                 // First transfer of a never-enrolled token makes it eligible: add the tier's units.
-                _updateTierEligibleUnits({tierId: STORE.tierIdOfToken(tokenId), delta: int256(votingUnits)});
+                _updateTierEligibleUnits({tierId: STORE.tierIdOfToken(tokenId), amount: votingUnits, increase: true});
             }
         }
 
@@ -200,13 +202,13 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     // ------------------------ private helpers -------------------------- //
     //*********************************************************************//
 
-    /// @notice Apply a signed delta to a tier's eligible-voting-units checkpoint at the current block.
+    /// @notice Add or remove units from a tier's eligible-voting-units checkpoint at the current block.
     /// @param tierId The tier whose eligible-voting-units trace to update.
-    /// @param delta The voting units to add (positive, on enrollment or first transfer) or remove (negative, on
-    /// burn).
-    function _updateTierEligibleUnits(uint256 tierId, int256 delta) private {
+    /// @param amount The voting units to add or remove.
+    /// @param increase Whether to add `amount`; if false, `amount` is removed.
+    function _updateTierEligibleUnits(uint256 tierId, uint256 amount, bool increase) private {
         Checkpoints.Trace160 storage trace = _tierEligibleUnitsOf[tierId];
-        uint256 updated = delta >= 0 ? trace.latest() + uint256(delta) : trace.latest() - uint256(-delta);
+        uint256 updated = increase ? trace.latest() + amount : trace.latest() - amount;
         // forge-lint: disable-next-line(unsafe-typecast)
         trace.push({key: uint96(block.number), value: uint160(updated)});
     }
