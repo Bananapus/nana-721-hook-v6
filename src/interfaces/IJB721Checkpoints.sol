@@ -8,6 +8,15 @@ import {IJB721TiersHookStore} from "./IJB721TiersHookStore.sol";
 /// @dev Deployed as a clone via JB721CheckpointsDeployer during hook initialization. One module per hook.
 /// Pass this address to JBTokenDistributor as the IVotes token.
 interface IJB721Checkpoints is IERC5805 {
+    /// @notice The total eligible voting units of a tier at a past block.
+    /// @dev "Eligible" means a token has an owner checkpoint: it was enrolled via `delegate(address,uint256[])` or
+    /// transferred at least once. Minted-but-unenrolled tokens are excluded, mirroring `ownerOfAt` eligibility, and
+    /// mints never write to this trace. Distributors use this as the denominator for tier-scoped reward pots.
+    /// @param tierId The tier to get the eligible voting units of.
+    /// @param blockNumber The block number to look up (must be strictly in the past).
+    /// @return The tier's eligible voting units at `blockNumber`.
+    function getPastTierVotingUnits(uint256 tierId, uint256 blockNumber) external view returns (uint256);
+
     /// @notice The hook that this module tracks voting power for.
     /// @return The hook address.
     // forge-lint: disable-next-line(mixed-case-function)
