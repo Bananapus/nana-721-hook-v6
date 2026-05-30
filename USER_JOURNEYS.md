@@ -110,6 +110,11 @@ This repo adds tiered NFT logic to Juicebox payment and cash-out flows. It owns 
 **Postconditions**
 - NFTs burn and reclaim value follows the intended tier model
 
+**Voting and tier-scoped rewards note**
+- Voting power and snapshot eligibility are tracked by the per-hook `JB721Checkpoints` module, lazily deployed on the first transfer.
+- A freshly minted token does NOT yet count toward a tier's eligible voting units. Enrolling it via `delegate(address, uint256[])` (or simply transferring it for the first time) is what makes its tier units count toward tier-scoped reward pots; the count is removed when the token is burned.
+- Distributors read a tier's historical denominator via `getPastTierVotingUnits(tierId, blockNumber)` — the per-tier analogue of a total-supply snapshot. Holders who never enroll or transfer are excluded.
+
 ## Trust Boundaries
 
 - this repo trusts core terminals, directory checks, and pricing surfaces from `nana-core-v6`

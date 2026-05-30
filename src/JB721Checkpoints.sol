@@ -50,6 +50,12 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// @custom:param tokenId The token ID to get historical owner checkpoints for.
     mapping(uint256 tokenId => Checkpoints.Trace160) internal _ownerCheckpointsOf;
 
+    /// @notice Checkpointed total eligible voting units per tier. A token contributes its tier voting units from the
+    /// block it first gains an owner checkpoint (enrollment or first transfer) until it is burned. Mints write
+    /// nothing, mirroring `_ownerCheckpointsOf` eligibility. Distributors read this as the tier-scoped denominator.
+    /// @custom:param tierId The tier to get the historical eligible voting units for.
+    mapping(uint256 tierId => Checkpoints.Trace160) internal _tierEligibleUnitsOf;
+
     //*********************************************************************//
     // -------------------------- constructor ---------------------------- //
     //*********************************************************************//
@@ -85,10 +91,15 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
                 revert JB721Checkpoints_NotOwner({tokenId: tokenId, caller: msg.sender});
             }
 
-            // Write an owner checkpoint if the token has none yet.
+            // Write an owner checkpoint if the token has none yet, and enroll its tier voting units.
             if (_ownerCheckpointsOf[tokenId].length() == 0) {
                 // forge-lint: disable-next-line(unsafe-typecast)
                 _ownerCheckpointsOf[tokenId].push({key: uint96(block.number), value: uint160(msg.sender)});
+                _updateTierEligibleUnits({
+                    tierId: STORE.tierIdOfToken(tokenId),
+                    amount: STORE.tierVotingUnitsOfTokenId({hook: hook, tokenId: tokenId}),
+                    increase: true
+                });
             }
 
             unchecked {
@@ -114,13 +125,30 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     function onTransfer(address from, address to, uint256 tokenId) external override {
         if (msg.sender != hook) revert JB721Checkpoints_Unauthorized({caller: msg.sender, hook: hook});
 
-        if (from != address(0)) {
-            // forge-lint: disable-next-line(unsafe-typecast)
-            _ownerCheckpointsOf[tokenId].push({key: uint96(block.number), value: uint160(to)});
-        }
-
         // Look up this token's tier voting units (lightweight getter — avoids full tier struct construction).
         uint256 votingUnits = STORE.tierVotingUnitsOfTokenId({hook: hook, tokenId: tokenId});
+
+        // On mint (`from == 0`) nothing is checkpointed: the token is ineligible until enrolled or transferred,
+        // so neither the owner trace nor the per-tier eligible-units trace is written.
+        if (from != address(0)) {
+            Checkpoints.Trace160 storage ownerTrace = _ownerCheckpointsOf[tokenId];
+            bool wasEligible = ownerTrace.length() != 0;
+
+            // forge-lint: disable-next-line(unsafe-typecast)
+            ownerTrace.push({key: uint96(block.number), value: uint160(to)});
+
+            if (to == address(0)) {
+                // Burn: remove the tier's units only if the token was already eligible.
+                if (wasEligible) {
+                    _updateTierEligibleUnits({
+                        tierId: STORE.tierIdOfToken(tokenId), amount: votingUnits, increase: false
+                    });
+                }
+            } else if (!wasEligible) {
+                // First transfer of a never-enrolled token makes it eligible: add the tier's units.
+                _updateTierEligibleUnits({tierId: STORE.tierIdOfToken(tokenId), amount: votingUnits, increase: true});
+            }
+        }
 
         // Move checkpointed voting power from the previous owner to the new owner.
         _transferVotingUnits({from: from, to: to, amount: votingUnits});
@@ -129,6 +157,12 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     //*********************************************************************//
     // ----------------------- external views ---------------------------- //
     //*********************************************************************//
+
+    /// @inheritdoc IJB721Checkpoints
+    function getPastTierVotingUnits(uint256 tierId, uint256 blockNumber) external view override returns (uint256) {
+        // forge-lint: disable-next-line(unsafe-typecast)
+        return _tierEligibleUnitsOf[tierId].upperLookupRecent(uint96(_validateTimepoint(blockNumber)));
+    }
 
     /// @notice The owner of an NFT at a past block.
     /// @dev Returns `address(0)` for tokens that have never been enrolled (via `delegate(address, uint256[])`) or
@@ -162,5 +196,20 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// @return The total voting units the account holds.
     function _getVotingUnits(address account) internal view override returns (uint256) {
         return STORE.votingUnitsOf({hook: hook, account: account});
+    }
+
+    //*********************************************************************//
+    // ------------------------ private helpers -------------------------- //
+    //*********************************************************************//
+
+    /// @notice Add or remove units from a tier's eligible-voting-units checkpoint at the current block.
+    /// @param tierId The tier whose eligible-voting-units trace to update.
+    /// @param amount The voting units to add or remove.
+    /// @param increase Whether to add `amount`; if false, `amount` is removed.
+    function _updateTierEligibleUnits(uint256 tierId, uint256 amount, bool increase) private {
+        Checkpoints.Trace160 storage trace = _tierEligibleUnitsOf[tierId];
+        uint256 updated = increase ? trace.latest() + amount : trace.latest() - amount;
+        // forge-lint: disable-next-line(unsafe-typecast)
+        trace.push({key: uint96(block.number), value: uint160(updated)});
     }
 }

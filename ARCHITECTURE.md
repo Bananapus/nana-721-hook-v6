@@ -18,6 +18,7 @@ Custom token URI resolvers usually live outside this repo, but they still affect
 - reserve minting and split routing must not drift from stored tier state
 - store-linked list and bitmap assumptions must stay valid under tier add, remove, and clean operations
 - deployer wiring must preserve the expected ruleset and hook shape
+- the per-tier eligible-voting-units trace must move only when a token's eligibility changes: it increments on enrollment or a token's first transfer, decrements on burn, and writes nothing on mint (so the mint path adds no checkpoint gas)
 
 ## Modules
 
@@ -28,6 +29,9 @@ Custom token URI resolvers usually live outside this repo, but they still affect
 | `JB721TiersHookDeployer` | Clone deployer for existing projects | Wiring helper |
 | `JB721TiersHookProjectDeployer` | Project-launch deployer with hook setup | Launch helper |
 | `JB721Hook` | Abstract 721 hook base | Shared behavior |
+| `JB721Checkpoints` | IVotes-compatible checkpoint module (one clone per hook) | Tracks historical owner checkpoints plus a per-tier eligible-voting-units trace |
+
+The checkpoint module keeps two kinds of checkpointed state. Per-token owner checkpoints back `ownerOfAt` for snapshot-based reward eligibility. A per-tier eligible-voting-units trace (`_tierEligibleUnitsOf`, read via `getPastTierVotingUnits(tierId, blockNumber)`) is the tier-scoped analogue of a total-supply snapshot: it is the running total of voting units across tokens that are currently eligible. A token contributes its tier voting units from the block it first gains an owner checkpoint — enrollment via `delegate(address, uint256[])` or its first transfer — and stops contributing when it is burned. Mints write nothing to either trace, so the mint path carries no added checkpoint gas; a minted-but-unenrolled token is ineligible until enrolled or transferred, exactly as `ownerOfAt` reports.
 
 ## Trust Boundaries
 
