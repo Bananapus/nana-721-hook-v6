@@ -119,8 +119,8 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
             _ownerCheckpointsOf[tokenId].push({key: uint96(block.number), value: uint160(to)});
         }
 
-        // Look up this token's tier to get its voting units.
-        uint256 votingUnits = STORE.tierOfTokenId({hook: hook, tokenId: tokenId, includeResolvedUri: false}).votingUnits;
+        // Look up this token's tier voting units (lightweight getter — avoids full tier struct construction).
+        uint256 votingUnits = STORE.tierVotingUnitsOfTokenId({hook: hook, tokenId: tokenId});
 
         // Move checkpointed voting power from the previous owner to the new owner.
         _transferVotingUnits({from: from, to: to, amount: votingUnits});

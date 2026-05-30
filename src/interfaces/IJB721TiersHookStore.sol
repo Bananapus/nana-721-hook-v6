@@ -151,6 +151,12 @@ interface IJB721TiersHookStore {
         view
         returns (uint256 tierId, bool transfersPausable);
 
+    /// @notice Get only the per-unit voting value for a token's tier, avoiding full struct construction.
+    /// @param hook The 721 hook address.
+    /// @param tokenId The token ID.
+    /// @return The per-unit voting value for the token's tier (custom voting units if set, otherwise the tier price).
+    function tierVotingUnitsOfTokenId(address hook, uint256 tokenId) external view returns (uint256);
+
     /// @notice Get an array of currently active 721 tiers for the provided 721 contract.
     /// @param hook The 721 contract to get the tiers of.
     /// @param categories An array of tier categories to get tiers from. Empty for all categories.

@@ -261,6 +261,24 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         transfersPausable = (storedTier.packedBools & 0x2) != 0;
     }
 
+    /// @notice Get only the per-unit voting value for a token's tier, avoiding full struct construction.
+    /// @dev Mirrors the `votingUnits` field computed in `_getTierFrom`: a tier with custom voting units configured
+    /// (the `useVotingUnits` flag, bit 2 of `packedBools`) contributes its stored voting units per NFT, otherwise it
+    /// contributes its price per NFT. Multiply by an account's balance in the tier to get its voting power there.
+    /// @param hook The 721 hook contract that the token belongs to.
+    /// @param tokenId The token ID.
+    /// @return The per-unit voting value for the token's tier.
+    function tierVotingUnitsOfTokenId(address hook, uint256 tokenId) external view override returns (uint256) {
+        // Get a reference to the tier's ID.
+        uint256 tierId = tierIdOfToken(tokenId);
+
+        // Keep a reference to the stored tier.
+        JBStored721Tier memory storedTier = _storedTierOf[hook][tierId];
+
+        // Bit 2 (0-indexed) of packedBools is useVotingUnits. Use custom voting units if set, otherwise the price.
+        return (storedTier.packedBools & 0x4 != 0) ? _tierVotingUnitsOf[hook][tierId] : storedTier.price;
+    }
+
     /// @notice Get all active (non-removed) tiers for a hook, with optional filtering by category and pagination.
     /// Tiers are returned sorted by category.
     /// @param hook The 721 hook contract to get tiers from.
