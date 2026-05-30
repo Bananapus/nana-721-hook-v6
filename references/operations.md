@@ -12,6 +12,7 @@
 - If you edit tier config or metadata behavior, inspect the corresponding structs and interfaces in `src/structs/` and `src/interfaces/`.
 - If you edit reserve behavior, verify pending reserve counts, default reserve beneficiary semantics, and cash-out denominator effects together.
 - If you edit discount behavior, verify mint price and cash-out weight separately. They are intentionally not the same quantity.
+- If you touch checkpoint, `onTransfer`, or `delegate` behavior, verify the per-tier eligible-voting-units trace (`_tierEligibleUnitsOf`, read via `getPastTierVotingUnits`) still moves only on eligibility changes: increment on enrollment or a token's first transfer, decrement on burn, and nothing on mint (so the mint path keeps its zero added checkpoint gas). Keep it in lockstep with `ownerOfAt` eligibility.
 - If you touch permissions, verify the caller path and permission constants still line up with the downstream ecosystem package that defines them.
 - If you touch URI behavior, confirm whether the issue belongs in this repo or in a downstream resolver contract that the hook calls.
 

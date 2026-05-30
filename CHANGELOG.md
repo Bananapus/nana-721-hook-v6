@@ -12,6 +12,16 @@ This file describes the verified change from `nana-721-hook-v5` to the current `
 - `JB721TiersHookProjectDeployer`
 - `JB721TiersHookLib`
 
+## 0.0.63 — Per-tier eligible voting units checkpoint
+
+`JB721Checkpoints` now maintains a checkpointed per-tier eligible-voting-units trace (`_tierEligibleUnitsOf`), exposed through a new external view:
+
+- `getPastTierVotingUnits(uint256 tierId, uint256 blockNumber) → uint256` — the per-tier analogue of `getPastTotalSupply`. Distributors read it as the exact historical denominator for tier-scoped reward pots (rewards claimable only by holders of a chosen tier set).
+- Write rules mirror `ownerOfAt` eligibility: a token contributes its tier voting units from the block it first gains an owner checkpoint — enrollment via `delegate(address, uint256[])` or its first transfer (the `from != address(0)` branch of `onTransfer`) — and is removed on burn.
+- **Mints write nothing.** The `from == address(0)` path is skipped, so a minted-but-unenrolled token is excluded from the tier total and the mint path carries zero added checkpoint gas.
+
+`package.json`: version `0.0.62 → 0.0.63`. No ABI breakage — this only adds the `getPastTierVotingUnits` view to `IJB721Checkpoints`.
+
 ## 0.0.50 — Bump nana-core-v6 to 0.0.53
 
 `@bananapus/core-v6@0.0.53` ([nana-core-v6 PR #145](https://github.com/Bananapus/nana-core-v6/pull/145)) drops the `via_ir` requirement on `JBCashOutHookSpecsLib`, which lets this package consume the cross-project cashout work (`payAfterCashOutTokensOf` / `addToBalanceAfterCashOutTokensOf`) without needing `via_ir = true` in its own foundry profile. `JB721TiersHookStore.tiersOf` is not via-ir-tolerant under solc 0.8.28 (its category loop trips the Yul stack ceiling), so this dep release is what makes the bump possible at all.
