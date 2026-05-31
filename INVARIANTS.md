@@ -96,7 +96,7 @@ Clone-deployed per project. `JBOwnable`, `ERC2771Context`, `JB721Hook` (which in
 
 - `beforePayRecordedWith(context) view → (weight, hookSpecs)` (`JB721TiersHook.sol:194-223`). Called by the terminal during `pay`. Computes the adjusted `weight` (reduced for split portion unless `issueTokensForSplits`), the total split amount to forward to this hook, and packs `(beneficiary, payer, splitMetadata, splitCreditWeight)` into the pay-hook spec metadata.
 - `afterPayRecordedWith(context) payable` (inherited `JB721Hook.sol:246-273`). Terminal-only. Validates msg.value ↔ forwardedAmount.token, then calls `_processPayment` which normalizes the value, decodes (beneficiary, payer, splitData), mints NFTs from the metadata-specified tiers, updates credits, and runs `distributeAll` on the forwarded split amount (`JB721TiersHook.sol:688-735`).
-- `beforeCashOutRecordedWith(context) view → (taxRate, cashOutCount, totalSupply, surplus, hookSpecs)` (`abstract/JB721Hook.sol:84-127`). Reverts `JB721Hook_UnexpectedTokenCashedOut` if fungible tokens are also being cashed out. Decodes the tokenId list from metadata, sets `cashOutCount = cashOutWeightOf(tokenIds)` and `totalSupply = totalCashOutWeightOf()`.
+- `beforeCashOutRecordedWith(context) view → (taxRate, cashOutCount, totalSupply, surplus, hookSpecs)` (`abstract/JB721Hook.sol:84-127`). Reverts `JB721Hook_UnexpectedTokenCashedOut` if fungible tokens are also being cashed out. Decodes the tokenId list from metadata, sets `cashOutCount = cashOutWeightOf(tokenIds)` and `totalSupply = totalCashOutWeight()`.
 - `afterCashOutRecordedWith(context) payable` (`abstract/JB721Hook.sol:191-240`). Terminal-only, must arrive with `msg.value == 0`. Burns each tokenId after verifying `_ownerOf(tokenId) == context.holder`; calls `_didBurn` (`JB721TiersHook.sol:586-589`) which increments `numberOfBurnedFor` per tier in the store.
 
 **Project-NFT-owner / permissioned operator:**
@@ -114,7 +114,7 @@ Clone-deployed per project. `JBOwnable`, `ERC2771Context`, `JB721Hook` (which in
 
 **View:**
 
-- `firstOwnerOf(tokenId)`, `pricingContext()`, `balanceOf(owner)`, `cashOutWeightOf(tokenIds)`, `totalCashOutWeightOf()`, `tokenURI(tokenId)`, `hasMintPermissionFor(...)` returns `false` (so `JBController.mintTokensOf` never trusts this hook as a mint-permission grantor; `abstract/JB721Hook.sol:150-152`), `supportsInterface(id)`.
+- `firstOwnerOf(tokenId)`, `pricingContext()`, `balanceOf(owner)`, `cashOutWeightOf(tokenIds)`, `totalCashOutWeight()`, `tokenURI(tokenId)`, `hasMintPermissionFor(...)` returns `false` (so `JBController.mintTokensOf` never trusts this hook as a mint-permission grantor; `abstract/JB721Hook.sol:150-152`), `supportsInterface(id)`.
 
 **Invariants maintained:**
 
