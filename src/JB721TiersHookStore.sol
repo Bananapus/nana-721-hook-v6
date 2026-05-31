@@ -97,6 +97,20 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @custom:param tierId The ID of the tier to get the balance for.
     mapping(address hook => mapping(address owner => mapping(uint256 tierId => uint256))) public override tierBalanceOf;
 
+    /// @notice Running aggregate of `totalCashOutWeight` per hook so cash-out pricing is O(1) instead of
+    /// O(maxTierId). Maintained incrementally: a paid mint adds the tier's full price for the new outstanding NFT
+    /// plus any newly-accrued pending reserve; a burn subtracts the tier's full price. Reserve mints are
+    /// weight-neutral (one pending reserve becomes one outstanding NFT), removed tiers keep their weight, and newly
+    /// added (unminted) tiers contribute zero — so spamming empty tiers can never grow this read or its cost.
+    /// @custom:param hook The 721 contract the running weight belongs to.
+    mapping(address hook => uint256) internal _totalCashOutWeightOf;
+
+    /// @notice Running per-owner NFT count per hook so `balanceOf` is O(1) instead of O(maxTierId). Maintained in
+    /// `recordTransferForTier` (mint increments the receiver, burn decrements the sender, transfer does both).
+    /// @custom:param hook The 721 contract the balance belongs to.
+    /// @custom:param owner The address whose running balance this is.
+    mapping(address hook => mapping(address owner => uint256)) internal _addressBalanceOf;
+
     /// @notice Returns the custom token URI resolver which overrides the default token URI resolver for the provided
     /// 721 contract.
     /// @custom:param hook The 721 contract to get the custom token URI resolver of.
@@ -472,18 +486,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @param owner The address to check the balance of.
     /// @return balance The total number of NFTs the owner holds.
     function balanceOf(address hook, address owner) public view override returns (uint256 balance) {
-        // Keep a reference to the greatest tier ID.
-        uint256 maxTierId = maxTierIdOf[hook];
-
-        // Loop through all tiers.
-        for (uint256 i = maxTierId; i != 0;) {
-            // Get a reference to the account's balance within this tier.
-            balance += tierBalanceOf[hook][owner][i];
-
-            unchecked {
-                --i;
-            }
-        }
+        // Read the running per-owner aggregate (maintained in `recordTransferForTier`). O(1) — independent of the
+        // tier count, so an attacker spamming empty tiers cannot make this read run out of gas.
+        return _addressBalanceOf[hook][owner];
     }
 
     /// @notice The combined cash-out weight of specific NFTs. Divide by `totalCashOutWeight` to get the fraction of
@@ -549,44 +554,19 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// denominator used to determine what fraction of a project's surplus each NFT can reclaim on cash out.
     /// @param hook The 721 hook contract to get the total cash-out weight of.
     /// @return weight The total cash-out weight.
-    // Changing defaultReserveBeneficiary retroactively affects totalCashOutWeight. By design —
-    // cashOutWeight is calculated dynamically, not snapshotted. The defaultReserveBeneficiary determines which
-    // tiers have pending reserves (via _numberOfPendingReservesFor), affecting the denominator. Changing it is
-    // an admin action that naturally affects future cash out calculations. Snapshotting would add storage
-    // overhead and complexity.
+    /// @dev Returns the running aggregate maintained in `recordMint`/`recordBurn`, so this is O(1) — independent of
+    /// the tier count. This matters because cash out invokes this on the hot path (via the hook's
+    /// `beforeCashOutRecordedWith`), and an attacker who can permissionlessly add tiers (e.g. via Croptop) could
+    /// otherwise grow `maxTierId` until the old O(maxTierId) loop exceeded the block gas limit and bricked every
+    /// holder's cash out. The aggregate equals
+    /// `sum over tiers of price * (outstanding + pendingReserves)` using the FULL tier price (not the discounted
+    /// price), by the same design as the per-token `cashOutWeightOf`. It is invariant under: adding empty tiers
+    /// (zero contribution), removing tiers (removed tiers keep their already-minted weight), reserve mints (a
+    /// pending reserve simply becomes an outstanding NFT), and changing `defaultReserveBeneficiaryOf` (a reserve
+    /// tier must already have a beneficiary when added, and the default is write-once-nonzero, so no tier's pending
+    /// is ever toggled on/off afterwards).
     function totalCashOutWeight(address hook) public view override returns (uint256 weight) {
-        // Keep a reference to the greatest tier ID.
-        uint256 maxTierId = maxTierIdOf[hook];
-
-        // Add each 721's original price (from its tier) to the weight.
-        // Uses the full tier price, not the discounted price — by design. See `cashOutWeightOf` for rationale.
-        for (uint256 i = 1; i <= maxTierId;) {
-            // Keep a reference to the stored tier.
-            JBStored721Tier memory storedTier = _storedTierOf[hook][i];
-
-            // Skip empty tiers (zero mints and zero burns) — they contribute zero weight.
-            if (storedTier.initialSupply == storedTier.remainingSupply && numberOfBurnedFor[hook][i] == 0) {
-                unchecked {
-                    ++i;
-                }
-                continue;
-            }
-
-            // Add the tier's price multiplied by the number of minted NFTs plus pending reserves.
-            // Pending reserves are included by design — they represent committed obligations that will be
-            // minted to the reserve beneficiary. Including them in the denominator ensures cash-out values
-            // account for the full diluted supply, preventing early cashers from extracting more than their
-            // fair share before reserves are minted.
-            // Note: removed tiers are NOT skipped here because minted NFTs from removed tiers still carry
-            // cash-out weight, and their pending reserves can still be minted.
-            weight += storedTier.price
-            * ((storedTier.initialSupply - (storedTier.remainingSupply + numberOfBurnedFor[hook][i]))
-                + _numberOfPendingReservesFor({hook: hook, tierId: i, storedTier: storedTier}));
-
-            unchecked {
-                ++i;
-            }
-        }
+        return _totalCashOutWeightOf[hook];
     }
 
     //*********************************************************************//
@@ -1189,6 +1169,12 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             // Increment the number of NFTs burned from the tier.
             numberOfBurnedFor[msg.sender][tierId]++;
 
+            // Maintain the running cash-out weight: a burn removes one outstanding NFT (weighted by the tier's full
+            // price). Pending reserves are unaffected — they track non-reserve MINTS, which a burn does not change.
+            unchecked {
+                _totalCashOutWeightOf[msg.sender] -= _storedTierOf[msg.sender][tierId].price;
+            }
+
             unchecked {
                 ++i;
             }
@@ -1282,6 +1268,10 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             // Make sure there's at least one NFT remaining to mint.
             if (storedTier.remainingSupply == 0) revert JB721TiersHookStore_InsufficientSupplyRemaining(tierId);
 
+            // Pending reserves before this mint, captured to maintain the O(1) cash-out weight aggregate.
+            uint256 pendingReservesBefore =
+                _numberOfPendingReservesFor({hook: msg.sender, tierId: tierId, storedTier: storedTier});
+
             // Mint the 721 — decrement remaining supply first so the reserve check below
             // sees the correct post-mint non-reserve-mint count.
             unchecked {
@@ -1292,12 +1282,22 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
                 leftoverAmount = leftoverAmount - price;
             }
 
+            // Pending reserves after this mint (also used for the supply check below). A non-reserve mint can only
+            // increase pending reserves, by at most one, so the difference is 0 or 1.
+            uint256 pendingReservesAfter =
+                _numberOfPendingReservesFor({hook: msg.sender, tierId: tierId, storedTier: storedTier});
+
             // Make sure there are still enough NFTs remaining to satisfy pending reserves.
-            if (
-                storedTier.remainingSupply
-                    < _numberOfPendingReservesFor({hook: msg.sender, tierId: tierId, storedTier: storedTier})
-            ) {
+            if (storedTier.remainingSupply < pendingReservesAfter) {
                 revert JB721TiersHookStore_InsufficientSupplyRemaining({tierId: tierId});
+            }
+
+            // Maintain the running cash-out weight: this mint adds one outstanding NFT plus any newly-accrued pending
+            // reserve, each weighted by the tier's FULL price (the cash-out weight uses the full price, not the
+            // discounted one). Keeps `totalCashOutWeight` O(1) regardless of the tier count.
+            unchecked {
+                _totalCashOutWeightOf[msg.sender] +=
+                    storedTier.price * (1 + (pendingReservesAfter - pendingReservesBefore));
             }
 
             unchecked {
@@ -1443,15 +1443,17 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     function recordTransferForTier(uint256 tierId, address from, address to) external override {
         // If this is not a mint,
         if (from != address(0)) {
-            // then subtract the tier balance from the sender.
+            // then subtract the tier balance from the sender, and the running per-owner balance read by `balanceOf`.
             --tierBalanceOf[msg.sender][from][tierId];
+            --_addressBalanceOf[msg.sender][from];
         }
 
         // If this is not a burn,
         if (to != address(0)) {
             unchecked {
-                // then increase the tier balance for the receiver.
+                // then increase the tier balance for the receiver, and the running per-owner balance.
                 ++tierBalanceOf[msg.sender][to][tierId];
+                ++_addressBalanceOf[msg.sender][to];
             }
         }
     }
