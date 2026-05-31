@@ -117,7 +117,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
         cashOutCount = cashOutWeightOf(decodedTokenIds);
 
         // Use the total cash out weight of the 721s.
-        totalSupply = totalCashOutWeightOf();
+        totalSupply = totalCashOutWeight();
 
         // Use the surplus from the context.
         effectiveSurplusValue = context.surplus.value;
@@ -156,7 +156,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     //*********************************************************************//
 
     /// @notice Returns the cumulative cash out weight of the specified token IDs relative to the
-    /// `totalCashOutWeightOf`.
+    /// `totalCashOutWeight`.
     /// @param tokenIds The NFT token IDs to calculate the cumulative cash out weight of.
     /// @return The cumulative cash out weight of the specified token IDs.
     function cashOutWeightOf(uint256[] memory tokenIds) public view virtual returns (uint256) {
@@ -176,7 +176,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
 
     /// @notice Calculates the cumulative cash out weight of all NFT token IDs.
     /// @return The total cumulative cash out weight of all NFT token IDs.
-    function totalCashOutWeightOf() public view virtual returns (uint256) {
+    function totalCashOutWeight() public view virtual returns (uint256) {
         return 0;
     }
 

@@ -12,6 +12,17 @@ This file describes the verified change from `nana-721-hook-v5` to the current `
 - `JB721TiersHookProjectDeployer`
 - `JB721TiersHookLib`
 
+## 0.0.65 — Keep the hook's no-arg view named `totalCashOutWeight()`
+
+0.0.64 over-applied the `…Of` rename to the hook's no-arg view. The `Of` suffix is reserved for keyed getters
+(`balanceOf(owner)`, `tierBalanceOf(hook, owner, tier)`, `maxTierIdOf(hook)`, the store's `totalCashOutWeightOf(hook)`);
+the hook's combined cash-out-weight view takes no key, so it is reverted to **`totalCashOutWeight()`** on
+`JB721Hook` / `JB721TiersHook`. The store's keyed `totalCashOutWeightOf(hook)` mapping (and the
+`IJB721TiersHookStore` interface) is unchanged.
+
+ABI: `JB721TiersHook.totalCashOutWeightOf()` → `totalCashOutWeight()` (reverting the 0.0.64 no-arg rename).
+`package.json`: version `0.0.64 → 0.0.65`.
+
 ## 0.0.64 — O(1) `totalCashOutWeightOf` and `balanceOf`; rename from `totalCashOutWeight`
 
 `JB721TiersHookStore.totalCashOutWeight` is renamed to **`totalCashOutWeightOf`** (matching the `…Of` getter
