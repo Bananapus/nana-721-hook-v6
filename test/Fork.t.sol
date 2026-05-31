@@ -1363,7 +1363,7 @@ contract Fork_721Hook_Test is Test {
         assertEq(weight, 1 ether, "cash out weight uses original price");
     }
 
-    /// @notice totalCashOutWeight includes pending reserves in denominator.
+    /// @notice totalCashOutWeightOf includes pending reserves in denominator.
     function test_fork_totalCashOutWeightIncludesPendingReserves() public {
         JB721TierConfig[] memory tierConfigs = _makeStandardTiers(1, 100, false);
         tierConfigs[0].price = 1 ether;
@@ -1376,7 +1376,7 @@ contract Fork_721Hook_Test is Test {
         tierIds[0] = 1;
         _payAndMint(projectId, 1 ether, tierIds, true, hook);
 
-        uint256 totalWeight = store.totalCashOutWeight(hook);
+        uint256 totalWeight = store.totalCashOutWeightOf(hook);
 
         // 1 paid mint + pending reserves. Total weight > just 1 * price.
         assertGt(totalWeight, 1 ether, "total weight includes pending reserves");
@@ -1394,7 +1394,7 @@ contract Fork_721Hook_Test is Test {
         JB721TiersHookFlags memory flags = _defaultFlags();
         (uint256 projectId, address hook) = _launchProject(tierConfigs, flags, 5000, true, 0x00); // 50% tax
 
-        // Seed with initial payments from payer — minting NFTs so totalCashOutWeight is large.
+        // Seed with initial payments from payer — minting NFTs so totalCashOutWeightOf is large.
         uint16[] memory seedTierIds = new uint16[](10);
         for (uint256 i; i < 10; i++) {
             seedTierIds[i] = 1;
@@ -1576,7 +1576,7 @@ contract Fork_721Hook_Test is Test {
     // SECTION 20: ADVERSARIAL — STALE CASH OUT WEIGHT AFTER REMOVAL
     // =====================================================================
 
-    /// @notice Mint from a tier, remove it, verify totalCashOutWeight still includes minted tokens.
+    /// @notice Mint from a tier, remove it, verify totalCashOutWeightOf still includes minted tokens.
     function test_fork_cashOutWeightPreservedAfterTierRemoval() public {
         (uint256 projectId, address hook,) = _launchStandardProject();
 
@@ -1586,7 +1586,7 @@ contract Fork_721Hook_Test is Test {
         tierIds[2] = 5;
         _payAndMint(projectId, 0.15 ether, tierIds, true, hook);
 
-        uint256 weightBefore = store.totalCashOutWeight(hook);
+        uint256 weightBefore = store.totalCashOutWeightOf(hook);
         assertGt(weightBefore, 0, "should have weight");
 
         // Remove tier 5.
@@ -1596,7 +1596,7 @@ contract Fork_721Hook_Test is Test {
         vm.prank(multisig);
         IJB721TiersHook(hook).adjustTiers(new JB721TierConfig[](0), toRemove);
 
-        uint256 weightAfter = store.totalCashOutWeight(hook);
+        uint256 weightAfter = store.totalCashOutWeightOf(hook);
         assertEq(weightAfter, weightBefore, "weight preserved after tier removal");
     }
 

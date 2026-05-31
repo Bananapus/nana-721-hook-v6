@@ -84,7 +84,7 @@ contract TestTieredHookStoreInvariant is Test {
         assertTrue(currentMax >= handler.lowestMaxTierIdSeen(), "maxTierIdOf should never decrease");
     }
 
-    /// @notice INV-721-4: the O(1) `totalCashOutWeight` aggregate equals a full per-tier recomputation using the
+    /// @notice INV-721-4: the O(1) `totalCashOutWeightOf` aggregate equals a full per-tier recomputation using the
     /// exact formula the old O(maxTierId) loop used. This is the load-bearing invariant for the running-aggregate
     /// optimization: if mint/burn ever fail to keep the aggregate in sync, this catches it.
     function invariant_totalCashOutWeightMatchesRecompute() public {
@@ -103,6 +103,6 @@ contract TestTieredHookStoreInvariant is Test {
             expected += tier.price * ((tier.initialSupply - (tier.remainingSupply + burned)) + pending);
         }
 
-        assertEq(store.totalCashOutWeight(hook), expected, "cash-out weight aggregate must equal per-tier recompute");
+        assertEq(store.totalCashOutWeightOf(hook), expected, "cash-out weight aggregate must equal per-tier recompute");
     }
 }

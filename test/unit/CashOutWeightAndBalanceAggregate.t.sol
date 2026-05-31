@@ -9,7 +9,7 @@ import {JB721TierConfig} from "../../src/structs/JB721TierConfig.sol";
 import {JB721TierConfigFlags} from "../../src/structs/JB721TierConfigFlags.sol";
 import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 
-/// @notice Unit tests for the O(1) `totalCashOutWeight` and `balanceOf` running aggregates. This test contract acts
+/// @notice Unit tests for the O(1) `totalCashOutWeightOf` and `balanceOf` running aggregates. This test contract acts
 /// as the hook (so `msg.sender == this` in the store) and drives the record* functions directly.
 contract CashOutWeightAndBalanceAggregateTest is Test {
     JB721TiersHookStore store;
@@ -81,29 +81,29 @@ contract CashOutWeightAndBalanceAggregateTest is Test {
         store.recordAddTiers(configs);
 
         // Adding tiers contributes nothing (no mints yet) — and spamming empty tiers stays free.
-        assertEq(store.totalCashOutWeight(address(this)), 0, "empty tiers contribute zero");
+        assertEq(store.totalCashOutWeightOf(address(this)), 0, "empty tiers contribute zero");
 
         // Mint 3 of tier 1: weight += 3 * 1e18.
         _mint(1, 3);
-        assertEq(store.totalCashOutWeight(address(this)), 3e18, "tier1 mints");
+        assertEq(store.totalCashOutWeightOf(address(this)), 3e18, "tier1 mints");
 
         // Mint 10 of tier 2: 10 outstanding + 1 accrued pending reserve (ceil(10/10)) at 2e18 each = 22e18.
         _mint(2, 10);
-        assertEq(store.totalCashOutWeight(address(this)), 3e18 + 22e18, "tier2 mints + pending reserve");
-        assertEq(store.totalCashOutWeight(address(this)), _recomputeWeight(), "aggregate == recompute");
+        assertEq(store.totalCashOutWeightOf(address(this)), 3e18 + 22e18, "tier2 mints + pending reserve");
+        assertEq(store.totalCashOutWeightOf(address(this)), _recomputeWeight(), "aggregate == recompute");
 
         // Reserve mint is weight-neutral: one pending reserve simply becomes one outstanding NFT.
-        uint256 before = store.totalCashOutWeight(address(this));
+        uint256 before = store.totalCashOutWeightOf(address(this));
         store.recordMintReservesFor(2, 1);
-        assertEq(store.totalCashOutWeight(address(this)), before, "reserve mint is weight-neutral");
-        assertEq(store.totalCashOutWeight(address(this)), _recomputeWeight(), "aggregate == recompute after reserve");
+        assertEq(store.totalCashOutWeightOf(address(this)), before, "reserve mint is weight-neutral");
+        assertEq(store.totalCashOutWeightOf(address(this)), _recomputeWeight(), "aggregate == recompute after reserve");
 
         // Burn one tier-1 NFT: weight -= 1e18.
         uint256[] memory t1 = _mint(1, 1); // mint one more to burn (keeps prior assertions clean)
-        uint256 afterExtraMint = store.totalCashOutWeight(address(this));
+        uint256 afterExtraMint = store.totalCashOutWeightOf(address(this));
         store.recordBurn(t1);
-        assertEq(store.totalCashOutWeight(address(this)), afterExtraMint - 1e18, "burn removes one outstanding");
-        assertEq(store.totalCashOutWeight(address(this)), _recomputeWeight(), "aggregate == recompute after burn");
+        assertEq(store.totalCashOutWeightOf(address(this)), afterExtraMint - 1e18, "burn removes one outstanding");
+        assertEq(store.totalCashOutWeightOf(address(this)), _recomputeWeight(), "aggregate == recompute after burn");
     }
 
     function test_balanceAggregate_mintTransferBurn() public {
@@ -142,6 +142,6 @@ contract CashOutWeightAndBalanceAggregateTest is Test {
 
         assertEq(store.maxTierIdOf(address(this)), 1000, "1000 tiers");
         // The read is O(1): it returns the aggregate (0) regardless of tier count.
-        assertEq(store.totalCashOutWeight(address(this)), 0, "empty-tier spam contributes zero");
+        assertEq(store.totalCashOutWeightOf(address(this)), 0, "empty-tier spam contributes zero");
     }
 }

@@ -190,7 +190,7 @@ interface IJB721TiersHookStore {
     /// @notice The combined cash out weight for all NFTs from the provided 721 contract.
     /// @param hook The 721 contract to get the total cash out weight of.
     /// @return weight The total cash out weight.
-    function totalCashOutWeight(address hook) external view returns (uint256 weight);
+    function totalCashOutWeightOf(address hook) external view returns (uint256 weight);
 
     /// @notice The total number of NFTs minted from the provided 721 contract.
     /// @param hook The 721 contract to get a total supply of.

@@ -97,19 +97,23 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @custom:param tierId The ID of the tier to get the balance for.
     mapping(address hook => mapping(address owner => mapping(uint256 tierId => uint256))) public override tierBalanceOf;
 
-    /// @notice Running aggregate of `totalCashOutWeight` per hook so cash-out pricing is O(1) instead of
-    /// O(maxTierId). Maintained incrementally: a paid mint adds the tier's full price for the new outstanding NFT
-    /// plus any newly-accrued pending reserve; a burn subtracts the tier's full price. Reserve mints are
-    /// weight-neutral (one pending reserve becomes one outstanding NFT), removed tiers keep their weight, and newly
-    /// added (unminted) tiers contribute zero — so spamming empty tiers can never grow this read or its cost.
-    /// @custom:param hook The 721 contract the running weight belongs to.
-    mapping(address hook => uint256) internal _totalCashOutWeightOf;
+    /// @notice The combined cash-out weight of all of a hook's NFTs, as a running aggregate so cash-out pricing is
+    /// O(1) instead of O(maxTierId).
+    /// @dev Maintained incrementally in `recordMint` (+ the tier's full price for the new outstanding NFT plus any
+    /// newly-accrued pending reserve) and `recordBurn` (- the tier's full price). It is invariant under everything
+    /// else: reserve mints are weight-neutral (a pending reserve becomes an outstanding NFT), removed tiers keep
+    /// their already-minted weight, and newly added (unminted) tiers contribute zero — so spamming empty tiers can
+    /// never grow this read or its cost. Uses the full tier price, not the discounted price (see `cashOutWeightOf`).
+    /// @custom:param hook The 721 contract to get the total cash-out weight of.
+    mapping(address hook => uint256) public override totalCashOutWeightOf;
 
-    /// @notice Running per-owner NFT count per hook so `balanceOf` is O(1) instead of O(maxTierId). Maintained in
-    /// `recordTransferForTier` (mint increments the receiver, burn decrements the sender, transfer does both).
-    /// @custom:param hook The 721 contract the balance belongs to.
-    /// @custom:param owner The address whose running balance this is.
-    mapping(address hook => mapping(address owner => uint256)) internal _addressBalanceOf;
+    /// @notice How many NFTs an address owns from a hook, totaled across all tiers, as a running aggregate so this
+    /// is O(1) instead of O(maxTierId).
+    /// @dev Maintained in `recordTransferForTier` (a mint increments the receiver, a burn decrements the sender, a
+    /// transfer does both), so an attacker spamming empty tiers cannot make this read run out of gas.
+    /// @custom:param hook The 721 contract to check.
+    /// @custom:param owner The address to get the balance of.
+    mapping(address hook => mapping(address owner => uint256)) public override balanceOf;
 
     /// @notice Returns the custom token URI resolver which overrides the default token URI resolver for the provided
     /// 721 contract.
@@ -481,17 +485,8 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     // -------------------------- public views --------------------------- //
     //*********************************************************************//
 
-    /// @notice How many NFTs an address owns from a hook, totaled across all tiers.
-    /// @param hook The 721 hook contract to check.
-    /// @param owner The address to check the balance of.
-    /// @return balance The total number of NFTs the owner holds.
-    function balanceOf(address hook, address owner) public view override returns (uint256 balance) {
-        // Read the running per-owner aggregate (maintained in `recordTransferForTier`). O(1) — independent of the
-        // tier count, so an attacker spamming empty tiers cannot make this read run out of gas.
-        return _addressBalanceOf[hook][owner];
-    }
 
-    /// @notice The combined cash-out weight of specific NFTs. Divide by `totalCashOutWeight` to get the fraction of
+    /// @notice The combined cash-out weight of specific NFTs. Divide by `totalCashOutWeightOf` to get the fraction of
     /// the project's surplus that cashing out these NFTs would reclaim.
     /// @dev Weight is based on each NFT's original tier price (not the discounted price paid). Discounts are
     /// transient purchase incentives and don't affect an NFT's share of the cash-out pool.
@@ -552,23 +547,6 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
     /// @notice The total cash-out weight across all outstanding NFTs (including pending reserves). This is the
     /// denominator used to determine what fraction of a project's surplus each NFT can reclaim on cash out.
-    /// @param hook The 721 hook contract to get the total cash-out weight of.
-    /// @return weight The total cash-out weight.
-    /// @dev Returns the running aggregate maintained in `recordMint`/`recordBurn`, so this is O(1) — independent of
-    /// the tier count. This matters because cash out invokes this on the hot path (via the hook's
-    /// `beforeCashOutRecordedWith`), and an attacker who can permissionlessly add tiers (e.g. via Croptop) could
-    /// otherwise grow `maxTierId` until the old O(maxTierId) loop exceeded the block gas limit and bricked every
-    /// holder's cash out. The aggregate equals
-    /// `sum over tiers of price * (outstanding + pendingReserves)` using the FULL tier price (not the discounted
-    /// price), by the same design as the per-token `cashOutWeightOf`. It is invariant under: adding empty tiers
-    /// (zero contribution), removing tiers (removed tiers keep their already-minted weight), reserve mints (a
-    /// pending reserve simply becomes an outstanding NFT), and changing `defaultReserveBeneficiaryOf` (a reserve
-    /// tier must already have a beneficiary when added, and the default is write-once-nonzero, so no tier's pending
-    /// is ever toggled on/off afterwards).
-    function totalCashOutWeight(address hook) public view override returns (uint256 weight) {
-        return _totalCashOutWeightOf[hook];
-    }
-
     //*********************************************************************//
     // -------------------------- internal views ------------------------- //
     //*********************************************************************//
@@ -1172,7 +1150,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             // Maintain the running cash-out weight: a burn removes one outstanding NFT (weighted by the tier's full
             // price). Pending reserves are unaffected — they track non-reserve MINTS, which a burn does not change.
             unchecked {
-                _totalCashOutWeightOf[msg.sender] -= _storedTierOf[msg.sender][tierId].price;
+                totalCashOutWeightOf[msg.sender] -= _storedTierOf[msg.sender][tierId].price;
             }
 
             unchecked {
@@ -1294,9 +1272,9 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
 
             // Maintain the running cash-out weight: this mint adds one outstanding NFT plus any newly-accrued pending
             // reserve, each weighted by the tier's FULL price (the cash-out weight uses the full price, not the
-            // discounted one). Keeps `totalCashOutWeight` O(1) regardless of the tier count.
+            // discounted one). Keeps `totalCashOutWeightOf` O(1) regardless of the tier count.
             unchecked {
-                _totalCashOutWeightOf[msg.sender] +=
+                totalCashOutWeightOf[msg.sender] +=
                     storedTier.price * (1 + (pendingReservesAfter - pendingReservesBefore));
             }
 
@@ -1445,7 +1423,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         if (from != address(0)) {
             // then subtract the tier balance from the sender, and the running per-owner balance read by `balanceOf`.
             --tierBalanceOf[msg.sender][from][tierId];
-            --_addressBalanceOf[msg.sender][from];
+            --balanceOf[msg.sender][from];
         }
 
         // If this is not a burn,
@@ -1453,7 +1431,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             unchecked {
                 // then increase the tier balance for the receiver, and the running per-owner balance.
                 ++tierBalanceOf[msg.sender][to][tierId];
-                ++_addressBalanceOf[msg.sender][to];
+                ++balanceOf[msg.sender][to];
             }
         }
     }

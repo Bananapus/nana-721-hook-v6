@@ -540,9 +540,9 @@ contract TestRegressionGaps_GasLimits is UnitTestSetup {
     }
 
     // ---------------------------------------------------------------
-    // Test 3: totalCashOutWeight with 100 tiers (some minted)
+    // Test 3: totalCashOutWeightOf with 100 tiers (some minted)
     // ---------------------------------------------------------------
-    /// @notice totalCashOutWeight iterates all tiers. With 100 tiers and some minted, it should not
+    /// @notice totalCashOutWeightOf iterates all tiers. With 100 tiers and some minted, it should not
     /// exceed gas limits.
     function test_gasLimit_totalCashOutWeight_100tiers() public {
         defaultTierConfig.initialSupply = 10;
@@ -633,15 +633,15 @@ contract TestRegressionGaps_GasLimits is UnitTestSetup {
 
         assertEq(targetHook.balanceOf(beneficiary), 10, "10 NFTs minted");
 
-        // Now measure gas for totalCashOutWeight.
+        // Now measure gas for totalCashOutWeightOf.
         uint256 gasBefore = gasleft();
-        uint256 weight = hookStore.totalCashOutWeight(address(targetHook));
+        uint256 weight = hookStore.totalCashOutWeightOf(address(targetHook));
         uint256 gasUsed = gasBefore - gasleft();
 
         assertTrue(weight > 0, "Cash out weight should be non-zero");
-        assertTrue(gasUsed < BLOCK_GAS_LIMIT, "totalCashOutWeight should fit within block gas limit");
+        assertTrue(gasUsed < BLOCK_GAS_LIMIT, "totalCashOutWeightOf should fit within block gas limit");
 
-        emit log_named_uint("Gas used for totalCashOutWeight (100 tiers, 10 minted)", gasUsed);
+        emit log_named_uint("Gas used for totalCashOutWeightOf (100 tiers, 10 minted)", gasUsed);
     }
 
     // ---------------------------------------------------------------
@@ -949,7 +949,7 @@ contract TestRegressionGaps_GasLimits is UnitTestSetup {
         emit log_named_uint("Gas used for balanceOf (100 tiers)", gasFor100);
     }
 
-    /// @notice `totalCashOutWeight` now reads an O(1) running aggregate, so cash-out pricing cost does NOT scale with
+    /// @notice `totalCashOutWeightOf` now reads an O(1) running aggregate, so cash-out pricing cost does NOT scale with
     /// the catalog size. This removes the gas-DoS brick where spamming tiers (e.g. via Croptop) could push the
     /// cash-out data-hook call over the block gas limit and strand every holder's redemption.
     function test_operatingEnvelope_totalCashOutWeight_isConstantRegardlessOfTierCount() public {
@@ -957,9 +957,9 @@ contract TestRegressionGaps_GasLimits is UnitTestSetup {
         uint256 gasFor100 = _measureTotalCashOutWeightGas({tierCount: 100, mintedCount: 10});
 
         // O(1): a 10x larger catalog must not materially increase the read cost (old O(maxTierId) loop was >4x).
-        assertLt(gasFor100, gasFor10 * 2, "totalCashOutWeight must be O(1) - independent of the tier count");
-        emit log_named_uint("Gas used for totalCashOutWeight (10 tiers)", gasFor10);
-        emit log_named_uint("Gas used for totalCashOutWeight (100 tiers)", gasFor100);
+        assertLt(gasFor100, gasFor10 * 2, "totalCashOutWeightOf must be O(1) - independent of the tier count");
+        emit log_named_uint("Gas used for totalCashOutWeightOf (10 tiers)", gasFor10);
+        emit log_named_uint("Gas used for totalCashOutWeightOf (100 tiers)", gasFor100);
     }
 
     function _measureBalanceOfGas(uint256 tierCount) internal returns (uint256 gasUsed) {
@@ -1034,7 +1034,7 @@ contract TestRegressionGaps_GasLimits is UnitTestSetup {
         targetHook.afterPayRecordedWith(payContext);
 
         uint256 gasBefore = gasleft();
-        hookStore.totalCashOutWeight(address(targetHook));
+        hookStore.totalCashOutWeightOf(address(targetHook));
         gasUsed = gasBefore - gasleft();
     }
 

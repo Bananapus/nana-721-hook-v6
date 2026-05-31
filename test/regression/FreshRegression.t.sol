@@ -156,7 +156,7 @@ contract FreshRegression is UnitTestSetup {
         assertEq(testHook.balanceOf(beneficiary), 1, "beneficiary still mints the split-bearing NFT");
         assertEq(testHook.payCreditsOf(beneficiary), 1, "stored credits fund essentially the entire mint");
         assertEq(splitReceiver.balance, 1, "split receiver only receives the fresh 1 wei payment");
-        assertEq(hookStore.totalCashOutWeight(address(testHook)), 1 ether, "full-price NFT still enters cash-out math");
+        assertEq(hookStore.totalCashOutWeightOf(address(testHook)), 1 ether, "full-price NFT still enters cash-out math");
     }
 
     /// @notice Creating a tier with reserveFrequency > 0 and no beneficiary (tier-specific or default)

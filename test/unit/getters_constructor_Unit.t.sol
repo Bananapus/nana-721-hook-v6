@@ -455,7 +455,7 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
             theoreticalWeight += (10 * i - 5 * i) * i * 10;
         }
         // Check: does the total cash out weight match the theoretical weight calculated?
-        assertEq(hook.test_store().totalCashOutWeight(address(hook)), theoreticalWeight);
+        assertEq(hook.test_store().totalCashOutWeightOf(address(hook)), theoreticalWeight);
     }
 
     function test_firstOwnerOf_shouldReturnCurrentOwnerIfFirstOwner(uint256 tokenId, address owner) public {

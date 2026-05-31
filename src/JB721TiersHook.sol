@@ -222,7 +222,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         });
     }
 
-    /// @notice The combined cash-out weight of specific NFTs. Divide by `totalCashOutWeight()` to get the fraction of
+    /// @notice The combined cash-out weight of specific NFTs. Divide by `totalCashOutWeightOf()` to get the fraction of
     /// surplus these NFTs can reclaim. Weight is based on the original tier price, not any discount paid.
     /// @param tokenIds The token IDs of the NFTs to get the combined cash-out weight of.
     /// @return weight The combined cash-out weight.
@@ -334,8 +334,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @notice The total cash-out weight across all outstanding NFTs and pending reserves. This is the denominator
     /// for cash-out calculations — an NFT's share of the surplus is its weight divided by this total.
     /// @return weight The total cash-out weight.
-    function totalCashOutWeight() public view virtual override returns (uint256) {
-        return STORE.totalCashOutWeight(address(this));
+    function totalCashOutWeightOf() public view virtual override returns (uint256) {
+        return STORE.totalCashOutWeightOf(address(this));
     }
 
     //*********************************************************************//
