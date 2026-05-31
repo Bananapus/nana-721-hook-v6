@@ -25,8 +25,8 @@ The underlying terminal / controller / fee guarantees are inherited from `@banan
 
 ## A.2 Holders — transfer, cash-out, voting
 
-- **Cash-out weight uses the ORIGINAL tier price.** Both `cashOutWeightOf` and `totalCashOutWeight` read `storedTier.price` (`JB721TiersHookStore.sol:485, 564`). Discounts never devalue an existing NFT.
-- **Pending reserves are part of the cash-out denominator.** `totalCashOutWeight` adds `storedTier.price × pendingReservesFor(tierId)` (`JB721TiersHookStore.sol:557-566`). This is intentional — it prevents reserve front-running, but means early cashers do not extract more than their diluted fair share. See RISKS §8.1 and §8.9.
+- **Cash-out weight uses the ORIGINAL tier price.** Both `cashOutWeightOf` (`JB721TiersHookStore.sol:495`) and the `totalCashOutWeightOf` running aggregate (accumulated from `storedTier.price` in `recordMint`/`recordBurn`, `:1276, :1152`) use the FULL tier price. Discounts never devalue an existing NFT.
+- **Pending reserves are part of the cash-out denominator.** On each paid mint, `recordMint` adds the tier's full price for both the new outstanding NFT and any newly-accrued pending reserve to `totalCashOutWeightOf` (`JB721TiersHookStore.sol:1276`). This is intentional — it prevents reserve front-running, but means early cashers do not extract more than their diluted fair share. See RISKS §8.1 and §8.9.
 - **Transfer pause requires BOTH the per-tier flag AND the ruleset flag.** `_update` short-circuits when `transfersPausable == false` on the tier (`JB721TiersHook.sol:769`); only if the tier is pausable does it then read `JB721TiersRulesetMetadataResolver.transfersPaused` on the current ruleset to decide whether to revert with `JB721TiersHook_TierTransfersPaused` (`JB721TiersHook.sol:775-783`). Burns to `address(0)` bypass the pause check.
 - **First-owner is recorded on first transfer-out.** `_firstOwnerOf[tokenId]` is written exactly once, when an NFT first leaves its minter, so provenance survives later transfers (`JB721TiersHook.sol:786-787`).
 - **`tierBalanceOf` stays in lockstep with ERC-721 balances.** `recordTransferForTier` decrements `from` and increments `to` for the token's tier on every `_update` (`JB721TiersHookStore.sol:1425-1439`).
@@ -96,7 +96,7 @@ Clone-deployed per project. `JBOwnable`, `ERC2771Context`, `JB721Hook` (which in
 
 - `beforePayRecordedWith(context) view → (weight, hookSpecs)` (`JB721TiersHook.sol:194-223`). Called by the terminal during `pay`. Computes the adjusted `weight` (reduced for split portion unless `issueTokensForSplits`), the total split amount to forward to this hook, and packs `(beneficiary, payer, splitMetadata, splitCreditWeight)` into the pay-hook spec metadata.
 - `afterPayRecordedWith(context) payable` (inherited `JB721Hook.sol:246-273`). Terminal-only. Validates msg.value ↔ forwardedAmount.token, then calls `_processPayment` which normalizes the value, decodes (beneficiary, payer, splitData), mints NFTs from the metadata-specified tiers, updates credits, and runs `distributeAll` on the forwarded split amount (`JB721TiersHook.sol:688-735`).
-- `beforeCashOutRecordedWith(context) view → (taxRate, cashOutCount, totalSupply, surplus, hookSpecs)` (`abstract/JB721Hook.sol:84-127`). Reverts `JB721Hook_UnexpectedTokenCashedOut` if fungible tokens are also being cashed out. Decodes the tokenId list from metadata, sets `cashOutCount = cashOutWeightOf(tokenIds)` and `totalSupply = totalCashOutWeight()`.
+- `beforeCashOutRecordedWith(context) view → (taxRate, cashOutCount, totalSupply, surplus, hookSpecs)` (`abstract/JB721Hook.sol:84-127`). Reverts `JB721Hook_UnexpectedTokenCashedOut` if fungible tokens are also being cashed out. Decodes the tokenId list from metadata, sets `cashOutCount = cashOutWeightOf(tokenIds)` and `totalSupply = totalCashOutWeightOf()`.
 - `afterCashOutRecordedWith(context) payable` (`abstract/JB721Hook.sol:191-240`). Terminal-only, must arrive with `msg.value == 0`. Burns each tokenId after verifying `_ownerOf(tokenId) == context.holder`; calls `_didBurn` (`JB721TiersHook.sol:586-589`) which increments `numberOfBurnedFor` per tier in the store.
 
 **Project-NFT-owner / permissioned operator:**
@@ -114,7 +114,7 @@ Clone-deployed per project. `JBOwnable`, `ERC2771Context`, `JB721Hook` (which in
 
 **View:**
 
-- `firstOwnerOf(tokenId)`, `pricingContext()`, `balanceOf(owner)`, `cashOutWeightOf(tokenIds)`, `totalCashOutWeight()`, `tokenURI(tokenId)`, `hasMintPermissionFor(...)` returns `false` (so `JBController.mintTokensOf` never trusts this hook as a mint-permission grantor; `abstract/JB721Hook.sol:150-152`), `supportsInterface(id)`.
+- `firstOwnerOf(tokenId)`, `pricingContext()`, `balanceOf(owner)`, `cashOutWeightOf(tokenIds)`, `totalCashOutWeightOf()`, `tokenURI(tokenId)`, `hasMintPermissionFor(...)` returns `false` (so `JBController.mintTokensOf` never trusts this hook as a mint-permission grantor; `abstract/JB721Hook.sol:150-152`), `supportsInterface(id)`.
 
 **Invariants maintained:**
 
@@ -130,7 +130,7 @@ Shared singleton. Every mutating function is keyed by `msg.sender` and trusts it
 
 **Reads (anyone):**
 
-- `tierOfTokenId`, `tierOf`, `tiersOf(categories, includeUri, startingId, size)`, `tierPricingOf`, `tierTransferInfoOfTokenId`, `tierIdOfToken` (pure), `tierBalanceOf`, `balanceOf`, `totalSupplyOf`, `cashOutWeightOf`, `totalCashOutWeight`, `numberOfPendingReservesFor`, `numberOfReservesMintedFor`, `numberOfBurnedFor`, `isTierRemoved`, `flagsOf`, `maxTierIdOf`, `reserveBeneficiaryOf`, `defaultReserveBeneficiaryOf`, `encodedIpfsUriOf`, `encodedTierIPFSUriOf`, `tokenUriResolverOf`, `tierVotingUnitsOf`, `votingUnitsOf`.
+- `tierOfTokenId`, `tierOf`, `tiersOf(categories, includeUri, startingId, size)`, `tierPricingOf`, `tierTransferInfoOfTokenId`, `tierIdOfToken` (pure), `tierBalanceOf`, `balanceOf`, `totalSupplyOf`, `cashOutWeightOf`, `totalCashOutWeightOf`, `numberOfPendingReservesFor`, `numberOfReservesMintedFor`, `numberOfBurnedFor`, `isTierRemoved`, `flagsOf`, `maxTierIdOf`, `reserveBeneficiaryOf`, `defaultReserveBeneficiaryOf`, `encodedIpfsUriOf`, `encodedTierIPFSUriOf`, `tokenUriResolverOf`, `tierVotingUnitsOf`, `votingUnitsOf`.
 
 **Writes (msg.sender treated as the hook):**
 
@@ -189,7 +189,7 @@ The hook's project association is bound at `initialize`; once set, it cannot cha
 # Section D — Cross-Cutting Invariants
 
 - **Tier-price immutability post-creation.** `storedTier.price` is never re-assigned after `recordAddTiers`. Discounts modify what payers pay; they never change cash-out weight.
-- **Removed-tier NFTs remain cash-outable.** `totalCashOutWeight` does NOT skip removed tiers (`JB721TiersHookStore.sol:543-571`); their minted NFTs still contribute, and their pending reserves still count.
+- **Removed-tier NFTs remain cash-outable.** Tier removal (`recordRemoveTierIds`) only flips a removal bitmap; it does NOT subtract from the `totalCashOutWeightOf` aggregate (`JB721TiersHookStore.sol:1138-1162` only adjusts the aggregate on mint/burn), so a removed tier's already-minted NFTs still contribute and their pending reserves still count.
 - **Category sort is strict-monotonic-or-equal.** `recordAddTiers` reverts `JB721TiersHookStore_InvalidCategorySortOrder` whenever a new tier's category is less than the previous tier's (`JB721TiersHookStore.sol:952-961`). Same-category appends are inserted before older same-category tiers; the linked-list rewires `_startingTierIdOfCategory` to point at the newer tier (`JB721TiersHookStore.sol:1049-1051`).
 - **Reserve frequency math.** `pendingReserves = ceil(numberOfNonReserveMints / reserveFrequency) − numberOfReservesMintedFor` (`JB721TiersHookStore.sol:712-755`). `reserveFrequency` is immutable; deadlock case (`initialSupply == 1 && reserveFrequency > 0`) is rejected at tier creation (`JB721TiersHookStore.sol:1004-1008`).
 - **Store trusts `msg.sender == hook`.** Every mutating store function keys all writes by `msg.sender`, so corruption is confined to the calling hook's namespace. The flip side: a malicious or buggy hook can corrupt only ITS OWN tier state.
@@ -218,7 +218,7 @@ The hook's project association is bound at `initialize`; once set, it cannot cha
 |---|---|---|
 | Tier price written once | `src/JB721TiersHookStore.sol` | 1020-1036 |
 | `cashOutWeightOf` uses original price | `src/JB721TiersHookStore.sol` | 478-491 |
-| `totalCashOutWeight` includes pending reserves | `src/JB721TiersHookStore.sol` | 539-572 |
+| `totalCashOutWeightOf` aggregate includes pending reserves | `src/JB721TiersHookStore.sol` | 1276 |
 | `recordMint` reserve-vs-remaining check | `src/JB721TiersHookStore.sol` | 1277-1283 |
 | `recordSetDiscountPercentOf` monotonicity | `src/JB721TiersHookStore.sol` | 1394-1398 |
 | Category sort enforcement | `src/JB721TiersHookStore.sol` | 952-961 |

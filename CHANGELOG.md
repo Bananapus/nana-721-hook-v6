@@ -12,6 +12,30 @@ This file describes the verified change from `nana-721-hook-v5` to the current `
 - `JB721TiersHookProjectDeployer`
 - `JB721TiersHookLib`
 
+## 0.0.64 — O(1) `totalCashOutWeightOf` and `balanceOf`; rename from `totalCashOutWeight`
+
+`JB721TiersHookStore.totalCashOutWeight` is renamed to **`totalCashOutWeightOf`** (matching the `…Of` getter
+convention) and, together with `balanceOf`, is now a running aggregate maintained incrementally instead of an
+O(maxTierId) loop:
+
+- `totalCashOutWeightOf[hook]` is updated in `recordMint` (+ the tier's full price for the new outstanding NFT plus
+  any newly-accrued pending reserve) and `recordBurn` (- the tier's full price). It is invariant under reserve mints
+  (weight-neutral — a pending reserve becomes an outstanding NFT), tier removal (removed tiers keep their
+  already-minted weight), and adding empty tiers (zero contribution).
+- `balanceOf[hook][owner]` is maintained in `recordTransferForTier` (mint increments the receiver, burn decrements
+  the sender, transfer does both).
+- Both are now public mappings rather than view functions; the hook's no-arg `totalCashOutWeight()` view is likewise
+  renamed `totalCashOutWeightOf()`.
+
+This removes a cash-out gas-DoS: a project that delegated tier creation (e.g. via Croptop) could previously be
+bricked by spamming empty tiers until `totalCashOutWeight`'s loop exceeded the block gas limit on the cash-out path
+(which the terminal calls without a try/catch). `votingUnitsOf` and `totalSupplyOf` still iterate tiers, but they are
+not on the cash-out fund-stranding path. A new invariant (`invariant_totalCashOutWeightMatchesRecompute`) asserts the
+aggregate equals a full per-tier recompute across fuzzed operation sequences.
+
+`package.json`: version `0.0.63 → 0.0.64`. ABI change: `totalCashOutWeight` → `totalCashOutWeightOf` on
+`IJB721TiersHookStore` (and the hook's no-arg view).
+
 ## 0.0.63 — Per-tier eligible voting units checkpoint
 
 `JB721Checkpoints` now maintains a checkpointed per-tier eligible-voting-units trace (`_tierEligibleUnitsOf`), exposed through a new external view:

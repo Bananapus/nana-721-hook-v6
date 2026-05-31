@@ -198,9 +198,31 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
         tierId = _lastSortedTierIdOf(nft);
     }
 
+    /// @dev The cash-out weight contribution of a single tier, using the same formula as the production aggregate, so
+    /// the `ForTest_*` manufacturing setters can keep the O(1) `totalCashOutWeightOf` aggregate consistent.
+    function _forTestTierWeight(
+        address hook,
+        uint256 index,
+        JBStored721Tier memory tier
+    )
+        internal
+        view
+        returns (uint256)
+    {
+        if (tier.initialSupply == tier.remainingSupply && numberOfBurnedFor[hook][index] == 0) return 0;
+        return tier.price
+            * ((tier.initialSupply - (tier.remainingSupply + numberOfBurnedFor[hook][index]))
+                + _numberOfPendingReservesFor({hook: hook, tierId: index, storedTier: tier}));
+    }
+
     // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_setTier(address hook, uint256 index, JBStored721Tier calldata newTier) public override {
+        // Keep the O(1) `totalCashOutWeightOf` aggregate in sync with the manufactured tier state.
+        totalCashOutWeightOf[
+            address(hook)
+        ] -= _forTestTierWeight(address(hook), index, _storedTierOf[address(hook)][index]);
         _storedTierOf[address(hook)][index] = newTier;
+        totalCashOutWeightOf[address(hook)] += _forTestTierWeight(address(hook), index, newTier);
     }
 
     // forge-lint: disable-next-line(mixed-case-function)
@@ -210,12 +232,22 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
 
     // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_setBalanceOf(address hook, address holder, uint256 tier, uint256 balance) public override {
+        // Keep the O(1) `balanceOf` aggregate in sync with the manufactured per-tier balance.
+        balanceOf[address(hook)][holder] =
+            balanceOf[address(hook)][holder] - tierBalanceOf[address(hook)][holder][tier] + balance;
         tierBalanceOf[address(hook)][holder][tier] = balance;
     }
 
     // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_setReservesMintedFor(address hook, uint256 tier, uint256 amount) public override {
+        // Reserve count changes pending reserves, which feed `totalCashOutWeightOf`; keep the aggregate in sync.
+        totalCashOutWeightOf[
+            address(hook)
+        ] -= _forTestTierWeight(address(hook), tier, _storedTierOf[address(hook)][tier]);
         numberOfReservesMintedFor[address(hook)][tier] = amount;
+        totalCashOutWeightOf[
+            address(hook)
+        ] += _forTestTierWeight(address(hook), tier, _storedTierOf[address(hook)][tier]);
     }
 
     // forge-lint: disable-next-line(mixed-case-function)

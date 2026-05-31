@@ -76,9 +76,9 @@ contract TierLifecycleInvariant_Local is StdInvariant, UnitTestSetup {
     // =========================================================================
     // INV-721-2: Total cash out weight consistency
     // =========================================================================
-    /// @notice totalCashOutWeight should equal sum(tier.price * outstanding) for all tiers.
+    /// @notice totalCashOutWeightOf should equal sum(tier.price * outstanding) for all tiers.
     function invariant_721_2_totalCashOutWeightConsistency() public {
-        uint256 totalWeight = store.totalCashOutWeight(address(hook));
+        uint256 totalWeight = store.totalCashOutWeightOf(address(hook));
 
         uint256 computedWeight = 0;
 
@@ -96,13 +96,13 @@ contract TierLifecycleInvariant_Local is StdInvariant, UnitTestSetup {
             uint256 minted = initial - remaining;
             uint256 outstanding = minted > burned ? minted - burned : 0;
 
-            // Pending reserves are also counted in totalCashOutWeight
+            // Pending reserves are also counted in totalCashOutWeightOf
             // (included in the store's calculation)
             computedWeight += price * outstanding;
         }
 
         // totalWeight >= computedWeight (it also includes pending reserves)
-        assertGe(totalWeight, computedWeight, "INV-721-2: totalCashOutWeight must >= sum(price * outstanding)");
+        assertGe(totalWeight, computedWeight, "INV-721-2: totalCashOutWeightOf must >= sum(price * outstanding)");
     }
 
     // =========================================================================

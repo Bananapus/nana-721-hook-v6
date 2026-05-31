@@ -11,7 +11,7 @@ import {JB721TiersHookStore} from "../../src/JB721TiersHookStore.sol";
 contract RetroactiveReserveBeneficiaryDilution is UnitTestSetup {
     /// @notice Creating a tier with reserveFrequency > 0 but no beneficiary (tier-specific or default) now reverts,
     /// preventing the phantom reserve scenario where a later default beneficiary retroactively inflates
-    /// totalCashOutWeight and dilutes existing holders.
+    /// totalCashOutWeightOf and dilutes existing holders.
     function test_adjustTier_reverts_when_reserve_has_no_beneficiary() public {
         ForTest_JB721TiersHook testHook = _initializeForTestHook(0);
 

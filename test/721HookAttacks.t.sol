@@ -212,7 +212,7 @@ contract NFTHookAttacks is UnitTestSetup {
     // Test 5: Cash-out weight after tier removal
     // =========================================================================
     /// @notice Mint NFTs from a tier, then remove the tier. Verify that
-    ///         totalCashOutWeight still accounts for the minted tokens.
+    ///         totalCashOutWeightOf still accounts for the minted tokens.
     function test_cashOutWeight_afterTierRemoval() public {
         defaultTierConfig.initialSupply = 100;
         defaultTierConfig.votingUnits = 10;
@@ -237,7 +237,7 @@ contract NFTHookAttacks is UnitTestSetup {
         assertEq(targetHook.balanceOf(beneficiary), 3, "3 NFTs minted");
 
         // Get total cash-out weight before removal (from the store).
-        uint256 weightBefore = hookStore.totalCashOutWeight(address(targetHook));
+        uint256 weightBefore = hookStore.totalCashOutWeightOf(address(targetHook));
 
         // Remove tier 1.
         vm.mockCall(mockJBPermissions, abi.encodeWithSelector(IJBPermissions.hasPermission.selector), abi.encode(true));
@@ -252,7 +252,7 @@ contract NFTHookAttacks is UnitTestSetup {
         assertTrue(hookStore.isTierRemoved(address(targetHook), 1), "Tier should be removed");
 
         // Total cash-out weight should still include the minted tokens.
-        uint256 weightAfter = hookStore.totalCashOutWeight(address(targetHook));
+        uint256 weightAfter = hookStore.totalCashOutWeightOf(address(targetHook));
         assertEq(weightAfter, weightBefore, "Cash-out weight should be preserved after removal");
     }
 
