@@ -61,6 +61,14 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     // --------------------- public stored properties -------------------- //
     //*********************************************************************//
 
+    /// @notice How many NFTs an address owns from a hook, totaled across all tiers, as a running aggregate so this
+    /// is O(1) instead of O(maxTierId).
+    /// @dev Maintained in `recordTransferForTier` (a mint increments the receiver, a burn decrements the sender, a
+    /// transfer does both), so an attacker spamming empty tiers cannot make this read run out of gas.
+    /// @custom:param hook The 721 contract to check.
+    /// @custom:param owner The address to get the balance of.
+    mapping(address hook => mapping(address owner => uint256)) public override balanceOf;
+
     /// @notice Returns the default reserve beneficiary for the provided 721 contract.
     /// @dev If a tier has a reserve beneficiary set, it will override this value.
     /// @custom:param hook The 721 contract to get the default reserve beneficiary of.
@@ -97,6 +105,11 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @custom:param tierId The ID of the tier to get the balance for.
     mapping(address hook => mapping(address owner => mapping(uint256 tierId => uint256))) public override tierBalanceOf;
 
+    /// @notice Returns the custom token URI resolver which overrides the default token URI resolver for the provided
+    /// 721 contract.
+    /// @custom:param hook The 721 contract to get the custom token URI resolver of.
+    mapping(address hook => IJB721TokenUriResolver) public override tokenUriResolverOf;
+
     /// @notice The combined cash-out weight of all of a hook's NFTs, as a running aggregate so cash-out pricing is
     /// O(1) instead of O(maxTierId).
     /// @dev Maintained incrementally in `recordMint` (+ the tier's full price for the new outstanding NFT plus any
@@ -106,19 +119,6 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// never grow this read or its cost. Uses the full tier price, not the discounted price (see `cashOutWeightOf`).
     /// @custom:param hook The 721 contract to get the total cash-out weight of.
     mapping(address hook => uint256) public override totalCashOutWeightOf;
-
-    /// @notice How many NFTs an address owns from a hook, totaled across all tiers, as a running aggregate so this
-    /// is O(1) instead of O(maxTierId).
-    /// @dev Maintained in `recordTransferForTier` (a mint increments the receiver, a burn decrements the sender, a
-    /// transfer does both), so an attacker spamming empty tiers cannot make this read run out of gas.
-    /// @custom:param hook The 721 contract to check.
-    /// @custom:param owner The address to get the balance of.
-    mapping(address hook => mapping(address owner => uint256)) public override balanceOf;
-
-    /// @notice Returns the custom token URI resolver which overrides the default token URI resolver for the provided
-    /// 721 contract.
-    /// @custom:param hook The 721 contract to get the custom token URI resolver of.
-    mapping(address hook => IJB721TokenUriResolver) public override tokenUriResolverOf;
 
     //*********************************************************************//
     // --------------------- internal stored properties ------------------ //
@@ -484,7 +484,6 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     //*********************************************************************//
     // -------------------------- public views --------------------------- //
     //*********************************************************************//
-
 
     /// @notice The combined cash-out weight of specific NFTs. Divide by `totalCashOutWeightOf` to get the fraction of
     /// the project's surplus that cashing out these NFTs would reclaim.
@@ -1274,8 +1273,8 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
             // reserve, each weighted by the tier's FULL price (the cash-out weight uses the full price, not the
             // discounted one). Keeps `totalCashOutWeightOf` O(1) regardless of the tier count.
             unchecked {
-                totalCashOutWeightOf[msg.sender] +=
-                    storedTier.price * (1 + (pendingReservesAfter - pendingReservesBefore));
+                totalCashOutWeightOf[msg.sender] += storedTier.price
+                * (1 + (pendingReservesAfter - pendingReservesBefore));
             }
 
             unchecked {
