@@ -12,6 +12,22 @@ This file describes the verified change from `nana-721-hook-v5` to the current `
 - `JB721TiersHookProjectDeployer`
 - `JB721TiersHookLib`
 
+## 0.0.67 — Raise dependency floors to the latest published versions
+
+Applies the dependency floor bump that 0.0.66 had to hold back. In 0.0.66 the higher `@bananapus/core-v6`
+floor pushed the `JB721TiersHook` runtime bytecode past the 24,576-byte deployment size limit. An upstream
+release of `@bananapus/ownable-v6` (now `0.0.36`) shrank the inherited code, so the bump now fits: with these
+floors `JB721TiersHook` compiles to 24,372 bytes, 204 bytes under the limit.
+
+Floors raised in `package.json`:
+
+- `@bananapus/core-v6`: `^0.0.72 → ^0.0.79`
+- `@bananapus/ownable-v6`: `^0.0.31 → ^0.0.36`
+- `@bananapus/permission-ids-v6`: `^0.0.27 → ^0.0.29`
+- `@bananapus/address-registry-v6`: `^0.0.26 → ^0.0.33`
+
+`package.json`: version `0.0.66 → 0.0.67`.
+
 ## 0.0.66 — Document NatSpec, comment, and lint conventions in STYLE_GUIDE
 
 Attempted to raise dependency floors to the latest published versions, but reverted the bump: with the higher
