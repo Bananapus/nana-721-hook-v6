@@ -12,6 +12,20 @@ This file describes the verified change from `nana-721-hook-v5` to the current `
 - `JB721TiersHookProjectDeployer`
 - `JB721TiersHookLib`
 
+## 0.0.66 — Document NatSpec, comment, and lint conventions in STYLE_GUIDE
+
+Attempted to raise dependency floors to the latest published versions, but reverted the bump: with the higher
+`@bananapus/core-v6` floor the `JB721TiersHook` runtime bytecode crosses the 24,576-byte deployment size limit
+(it lands 175 bytes over, versus a 4-byte margin on the kept floors), so the floors are left as they were and no
+dependency change ships in this release.
+
+What does ship: `STYLE_GUIDE.md` now makes existing documentation conventions explicit. The NatSpec section
+spells out the required tags for every member kind, a new Comments section codifies the "explain WHY, written as
+if the current implementation is the only implementation" rule, and the Linting section states the zero
+errors/warnings/notes bar that CI enforces.
+
+`package.json`: version `0.0.65 → 0.0.66`.
+
 ## 0.0.65 — Keep the hook's no-arg view named `totalCashOutWeight()`
 
 0.0.64 over-applied the `…Of` rename to the hook's no-arg view. The `Of` suffix is reserved for keyed getters
