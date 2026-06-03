@@ -541,8 +541,7 @@ contract Fork_721Hook_Test is Test {
             cashOutCount: 0,
             minTokensReclaimed: 0,
             beneficiary: payable(beneficiary),
-            metadata: cashOutMeta,
-            referralProjectId: 0
+            metadata: cashOutMeta
         });
 
         assertEq(IERC721(hook).balanceOf(beneficiary), 0, "NFT should be burned");
@@ -575,8 +574,7 @@ contract Fork_721Hook_Test is Test {
             cashOutCount: 0,
             minTokensReclaimed: 0,
             beneficiary: payable(beneficiary),
-            metadata: cashOutMeta,
-            referralProjectId: 0
+            metadata: cashOutMeta
         });
 
         assertEq(IERC721(hook).balanceOf(beneficiary), 0, "all NFTs burned");
@@ -605,8 +603,7 @@ contract Fork_721Hook_Test is Test {
             cashOutCount: 0,
             minTokensReclaimed: 0,
             beneficiary: payable(beneficiary),
-            metadata: cashOutMeta,
-            referralProjectId: 0
+            metadata: cashOutMeta
         });
 
         // With 0% tax and single NFT, should reclaim nearly all (minus fee).
@@ -1441,8 +1438,7 @@ contract Fork_721Hook_Test is Test {
             cashOutCount: 0,
             minTokensReclaimed: 0,
             beneficiary: payable(attacker),
-            metadata: cashOutMeta,
-            referralProjectId: 0
+            metadata: cashOutMeta
         });
 
         // Attacker should not have profited.
@@ -1475,8 +1471,7 @@ contract Fork_721Hook_Test is Test {
             cashOutCount: 0,
             minTokensReclaimed: 0,
             beneficiary: payable(attacker),
-            metadata: cashOutMeta,
-            referralProjectId: 0
+            metadata: cashOutMeta
         });
     }
 
@@ -1721,8 +1716,7 @@ contract Fork_721Hook_Test is Test {
             cashOutCount: 0,
             minTokensReclaimed: 0,
             beneficiary: payable(beneficiary),
-            metadata: cashOutMeta,
-            referralProjectId: 0
+            metadata: cashOutMeta
         });
 
         assertEq(IERC721(hook).balanceOf(beneficiary), 3, "3 NFTs remaining");
@@ -1968,8 +1962,7 @@ contract Fork_721Hook_Test is Test {
             cashOutCount: 0,
             minTokensReclaimed: 0,
             beneficiary: payable(user1),
-            metadata: cashOutMeta,
-            referralProjectId: 0
+            metadata: cashOutMeta
         });
 
         uint256 reclaimed = user1.balance - balBefore;
@@ -2048,8 +2041,7 @@ contract Fork_721Hook_Test is Test {
             cashOutCount: 0,
             minTokensReclaimed: 0,
             beneficiary: payable(beneficiary),
-            metadata: cashOutMeta,
-            referralProjectId: 0
+            metadata: cashOutMeta
         });
 
         // Mint again — should get token #2, not #1 (burned tokens don't recycle numbers).
