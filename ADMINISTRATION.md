@@ -31,7 +31,7 @@
 ## Privileged Surfaces
 
 - `adjustTiers(...)`
-- `mintFor(...)`
+- `mintFor(...)` — permissioned free NFT issuance for tiers with `allowOwnerMint`
 - `setDiscountPercentOf(...)`
 - `setDiscountPercentsOf(...)` (batch variant)
 - `setMetadata(...)`
@@ -58,6 +58,7 @@ Permissions are checked against the project owner via `_requirePermissionFrom`. 
 ## Operational Notes
 
 - review tier parameters before launch as if they were economic policy
+- decide explicitly whether `allowOwnerMint` is intended; delegated `mintFor` can consume tier supply without payment
 - treat discount changes and metadata changes as meaningful authority, not cosmetic controls
 - be explicit about whether the hook participates in pay, cash out, or both
 - separate resolver trust from hook and store trust

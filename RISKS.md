@@ -60,7 +60,7 @@ This file covers the tiered-NFT accounting, reserve-mint, and cash-out risks in 
 ## 5. Access Control
 
 - **`adjustTiers` is permissioned and respects append-only restrictions.**
-- **`mintFor` is permissioned and still depends on per-tier owner-mint flags.**
+- **`mintFor` is permissioned free NFT issuance.** It still depends on per-tier `allowOwnerMint`, but it bypasses price, credits, and `cantBuyWithCredits`, consumes tier supply, and should be treated as supply-admin authority.
 - **`setDiscountPercentOf` is permissioned and can be one-way constrained.** The `cantIncreaseDiscountPercent` per-tier flag makes the discount monotonically non-increasing once set.
 - **`setMetadata` is permissioned and changes name, symbol, URIs, resolver, and tier URIs.**
 - **Transfer pause is tier-sensitive.**
