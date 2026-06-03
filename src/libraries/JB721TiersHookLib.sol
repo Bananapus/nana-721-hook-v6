@@ -31,21 +31,55 @@ library JB721TiersHookLib {
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
 
+    /// @notice Thrown when the fresh payment value does not cover the cost of credit-restricted tiers being minted.
     error JB721TiersHook_CantBuyWithCredits(uint256 restrictedCost, uint256 freshValue);
+
+    /// @notice Thrown when funds are left over after minting but overspending is not allowed.
     error JB721TiersHook_Overspending(uint256 leftoverAmount);
+
+    /// @notice Thrown when leftover funds must be routed to the project but it has no primary terminal for the token.
     error JB721TiersHookLib_NoTerminalForLeftover(uint256 projectId, address token, uint256 leftoverAmount);
+
+    /// @notice Thrown when the per-tier split amounts do not sum to the total amount forwarded by the terminal.
     error JB721TiersHookLib_SplitAmountMismatch(uint256 expectedAmount, uint256 actualAmount);
+
+    /// @notice Thrown when routing leftover funds to the project's terminal reverts or under-consumes the allowance.
     error JB721TiersHookLib_SplitFallbackFailed(uint256 projectId, address token, uint256 amount, bytes reason);
+
+    /// @notice Thrown when the decoded split metadata's tier ID and amount arrays have different lengths.
     error JB721TiersHookLib_SplitMetadataLengthMismatch(uint256 tierIdCount, uint256 amountCount);
+
+    /// @notice Thrown when the ERC-20 amount actually received does not match the expected transfer amount.
     error JB721TiersHookLib_TokenTransferAmountMismatch(uint256 expectedAmount, uint256 receivedAmount);
 
     //*********************************************************************//
     // ------------------------------- events ---------------------------- //
     //*********************************************************************//
 
+    /// @notice Emitted when a new tier is added.
+    /// @param tierId The ID of the tier that was added.
+    /// @param tier The configuration of the tier that was added.
+    /// @param caller The address that called the function.
     event AddTier(uint256 indexed tierId, JB721TierConfig tier, address caller);
+
+    /// @notice Emitted when a tier is removed.
+    /// @param tierId The ID of the tier that was removed.
+    /// @param caller The address that called the function.
     event RemoveTier(uint256 indexed tierId, address caller);
+
+    /// @notice Emitted when a tier's discount percent is set.
+    /// @param tierId The ID of the tier whose discount percent was set.
+    /// @param discountPercent The new discount percent.
+    /// @param caller The address that called the function.
     event SetDiscountPercent(uint256 indexed tierId, uint256 discountPercent, address caller);
+
+    /// @notice Emitted when a split payout reverts during distribution. The failed split's funds route to the
+    /// project's balance.
+    /// @param projectId The project ID the split belongs to.
+    /// @param split The split that reverted.
+    /// @param amount The amount that was paid out.
+    /// @param reason The revert reason bytes.
+    /// @param caller The address that called the function.
     event SplitPayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
 
     //*********************************************************************//

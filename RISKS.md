@@ -2,13 +2,13 @@
 
 This file covers the tiered-NFT accounting, reserve-mint, and cash-out risks in the shared 721 hook used across multiple higher-level products.
 
-## How To Use This File
+## How to use this file
 
 - Read `Priority risks` first. They summarize the shared 721-hook risks with the widest blast radius.
 - Use the later sections for reentrancy, gas, tier accounting, and integration reasoning.
 - Treat `Invariants to verify` as required coverage for any hook or store change.
 
-## Priority Risks
+## Priority risks
 
 | Priority | Risk | Why it matters | Primary controls |
 |----------|------|----------------|------------------|
@@ -16,7 +16,7 @@ This file covers the tiered-NFT accounting, reserve-mint, and cash-out risks in 
 | P1 | Gas and iteration ceilings around tier state | Tier operations can iterate over reserves, pricing state, and cash-out weights. | Gas tests, tier-count limits, and DoS review. |
 | P1 | Cash-out and reserve math mismatch | Fair redemption depends on tier supply, pending reserves, and pricing state staying aligned. | Detailed invariants, fuzzing, and integration tests. |
 
-## 1. Trust Assumptions
+## 1. Trust assumptions
 
 - **The store is trusted.** It keys state by `msg.sender`, so a hook can only affect its own namespace, but that namespace is fully trusted.
 - **Tier configuration is partly immutable.** Price, supply, reserve frequency, category, voting units, and split percent are permanent after creation.
@@ -25,7 +25,7 @@ This file covers the tiered-NFT accounting, reserve-mint, and cash-out risks in 
 - **Clone initialization is one-shot.** Clones are deployed and initialized atomically.
 - **Directory and prices are trusted.** Terminal authentication and cross-currency behavior depend on core.
 
-## 2. Economic Risks
+## 2. Economic risks
 
 - **Cash-out weight uses full undiscounted price.**
 - **Pending reserves inflate the cash-out denominator before reserves are minted.**
@@ -36,7 +36,7 @@ This file covers the tiered-NFT accounting, reserve-mint, and cash-out risks in 
 - **`splitPercent` can reduce fungible-token minting weight.**
 - **Reserve minting is permissionless.**
 
-## 3. Reentrancy Surface
+## 3. Reentrancy surface
 
 - **Split hook callbacks execute arbitrary code.**
 - **Split beneficiary ETH sends can fail softly and reroute value.**
@@ -44,7 +44,7 @@ This file covers the tiered-NFT accounting, reserve-mint, and cash-out risks in 
 - **Split fallback can still strand value if the project terminal rejects leftovers.**
 - **There is no `ReentrancyGuard`.** Safety depends on state ordering, terminal auth, and wrapped external calls.
 
-## 4. Gas And DoS Vectors
+## 4. Gas and DoS vectors
 
 - **`totalCashOutWeightOf` and `balanceOf` are O(1).** Both read running aggregates maintained on mint/burn/transfer
   rather than iterating tiers, so cash-out pricing and balance reads cannot be gas-DoS'd by inflating the tier count
@@ -57,7 +57,7 @@ This file covers the tiered-NFT accounting, reserve-mint, and cash-out risks in 
 - **Minting across many tiers in one payment can get expensive fast.**
 - **Reserve minting is loop-based and should be batched when large.**
 
-## 5. Access Control
+## 5. Access control
 
 - **`adjustTiers` is permissioned and respects append-only restrictions.**
 - **`mintFor` is permissioned free NFT issuance.** It still depends on per-tier `allowOwnerMint`, but it bypasses price, credits, and `cantBuyWithCredits`, consumes tier supply, and should be treated as supply-admin authority.
@@ -66,7 +66,7 @@ This file covers the tiered-NFT accounting, reserve-mint, and cash-out risks in 
 - **Transfer pause is tier-sensitive.**
 - **`mintPendingReservesFor` and `cleanTiers` are permissionless by design.**
 
-## 6. Integration Risks
+## 6. Integration risks
 
 - **Hook weight can override fungible-token minting.**
 - **Metadata encoding is fragile.** Pay-hook metadata carries `(beneficiary, payer, splitData, splitCreditWeight)`.
@@ -79,7 +79,7 @@ This file covers the tiered-NFT accounting, reserve-mint, and cash-out risks in 
   the forwarded amount.
 - **Token URI resolver calls can block metadata reads if the resolver reverts.**
 
-## 7. Invariants To Verify
+## 7. Invariants to verify
 
 - per-tier supply conservation holds
 - total cash-out weight stays consistent with outstanding NFTs and pending reserves
@@ -91,7 +91,7 @@ This file covers the tiered-NFT accounting, reserve-mint, and cash-out risks in 
 - store balance views match ERC-721 balances
 - discount monotonicity is enforced when locked
 
-## 8. Accepted Behaviors
+## 8. Accepted behaviors
 
 ### 8.1 Pending reserves dilute cash-out value before minting
 

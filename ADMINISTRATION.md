@@ -1,6 +1,6 @@
 # Administration
 
-## At A Glance
+## At a glance
 
 | Item | Details |
 | --- | --- |
@@ -13,7 +13,7 @@
 
 `nana-721-hook-v6` splits control between project-level hook ownership and the tier rules enforced by the store. Many important settings can be changed only in limited ways after launch.
 
-## Control Model
+## Control model
 
 - project owners or delegates control hook-level configuration
 - tier creation and mutation are permissioned and partially one-way
@@ -28,7 +28,7 @@
 | Tier delegate | `JBPermissions` grant | Per project | Usually tier, mint, discount, or metadata permissions |
 | Reserve beneficiary | Tier config | Per tier | Receives reserve NFTs |
 
-## Privileged Surfaces
+## Privileged surfaces
 
 - `adjustTiers(...)`
 - `mintFor(...)` — permissioned free NFT issuance for tiers with `allowOwnerMint`
@@ -37,7 +37,7 @@
 - `setMetadata(...)`
 - deployer setup and hook ownership transfer paths
 
-## Deployer Permission Model
+## Deployer permission model
 
 `JB721TiersHookProjectDeployer` requires callers to hold the correct Juicebox permission for each operation:
 
@@ -49,13 +49,13 @@
 
 Permissions are checked against the project owner via `_requirePermissionFrom`. The deployer calls the controller on the caller's behalf, so the controller sees the deployer as `msg.sender`.
 
-## Immutable And One-Way
+## Immutable and one-way
 
 - many tier properties are immutable once created
 - removed tiers do not reduce `maxTierIdOf`
 - pool-like mutable rescue does not exist here; bad tier design is often expensive to unwind
 
-## Operational Notes
+## Operational notes
 
 - review tier parameters before launch as if they were economic policy
 - decide explicitly whether `allowOwnerMint` is intended; delegated `mintFor` can consume tier supply without payment
@@ -63,7 +63,7 @@ Permissions are checked against the project owner via `_requirePermissionFrom`. 
 - be explicit about whether the hook participates in pay, cash out, or both
 - separate resolver trust from hook and store trust
 
-## Machine Notes
+## Machine notes
 
 - do not reason from the hook alone when the bug may live in the store
 - if a resolver is involved, inspect it separately
@@ -75,13 +75,13 @@ Permissions are checked against the project owner via `_requirePermissionFrom`. 
 - many tier-design mistakes are effectively permanent once live
 - deployer mistakes may require a new hook path rather than in-place repair
 
-## Admin Boundaries
+## Admin boundaries
 
 - no one can rewrite immutable tier properties after creation
 - deployers do not bypass runtime permissions after setup
 - resolver behavior cannot fix broken hook accounting
 
-## Source Map
+## Source map
 
 - `src/JB721TiersHook.sol`
 - `src/JB721TiersHookStore.sol`

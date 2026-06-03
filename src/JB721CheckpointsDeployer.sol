@@ -17,6 +17,7 @@ contract JB721CheckpointsDeployer is IJB721CheckpointsDeployer {
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
 
+    /// @notice Thrown when the caller of `deploy` is not the hook the module will serve.
     error JB721CheckpointsDeployer_Unauthorized(address caller, address hook);
 
     //*********************************************************************//

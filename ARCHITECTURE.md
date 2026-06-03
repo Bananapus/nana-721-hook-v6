@@ -4,13 +4,13 @@
 
 `nana-721-hook-v6` is the shared tiered NFT layer for Juicebox V6. It lets projects sell NFT tiers, track reserves, route split payouts, and cash out NFTs without replacing core treasury accounting.
 
-## System Overview
+## System overview
 
 `JB721TiersHook` is the runtime hook. `JB721TiersHookStore` is the accounting backend for tiers, supply, reserves, and lookup. The deployers package that hook into reusable flows for existing projects and new project launches.
 
 Custom token URI resolvers usually live outside this repo, but they still affect the trusted surface seen by users.
 
-## Core Invariants
+## Core invariants
 
 - the hook must not create alternate treasury accounting
 - tier supply, burned counts, and reserves must stay coherent
@@ -33,16 +33,16 @@ Custom token URI resolvers usually live outside this repo, but they still affect
 
 The checkpoint module keeps two kinds of checkpointed state. Per-token owner checkpoints back `ownerOfAt` for snapshot-based reward eligibility. A per-tier eligible-voting-units trace (`_tierEligibleUnitsOf`, read via `getPastTierVotingUnits(tierId, blockNumber)`) is the tier-scoped analogue of a total-supply snapshot: it is the running total of voting units across tokens that are currently eligible. A token contributes its tier voting units from the block it first gains an owner checkpoint — enrollment via `delegate(address, uint256[])` or its first transfer — and stops contributing when it is burned. Mints write nothing to either trace, so the mint path carries no added checkpoint gas; a minted-but-unenrolled token is ineligible until enrolled or transferred, exactly as `ownerOfAt` reports.
 
-## Trust Boundaries
+## Trust boundaries
 
 - core accounting, pricing, and terminal authentication remain in `nana-core-v6`
 - metadata resolvers can be project-specific and should be treated as trusted external surfaces
 - the store is trusted by every hook that uses it
 - deployers are trusted to wire the hook into the intended project and ruleset shape
 
-## Critical Flows
+## Critical flows
 
-### Pay And Mint
+### Pay and mint
 
 ```text
 payment arrives
@@ -52,7 +52,7 @@ payment arrives
   -> collection state and balances update for the beneficiary
 ```
 
-### Cash Out
+### Cash out
 
 ```text
 cash out requested
@@ -62,27 +62,27 @@ cash out requested
   -> terminal reclaims value using hook-aware cash-out math
 ```
 
-## Accounting Model
+## Accounting model
 
 This repo owns tier accounting and NFT lifecycle logic. It does not own the canonical project ledger for balances, fees, or surplus.
 
 The most important state lives in the store: remaining supply, burned counts, reserve tracking, and per-tier configuration.
 
-## Security Model
+## Security model
 
 - store corruption has ecosystem-wide blast radius because many products reuse it
 - reserve logic, discounts, and cash-out weight are the main economic risk surfaces
 - split distribution and fallback behavior are part of correctness, not a secondary concern
 - gas costs matter because some reads and writes scale with tier count
 
-## Safe Change Guide
+## Safe change guide
 
 - review hook and store behavior together when changing tier lifecycle logic
 - if reserve logic changes, re-check cash-out weight and pending reserve effects together
 - if deployer behavior changes, re-check ruleset wiring and ownership transfer paths
 - do not treat resolver behavior as proof that hook accounting is correct
 
-## Canonical Checks
+## Canonical checks
 
 - pay, mint, and redeem end-to-end behavior:
   `test/E2E/Pay_Mint_Redeem_E2E.t.sol`
@@ -93,7 +93,7 @@ The most important state lives in the store: remaining supply, burned counts, re
   `test/regression/SplitCreditsMismatch.t.sol`
   `test/regression/ProjectDeployerRulesets.t.sol`
 
-## Source Map
+## Source map
 
 - `src/JB721TiersHook.sol`
 - `src/JB721TiersHookStore.sol`

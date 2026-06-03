@@ -4,11 +4,11 @@ Scope: the contracts shipped from this repo — `JB721TiersHook` (clone implemen
 
 Companion docs: [ARCHITECTURE.md](./ARCHITECTURE.md), [RISKS.md](./RISKS.md), [USER_JOURNEYS.md](./USER_JOURNEYS.md), [ADMINISTRATION.md](./ADMINISTRATION.md), [AUDIT_INSTRUCTIONS.md](./AUDIT_INSTRUCTIONS.md), [SKILLS.md](./SKILLS.md), [CHANGELOG.md](./CHANGELOG.md).
 
-The underlying terminal / controller / fee guarantees are inherited from `@bananapus/core-v6` and documented in `/Users/jango/Documents/jb/v6/evm/INVARIANTS.md`. This file only describes what THIS repo's contracts add or constrain on top.
+The underlying terminal / controller / fee guarantees are inherited from `@bananapus/core-v6` and documented in `../INVARIANTS.md`. This file only describes what THIS repo's contracts add or constrain on top.
 
 ---
 
-# Section A — Guarantees to Paying Users
+## Section A — Guarantees to paying users
 
 ## A.1 Paying-user mint
 
@@ -49,7 +49,7 @@ The underlying terminal / controller / fee guarantees are inherited from `@banan
 
 ---
 
-# Section B — Guarantees to the Operator (project owner / delegates)
+## Section B — Guarantees to the operator (project owner / delegates)
 
 ## B.1 Operator powers (project owner OR a `JBPermissions` delegate)
 
@@ -82,7 +82,7 @@ These five flags are written once at clone init and never updated — `recordFla
 
 ---
 
-# Section C — Per-Contract Operation Inventory
+## Section C — Per-contract operation inventory
 
 ## C.1 `JB721TiersHook` — `src/JB721TiersHook.sol`
 
@@ -186,7 +186,7 @@ The hook's project association is bound at `initialize`; once set, it cannot cha
 
 ---
 
-# Section D — Cross-Cutting Invariants
+## Section D — Cross-cutting invariants
 
 - **Tier-price immutability post-creation.** `storedTier.price` is never re-assigned after `recordAddTiers`. Discounts modify what payers pay; they never change cash-out weight.
 - **Removed-tier NFTs remain cash-outable.** Tier removal (`recordRemoveTierIds`) only flips a removal bitmap; it does NOT subtract from the `totalCashOutWeightOf` aggregate (`JB721TiersHookStore.sol:1138-1162` only adjusts the aggregate on mint/burn), so a removed tier's already-minted NFTs still contribute and their pending reserves still count.
@@ -201,7 +201,7 @@ The hook's project association is bound at `initialize`; once set, it cannot cha
 
 ---
 
-# Section E — Centralization Posture
+## Section E — Centralization posture
 
 - **Hook clone — `JBOwnable`, scoped to project owner.** Each clone's owner is the project NFT holder (after `transferOwnershipToProject`). All powerful mutators (`adjustTiers`, `mintFor`, discount, metadata) gate through `_requirePermissionFrom({account: owner(), ...})`. The project owner can therefore delegate any of these surfaces to operators via the core `JBPermissions` registry; there is no super-admin override on the hook.
 - **Store — no admin.** `JB721TiersHookStore` has no owner, no upgrade path, no privileged caller. It trusts `msg.sender` to be a hook and writes scoped to that hook's address. Global admin actions across all hooks are not possible.
@@ -212,7 +212,7 @@ The hook's project association is bound at `initialize`; once set, it cannot cha
 
 ---
 
-# Section F — File:Line References
+## Section F — File:line references
 
 | Claim | File | Line(s) |
 |---|---|---|
@@ -260,9 +260,9 @@ The hook's project association is bound at `initialize`; once set, it cannot cha
 
 ---
 
-# Out of Scope
+## Out of scope
 
-- Underlying core terminal/controller/permissions/sucker guarantees — see `/Users/jango/Documents/jb/v6/evm/INVARIANTS.md` and `nana-core-v6`.
+- Underlying core terminal/controller/permissions/sucker guarantees — see `../INVARIANTS.md` and `nana-core-v6`.
 - Project-specific token URI resolvers (Banny, Defifa) and the resolver trust surface — those live downstream and are described in their own repos.
 - Croptop's curator surface that composes over this hook.
 - The 2.5% protocol fee mechanics — inherited from `JBMultiTerminal`.

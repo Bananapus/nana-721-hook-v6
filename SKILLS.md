@@ -1,11 +1,11 @@
 # Juicebox 721 Hook
 
-## Use This File For
+## Use this file for
 
 - Use this file when the task involves tiered NFT minting, reserve minting, tier adjustments, deployer wiring, or 721-aware cash-out behavior.
 - Start here, then decide whether the issue is in hook execution, store accounting, deployer setup, or resolver behavior.
 
-## Read This Next
+## Read this next
 
 | If you need... | Open this next |
 |---|---|
@@ -16,7 +16,7 @@
 | Deployer flows | [`src/JB721TiersHookDeployer.sol`](./src/JB721TiersHookDeployer.sol), [`src/JB721TiersHookProjectDeployer.sol`](./src/JB721TiersHookProjectDeployer.sol) |
 | Lifecycle, invariant, and review coverage | [`test/E2E/Pay_Mint_Redeem_E2E.t.sol`](./test/E2E/Pay_Mint_Redeem_E2E.t.sol), [`test/invariants/TierLifecycleInvariant.t.sol`](./test/invariants/TierLifecycleInvariant.t.sol), [`test/invariants/TieredHookStoreInvariant.t.sol`](./test/invariants/TieredHookStoreInvariant.t.sol), [`test/regression/SplitCreditsMismatch.t.sol`](./test/regression/SplitCreditsMismatch.t.sol) |
 
-## Repo Map
+## Repo map
 
 | Area | Where to look |
 |---|---|
@@ -29,12 +29,12 @@
 
 Tiered NFT hook for Juicebox V6. This repo handles priced NFT tiers, reserve logic, tier-aware cash outs, and deployer flows that wire those hooks into projects.
 
-## Reference Files
+## Reference files
 
 - Open [`references/runtime.md`](./references/runtime.md) when you need hook and store roles, cash-out weight behavior, or main invariants.
 - Open [`references/operations.md`](./references/operations.md) when you need permission paths, tier-adjustment rules, test breadcrumbs, or common stale assumptions.
 
-## Working Rules
+## Working rules
 
 - Start in [`src/JB721TiersHookStore.sol`](./src/JB721TiersHookStore.sol) for tier accounting questions.
 - Keep hook behavior, store behavior, and resolver behavior separate.

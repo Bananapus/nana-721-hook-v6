@@ -31,10 +31,19 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
 
+    /// @notice Thrown when a cash out callback carries value, comes from a non-terminal, or targets the wrong project.
     error JB721Hook_InvalidCashOut(address caller, uint256 contextProjectId, uint256 projectId, uint256 msgValue);
+
+    /// @notice Thrown when a pay callback comes from a non-terminal or targets the wrong project.
     error JB721Hook_InvalidPay(address caller, uint256 contextProjectId, uint256 projectId);
+
+    /// @notice Thrown when the ETH attached to a pay callback does not match the terminal-forwarded amount.
     error JB721Hook_InvalidPayValue(address token, uint256 msgValue, uint256 forwardedValue);
+
+    /// @notice Thrown when cashing out an NFT whose owner is not the cash-out holder.
     error JB721Hook_UnauthorizedToken(uint256 tokenId, address holder);
+
+    /// @notice Thrown when fungible project tokens are cashed out alongside the NFTs (non-zero cash-out count).
     error JB721Hook_UnexpectedTokenCashedOut(uint256 cashOutCount);
 
     //*********************************************************************//
