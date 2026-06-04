@@ -13,12 +13,10 @@ pragma solidity ^0.8.0;
 /// permission from the owner should be allowed to mint project tokens on demand during this ruleset.
 /// @custom:member allowSetCustomToken A flag indicating if the project owner can set the project's token to a custom
 /// ERC-20.
-/// @custom:member allowTerminalMigration A flag indicating if migrating terminals should be allowed during this
-/// ruleset.
+/// @custom:member allowTerminalMigration A flag indicating if terminal migration is allowed during this ruleset.
 /// @custom:member allowSetTerminals A flag indicating if a project's terminals can be added or removed.
 /// @custom:member allowSetController A flag indicating if a project's controller can be changed.
-/// @custom:member allowAddAccountingContext A flag indicating if a project can add new accounting contexts for its
-/// terminals to use.
+/// @custom:member allowAddAccountingContext A flag indicating if a project can add accounting contexts to terminals.
 /// @custom:member allowAddPriceFeed A flag indicating if a project can add new price feeds to calculate exchange rates
 /// between its tokens.
 /// @custom:member ownerMustSendPayouts A flag indicating if the owner must manually trigger payout distributions.

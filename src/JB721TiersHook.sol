@@ -244,8 +244,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @notice Initialize a cloned copy of the hook. Sets the project association, ERC-721 name/symbol, pricing
     /// context (currency + decimals), metadata URIs, initial tiers, and behavioral flags. Can only be called once
     /// per clone — the implementation contract is pre-initialized in its constructor to prevent misuse.
-    /// @dev Called by `JB721TiersHookDeployer` immediately after cloning. Reverts if called more than once or if the
-    /// project ID is zero.
+    /// @dev Called by `JB721TiersHookDeployer` after cloning. Reverts if called twice or if the project ID is zero.
     /// @param initialProjectId The ID of the project this hook is associated with.
     /// @param name The name of the NFT collection.
     /// @param symbol The symbol representing the NFT collection.
@@ -461,9 +460,8 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @param symbol The new collection symbol. Send empty to leave unchanged.
     /// @param baseUri The new base URI. Send empty to leave unchanged.
     /// @param contractUri The new contract URI. Send empty to leave unchanged.
-    /// @param tokenUriResolver The new URI resolver. Pass `IJB721TokenUriResolver(address(this))` as a sentinel value
-    /// to leave unchanged. `address(this)` is used instead of `address(0)` because `address(0)` is a valid value that
-    /// clears the resolver.
+    /// @param tokenUriResolver The new URI resolver. Pass `IJB721TokenUriResolver(address(this))` to leave it
+    /// unchanged; `address(0)` clears the resolver.
     /// @param encodedIpfsUriTierId The ID of the tier to set the encoded IPFS URI of.
     /// @param encodedIpfsUri The encoded IPFS URI to set.
     function setMetadata(
