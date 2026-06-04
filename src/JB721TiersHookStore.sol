@@ -29,24 +29,62 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
 
+    /// @notice Thrown when an owner mint is attempted on a tier that does not allow owner minting.
     error JB721TiersHookStore_CantMintManually(uint256 tierId);
+
+    /// @notice Thrown when removing a tier that is flagged as non-removable.
     error JB721TiersHookStore_CantRemoveTier(uint256 tierId);
+
+    /// @notice Thrown when adding a tier with an initial supply of one and a non-zero reserve frequency, which would
+    /// deadlock reserve minting.
     error JB721TiersHookStore_DeadlockedReserve(uint256 tierId, uint256 initialSupply, uint256 reserveFrequency);
+
+    /// @notice Thrown when a tier's discount percent exceeds the discount denominator.
     error JB721TiersHookStore_DiscountPercentExceedsBounds(uint256 percent, uint256 limit);
+
+    /// @notice Thrown when increasing a tier's discount percent that is flagged as not allowing discount increases.
     error JB721TiersHookStore_DiscountPercentIncreaseNotAllowed(uint256 percent, uint256 storedPercent);
+
+    /// @notice Thrown when minting more reserved NFTs than the number currently pending for the tier.
     error JB721TiersHookStore_InsufficientPendingReserves(uint256 count, uint256 numberOfPendingReserves);
+
+    /// @notice Thrown when minting from a tier that has no remaining supply available for the mint.
     error JB721TiersHookStore_InsufficientSupplyRemaining(uint256 tierId);
+
+    /// @notice Thrown when tiers to add are not sorted by category in ascending order.
     error JB721TiersHookStore_InvalidCategorySortOrder(uint256 tierCategory, uint256 previousTierCategory);
+
+    /// @notice Thrown when a tier's initial supply exceeds the maximum allowed quantity.
     error JB721TiersHookStore_InvalidQuantity(uint256 quantity, uint256 limit);
+
+    /// @notice Thrown when adding a tier with owner minting enabled while the contract's flags disallow it.
     error JB721TiersHookStore_ManualMintingNotAllowed(uint256 tierId);
+
+    /// @notice Thrown when adding tiers would exceed the maximum number of tiers the contract can hold.
     error JB721TiersHookStore_MaxTiersExceeded(uint256 numberOfTiers, uint256 limit);
+
+    /// @notice Thrown when adding a tier with reserves but neither a tier-specific nor default reserve beneficiary set.
     error JB721TiersHookStore_MissingReserveBeneficiary(uint256 tierId);
+
+    /// @notice Thrown when a tier's price exceeds the amount left over to spend on it.
     error JB721TiersHookStore_PriceExceedsAmount(uint256 price, uint256 leftoverAmount);
+
+    /// @notice Thrown when adding a tier with a reserve frequency while the contract's flags disallow it.
     error JB721TiersHookStore_ReserveFrequencyNotAllowed(uint256 tierId);
+
+    /// @notice Thrown when a tier's split percent exceeds the total splits percent.
     error JB721TiersHookStore_SplitPercentExceedsBounds(uint256 percent, uint256 limit);
+
+    /// @notice Thrown when operating on a tier that has been removed.
     error JB721TiersHookStore_TierRemoved(uint256 tierId);
+
+    /// @notice Thrown when referencing a tier that does not exist.
     error JB721TiersHookStore_UnrecognizedTier(uint256 tierId);
+
+    /// @notice Thrown when adding a tier with voting units while the contract's flags disallow it.
     error JB721TiersHookStore_VotingUnitsNotAllowed(uint256 tierId);
+
+    /// @notice Thrown when adding a tier with an initial supply of zero.
     error JB721TiersHookStore_ZeroInitialSupply(uint256 tierId);
 
     //*********************************************************************//
@@ -544,13 +582,11 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         });
     }
 
-    /// @notice The total cash-out weight across all outstanding NFTs (including pending reserves). This is the
-    /// denominator used to determine what fraction of a project's surplus each NFT can reclaim on cash out.
     //*********************************************************************//
     // -------------------------- internal views ------------------------- //
     //*********************************************************************//
 
-    /// @notice Get the first tier ID from an 721 contract (when sorted by category) within a provided category.
+    /// @notice Get the first tier ID from a 721 contract (when sorted by category) within a provided category.
     /// @param hook The 721 contract to get the first sorted tier ID of.
     /// @param category The category to get the first sorted tier ID within. Send 0 for the first ID across all tiers,
     /// which may belong to any category.
@@ -561,7 +597,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         if (id == 0) id = 1;
     }
 
-    /// @notice Generate a token ID for an 721 given a tier ID and a token number within that tier.
+    /// @notice Generate a token ID for a 721 given a tier ID and a token number within that tier.
     /// @param tierId The ID of the tier to generate a token ID for.
     /// @param tokenNumber The token number of the 721 within the tier.
     /// @return The token ID of the 721.
@@ -644,7 +680,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         return bitmapWord.isTierIdRemoved(tierId);
     }
 
-    /// @notice The last sorted tier ID from an 721 contract (when sorted by category).
+    /// @notice The last sorted tier ID from a 721 contract (when sorted by category).
     /// @param hook The 721 contract to get the last sorted tier ID of.
     /// @return id The last sorted tier ID.
     function _lastSortedTierIdOf(address hook) internal view returns (uint256 id) {
@@ -771,6 +807,12 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @param cantBeRemoved Whether this tier is permanently locked and cannot be removed once added.
     /// @param cantIncreaseDiscountPercent Whether the discount percent can only stay the same or decrease.
     /// @param cantBuyWithCredits Whether this tier cannot be purchased using accumulated pay credits.
+    /// @return allowOwnerMint Whether the project owner can mint from this tier directly (without paying).
+    /// @return transfersPausable Whether transfers of NFTs from this tier can be paused by the ruleset.
+    /// @return useVotingUnits Whether this tier uses a custom voting power value instead of defaulting to its price.
+    /// @return cantBeRemoved Whether this tier is permanently locked and cannot be removed once added.
+    /// @return cantIncreaseDiscountPercent Whether the discount percent can only stay the same or decrease.
+    /// @return cantBuyWithCredits Whether this tier cannot be purchased using accumulated pay credits.
     function _unpackBools(uint8 packed)
         internal
         pure

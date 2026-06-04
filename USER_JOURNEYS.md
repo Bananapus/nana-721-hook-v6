@@ -1,24 +1,24 @@
 # User Journeys
 
-## Repo Purpose
+## Repo purpose
 
 This repo adds tiered NFT logic to Juicebox payment and cash-out flows. It owns tier pricing, reserves, and NFT lifecycle state. It does not own project-specific artwork or game logic.
 
-## Primary Actors
+## Primary actors
 
 - projects that want priced NFT tiers in their Juicebox flow
 - operators managing tier configuration and hook permissions
 - holders minting, transferring, and cashing out tiered NFTs
 - auditors reviewing tier accounting, reserve behavior, and deployer wiring
 
-## Key Surfaces
+## Key surfaces
 
 - `JB721TiersHook`: runtime 721 hook behavior
 - `JB721TiersHookStore`: tier accounting and supply state
 - `JB721TiersHookDeployer` and `JB721TiersHookProjectDeployer`: wiring surfaces
 - token URI resolver contracts in downstream repos: presentation layer
 
-## Journey 1: Launch A Project With A Tiered NFT Hook
+## Journey 1: Launch a project with a tiered NFT hook
 
 **Actor:** project operator or deployer.
 
@@ -42,7 +42,7 @@ This repo adds tiered NFT logic to Juicebox payment and cash-out flows. It owns 
 **Postconditions**
 - the project has a tiered NFT hook wired into its Juicebox flow
 
-## Journey 2: Pay And Mint Tiered NFTs
+## Journey 2: Pay and mint tiered NFTs
 
 **Actor:** payer or integration acting for a payer.
 
@@ -65,7 +65,7 @@ This repo adds tiered NFT logic to Juicebox payment and cash-out flows. It owns 
 **Postconditions**
 - the payer or beneficiary receives the intended NFT tiers and tier state updates
 
-## Journey 3: Mint Or Release Reserve NFTs
+## Journey 3: Mint or release reserve NFTs
 
 **Actor:** reserve beneficiary, operator, or any caller using the reserve path.
 
@@ -87,7 +87,7 @@ This repo adds tiered NFT logic to Juicebox payment and cash-out flows. It owns 
 **Postconditions**
 - pending reserves mint according to tier configuration
 
-## Journey 4: Cash Out Tiered NFTs
+## Journey 4: Cash out tiered NFTs
 
 **Actor:** NFT holder.
 
@@ -115,13 +115,13 @@ This repo adds tiered NFT logic to Juicebox payment and cash-out flows. It owns 
 - A freshly minted token does NOT yet count toward a tier's eligible voting units. Enrolling it via `delegate(address, uint256[])` (or simply transferring it for the first time) is what makes its tier units count toward tier-scoped reward pots; the count is removed when the token is burned.
 - Distributors read a tier's historical denominator via `getPastTierVotingUnits(tierId, blockNumber)` — the per-tier analogue of a total-supply snapshot. Holders who never enroll or transfer are excluded.
 
-## Trust Boundaries
+## Trust boundaries
 
 - this repo trusts core terminals, directory checks, and pricing surfaces from `nana-core-v6`
 - metadata resolvers are outside this repo but still affect user-visible trust
 - the store is the main source of truth for tier lifecycle state
 
-## Hand-Offs
+## Hand-offs
 
 - Use [nana-core-v6](../nana-core-v6/USER_JOURNEYS.md) for the underlying terminal and accounting behavior.
 - Use the downstream resolver repo when the question is about project-specific metadata or rendering.

@@ -24,8 +24,13 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
 
+    /// @notice Thrown when `initialize` is called on a module whose hook has already been set.
     error JB721Checkpoints_AlreadyInitialized(address hook);
+
+    /// @notice Thrown when the caller tries to enroll a token they do not currently own.
     error JB721Checkpoints_NotOwner(uint256 tokenId, address caller);
+
+    /// @notice Thrown when a hook-only function is called by an address other than the module's hook.
     error JB721Checkpoints_Unauthorized(address caller, address hook);
 
     //*********************************************************************//
@@ -158,7 +163,10 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     // ----------------------- external views ---------------------------- //
     //*********************************************************************//
 
-    /// @inheritdoc IJB721Checkpoints
+    /// @notice The total eligible voting units of a tier at a past block.
+    /// @param tierId The tier to get the eligible voting units of.
+    /// @param blockNumber The block number to look up (must be strictly in the past).
+    /// @return The tier's eligible voting units at `blockNumber`.
     function getPastTierVotingUnits(uint256 tierId, uint256 blockNumber) external view override returns (uint256) {
         // forge-lint: disable-next-line(unsafe-typecast)
         return _tierEligibleUnitsOf[tierId].upperLookupRecent(uint96(_validateTimepoint(blockNumber)));

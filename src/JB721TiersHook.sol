@@ -41,11 +41,22 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     // --------------------------- custom errors ------------------------- //
     //*********************************************************************//
 
+    /// @notice Thrown when `initialize` is called on a hook that has already been initialized.
     error JB721TiersHook_AlreadyInitialized(uint256 projectId);
+
+    /// @notice Thrown when the configured pricing decimals exceed 18.
     error JB721TiersHook_InvalidPricingDecimals(uint256 decimals);
+
+    /// @notice Thrown when minting reserved NFTs while the ruleset has reserve minting paused.
     error JB721TiersHook_MintReserveNftsPaused(uint256 projectId, uint256 tierId);
+
+    /// @notice Thrown when forwarded funds must be distributed to tier splits but no split metadata was provided.
     error JB721TiersHook_MissingSplitMetadata();
+
+    /// @notice Thrown when the hook is initialized with a project ID of zero.
     error JB721TiersHook_NoProjectId(uint256 projectId);
+
+    /// @notice Thrown when an NFT is transferred (to a non-zero address) while the ruleset has transfers paused.
     error JB721TiersHook_TierTransfersPaused(uint256 projectId, uint256 tokenId, address from, address to);
 
     //*********************************************************************//
@@ -97,7 +108,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     //*********************************************************************//
 
     /// @notice The first owner of each token ID, stored on first transfer out.
-    /// @custom:param The token ID of the NFT to get the stored first owner of.
+    /// @custom:param tokenId The token ID of the NFT to get the stored first owner of.
     mapping(uint256 tokenId => address) internal _firstOwnerOf;
 
     /// @notice Packed context for the pricing of this contract's tiers.
@@ -755,6 +766,7 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @notice Before transferring an NFT, register its first owner (if necessary).
     /// @param to The address to transfer the NFT to.
     /// @param tokenId The token ID of the NFT to transfer.
+    /// @return from The address the NFT is being transferred from.
     function _update(address to, uint256 tokenId, address auth) internal virtual override returns (address from) {
         // Get only the tier ID and transfersPausable flag (lightweight — avoids full struct construction).
         (uint256 tierId, bool transfersPausable) =
