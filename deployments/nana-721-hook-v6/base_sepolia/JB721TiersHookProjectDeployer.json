@@ -1,0 +1,1785 @@
+{
+	"format": "sphinx-sol-ct-artifact-1",
+	"address": "0x63b8235235267d7bd7f8c1aab075f104851751eb",
+	"sourceName": "node_modules/@bananapus/721-hook-v6/src/JB721TiersHookProjectDeployer.sol",
+	"contractName": "JB721TiersHookProjectDeployer",
+	"chainId": "0x14a34",
+	"abi": [
+		{
+			"type": "constructor",
+			"inputs": [
+				{
+					"name": "directory",
+					"type": "address",
+					"internalType": "contract IJBDirectory"
+				},
+				{
+					"name": "permissions",
+					"type": "address",
+					"internalType": "contract IJBPermissions"
+				},
+				{
+					"name": "hookDeployer",
+					"type": "address",
+					"internalType": "contract IJB721TiersHookDeployer"
+				},
+				{
+					"name": "trustedForwarder",
+					"type": "address",
+					"internalType": "address"
+				}
+			],
+			"stateMutability": "nonpayable"
+		},
+		{
+			"type": "function",
+			"name": "DIRECTORY",
+			"inputs": [],
+			"outputs": [
+				{
+					"name": "",
+					"type": "address",
+					"internalType": "contract IJBDirectory"
+				}
+			],
+			"stateMutability": "view"
+		},
+		{
+			"type": "function",
+			"name": "HOOK_DEPLOYER",
+			"inputs": [],
+			"outputs": [
+				{
+					"name": "",
+					"type": "address",
+					"internalType": "contract IJB721TiersHookDeployer"
+				}
+			],
+			"stateMutability": "view"
+		},
+		{
+			"type": "function",
+			"name": "PERMISSIONS",
+			"inputs": [],
+			"outputs": [
+				{
+					"name": "",
+					"type": "address",
+					"internalType": "contract IJBPermissions"
+				}
+			],
+			"stateMutability": "view"
+		},
+		{
+			"type": "function",
+			"name": "isTrustedForwarder",
+			"inputs": [
+				{
+					"name": "forwarder",
+					"type": "address",
+					"internalType": "address"
+				}
+			],
+			"outputs": [
+				{
+					"name": "",
+					"type": "bool",
+					"internalType": "bool"
+				}
+			],
+			"stateMutability": "view"
+		},
+		{
+			"type": "function",
+			"name": "launchProjectFor",
+			"inputs": [
+				{
+					"name": "owner",
+					"type": "address",
+					"internalType": "address"
+				},
+				{
+					"name": "deployTiersHookConfig",
+					"type": "tuple",
+					"internalType": "struct JBDeploy721TiersHookConfig",
+					"components": [
+						{
+							"name": "name",
+							"type": "string",
+							"internalType": "string"
+						},
+						{
+							"name": "symbol",
+							"type": "string",
+							"internalType": "string"
+						},
+						{
+							"name": "baseUri",
+							"type": "string",
+							"internalType": "string"
+						},
+						{
+							"name": "tokenUriResolver",
+							"type": "address",
+							"internalType": "contract IJB721TokenUriResolver"
+						},
+						{
+							"name": "contractUri",
+							"type": "string",
+							"internalType": "string"
+						},
+						{
+							"name": "tiersConfig",
+							"type": "tuple",
+							"internalType": "struct JB721InitTiersConfig",
+							"components": [
+								{
+									"name": "tiers",
+									"type": "tuple[]",
+									"internalType": "struct JB721TierConfig[]",
+									"components": [
+										{
+											"name": "price",
+											"type": "uint104",
+											"internalType": "uint104"
+										},
+										{
+											"name": "initialSupply",
+											"type": "uint32",
+											"internalType": "uint32"
+										},
+										{
+											"name": "votingUnits",
+											"type": "uint32",
+											"internalType": "uint32"
+										},
+										{
+											"name": "reserveFrequency",
+											"type": "uint16",
+											"internalType": "uint16"
+										},
+										{
+											"name": "reserveBeneficiary",
+											"type": "address",
+											"internalType": "address"
+										},
+										{
+											"name": "encodedIpfsUri",
+											"type": "bytes32",
+											"internalType": "bytes32"
+										},
+										{
+											"name": "category",
+											"type": "uint24",
+											"internalType": "uint24"
+										},
+										{
+											"name": "discountPercent",
+											"type": "uint8",
+											"internalType": "uint8"
+										},
+										{
+											"name": "flags",
+											"type": "tuple",
+											"internalType": "struct JB721TierConfigFlags",
+											"components": [
+												{
+													"name": "allowOwnerMint",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "useReserveBeneficiaryAsDefault",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "transfersPausable",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "useVotingUnits",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "cantBeRemoved",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "cantIncreaseDiscountPercent",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "cantBuyWithCredits",
+													"type": "bool",
+													"internalType": "bool"
+												}
+											]
+										},
+										{
+											"name": "splitPercent",
+											"type": "uint32",
+											"internalType": "uint32"
+										},
+										{
+											"name": "splits",
+											"type": "tuple[]",
+											"internalType": "struct JBSplit[]",
+											"components": [
+												{
+													"name": "percent",
+													"type": "uint32",
+													"internalType": "uint32"
+												},
+												{
+													"name": "projectId",
+													"type": "uint64",
+													"internalType": "uint64"
+												},
+												{
+													"name": "beneficiary",
+													"type": "address",
+													"internalType": "address payable"
+												},
+												{
+													"name": "preferAddToBalance",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "lockedUntil",
+													"type": "uint48",
+													"internalType": "uint48"
+												},
+												{
+													"name": "hook",
+													"type": "address",
+													"internalType": "contract IJBSplitHook"
+												}
+											]
+										}
+									]
+								},
+								{
+									"name": "currency",
+									"type": "uint32",
+									"internalType": "uint32"
+								},
+								{
+									"name": "decimals",
+									"type": "uint8",
+									"internalType": "uint8"
+								}
+							]
+						},
+						{
+							"name": "flags",
+							"type": "tuple",
+							"internalType": "struct JB721TiersHookFlags",
+							"components": [
+								{
+									"name": "noNewTiersWithReserves",
+									"type": "bool",
+									"internalType": "bool"
+								},
+								{
+									"name": "noNewTiersWithVotes",
+									"type": "bool",
+									"internalType": "bool"
+								},
+								{
+									"name": "noNewTiersWithOwnerMinting",
+									"type": "bool",
+									"internalType": "bool"
+								},
+								{
+									"name": "preventOverspending",
+									"type": "bool",
+									"internalType": "bool"
+								},
+								{
+									"name": "issueTokensForSplits",
+									"type": "bool",
+									"internalType": "bool"
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "launchProjectConfig",
+					"type": "tuple",
+					"internalType": "struct JBLaunchProjectConfig",
+					"components": [
+						{
+							"name": "projectUri",
+							"type": "string",
+							"internalType": "string"
+						},
+						{
+							"name": "rulesetConfigurations",
+							"type": "tuple[]",
+							"internalType": "struct JBPayDataHookRulesetConfig[]",
+							"components": [
+								{
+									"name": "mustStartAtOrAfter",
+									"type": "uint48",
+									"internalType": "uint48"
+								},
+								{
+									"name": "duration",
+									"type": "uint32",
+									"internalType": "uint32"
+								},
+								{
+									"name": "weight",
+									"type": "uint112",
+									"internalType": "uint112"
+								},
+								{
+									"name": "weightCutPercent",
+									"type": "uint32",
+									"internalType": "uint32"
+								},
+								{
+									"name": "approvalHook",
+									"type": "address",
+									"internalType": "contract IJBRulesetApprovalHook"
+								},
+								{
+									"name": "metadata",
+									"type": "tuple",
+									"internalType": "struct JBPayDataHookRulesetMetadata",
+									"components": [
+										{
+											"name": "reservedPercent",
+											"type": "uint16",
+											"internalType": "uint16"
+										},
+										{
+											"name": "cashOutTaxRate",
+											"type": "uint16",
+											"internalType": "uint16"
+										},
+										{
+											"name": "baseCurrency",
+											"type": "uint32",
+											"internalType": "uint32"
+										},
+										{
+											"name": "pausePay",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "pauseCreditTransfers",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "allowOwnerMinting",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "allowSetCustomToken",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "allowTerminalMigration",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "allowSetTerminals",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "allowSetController",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "allowAddAccountingContext",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "allowAddPriceFeed",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "ownerMustSendPayouts",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "holdFees",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "scopeCashOutsToLocalBalances",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "useDataHookForCashOut",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "metadata",
+											"type": "uint16",
+											"internalType": "uint16"
+										}
+									]
+								},
+								{
+									"name": "splitGroups",
+									"type": "tuple[]",
+									"internalType": "struct JBSplitGroup[]",
+									"components": [
+										{
+											"name": "groupId",
+											"type": "uint256",
+											"internalType": "uint256"
+										},
+										{
+											"name": "splits",
+											"type": "tuple[]",
+											"internalType": "struct JBSplit[]",
+											"components": [
+												{
+													"name": "percent",
+													"type": "uint32",
+													"internalType": "uint32"
+												},
+												{
+													"name": "projectId",
+													"type": "uint64",
+													"internalType": "uint64"
+												},
+												{
+													"name": "beneficiary",
+													"type": "address",
+													"internalType": "address payable"
+												},
+												{
+													"name": "preferAddToBalance",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "lockedUntil",
+													"type": "uint48",
+													"internalType": "uint48"
+												},
+												{
+													"name": "hook",
+													"type": "address",
+													"internalType": "contract IJBSplitHook"
+												}
+											]
+										}
+									]
+								},
+								{
+									"name": "fundAccessLimitGroups",
+									"type": "tuple[]",
+									"internalType": "struct JBFundAccessLimitGroup[]",
+									"components": [
+										{
+											"name": "terminal",
+											"type": "address",
+											"internalType": "address"
+										},
+										{
+											"name": "token",
+											"type": "address",
+											"internalType": "address"
+										},
+										{
+											"name": "payoutLimits",
+											"type": "tuple[]",
+											"internalType": "struct JBCurrencyAmount[]",
+											"components": [
+												{
+													"name": "amount",
+													"type": "uint224",
+													"internalType": "uint224"
+												},
+												{
+													"name": "currency",
+													"type": "uint32",
+													"internalType": "uint32"
+												}
+											]
+										},
+										{
+											"name": "surplusAllowances",
+											"type": "tuple[]",
+											"internalType": "struct JBCurrencyAmount[]",
+											"components": [
+												{
+													"name": "amount",
+													"type": "uint224",
+													"internalType": "uint224"
+												},
+												{
+													"name": "currency",
+													"type": "uint32",
+													"internalType": "uint32"
+												}
+											]
+										}
+									]
+								}
+							]
+						},
+						{
+							"name": "terminalConfigurations",
+							"type": "tuple[]",
+							"internalType": "struct JBTerminalConfig[]",
+							"components": [
+								{
+									"name": "terminal",
+									"type": "address",
+									"internalType": "contract IJBTerminal"
+								},
+								{
+									"name": "accountingContextsToAccept",
+									"type": "tuple[]",
+									"internalType": "struct JBAccountingContext[]",
+									"components": [
+										{
+											"name": "token",
+											"type": "address",
+											"internalType": "address"
+										},
+										{
+											"name": "decimals",
+											"type": "uint8",
+											"internalType": "uint8"
+										},
+										{
+											"name": "currency",
+											"type": "uint32",
+											"internalType": "uint32"
+										}
+									]
+								}
+							]
+						},
+						{
+							"name": "memo",
+							"type": "string",
+							"internalType": "string"
+						}
+					]
+				},
+				{
+					"name": "controller",
+					"type": "address",
+					"internalType": "contract IJBController"
+				},
+				{
+					"name": "salt",
+					"type": "bytes32",
+					"internalType": "bytes32"
+				}
+			],
+			"outputs": [
+				{
+					"name": "projectId",
+					"type": "uint256",
+					"internalType": "uint256"
+				},
+				{
+					"name": "hook",
+					"type": "address",
+					"internalType": "contract IJB721TiersHook"
+				}
+			],
+			"stateMutability": "payable"
+		},
+		{
+			"type": "function",
+			"name": "launchRulesetsFor",
+			"inputs": [
+				{
+					"name": "projectId",
+					"type": "uint256",
+					"internalType": "uint256"
+				},
+				{
+					"name": "deployTiersHookConfig",
+					"type": "tuple",
+					"internalType": "struct JBDeploy721TiersHookConfig",
+					"components": [
+						{
+							"name": "name",
+							"type": "string",
+							"internalType": "string"
+						},
+						{
+							"name": "symbol",
+							"type": "string",
+							"internalType": "string"
+						},
+						{
+							"name": "baseUri",
+							"type": "string",
+							"internalType": "string"
+						},
+						{
+							"name": "tokenUriResolver",
+							"type": "address",
+							"internalType": "contract IJB721TokenUriResolver"
+						},
+						{
+							"name": "contractUri",
+							"type": "string",
+							"internalType": "string"
+						},
+						{
+							"name": "tiersConfig",
+							"type": "tuple",
+							"internalType": "struct JB721InitTiersConfig",
+							"components": [
+								{
+									"name": "tiers",
+									"type": "tuple[]",
+									"internalType": "struct JB721TierConfig[]",
+									"components": [
+										{
+											"name": "price",
+											"type": "uint104",
+											"internalType": "uint104"
+										},
+										{
+											"name": "initialSupply",
+											"type": "uint32",
+											"internalType": "uint32"
+										},
+										{
+											"name": "votingUnits",
+											"type": "uint32",
+											"internalType": "uint32"
+										},
+										{
+											"name": "reserveFrequency",
+											"type": "uint16",
+											"internalType": "uint16"
+										},
+										{
+											"name": "reserveBeneficiary",
+											"type": "address",
+											"internalType": "address"
+										},
+										{
+											"name": "encodedIpfsUri",
+											"type": "bytes32",
+											"internalType": "bytes32"
+										},
+										{
+											"name": "category",
+											"type": "uint24",
+											"internalType": "uint24"
+										},
+										{
+											"name": "discountPercent",
+											"type": "uint8",
+											"internalType": "uint8"
+										},
+										{
+											"name": "flags",
+											"type": "tuple",
+											"internalType": "struct JB721TierConfigFlags",
+											"components": [
+												{
+													"name": "allowOwnerMint",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "useReserveBeneficiaryAsDefault",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "transfersPausable",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "useVotingUnits",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "cantBeRemoved",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "cantIncreaseDiscountPercent",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "cantBuyWithCredits",
+													"type": "bool",
+													"internalType": "bool"
+												}
+											]
+										},
+										{
+											"name": "splitPercent",
+											"type": "uint32",
+											"internalType": "uint32"
+										},
+										{
+											"name": "splits",
+											"type": "tuple[]",
+											"internalType": "struct JBSplit[]",
+											"components": [
+												{
+													"name": "percent",
+													"type": "uint32",
+													"internalType": "uint32"
+												},
+												{
+													"name": "projectId",
+													"type": "uint64",
+													"internalType": "uint64"
+												},
+												{
+													"name": "beneficiary",
+													"type": "address",
+													"internalType": "address payable"
+												},
+												{
+													"name": "preferAddToBalance",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "lockedUntil",
+													"type": "uint48",
+													"internalType": "uint48"
+												},
+												{
+													"name": "hook",
+													"type": "address",
+													"internalType": "contract IJBSplitHook"
+												}
+											]
+										}
+									]
+								},
+								{
+									"name": "currency",
+									"type": "uint32",
+									"internalType": "uint32"
+								},
+								{
+									"name": "decimals",
+									"type": "uint8",
+									"internalType": "uint8"
+								}
+							]
+						},
+						{
+							"name": "flags",
+							"type": "tuple",
+							"internalType": "struct JB721TiersHookFlags",
+							"components": [
+								{
+									"name": "noNewTiersWithReserves",
+									"type": "bool",
+									"internalType": "bool"
+								},
+								{
+									"name": "noNewTiersWithVotes",
+									"type": "bool",
+									"internalType": "bool"
+								},
+								{
+									"name": "noNewTiersWithOwnerMinting",
+									"type": "bool",
+									"internalType": "bool"
+								},
+								{
+									"name": "preventOverspending",
+									"type": "bool",
+									"internalType": "bool"
+								},
+								{
+									"name": "issueTokensForSplits",
+									"type": "bool",
+									"internalType": "bool"
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "launchRulesetsConfig",
+					"type": "tuple",
+					"internalType": "struct JBLaunchRulesetsConfig",
+					"components": [
+						{
+							"name": "projectId",
+							"type": "uint64",
+							"internalType": "uint64"
+						},
+						{
+							"name": "rulesetConfigurations",
+							"type": "tuple[]",
+							"internalType": "struct JBPayDataHookRulesetConfig[]",
+							"components": [
+								{
+									"name": "mustStartAtOrAfter",
+									"type": "uint48",
+									"internalType": "uint48"
+								},
+								{
+									"name": "duration",
+									"type": "uint32",
+									"internalType": "uint32"
+								},
+								{
+									"name": "weight",
+									"type": "uint112",
+									"internalType": "uint112"
+								},
+								{
+									"name": "weightCutPercent",
+									"type": "uint32",
+									"internalType": "uint32"
+								},
+								{
+									"name": "approvalHook",
+									"type": "address",
+									"internalType": "contract IJBRulesetApprovalHook"
+								},
+								{
+									"name": "metadata",
+									"type": "tuple",
+									"internalType": "struct JBPayDataHookRulesetMetadata",
+									"components": [
+										{
+											"name": "reservedPercent",
+											"type": "uint16",
+											"internalType": "uint16"
+										},
+										{
+											"name": "cashOutTaxRate",
+											"type": "uint16",
+											"internalType": "uint16"
+										},
+										{
+											"name": "baseCurrency",
+											"type": "uint32",
+											"internalType": "uint32"
+										},
+										{
+											"name": "pausePay",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "pauseCreditTransfers",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "allowOwnerMinting",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "allowSetCustomToken",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "allowTerminalMigration",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "allowSetTerminals",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "allowSetController",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "allowAddAccountingContext",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "allowAddPriceFeed",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "ownerMustSendPayouts",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "holdFees",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "scopeCashOutsToLocalBalances",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "useDataHookForCashOut",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "metadata",
+											"type": "uint16",
+											"internalType": "uint16"
+										}
+									]
+								},
+								{
+									"name": "splitGroups",
+									"type": "tuple[]",
+									"internalType": "struct JBSplitGroup[]",
+									"components": [
+										{
+											"name": "groupId",
+											"type": "uint256",
+											"internalType": "uint256"
+										},
+										{
+											"name": "splits",
+											"type": "tuple[]",
+											"internalType": "struct JBSplit[]",
+											"components": [
+												{
+													"name": "percent",
+													"type": "uint32",
+													"internalType": "uint32"
+												},
+												{
+													"name": "projectId",
+													"type": "uint64",
+													"internalType": "uint64"
+												},
+												{
+													"name": "beneficiary",
+													"type": "address",
+													"internalType": "address payable"
+												},
+												{
+													"name": "preferAddToBalance",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "lockedUntil",
+													"type": "uint48",
+													"internalType": "uint48"
+												},
+												{
+													"name": "hook",
+													"type": "address",
+													"internalType": "contract IJBSplitHook"
+												}
+											]
+										}
+									]
+								},
+								{
+									"name": "fundAccessLimitGroups",
+									"type": "tuple[]",
+									"internalType": "struct JBFundAccessLimitGroup[]",
+									"components": [
+										{
+											"name": "terminal",
+											"type": "address",
+											"internalType": "address"
+										},
+										{
+											"name": "token",
+											"type": "address",
+											"internalType": "address"
+										},
+										{
+											"name": "payoutLimits",
+											"type": "tuple[]",
+											"internalType": "struct JBCurrencyAmount[]",
+											"components": [
+												{
+													"name": "amount",
+													"type": "uint224",
+													"internalType": "uint224"
+												},
+												{
+													"name": "currency",
+													"type": "uint32",
+													"internalType": "uint32"
+												}
+											]
+										},
+										{
+											"name": "surplusAllowances",
+											"type": "tuple[]",
+											"internalType": "struct JBCurrencyAmount[]",
+											"components": [
+												{
+													"name": "amount",
+													"type": "uint224",
+													"internalType": "uint224"
+												},
+												{
+													"name": "currency",
+													"type": "uint32",
+													"internalType": "uint32"
+												}
+											]
+										}
+									]
+								}
+							]
+						},
+						{
+							"name": "terminalConfigurations",
+							"type": "tuple[]",
+							"internalType": "struct JBTerminalConfig[]",
+							"components": [
+								{
+									"name": "terminal",
+									"type": "address",
+									"internalType": "contract IJBTerminal"
+								},
+								{
+									"name": "accountingContextsToAccept",
+									"type": "tuple[]",
+									"internalType": "struct JBAccountingContext[]",
+									"components": [
+										{
+											"name": "token",
+											"type": "address",
+											"internalType": "address"
+										},
+										{
+											"name": "decimals",
+											"type": "uint8",
+											"internalType": "uint8"
+										},
+										{
+											"name": "currency",
+											"type": "uint32",
+											"internalType": "uint32"
+										}
+									]
+								}
+							]
+						},
+						{
+							"name": "memo",
+							"type": "string",
+							"internalType": "string"
+						}
+					]
+				},
+				{
+					"name": "projectUri",
+					"type": "string",
+					"internalType": "string"
+				},
+				{
+					"name": "controller",
+					"type": "address",
+					"internalType": "contract IJBController"
+				},
+				{
+					"name": "salt",
+					"type": "bytes32",
+					"internalType": "bytes32"
+				}
+			],
+			"outputs": [
+				{
+					"name": "rulesetId",
+					"type": "uint256",
+					"internalType": "uint256"
+				},
+				{
+					"name": "hook",
+					"type": "address",
+					"internalType": "contract IJB721TiersHook"
+				}
+			],
+			"stateMutability": "nonpayable"
+		},
+		{
+			"type": "function",
+			"name": "onERC721Received",
+			"inputs": [
+				{
+					"name": "",
+					"type": "address",
+					"internalType": "address"
+				},
+				{
+					"name": "from",
+					"type": "address",
+					"internalType": "address"
+				},
+				{
+					"name": "",
+					"type": "uint256",
+					"internalType": "uint256"
+				},
+				{
+					"name": "",
+					"type": "bytes",
+					"internalType": "bytes"
+				}
+			],
+			"outputs": [
+				{
+					"name": "",
+					"type": "bytes4",
+					"internalType": "bytes4"
+				}
+			],
+			"stateMutability": "view"
+		},
+		{
+			"type": "function",
+			"name": "queueRulesetsOf",
+			"inputs": [
+				{
+					"name": "projectId",
+					"type": "uint256",
+					"internalType": "uint256"
+				},
+				{
+					"name": "deployTiersHookConfig",
+					"type": "tuple",
+					"internalType": "struct JBDeploy721TiersHookConfig",
+					"components": [
+						{
+							"name": "name",
+							"type": "string",
+							"internalType": "string"
+						},
+						{
+							"name": "symbol",
+							"type": "string",
+							"internalType": "string"
+						},
+						{
+							"name": "baseUri",
+							"type": "string",
+							"internalType": "string"
+						},
+						{
+							"name": "tokenUriResolver",
+							"type": "address",
+							"internalType": "contract IJB721TokenUriResolver"
+						},
+						{
+							"name": "contractUri",
+							"type": "string",
+							"internalType": "string"
+						},
+						{
+							"name": "tiersConfig",
+							"type": "tuple",
+							"internalType": "struct JB721InitTiersConfig",
+							"components": [
+								{
+									"name": "tiers",
+									"type": "tuple[]",
+									"internalType": "struct JB721TierConfig[]",
+									"components": [
+										{
+											"name": "price",
+											"type": "uint104",
+											"internalType": "uint104"
+										},
+										{
+											"name": "initialSupply",
+											"type": "uint32",
+											"internalType": "uint32"
+										},
+										{
+											"name": "votingUnits",
+											"type": "uint32",
+											"internalType": "uint32"
+										},
+										{
+											"name": "reserveFrequency",
+											"type": "uint16",
+											"internalType": "uint16"
+										},
+										{
+											"name": "reserveBeneficiary",
+											"type": "address",
+											"internalType": "address"
+										},
+										{
+											"name": "encodedIpfsUri",
+											"type": "bytes32",
+											"internalType": "bytes32"
+										},
+										{
+											"name": "category",
+											"type": "uint24",
+											"internalType": "uint24"
+										},
+										{
+											"name": "discountPercent",
+											"type": "uint8",
+											"internalType": "uint8"
+										},
+										{
+											"name": "flags",
+											"type": "tuple",
+											"internalType": "struct JB721TierConfigFlags",
+											"components": [
+												{
+													"name": "allowOwnerMint",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "useReserveBeneficiaryAsDefault",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "transfersPausable",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "useVotingUnits",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "cantBeRemoved",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "cantIncreaseDiscountPercent",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "cantBuyWithCredits",
+													"type": "bool",
+													"internalType": "bool"
+												}
+											]
+										},
+										{
+											"name": "splitPercent",
+											"type": "uint32",
+											"internalType": "uint32"
+										},
+										{
+											"name": "splits",
+											"type": "tuple[]",
+											"internalType": "struct JBSplit[]",
+											"components": [
+												{
+													"name": "percent",
+													"type": "uint32",
+													"internalType": "uint32"
+												},
+												{
+													"name": "projectId",
+													"type": "uint64",
+													"internalType": "uint64"
+												},
+												{
+													"name": "beneficiary",
+													"type": "address",
+													"internalType": "address payable"
+												},
+												{
+													"name": "preferAddToBalance",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "lockedUntil",
+													"type": "uint48",
+													"internalType": "uint48"
+												},
+												{
+													"name": "hook",
+													"type": "address",
+													"internalType": "contract IJBSplitHook"
+												}
+											]
+										}
+									]
+								},
+								{
+									"name": "currency",
+									"type": "uint32",
+									"internalType": "uint32"
+								},
+								{
+									"name": "decimals",
+									"type": "uint8",
+									"internalType": "uint8"
+								}
+							]
+						},
+						{
+							"name": "flags",
+							"type": "tuple",
+							"internalType": "struct JB721TiersHookFlags",
+							"components": [
+								{
+									"name": "noNewTiersWithReserves",
+									"type": "bool",
+									"internalType": "bool"
+								},
+								{
+									"name": "noNewTiersWithVotes",
+									"type": "bool",
+									"internalType": "bool"
+								},
+								{
+									"name": "noNewTiersWithOwnerMinting",
+									"type": "bool",
+									"internalType": "bool"
+								},
+								{
+									"name": "preventOverspending",
+									"type": "bool",
+									"internalType": "bool"
+								},
+								{
+									"name": "issueTokensForSplits",
+									"type": "bool",
+									"internalType": "bool"
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "queueRulesetsConfig",
+					"type": "tuple",
+					"internalType": "struct JBQueueRulesetsConfig",
+					"components": [
+						{
+							"name": "projectId",
+							"type": "uint64",
+							"internalType": "uint64"
+						},
+						{
+							"name": "rulesetConfigurations",
+							"type": "tuple[]",
+							"internalType": "struct JBPayDataHookRulesetConfig[]",
+							"components": [
+								{
+									"name": "mustStartAtOrAfter",
+									"type": "uint48",
+									"internalType": "uint48"
+								},
+								{
+									"name": "duration",
+									"type": "uint32",
+									"internalType": "uint32"
+								},
+								{
+									"name": "weight",
+									"type": "uint112",
+									"internalType": "uint112"
+								},
+								{
+									"name": "weightCutPercent",
+									"type": "uint32",
+									"internalType": "uint32"
+								},
+								{
+									"name": "approvalHook",
+									"type": "address",
+									"internalType": "contract IJBRulesetApprovalHook"
+								},
+								{
+									"name": "metadata",
+									"type": "tuple",
+									"internalType": "struct JBPayDataHookRulesetMetadata",
+									"components": [
+										{
+											"name": "reservedPercent",
+											"type": "uint16",
+											"internalType": "uint16"
+										},
+										{
+											"name": "cashOutTaxRate",
+											"type": "uint16",
+											"internalType": "uint16"
+										},
+										{
+											"name": "baseCurrency",
+											"type": "uint32",
+											"internalType": "uint32"
+										},
+										{
+											"name": "pausePay",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "pauseCreditTransfers",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "allowOwnerMinting",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "allowSetCustomToken",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "allowTerminalMigration",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "allowSetTerminals",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "allowSetController",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "allowAddAccountingContext",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "allowAddPriceFeed",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "ownerMustSendPayouts",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "holdFees",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "scopeCashOutsToLocalBalances",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "useDataHookForCashOut",
+											"type": "bool",
+											"internalType": "bool"
+										},
+										{
+											"name": "metadata",
+											"type": "uint16",
+											"internalType": "uint16"
+										}
+									]
+								},
+								{
+									"name": "splitGroups",
+									"type": "tuple[]",
+									"internalType": "struct JBSplitGroup[]",
+									"components": [
+										{
+											"name": "groupId",
+											"type": "uint256",
+											"internalType": "uint256"
+										},
+										{
+											"name": "splits",
+											"type": "tuple[]",
+											"internalType": "struct JBSplit[]",
+											"components": [
+												{
+													"name": "percent",
+													"type": "uint32",
+													"internalType": "uint32"
+												},
+												{
+													"name": "projectId",
+													"type": "uint64",
+													"internalType": "uint64"
+												},
+												{
+													"name": "beneficiary",
+													"type": "address",
+													"internalType": "address payable"
+												},
+												{
+													"name": "preferAddToBalance",
+													"type": "bool",
+													"internalType": "bool"
+												},
+												{
+													"name": "lockedUntil",
+													"type": "uint48",
+													"internalType": "uint48"
+												},
+												{
+													"name": "hook",
+													"type": "address",
+													"internalType": "contract IJBSplitHook"
+												}
+											]
+										}
+									]
+								},
+								{
+									"name": "fundAccessLimitGroups",
+									"type": "tuple[]",
+									"internalType": "struct JBFundAccessLimitGroup[]",
+									"components": [
+										{
+											"name": "terminal",
+											"type": "address",
+											"internalType": "address"
+										},
+										{
+											"name": "token",
+											"type": "address",
+											"internalType": "address"
+										},
+										{
+											"name": "payoutLimits",
+											"type": "tuple[]",
+											"internalType": "struct JBCurrencyAmount[]",
+											"components": [
+												{
+													"name": "amount",
+													"type": "uint224",
+													"internalType": "uint224"
+												},
+												{
+													"name": "currency",
+													"type": "uint32",
+													"internalType": "uint32"
+												}
+											]
+										},
+										{
+											"name": "surplusAllowances",
+											"type": "tuple[]",
+											"internalType": "struct JBCurrencyAmount[]",
+											"components": [
+												{
+													"name": "amount",
+													"type": "uint224",
+													"internalType": "uint224"
+												},
+												{
+													"name": "currency",
+													"type": "uint32",
+													"internalType": "uint32"
+												}
+											]
+										}
+									]
+								}
+							]
+						},
+						{
+							"name": "memo",
+							"type": "string",
+							"internalType": "string"
+						}
+					]
+				},
+				{
+					"name": "controller",
+					"type": "address",
+					"internalType": "contract IJBController"
+				},
+				{
+					"name": "salt",
+					"type": "bytes32",
+					"internalType": "bytes32"
+				}
+			],
+			"outputs": [
+				{
+					"name": "rulesetId",
+					"type": "uint256",
+					"internalType": "uint256"
+				},
+				{
+					"name": "hook",
+					"type": "address",
+					"internalType": "contract IJB721TiersHook"
+				}
+			],
+			"stateMutability": "nonpayable"
+		},
+		{
+			"type": "function",
+			"name": "trustedForwarder",
+			"inputs": [],
+			"outputs": [
+				{
+					"name": "",
+					"type": "address",
+					"internalType": "address"
+				}
+			],
+			"stateMutability": "view"
+		},
+		{
+			"type": "error",
+			"name": "JBPermissioned_Unauthorized",
+			"inputs": [
+				{
+					"name": "account",
+					"type": "address",
+					"internalType": "address"
+				},
+				{
+					"name": "sender",
+					"type": "address",
+					"internalType": "address"
+				},
+				{
+					"name": "projectId",
+					"type": "uint256",
+					"internalType": "uint256"
+				},
+				{
+					"name": "permissionId",
+					"type": "uint256",
+					"internalType": "uint256"
+				}
+			]
+		}
+	],
+	"args": [
+		"0xE7d0F5ADC3847d4AfD70B7bcd58e34B1AAFDffbc",
+		"0xCF5870A8F942110C2ea89fd03B7a3D578816a265",
+		"0xA19E29ADA73ec9170902fd69A266867f00808622",
+		"0x53d5A7E174A87721c527ED14c7Ce7cb515465607"
+	],
+	"solcInputHash": "e483f56f9c8b604abda4f81b54d06fea",
+	"receipt": {
+		"type": "0x2",
+		"status": "0x1",
+		"cumulativeGasUsed": "0x426b80",
+		"logs": [
+			{
+				"address": "0xa2ea7657440875bf916cbfc0cfa88f13e38ad463",
+				"topics": [
+					"0x572f161235911da04685a68c06adf558fc7e4a36909dca394650e0adc19cc93d",
+					"0x000000000000000000000000755ff2f75a0a586ecfa2b9a3c959cb662458a105",
+					"0x0000000000000000000000005302f9cbdd03815f8c7105f5030d8ef43601581e",
+					"0x7f5efdabfe03ab48828e024b272d57cbf88263079dbab39e2aeeff369379f65d"
+				],
+				"data": "0x0000000000000000000000000000000000000000000000000000000000000000",
+				"blockHash": "0xcfe9e6ee7c398ec6eee9bfddecb12caac0577cd043900ebf28b0dcf645a9c73f",
+				"blockNumber": "0x28778ca",
+				"blockTimestamp": "0x6a225074",
+				"transactionHash": "0x28bda1625b85a952993de7ddb33cd41003c2f13e55ad13bd16dbc40d65dc1884",
+				"transactionIndex": "0xe",
+				"logIndex": "0x4a",
+				"removed": false
+			},
+			{
+				"address": "0xd5136c794ee43bef1ed4cf1eb6dee45b7f803437",
+				"topics": [
+					"0x6895c13664aa4f67288b25d7a21d7aaa34916e355fb9b6fae0a139a9085becb8",
+					"0x0000000000000000000000005302f9cbdd03815f8c7105f5030d8ef43601581e"
+				],
+				"data": "0x",
+				"blockHash": "0xcfe9e6ee7c398ec6eee9bfddecb12caac0577cd043900ebf28b0dcf645a9c73f",
+				"blockNumber": "0x28778ca",
+				"blockTimestamp": "0x6a225074",
+				"transactionHash": "0x28bda1625b85a952993de7ddb33cd41003c2f13e55ad13bd16dbc40d65dc1884",
+				"transactionIndex": "0xe",
+				"logIndex": "0x4b",
+				"removed": false
+			},
+			{
+				"address": "0x5302f9cbdd03815f8c7105f5030d8ef43601581e",
+				"topics": [
+					"0xa65fb05c5808f5f389d72edeaf719ce38f4cc55c1f69ca3cbfb31c21501caa07",
+					"0x38babc3aa77d57396faddc316571a6e6370dbe4fbc4851c71d56849c112017eb"
+				],
+				"data": "0x0000000000000000000000000000000000000000000000000000000000000021",
+				"blockHash": "0xcfe9e6ee7c398ec6eee9bfddecb12caac0577cd043900ebf28b0dcf645a9c73f",
+				"blockNumber": "0x28778ca",
+				"blockTimestamp": "0x6a225074",
+				"transactionHash": "0x28bda1625b85a952993de7ddb33cd41003c2f13e55ad13bd16dbc40d65dc1884",
+				"transactionIndex": "0xe",
+				"logIndex": "0x4c",
+				"removed": false
+			}
+		],
+		"logsBloom": "0x00000000000010000000020000080000000000000000000000000000000000000000000000000000000000000040000002000000000000000000010000000000000000000000200000000000000000000000000000000000400000000001000000000000000000000000000000000800000000000000000000001000000000000800000008000000000104000000040200000000000000000000000100000000004000040000000000000000000000002200000000000000000000000004000000000002040000000000000000000000000000000000000000000000000000000000000000000000000000000040000200000000008080000000000000000100",
+		"transactionHash": "0x28bda1625b85a952993de7ddb33cd41003c2f13e55ad13bd16dbc40d65dc1884",
+		"transactionIndex": "0xe",
+		"blockHash": "0xcfe9e6ee7c398ec6eee9bfddecb12caac0577cd043900ebf28b0dcf645a9c73f",
+		"blockNumber": "0x28778ca",
+		"gasUsed": "0x2ca967",
+		"effectiveGasPrice": "0x802c80",
+		"blobGasUsed": "0x29465e",
+		"from": "0x755ff2f75a0a586ecfa2b9a3c959cb662458a105",
+		"to": "0xa2ea7657440875bf916cbfc0cfa88f13e38ad463",
+		"contractAddress": null,
+		"l1GasPrice": "0x1fe65d46e",
+		"l1GasUsed": "0x17b18",
+		"l1Fee": "0x2a4843175c6",
+		"l1BaseFeeScalar": "0x44d",
+		"l1BlobBaseFee": "0x1da54364",
+		"l1BlobBaseFeeScalar": "0xa118b",
+		"daFootprintGasScalar": "0x1be"
+	},
+	"bytecode": "0x610100604052348015610010575f5ffd5b5060405161319c38038061319c83398101604081905261002f91610069565b6001600160a01b0390811660805291821660a05291811660c0521660e0526100c5565b6001600160a01b0381168114610066575f5ffd5b50565b5f5f5f5f6080858703121561007c575f5ffd5b845161008781610052565b602086015190945061009881610052565b60408601519093506100a981610052565b60608601519092506100ba81610052565b939692955090935050565b60805160a05160c05160e05161305e61013e5f395f81816101e701528181610457015281816106d4015261097c01525f81816101b40152818161027101528181610337015281816105dd015261088001525f818161024c0152610b2c01525f818161011d0152818161016b01526114d8015261305e5ff3fe608060405260043610610084575f3560e01c806388bc2ef31161005757806388bc2ef3146101a3578063abf8c5c8146101d6578063c04ae38f14610209578063c96c06541461021c578063f434c9141461023b575f5ffd5b8063150b7a0214610088578063334d3b16146100c5578063572b6c05146101015780637da0a8771461015d575b5f5ffd5b348015610093575f5ffd5b506100a76100a2366004611671565b61026e565b6040516001600160e01b031990911681526020015b60405180910390f35b3480156100d0575f5ffd5b506100e46100df366004611705565b610332565b604080519283526001600160a01b039091166020830152016100bc565b34801561010c575f5ffd5b5061014d61011b3660046117bd565b7f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0390811691161490565b60405190151581526020016100bc565b348015610168575f5ffd5b507f00000000000000000000000000000000000000000000000000000000000000005b6040516001600160a01b0390911681526020016100bc565b3480156101ae575f5ffd5b5061018b7f000000000000000000000000000000000000000000000000000000000000000081565b3480156101e1575f5ffd5b5061018b7f000000000000000000000000000000000000000000000000000000000000000081565b6100e46102173660046117df565b6105d8565b348015610227575f5ffd5b506100e461023636600461186d565b610879565b348015610246575f5ffd5b5061018b7f000000000000000000000000000000000000000000000000000000000000000081565b5f7f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663293c49996040518163ffffffff1660e01b8152600401602060405180830381865afa1580156102cb573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906102ef91906118e5565b6001600160a01b0316336001600160a01b031614158061031757506001600160a01b03851615155b15610320575f5ffd5b50630a85bd0160e11b95945050505050565b5f5f5f7f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663293c49996040518163ffffffff1660e01b8152600401602060405180830381865afa158015610391573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906103b591906118e5565b6040516331a9108f60e11b8152600481018c90529091505f906001600160a01b03831690636352211e90602401602060405180830381865afa1580156103fd573d5f5f3e3d5ffd5b505050506040513d601f19601f8201168201806040525081019061042191906118e5565b905061042f818c6003610ac1565b61043b818c600f610ac1565b861561044d5761044d818c6007610ac1565b6001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016636f6947868c8c88156104c35761048c610be0565b604080516001600160a01b03909216602083015281018a9052606001604051602081830303815290604052805190602001206104c5565b5f5b6040518463ffffffff1660e01b81526004016104e393929190611e0c565b6020604051808303815f875af11580156104ff573d5f5f3e3d5ffd5b505050506040513d601f19601f8201168201806040525081019061052391906118e5565b6040516351106b4b60e11b8152600481018d90529093506001600160a01b0384169063a220d696906024015f604051808303815f87803b158015610565575f5ffd5b505af1158015610577573d5f5f3e3d5ffd5b505050506105c88b8a6105899061283a565b8a8a8080601f0160208091040260200160405190810160405280939291908181526020018383808284375f920191909152508992508c9150610bee9050565b9350505097509795505050505050565b5f5f5f7f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663293c49996040518163ffffffff1660e01b8152600401602060405180830381865afa158015610637573d5f5f3e3d5ffd5b505050506040513d601f19601f8201168201806040525081019061065b91906118e5565b60405163180e2b1160e31b81523060048201529091506001600160a01b0382169063c071588890349060240160206040518083038185885af11580156106a3573d5f5f3e3d5ffd5b50505050506040513d601f19601f820116820180604052508101906106c891906128e1565b92506001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016636f6947868489871561074057610709610be0565b604080516001600160a01b039092166020830152810189905260600160405160208183030381529060405280519060200120610742565b5f5b6040518463ffffffff1660e01b815260040161076093929190611e0c565b6020604051808303815f875af115801561077c573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906107a091906118e5565b91506107b6836107af886128f8565b8488610ee7565b6040516351106b4b60e11b8152600481018490526001600160a01b0383169063a220d696906024015f604051808303815f87803b1580156107f5575f5ffd5b505af1158015610807573d5f5f3e3d5ffd5b5050604051632142170760e11b81523060048201526001600160a01b038b8116602483015260448201879052841692506342842e0e91506064015f604051808303815f87803b158015610858575f5ffd5b505af115801561086a573d5f5f3e3d5ffd5b50505050509550959350505050565b5f5f6109727f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663293c49996040518163ffffffff1660e01b8152600401602060405180830381865afa1580156108da573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906108fe91906118e5565b6001600160a01b0316636352211e896040518263ffffffff1660e01b815260040161092b91815260200190565b602060405180830381865afa158015610946573d5f5f3e3d5ffd5b505050506040513d601f19601f8201168201806040525081019061096a91906118e5565b886002610ac1565b6001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016636f694786888886156109e8576109b1610be0565b604080516001600160a01b0390921660208301528101889052606001604051602081830303815290604052805190602001206109ea565b5f5b6040518463ffffffff1660e01b8152600401610a0893929190611e0c565b6020604051808303815f875af1158015610a24573d5f5f3e3d5ffd5b505050506040513d601f19601f82011682018060405250810190610a4891906118e5565b6040516351106b4b60e11b8152600481018990529091506001600160a01b0382169063a220d696906024015f604051808303815f87803b158015610a8a575f5ffd5b505af1158015610a9c573d5f5f3e3d5ffd5b50505050610ab58786610aae9061294c565b83876111d9565b91509550959350505050565b5f610aca610be0565b9050836001600160a01b0316816001600160a01b031614158015610b975750604051631a45b42760e11b81526001600160a01b0382811660048301528581166024830152604482018590526064820184905260016084830181905260a48301527f0000000000000000000000000000000000000000000000000000000000000000169063348b684e9060c401602060405180830381865afa158015610b71573d5f5f3e3d5ffd5b505050506040513d601f19601f82011682018060405250810190610b9591906129c9565b155b15610bda57604051631326f75560e11b81526001600160a01b03808616600483015282166024820152604481018490526064810183905260840160405180910390fd5b50505050565b5f610be96114c7565b905090565b5f5f8560200151516001600160401b03811115610c0d57610c0d611f18565b604051908082528060200260200182016040528015610c4657816020015b610c33611531565b815260200190600190039081610c2b5790505b5090505f5b866020015151811015610e5d575f87602001518281518110610c6f57610c6f6129e4565b60200260200101519050604051806101000160405280825f015165ffffffffffff168152602001826020015163ffffffff16815260200182604001516001600160701b03168152602001826060015163ffffffff16815260200182608001516001600160a01b031681526020016040518061026001604052808460a001515f015161ffff1681526020018460a001516020015161ffff1681526020018460a001516040015163ffffffff1681526020018460a0015160600151151581526020018460a0015160800151151581526020018460a0015160a00151151581526020018460a0015160c00151151581526020018460a0015160e00151151581526020018460a001516101000151151581526020018460a001516101200151151581526020018460a001516101400151151581526020018460a001516101600151151581526020018460a001516101800151151581526020018460a001516101a00151151581526020018460a001516101c00151151581526020016001151581526020018460a001516101e0015115158152602001896001600160a01b031681526020018460a00151610200015161ffff1681525081526020018260c0015181526020018260e00151815250838381518110610e4957610e496129e4565b602090810291909101015250600101610c4b565b50604080870151606088015191516307128b6b60e31b81525f926001600160a01b038716926338945b5892610e9b928d928c92899290600401612e9c565b6020604051808303815f875af1158015610eb7573d5f5f3e3d5ffd5b505050506040513d601f19601f82011682018060405250810190610edb91906128e1565b98975050505050505050565b5f8360200151516001600160401b03811115610f0557610f05611f18565b604051908082528060200260200182016040528015610f3e57816020015b610f2b611531565b815260200190600190039081610f235790505b5090505f5b846020015151811015611155575f85602001518281518110610f6757610f676129e4565b60200260200101519050604051806101000160405280825f015165ffffffffffff168152602001826020015163ffffffff16815260200182604001516001600160701b03168152602001826060015163ffffffff16815260200182608001516001600160a01b031681526020016040518061026001604052808460a001515f015161ffff1681526020018460a001516020015161ffff1681526020018460a001516040015163ffffffff1681526020018460a0015160600151151581526020018460a0015160800151151581526020018460a0015160a00151151581526020018460a0015160c00151151581526020018460a0015160e00151151581526020018460a001516101000151151581526020018460a001516101200151151581526020018460a001516101400151151581526020018460a001516101600151151581526020018460a001516101800151151581526020018460a001516101a00151151581526020018460a001516101c00151151581526020016001151581526020018460a001516101e0015115158152602001886001600160a01b031681526020018460a00151610200015161ffff1681525081526020018260c0015181526020018260e00151815250838381518110611141576111416129e4565b602090810291909101015250600101610f43565b508351604080860151606087015191516307128b6b60e31b81526001600160a01b038616936338945b5893611191938b93889290600401612e9c565b6020604051808303815f875af11580156111ad573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906111d191906128e1565b505050505050565b5f5f8460200151516001600160401b038111156111f8576111f8611f18565b60405190808252806020026020018201604052801561123157816020015b61121e611531565b8152602001906001900390816112165790505b5090505f5b856020015151811015611448575f8660200151828151811061125a5761125a6129e4565b60200260200101519050604051806101000160405280825f015165ffffffffffff168152602001826020015163ffffffff16815260200182604001516001600160701b03168152602001826060015163ffffffff16815260200182608001516001600160a01b031681526020016040518061026001604052808460a001515f015161ffff1681526020018460a001516020015161ffff1681526020018460a001516040015163ffffffff1681526020018460a0015160600151151581526020018460a0015160800151151581526020018460a0015160a00151151581526020018460a0015160c00151151581526020018460a0015160e00151151581526020018460a001516101000151151581526020018460a001516101200151151581526020018460a001516101400151151581526020018460a001516101600151151581526020018460a001516101800151151581526020018460a001516101a00151151581526020018460a001516101c00151151581526020016001151581526020018460a001516101e0015115158152602001896001600160a01b031681526020018460a00151610200015161ffff1681525081526020018260c0015181526020018260e00151815250838381518110611434576114346129e4565b602090810291909101015250600101611236565b5060408086015190516303141db760e41b81526001600160a01b03851691633141db709161147d918a91869190600401612fb3565b6020604051808303815f875af1158015611499573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906114bd91906128e1565b9695505050505050565b5f36601480821080159061150357507f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031633145b156115295761151636828403815f612fdd565b61151f91613004565b60601c9250505090565b339250505090565b6040805161010080820183525f808352602080840182905283850182905260608085018390526080808601849052865161026081018852848152928301849052958201839052810182905293840181905260a084810182905260c0850182905260e0850182905291840181905261012084018190526101408401819052610160840181905261018084018190526101a084018190526101c084018190526101e0840181905261020084018190526102208401819052610240840152909190820190815260200160608152602001606081525090565b6001600160a01b038116811461161a575f5ffd5b50565b803561162881611606565b919050565b5f5f83601f84011261163d575f5ffd5b5081356001600160401b03811115611653575f5ffd5b60208301915083602082850101111561166a575f5ffd5b9250929050565b5f5f5f5f5f60808688031215611685575f5ffd5b853561169081611606565b945060208601356116a081611606565b93506040860135925060608601356001600160401b038111156116c1575f5ffd5b6116cd8882890161162d565b969995985093965092949392505050565b5f61016082840312156116ef575f5ffd5b50919050565b5f608082840312156116ef575f5ffd5b5f5f5f5f5f5f5f60c0888a03121561171b575f5ffd5b8735965060208801356001600160401b03811115611737575f5ffd5b6117438a828b016116de565b96505060408801356001600160401b0381111561175e575f5ffd5b61176a8a828b016116f5565b95505060608801356001600160401b03811115611785575f5ffd5b6117918a828b0161162d565b90955093505060808801356117a581611606565b96999598509396929591949193505060a09091013590565b5f602082840312156117cd575f5ffd5b81356117d881611606565b9392505050565b5f5f5f5f5f60a086880312156117f3575f5ffd5b85356117fe81611606565b945060208601356001600160401b03811115611818575f5ffd5b611824888289016116de565b94505060408601356001600160401b0381111561183f575f5ffd5b61184b888289016116f5565b935050606086013561185c81611606565b949793965091946080013592915050565b5f5f5f5f5f60a08688031215611881575f5ffd5b8535945060208601356001600160401b0381111561189d575f5ffd5b6118a9888289016116de565b94505060408601356001600160401b038111156118c4575f5ffd5b8601606081890312156118d5575f5ffd5b9250606086013561185c81611606565b5f602082840312156118f5575f5ffd5b81516117d881611606565b5f5f8335601e19843603018112611915575f5ffd5b83016020810192503590506001600160401b03811115611933575f5ffd5b80360382131561166a575f5ffd5b81835281816020850137505f828201602090810191909152601f909101601f19169091010190565b5f8235605e1983360301811261197d575f5ffd5b90910192915050565b80356cffffffffffffffffffffffffff81168114611628575f5ffd5b803563ffffffff81168114611628575f5ffd5b803561ffff81168114611628575f5ffd5b803562ffffff81168114611628575f5ffd5b803560ff81168114611628575f5ffd5b801515811461161a575f5ffd5b8035611628816119e8565b8035611a0b816119e8565b151582526020810135611a1d816119e8565b151560208301526040810135611a32816119e8565b15156040830152611a45606082016119f5565b15156060830152611a58608082016119f5565b15156080830152611a6b60a082016119f5565b151560a0830152611a7e60c082016119f5565b80151560c0840152505050565b505050565b5f5f8335601e19843603018112611aa5575f5ffd5b83016020810192503590506001600160401b03811115611ac3575f5ffd5b60c08102360382131561166a575f5ffd5b80356001600160401b0381168114611628575f5ffd5b803565ffffffffffff81168114611628575f5ffd5b8183526020830192505f815f5b84811015611bb65763ffffffff611b22836119a2565b1686526001600160401b03611b3960208401611ad4565b1660208701526040820135611b4d81611606565b6001600160a01b031660408701526060820135611b69816119e8565b1515606087015265ffffffffffff611b8360808401611aea565b166080870152611b9560a0830161161d565b6001600160a01b031660a087015260c0958601959190910190600101611b0c565b5093949350505050565b5f606083018235601e19843603018112611bd8575f5ffd5b83018035602082016001600160401b03821115611bf3575f5ffd5b8160051b803603821315611c05575f5ffd5b606088529382905260809387018401935f90880161023e1936869003015b84831015611d6957898703607f190182528335818112611c41575f5ffd5b860160208101611c6789611c5483611986565b6cffffffffffffffffffffffffff169052565b611c73604083016119a2565b63ffffffff1660208a0152611c8a606083016119a2565b63ffffffff1660408a0152611ca1608083016119b5565b61ffff1660608a0152611cb660a0830161161d565b6001600160a01b031660808a015260c082013560a08a0152611cda60e083016119c6565b62ffffff1660c08a0152611cf161010083016119d8565b60ff1660e08a0152611d0b6101008a016101208401611a00565b611d1861020083016119a2565b63ffffffff166101e08a0152611d32610220830182611a90565b925090506102206102008a0152611d4e6102208a018383611aff565b98505050602084019350602082019150600183019250611c23565b505050505050611d7b602084016119a2565b63ffffffff166020850152611d92604084016119d8565b60ff81166040860152509392505050565b8035611dae816119e8565b151582526020810135611dc0816119e8565b151560208301526040810135611dd5816119e8565b151560408301526060810135611dea816119e8565b151560608301526080810135611dff816119e8565b8015156080840152505050565b838152606060208201525f611e218485611900565b6101606060850152611e386101c085018284611941565b915050611e486020860186611900565b848303605f19016080860152611e5f838284611941565b92505050611e706040860186611900565b848303605f190160a0860152611e87838284611941565b925050506060850135611e9981611606565b6001600160a01b031660c0840152611eb46080860186611900565b848303605f190160e0860152611ecb838284611941565b92505050611edc60a0860186611969565b838203605f1901610100850152611ef38282611bc0565b915050611f07610120840160c08701611da3565b604092909201929092529392505050565b634e487b7160e01b5f52604160045260245ffd5b60405161022081016001600160401b0381118282101715611f4f57611f4f611f18565b60405290565b604080519081016001600160401b0381118282101715611f4f57611f4f611f18565b60405160c081016001600160401b0381118282101715611f4f57611f4f611f18565b604051608081016001600160401b0381118282101715611f4f57611f4f611f18565b60405161010081016001600160401b0381118282101715611f4f57611f4f611f18565b604051606081016001600160401b0381118282101715611f4f57611f4f611f18565b604051601f8201601f191681016001600160401b038111828210171561202857612028611f18565b604052919050565b5f6001600160401b0382111561204857612048611f18565b5060051b60200190565b80356001600160701b0381168114611628575f5ffd5b5f6102208284031215612079575f5ffd5b612081611f2c565b905061208c826119b5565b815261209a602083016119b5565b60208201526120ab604083016119a2565b60408201526120bc606083016119f5565b60608201526120cd608083016119f5565b60808201526120de60a083016119f5565b60a08201526120ef60c083016119f5565b60c082015261210060e083016119f5565b60e082015261211261010083016119f5565b61010082015261212561012083016119f5565b61012082015261213861014083016119f5565b61014082015261214b61016083016119f5565b61016082015261215e61018083016119f5565b6101808201526121716101a083016119f5565b6101a08201526121846101c083016119f5565b6101c08201526121976101e083016119f5565b6101e08201526121aa61020083016119b5565b61020082015292915050565b5f82601f8301126121c5575f5ffd5b81356121d86121d382612030565b612000565b8082825260208201915060208360051b8601019250858311156121f9575f5ffd5b602085015b8381101561235c5780356001600160401b0381111561221b575f5ffd5b86016040818903601f19011215612230575f5ffd5b612238611f55565b6020820135815260408201356001600160401b03811115612257575f5ffd5b60208184010192505088601f83011261226e575f5ffd5b813561227c6121d382612030565b80828252602082019150602060c0840286010192508b83111561229d575f5ffd5b6020850194505b8285101561233d5760c0858d0312156122bb575f5ffd5b6122c3611f77565b6122cc866119a2565b81526122da60208701611ad4565b602082015260408601356122ed81611606565b60408201526060860135612300816119e8565b606082015261231160808701611aea565b608082015260a086013561232481611606565b60a0820152825260c094909401936020909101906122a4565b80602085015250505080855250506020830192506020810190506121fe565b5095945050505050565b5f82601f830112612375575f5ffd5b81356123836121d382612030565b8082825260208201915060208360061b8601019250858311156123a4575f5ffd5b602085015b8381101561235c57604081880312156123c0575f5ffd5b6123c8611f55565b81356001600160e01b03811681146123de575f5ffd5b81526123ec602083016119a2565b6020820152808452506020830192506040810190506123a9565b5f82601f830112612415575f5ffd5b81356124236121d382612030565b8082825260208201915060208360051b860101925085831115612444575f5ffd5b602085015b8381101561235c5780356001600160401b03811115612466575f5ffd5b86016080818903601f1901121561247b575f5ffd5b612483611f99565b602082013561249181611606565b815260408201356124a181611606565b602082015260608201356001600160401b038111156124be575f5ffd5b6124cd8a602083860101612366565b60408301525060808201356001600160401b038111156124eb575f5ffd5b6124fa8a602083860101612366565b60608301525084525060209283019201612449565b5f82601f83011261251e575f5ffd5b813561252c6121d382612030565b8082825260208201915060208360051b86010192508583111561254d575f5ffd5b602085015b8381101561235c5780356001600160401b0381111561256f575f5ffd5b8601610300818903601f19011215612585575f5ffd5b61258d611fbb565b61259960208301611aea565b81526125a7604083016119a2565b60208201526125b860608301612052565b60408201526125c9608083016119a2565b60608201526125da60a0830161161d565b60808201526125ec8960c08401612068565b60a08201526102e08201356001600160401b0381111561260a575f5ffd5b6126198a6020838601016121b6565b60c0830152506103008201356001600160401b03811115612638575f5ffd5b6126478a602083860101612406565b60e08301525084525060209283019201612552565b5f82601f83011261266b575f5ffd5b81356126796121d382612030565b8082825260208201915060208360051b86010192508583111561269a575f5ffd5b602085015b8381101561235c5780356001600160401b038111156126bc575f5ffd5b86016040818903601f190112156126d1575f5ffd5b6126d9611f55565b60208201356126e781611606565b815260408201356001600160401b03811115612701575f5ffd5b60208184010192505088601f830112612718575f5ffd5b81356127266121d382612030565b8082825260208201915060206060840286010192508b831115612747575f5ffd5b6020850194505b828510156127b0576060858d031215612765575f5ffd5b61276d611fde565b853561277881611606565b8152612786602087016119d8565b6020820152612797604087016119a2565b604082015282526060949094019360209091019061274e565b806020850152505050808552505060208301925060208101905061269f565b5f82601f8301126127de575f5ffd5b81356001600160401b038111156127f7576127f7611f18565b61280a601f8201601f1916602001612000565b81815284602083860101111561281e575f5ffd5b816020850160208301375f918101602001919091529392505050565b5f6080823603121561284a575f5ffd5b612852611f99565b61285b83611ad4565b815260208301356001600160401b03811115612875575f5ffd5b6128813682860161250f565b60208301525060408301356001600160401b0381111561289f575f5ffd5b6128ab3682860161265c565b60408301525060608301356001600160401b038111156128c9575f5ffd5b6128d5368286016127cf565b60608301525092915050565b5f602082840312156128f1575f5ffd5b5051919050565b5f60808236031215612908575f5ffd5b612910611f99565b82356001600160401b03811115612925575f5ffd5b612931368286016127cf565b82525060208301356001600160401b03811115612875575f5ffd5b5f6060823603121561295c575f5ffd5b612964611fde565b61296d83611ad4565b815260208301356001600160401b03811115612987575f5ffd5b6129933682860161250f565b60208301525060408301356001600160401b038111156129b1575f5ffd5b6129bd368286016127cf565b60408301525092915050565b5f602082840312156129d9575f5ffd5b81516117d8816119e8565b634e487b7160e01b5f52603260045260245ffd5b5f81518084528060208401602086015e5f602082860101526020601f19601f83011685010191505092915050565b805161ffff1682526020810151612a43602084018261ffff169052565b506040810151612a5b604084018263ffffffff169052565b506060810151612a6f606084018215159052565b506080810151612a83608084018215159052565b5060a0810151612a9760a084018215159052565b5060c0810151612aab60c084018215159052565b5060e0810151612abf60e084018215159052565b50610100810151612ad561010084018215159052565b50610120810151612aeb61012084018215159052565b50610140810151612b0161014084018215159052565b50610160810151612b1761016084018215159052565b50610180810151612b2d61018084018215159052565b506101a0810151612b436101a084018215159052565b506101c0810151612b596101c084018215159052565b506101e0810151612b6f6101e084018215159052565b50610200810151612b8561020084018215159052565b50610220810151612ba26102208401826001600160a01b03169052565b50610240810151611a8b61024084018261ffff169052565b5f82825180855260208501945060208160051b830101602085015f5b83811015612ca857848303601f19018852815180518452602090810151604082860181905281519086018190529101905f9060608601905b80831015612c8f57835163ffffffff81511683526001600160401b03602082015116602084015260018060a01b03604082015116604084015260608101511515606084015265ffffffffffff608082015116608084015260018060a01b0360a08201511660a08401525060c082019150602084019350600183019250612c0e565b5060209a8b019a90955093909301925050600101612bd6565b50909695505050505050565b5f8151808452602084019350602083015f5b82811015611bb657815180516001600160e01b0316875260209081015163ffffffff168188015260409096019590910190600101612cc6565b5f82825180855260208501945060208160051b830101602085015f5b83811015612ca857848303601f19018852815180516001600160a01b03908116855260208083015190911690850152604080820151608091860182905290612d6590860182612cb4565b9050606082015191508481036060860152612d808183612cb4565b60209a8b019a90955093909301925050600101612d1b565b5f82825180855260208501945060208160051b830101602085015f5b83811015612ca857848303601f190188528151805165ffffffffffff1684526020810151612dea602086018263ffffffff169052565b506040810151612e0560408601826001600160701b03169052565b506060810151612e1d606086018263ffffffff169052565b506080810151612e3860808601826001600160a01b03169052565b5060a0810151612e4b60a0860182612a26565b5060c0810151610340610300860152612e68610340860182612bba565b905060e08201519150848103610320860152612e848183612cff565b60209a8b019a90955093909301925050600101612db4565b85815260a060208201525f612eb460a08301876129f8565b8281036040840152612ec68187612d98565b9050828103606084015280855180835260208301915060208160051b840101602088015f5b83811015612f9057858303601f19018552815180516001600160a01b03168452602090810151604082860181905281519086018190529101905f9060608601905b80831015612f7757835160018060a01b03815116835260ff602082015116602084015263ffffffff604082015116604084015250606082019150602084019350600183019250612f2c565b5060209788019790955093909301925050600101612eeb565b50508581036080870152612fa481886129f8565b9b9a5050505050505050505050565b838152606060208201525f612fcb6060830185612d98565b82810360408401526114bd81856129f8565b5f5f85851115612feb575f5ffd5b83861115612ff7575f5ffd5b5050820193919092039150565b80356bffffffffffffffffffffffff19811690601484101561304a576bffffffffffffffffffffffff196bffffffffffffffffffffffff198560140360031b1b82161691505b509291505056fea164736f6c634300081c000a",
+	"deployedBytecode": "0x608060405260043610610084575f3560e01c806388bc2ef31161005757806388bc2ef3146101a3578063abf8c5c8146101d6578063c04ae38f14610209578063c96c06541461021c578063f434c9141461023b575f5ffd5b8063150b7a0214610088578063334d3b16146100c5578063572b6c05146101015780637da0a8771461015d575b5f5ffd5b348015610093575f5ffd5b506100a76100a2366004611671565b61026e565b6040516001600160e01b031990911681526020015b60405180910390f35b3480156100d0575f5ffd5b506100e46100df366004611705565b610332565b604080519283526001600160a01b039091166020830152016100bc565b34801561010c575f5ffd5b5061014d61011b3660046117bd565b7f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0390811691161490565b60405190151581526020016100bc565b348015610168575f5ffd5b507f00000000000000000000000000000000000000000000000000000000000000005b6040516001600160a01b0390911681526020016100bc565b3480156101ae575f5ffd5b5061018b7f000000000000000000000000000000000000000000000000000000000000000081565b3480156101e1575f5ffd5b5061018b7f000000000000000000000000000000000000000000000000000000000000000081565b6100e46102173660046117df565b6105d8565b348015610227575f5ffd5b506100e461023636600461186d565b610879565b348015610246575f5ffd5b5061018b7f000000000000000000000000000000000000000000000000000000000000000081565b5f7f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663293c49996040518163ffffffff1660e01b8152600401602060405180830381865afa1580156102cb573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906102ef91906118e5565b6001600160a01b0316336001600160a01b031614158061031757506001600160a01b03851615155b15610320575f5ffd5b50630a85bd0160e11b95945050505050565b5f5f5f7f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663293c49996040518163ffffffff1660e01b8152600401602060405180830381865afa158015610391573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906103b591906118e5565b6040516331a9108f60e11b8152600481018c90529091505f906001600160a01b03831690636352211e90602401602060405180830381865afa1580156103fd573d5f5f3e3d5ffd5b505050506040513d601f19601f8201168201806040525081019061042191906118e5565b905061042f818c6003610ac1565b61043b818c600f610ac1565b861561044d5761044d818c6007610ac1565b6001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016636f6947868c8c88156104c35761048c610be0565b604080516001600160a01b03909216602083015281018a9052606001604051602081830303815290604052805190602001206104c5565b5f5b6040518463ffffffff1660e01b81526004016104e393929190611e0c565b6020604051808303815f875af11580156104ff573d5f5f3e3d5ffd5b505050506040513d601f19601f8201168201806040525081019061052391906118e5565b6040516351106b4b60e11b8152600481018d90529093506001600160a01b0384169063a220d696906024015f604051808303815f87803b158015610565575f5ffd5b505af1158015610577573d5f5f3e3d5ffd5b505050506105c88b8a6105899061283a565b8a8a8080601f0160208091040260200160405190810160405280939291908181526020018383808284375f920191909152508992508c9150610bee9050565b9350505097509795505050505050565b5f5f5f7f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663293c49996040518163ffffffff1660e01b8152600401602060405180830381865afa158015610637573d5f5f3e3d5ffd5b505050506040513d601f19601f8201168201806040525081019061065b91906118e5565b60405163180e2b1160e31b81523060048201529091506001600160a01b0382169063c071588890349060240160206040518083038185885af11580156106a3573d5f5f3e3d5ffd5b50505050506040513d601f19601f820116820180604052508101906106c891906128e1565b92506001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016636f6947868489871561074057610709610be0565b604080516001600160a01b039092166020830152810189905260600160405160208183030381529060405280519060200120610742565b5f5b6040518463ffffffff1660e01b815260040161076093929190611e0c565b6020604051808303815f875af115801561077c573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906107a091906118e5565b91506107b6836107af886128f8565b8488610ee7565b6040516351106b4b60e11b8152600481018490526001600160a01b0383169063a220d696906024015f604051808303815f87803b1580156107f5575f5ffd5b505af1158015610807573d5f5f3e3d5ffd5b5050604051632142170760e11b81523060048201526001600160a01b038b8116602483015260448201879052841692506342842e0e91506064015f604051808303815f87803b158015610858575f5ffd5b505af115801561086a573d5f5f3e3d5ffd5b50505050509550959350505050565b5f5f6109727f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663293c49996040518163ffffffff1660e01b8152600401602060405180830381865afa1580156108da573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906108fe91906118e5565b6001600160a01b0316636352211e896040518263ffffffff1660e01b815260040161092b91815260200190565b602060405180830381865afa158015610946573d5f5f3e3d5ffd5b505050506040513d601f19601f8201168201806040525081019061096a91906118e5565b886002610ac1565b6001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016636f694786888886156109e8576109b1610be0565b604080516001600160a01b0390921660208301528101889052606001604051602081830303815290604052805190602001206109ea565b5f5b6040518463ffffffff1660e01b8152600401610a0893929190611e0c565b6020604051808303815f875af1158015610a24573d5f5f3e3d5ffd5b505050506040513d601f19601f82011682018060405250810190610a4891906118e5565b6040516351106b4b60e11b8152600481018990529091506001600160a01b0382169063a220d696906024015f604051808303815f87803b158015610a8a575f5ffd5b505af1158015610a9c573d5f5f3e3d5ffd5b50505050610ab58786610aae9061294c565b83876111d9565b91509550959350505050565b5f610aca610be0565b9050836001600160a01b0316816001600160a01b031614158015610b975750604051631a45b42760e11b81526001600160a01b0382811660048301528581166024830152604482018590526064820184905260016084830181905260a48301527f0000000000000000000000000000000000000000000000000000000000000000169063348b684e9060c401602060405180830381865afa158015610b71573d5f5f3e3d5ffd5b505050506040513d601f19601f82011682018060405250810190610b9591906129c9565b155b15610bda57604051631326f75560e11b81526001600160a01b03808616600483015282166024820152604481018490526064810183905260840160405180910390fd5b50505050565b5f610be96114c7565b905090565b5f5f8560200151516001600160401b03811115610c0d57610c0d611f18565b604051908082528060200260200182016040528015610c4657816020015b610c33611531565b815260200190600190039081610c2b5790505b5090505f5b866020015151811015610e5d575f87602001518281518110610c6f57610c6f6129e4565b60200260200101519050604051806101000160405280825f015165ffffffffffff168152602001826020015163ffffffff16815260200182604001516001600160701b03168152602001826060015163ffffffff16815260200182608001516001600160a01b031681526020016040518061026001604052808460a001515f015161ffff1681526020018460a001516020015161ffff1681526020018460a001516040015163ffffffff1681526020018460a0015160600151151581526020018460a0015160800151151581526020018460a0015160a00151151581526020018460a0015160c00151151581526020018460a0015160e00151151581526020018460a001516101000151151581526020018460a001516101200151151581526020018460a001516101400151151581526020018460a001516101600151151581526020018460a001516101800151151581526020018460a001516101a00151151581526020018460a001516101c00151151581526020016001151581526020018460a001516101e0015115158152602001896001600160a01b031681526020018460a00151610200015161ffff1681525081526020018260c0015181526020018260e00151815250838381518110610e4957610e496129e4565b602090810291909101015250600101610c4b565b50604080870151606088015191516307128b6b60e31b81525f926001600160a01b038716926338945b5892610e9b928d928c92899290600401612e9c565b6020604051808303815f875af1158015610eb7573d5f5f3e3d5ffd5b505050506040513d601f19601f82011682018060405250810190610edb91906128e1565b98975050505050505050565b5f8360200151516001600160401b03811115610f0557610f05611f18565b604051908082528060200260200182016040528015610f3e57816020015b610f2b611531565b815260200190600190039081610f235790505b5090505f5b846020015151811015611155575f85602001518281518110610f6757610f676129e4565b60200260200101519050604051806101000160405280825f015165ffffffffffff168152602001826020015163ffffffff16815260200182604001516001600160701b03168152602001826060015163ffffffff16815260200182608001516001600160a01b031681526020016040518061026001604052808460a001515f015161ffff1681526020018460a001516020015161ffff1681526020018460a001516040015163ffffffff1681526020018460a0015160600151151581526020018460a0015160800151151581526020018460a0015160a00151151581526020018460a0015160c00151151581526020018460a0015160e00151151581526020018460a001516101000151151581526020018460a001516101200151151581526020018460a001516101400151151581526020018460a001516101600151151581526020018460a001516101800151151581526020018460a001516101a00151151581526020018460a001516101c00151151581526020016001151581526020018460a001516101e0015115158152602001886001600160a01b031681526020018460a00151610200015161ffff1681525081526020018260c0015181526020018260e00151815250838381518110611141576111416129e4565b602090810291909101015250600101610f43565b508351604080860151606087015191516307128b6b60e31b81526001600160a01b038616936338945b5893611191938b93889290600401612e9c565b6020604051808303815f875af11580156111ad573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906111d191906128e1565b505050505050565b5f5f8460200151516001600160401b038111156111f8576111f8611f18565b60405190808252806020026020018201604052801561123157816020015b61121e611531565b8152602001906001900390816112165790505b5090505f5b856020015151811015611448575f8660200151828151811061125a5761125a6129e4565b60200260200101519050604051806101000160405280825f015165ffffffffffff168152602001826020015163ffffffff16815260200182604001516001600160701b03168152602001826060015163ffffffff16815260200182608001516001600160a01b031681526020016040518061026001604052808460a001515f015161ffff1681526020018460a001516020015161ffff1681526020018460a001516040015163ffffffff1681526020018460a0015160600151151581526020018460a0015160800151151581526020018460a0015160a00151151581526020018460a0015160c00151151581526020018460a0015160e00151151581526020018460a001516101000151151581526020018460a001516101200151151581526020018460a001516101400151151581526020018460a001516101600151151581526020018460a001516101800151151581526020018460a001516101a00151151581526020018460a001516101c00151151581526020016001151581526020018460a001516101e0015115158152602001896001600160a01b031681526020018460a00151610200015161ffff1681525081526020018260c0015181526020018260e00151815250838381518110611434576114346129e4565b602090810291909101015250600101611236565b5060408086015190516303141db760e41b81526001600160a01b03851691633141db709161147d918a91869190600401612fb3565b6020604051808303815f875af1158015611499573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906114bd91906128e1565b9695505050505050565b5f36601480821080159061150357507f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031633145b156115295761151636828403815f612fdd565b61151f91613004565b60601c9250505090565b339250505090565b6040805161010080820183525f808352602080840182905283850182905260608085018390526080808601849052865161026081018852848152928301849052958201839052810182905293840181905260a084810182905260c0850182905260e0850182905291840181905261012084018190526101408401819052610160840181905261018084018190526101a084018190526101c084018190526101e0840181905261020084018190526102208401819052610240840152909190820190815260200160608152602001606081525090565b6001600160a01b038116811461161a575f5ffd5b50565b803561162881611606565b919050565b5f5f83601f84011261163d575f5ffd5b5081356001600160401b03811115611653575f5ffd5b60208301915083602082850101111561166a575f5ffd5b9250929050565b5f5f5f5f5f60808688031215611685575f5ffd5b853561169081611606565b945060208601356116a081611606565b93506040860135925060608601356001600160401b038111156116c1575f5ffd5b6116cd8882890161162d565b969995985093965092949392505050565b5f61016082840312156116ef575f5ffd5b50919050565b5f608082840312156116ef575f5ffd5b5f5f5f5f5f5f5f60c0888a03121561171b575f5ffd5b8735965060208801356001600160401b03811115611737575f5ffd5b6117438a828b016116de565b96505060408801356001600160401b0381111561175e575f5ffd5b61176a8a828b016116f5565b95505060608801356001600160401b03811115611785575f5ffd5b6117918a828b0161162d565b90955093505060808801356117a581611606565b96999598509396929591949193505060a09091013590565b5f602082840312156117cd575f5ffd5b81356117d881611606565b9392505050565b5f5f5f5f5f60a086880312156117f3575f5ffd5b85356117fe81611606565b945060208601356001600160401b03811115611818575f5ffd5b611824888289016116de565b94505060408601356001600160401b0381111561183f575f5ffd5b61184b888289016116f5565b935050606086013561185c81611606565b949793965091946080013592915050565b5f5f5f5f5f60a08688031215611881575f5ffd5b8535945060208601356001600160401b0381111561189d575f5ffd5b6118a9888289016116de565b94505060408601356001600160401b038111156118c4575f5ffd5b8601606081890312156118d5575f5ffd5b9250606086013561185c81611606565b5f602082840312156118f5575f5ffd5b81516117d881611606565b5f5f8335601e19843603018112611915575f5ffd5b83016020810192503590506001600160401b03811115611933575f5ffd5b80360382131561166a575f5ffd5b81835281816020850137505f828201602090810191909152601f909101601f19169091010190565b5f8235605e1983360301811261197d575f5ffd5b90910192915050565b80356cffffffffffffffffffffffffff81168114611628575f5ffd5b803563ffffffff81168114611628575f5ffd5b803561ffff81168114611628575f5ffd5b803562ffffff81168114611628575f5ffd5b803560ff81168114611628575f5ffd5b801515811461161a575f5ffd5b8035611628816119e8565b8035611a0b816119e8565b151582526020810135611a1d816119e8565b151560208301526040810135611a32816119e8565b15156040830152611a45606082016119f5565b15156060830152611a58608082016119f5565b15156080830152611a6b60a082016119f5565b151560a0830152611a7e60c082016119f5565b80151560c0840152505050565b505050565b5f5f8335601e19843603018112611aa5575f5ffd5b83016020810192503590506001600160401b03811115611ac3575f5ffd5b60c08102360382131561166a575f5ffd5b80356001600160401b0381168114611628575f5ffd5b803565ffffffffffff81168114611628575f5ffd5b8183526020830192505f815f5b84811015611bb65763ffffffff611b22836119a2565b1686526001600160401b03611b3960208401611ad4565b1660208701526040820135611b4d81611606565b6001600160a01b031660408701526060820135611b69816119e8565b1515606087015265ffffffffffff611b8360808401611aea565b166080870152611b9560a0830161161d565b6001600160a01b031660a087015260c0958601959190910190600101611b0c565b5093949350505050565b5f606083018235601e19843603018112611bd8575f5ffd5b83018035602082016001600160401b03821115611bf3575f5ffd5b8160051b803603821315611c05575f5ffd5b606088529382905260809387018401935f90880161023e1936869003015b84831015611d6957898703607f190182528335818112611c41575f5ffd5b860160208101611c6789611c5483611986565b6cffffffffffffffffffffffffff169052565b611c73604083016119a2565b63ffffffff1660208a0152611c8a606083016119a2565b63ffffffff1660408a0152611ca1608083016119b5565b61ffff1660608a0152611cb660a0830161161d565b6001600160a01b031660808a015260c082013560a08a0152611cda60e083016119c6565b62ffffff1660c08a0152611cf161010083016119d8565b60ff1660e08a0152611d0b6101008a016101208401611a00565b611d1861020083016119a2565b63ffffffff166101e08a0152611d32610220830182611a90565b925090506102206102008a0152611d4e6102208a018383611aff565b98505050602084019350602082019150600183019250611c23565b505050505050611d7b602084016119a2565b63ffffffff166020850152611d92604084016119d8565b60ff81166040860152509392505050565b8035611dae816119e8565b151582526020810135611dc0816119e8565b151560208301526040810135611dd5816119e8565b151560408301526060810135611dea816119e8565b151560608301526080810135611dff816119e8565b8015156080840152505050565b838152606060208201525f611e218485611900565b6101606060850152611e386101c085018284611941565b915050611e486020860186611900565b848303605f19016080860152611e5f838284611941565b92505050611e706040860186611900565b848303605f190160a0860152611e87838284611941565b925050506060850135611e9981611606565b6001600160a01b031660c0840152611eb46080860186611900565b848303605f190160e0860152611ecb838284611941565b92505050611edc60a0860186611969565b838203605f1901610100850152611ef38282611bc0565b915050611f07610120840160c08701611da3565b604092909201929092529392505050565b634e487b7160e01b5f52604160045260245ffd5b60405161022081016001600160401b0381118282101715611f4f57611f4f611f18565b60405290565b604080519081016001600160401b0381118282101715611f4f57611f4f611f18565b60405160c081016001600160401b0381118282101715611f4f57611f4f611f18565b604051608081016001600160401b0381118282101715611f4f57611f4f611f18565b60405161010081016001600160401b0381118282101715611f4f57611f4f611f18565b604051606081016001600160401b0381118282101715611f4f57611f4f611f18565b604051601f8201601f191681016001600160401b038111828210171561202857612028611f18565b604052919050565b5f6001600160401b0382111561204857612048611f18565b5060051b60200190565b80356001600160701b0381168114611628575f5ffd5b5f6102208284031215612079575f5ffd5b612081611f2c565b905061208c826119b5565b815261209a602083016119b5565b60208201526120ab604083016119a2565b60408201526120bc606083016119f5565b60608201526120cd608083016119f5565b60808201526120de60a083016119f5565b60a08201526120ef60c083016119f5565b60c082015261210060e083016119f5565b60e082015261211261010083016119f5565b61010082015261212561012083016119f5565b61012082015261213861014083016119f5565b61014082015261214b61016083016119f5565b61016082015261215e61018083016119f5565b6101808201526121716101a083016119f5565b6101a08201526121846101c083016119f5565b6101c08201526121976101e083016119f5565b6101e08201526121aa61020083016119b5565b61020082015292915050565b5f82601f8301126121c5575f5ffd5b81356121d86121d382612030565b612000565b8082825260208201915060208360051b8601019250858311156121f9575f5ffd5b602085015b8381101561235c5780356001600160401b0381111561221b575f5ffd5b86016040818903601f19011215612230575f5ffd5b612238611f55565b6020820135815260408201356001600160401b03811115612257575f5ffd5b60208184010192505088601f83011261226e575f5ffd5b813561227c6121d382612030565b80828252602082019150602060c0840286010192508b83111561229d575f5ffd5b6020850194505b8285101561233d5760c0858d0312156122bb575f5ffd5b6122c3611f77565b6122cc866119a2565b81526122da60208701611ad4565b602082015260408601356122ed81611606565b60408201526060860135612300816119e8565b606082015261231160808701611aea565b608082015260a086013561232481611606565b60a0820152825260c094909401936020909101906122a4565b80602085015250505080855250506020830192506020810190506121fe565b5095945050505050565b5f82601f830112612375575f5ffd5b81356123836121d382612030565b8082825260208201915060208360061b8601019250858311156123a4575f5ffd5b602085015b8381101561235c57604081880312156123c0575f5ffd5b6123c8611f55565b81356001600160e01b03811681146123de575f5ffd5b81526123ec602083016119a2565b6020820152808452506020830192506040810190506123a9565b5f82601f830112612415575f5ffd5b81356124236121d382612030565b8082825260208201915060208360051b860101925085831115612444575f5ffd5b602085015b8381101561235c5780356001600160401b03811115612466575f5ffd5b86016080818903601f1901121561247b575f5ffd5b612483611f99565b602082013561249181611606565b815260408201356124a181611606565b602082015260608201356001600160401b038111156124be575f5ffd5b6124cd8a602083860101612366565b60408301525060808201356001600160401b038111156124eb575f5ffd5b6124fa8a602083860101612366565b60608301525084525060209283019201612449565b5f82601f83011261251e575f5ffd5b813561252c6121d382612030565b8082825260208201915060208360051b86010192508583111561254d575f5ffd5b602085015b8381101561235c5780356001600160401b0381111561256f575f5ffd5b8601610300818903601f19011215612585575f5ffd5b61258d611fbb565b61259960208301611aea565b81526125a7604083016119a2565b60208201526125b860608301612052565b60408201526125c9608083016119a2565b60608201526125da60a0830161161d565b60808201526125ec8960c08401612068565b60a08201526102e08201356001600160401b0381111561260a575f5ffd5b6126198a6020838601016121b6565b60c0830152506103008201356001600160401b03811115612638575f5ffd5b6126478a602083860101612406565b60e08301525084525060209283019201612552565b5f82601f83011261266b575f5ffd5b81356126796121d382612030565b8082825260208201915060208360051b86010192508583111561269a575f5ffd5b602085015b8381101561235c5780356001600160401b038111156126bc575f5ffd5b86016040818903601f190112156126d1575f5ffd5b6126d9611f55565b60208201356126e781611606565b815260408201356001600160401b03811115612701575f5ffd5b60208184010192505088601f830112612718575f5ffd5b81356127266121d382612030565b8082825260208201915060206060840286010192508b831115612747575f5ffd5b6020850194505b828510156127b0576060858d031215612765575f5ffd5b61276d611fde565b853561277881611606565b8152612786602087016119d8565b6020820152612797604087016119a2565b604082015282526060949094019360209091019061274e565b806020850152505050808552505060208301925060208101905061269f565b5f82601f8301126127de575f5ffd5b81356001600160401b038111156127f7576127f7611f18565b61280a601f8201601f1916602001612000565b81815284602083860101111561281e575f5ffd5b816020850160208301375f918101602001919091529392505050565b5f6080823603121561284a575f5ffd5b612852611f99565b61285b83611ad4565b815260208301356001600160401b03811115612875575f5ffd5b6128813682860161250f565b60208301525060408301356001600160401b0381111561289f575f5ffd5b6128ab3682860161265c565b60408301525060608301356001600160401b038111156128c9575f5ffd5b6128d5368286016127cf565b60608301525092915050565b5f602082840312156128f1575f5ffd5b5051919050565b5f60808236031215612908575f5ffd5b612910611f99565b82356001600160401b03811115612925575f5ffd5b612931368286016127cf565b82525060208301356001600160401b03811115612875575f5ffd5b5f6060823603121561295c575f5ffd5b612964611fde565b61296d83611ad4565b815260208301356001600160401b03811115612987575f5ffd5b6129933682860161250f565b60208301525060408301356001600160401b038111156129b1575f5ffd5b6129bd368286016127cf565b60408301525092915050565b5f602082840312156129d9575f5ffd5b81516117d8816119e8565b634e487b7160e01b5f52603260045260245ffd5b5f81518084528060208401602086015e5f602082860101526020601f19601f83011685010191505092915050565b805161ffff1682526020810151612a43602084018261ffff169052565b506040810151612a5b604084018263ffffffff169052565b506060810151612a6f606084018215159052565b506080810151612a83608084018215159052565b5060a0810151612a9760a084018215159052565b5060c0810151612aab60c084018215159052565b5060e0810151612abf60e084018215159052565b50610100810151612ad561010084018215159052565b50610120810151612aeb61012084018215159052565b50610140810151612b0161014084018215159052565b50610160810151612b1761016084018215159052565b50610180810151612b2d61018084018215159052565b506101a0810151612b436101a084018215159052565b506101c0810151612b596101c084018215159052565b506101e0810151612b6f6101e084018215159052565b50610200810151612b8561020084018215159052565b50610220810151612ba26102208401826001600160a01b03169052565b50610240810151611a8b61024084018261ffff169052565b5f82825180855260208501945060208160051b830101602085015f5b83811015612ca857848303601f19018852815180518452602090810151604082860181905281519086018190529101905f9060608601905b80831015612c8f57835163ffffffff81511683526001600160401b03602082015116602084015260018060a01b03604082015116604084015260608101511515606084015265ffffffffffff608082015116608084015260018060a01b0360a08201511660a08401525060c082019150602084019350600183019250612c0e565b5060209a8b019a90955093909301925050600101612bd6565b50909695505050505050565b5f8151808452602084019350602083015f5b82811015611bb657815180516001600160e01b0316875260209081015163ffffffff168188015260409096019590910190600101612cc6565b5f82825180855260208501945060208160051b830101602085015f5b83811015612ca857848303601f19018852815180516001600160a01b03908116855260208083015190911690850152604080820151608091860182905290612d6590860182612cb4565b9050606082015191508481036060860152612d808183612cb4565b60209a8b019a90955093909301925050600101612d1b565b5f82825180855260208501945060208160051b830101602085015f5b83811015612ca857848303601f190188528151805165ffffffffffff1684526020810151612dea602086018263ffffffff169052565b506040810151612e0560408601826001600160701b03169052565b506060810151612e1d606086018263ffffffff169052565b506080810151612e3860808601826001600160a01b03169052565b5060a0810151612e4b60a0860182612a26565b5060c0810151610340610300860152612e68610340860182612bba565b905060e08201519150848103610320860152612e848183612cff565b60209a8b019a90955093909301925050600101612db4565b85815260a060208201525f612eb460a08301876129f8565b8281036040840152612ec68187612d98565b9050828103606084015280855180835260208301915060208160051b840101602088015f5b83811015612f9057858303601f19018552815180516001600160a01b03168452602090810151604082860181905281519086018190529101905f9060608601905b80831015612f7757835160018060a01b03815116835260ff602082015116602084015263ffffffff604082015116604084015250606082019150602084019350600183019250612f2c565b5060209788019790955093909301925050600101612eeb565b50508581036080870152612fa481886129f8565b9b9a5050505050505050505050565b838152606060208201525f612fcb6060830185612d98565b82810360408401526114bd81856129f8565b5f5f85851115612feb575f5ffd5b83861115612ff7575f5ffd5b5050820193919092039150565b80356bffffffffffffffffffffffff19811690601484101561304a576bffffffffffffffffffffffff196bffffffffffffffffffffffff198560140360031b1b82161691505b509291505056fea164736f6c634300081c000a",
+	"metadata": "{\"compiler\":{\"version\":\"0.8.28+commit.7893614a\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"contract IJBDirectory\",\"name\":\"directory\",\"type\":\"address\"},{\"internalType\":\"contract IJBPermissions\",\"name\":\"permissions\",\"type\":\"address\"},{\"internalType\":\"contract IJB721TiersHookDeployer\",\"name\":\"hookDeployer\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"trustedForwarder\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"projectId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"permissionId\",\"type\":\"uint256\"}],\"type\":\"error\",\"name\":\"JBPermissioned_Unauthorized\"},{\"inputs\":[],\"stateMutability\":\"view\",\"type\":\"function\",\"name\":\"DIRECTORY\",\"outputs\":[{\"internalType\":\"contract IJBDirectory\",\"name\":\"\",\"type\":\"address\"}]},{\"inputs\":[],\"stateMutability\":\"view\",\"type\":\"function\",\"name\":\"HOOK_DEPLOYER\",\"outputs\":[{\"internalType\":\"contract IJB721TiersHookDeployer\",\"name\":\"\",\"type\":\"address\"}]},{\"inputs\":[],\"stateMutability\":\"view\",\"type\":\"function\",\"name\":\"PERMISSIONS\",\"outputs\":[{\"internalType\":\"contract IJBPermissions\",\"name\":\"\",\"type\":\"address\"}]},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"forwarder\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"name\":\"isTrustedForwarder\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}]},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"struct JBDeploy721TiersHookConfig\",\"name\":\"deployTiersHookConfig\",\"type\":\"tuple\",\"components\":[{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"symbol\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"baseUri\",\"type\":\"string\"},{\"internalType\":\"contract IJB721TokenUriResolver\",\"name\":\"tokenUriResolver\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"contractUri\",\"type\":\"string\"},{\"internalType\":\"struct JB721InitTiersConfig\",\"name\":\"tiersConfig\",\"type\":\"tuple\",\"components\":[{\"internalType\":\"struct JB721TierConfig[]\",\"name\":\"tiers\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"uint104\",\"name\":\"price\",\"type\":\"uint104\"},{\"internalType\":\"uint32\",\"name\":\"initialSupply\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"votingUnits\",\"type\":\"uint32\"},{\"internalType\":\"uint16\",\"name\":\"reserveFrequency\",\"type\":\"uint16\"},{\"internalType\":\"address\",\"name\":\"reserveBeneficiary\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"encodedIpfsUri\",\"type\":\"bytes32\"},{\"internalType\":\"uint24\",\"name\":\"category\",\"type\":\"uint24\"},{\"internalType\":\"uint8\",\"name\":\"discountPercent\",\"type\":\"uint8\"},{\"internalType\":\"struct JB721TierConfigFlags\",\"name\":\"flags\",\"type\":\"tuple\",\"components\":[{\"internalType\":\"bool\",\"name\":\"allowOwnerMint\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"useReserveBeneficiaryAsDefault\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"transfersPausable\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"useVotingUnits\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"cantBeRemoved\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"cantIncreaseDiscountPercent\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"cantBuyWithCredits\",\"type\":\"bool\"}]},{\"internalType\":\"uint32\",\"name\":\"splitPercent\",\"type\":\"uint32\"},{\"internalType\":\"struct JBSplit[]\",\"name\":\"splits\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"uint32\",\"name\":\"percent\",\"type\":\"uint32\"},{\"internalType\":\"uint64\",\"name\":\"projectId\",\"type\":\"uint64\"},{\"internalType\":\"address payable\",\"name\":\"beneficiary\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"preferAddToBalance\",\"type\":\"bool\"},{\"internalType\":\"uint48\",\"name\":\"lockedUntil\",\"type\":\"uint48\"},{\"internalType\":\"contract IJBSplitHook\",\"name\":\"hook\",\"type\":\"address\"}]}]},{\"internalType\":\"uint32\",\"name\":\"currency\",\"type\":\"uint32\"},{\"internalType\":\"uint8\",\"name\":\"decimals\",\"type\":\"uint8\"}]},{\"internalType\":\"struct JB721TiersHookFlags\",\"name\":\"flags\",\"type\":\"tuple\",\"components\":[{\"internalType\":\"bool\",\"name\":\"noNewTiersWithReserves\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"noNewTiersWithVotes\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"noNewTiersWithOwnerMinting\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"preventOverspending\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"issueTokensForSplits\",\"type\":\"bool\"}]}]},{\"internalType\":\"struct JBLaunchProjectConfig\",\"name\":\"launchProjectConfig\",\"type\":\"tuple\",\"components\":[{\"internalType\":\"string\",\"name\":\"projectUri\",\"type\":\"string\"},{\"internalType\":\"struct JBPayDataHookRulesetConfig[]\",\"name\":\"rulesetConfigurations\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"uint48\",\"name\":\"mustStartAtOrAfter\",\"type\":\"uint48\"},{\"internalType\":\"uint32\",\"name\":\"duration\",\"type\":\"uint32\"},{\"internalType\":\"uint112\",\"name\":\"weight\",\"type\":\"uint112\"},{\"internalType\":\"uint32\",\"name\":\"weightCutPercent\",\"type\":\"uint32\"},{\"internalType\":\"contract IJBRulesetApprovalHook\",\"name\":\"approvalHook\",\"type\":\"address\"},{\"internalType\":\"struct JBPayDataHookRulesetMetadata\",\"name\":\"metadata\",\"type\":\"tuple\",\"components\":[{\"internalType\":\"uint16\",\"name\":\"reservedPercent\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"cashOutTaxRate\",\"type\":\"uint16\"},{\"internalType\":\"uint32\",\"name\":\"baseCurrency\",\"type\":\"uint32\"},{\"internalType\":\"bool\",\"name\":\"pausePay\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"pauseCreditTransfers\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"allowOwnerMinting\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"allowSetCustomToken\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"allowTerminalMigration\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"allowSetTerminals\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"allowSetController\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"allowAddAccountingContext\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"allowAddPriceFeed\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"ownerMustSendPayouts\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"holdFees\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"scopeCashOutsToLocalBalances\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"useDataHookForCashOut\",\"type\":\"bool\"},{\"internalType\":\"uint16\",\"name\":\"metadata\",\"type\":\"uint16\"}]},{\"internalType\":\"struct JBSplitGroup[]\",\"name\":\"splitGroups\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"uint256\",\"name\":\"groupId\",\"type\":\"uint256\"},{\"internalType\":\"struct JBSplit[]\",\"name\":\"splits\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"uint32\",\"name\":\"percent\",\"type\":\"uint32\"},{\"internalType\":\"uint64\",\"name\":\"projectId\",\"type\":\"uint64\"},{\"internalType\":\"address payable\",\"name\":\"beneficiary\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"preferAddToBalance\",\"type\":\"bool\"},{\"internalType\":\"uint48\",\"name\":\"lockedUntil\",\"type\":\"uint48\"},{\"internalType\":\"contract IJBSplitHook\",\"name\":\"hook\",\"type\":\"address\"}]}]},{\"internalType\":\"struct JBFundAccessLimitGroup[]\",\"name\":\"fundAccessLimitGroups\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"address\",\"name\":\"terminal\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"struct JBCurrencyAmount[]\",\"name\":\"payoutLimits\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"uint224\",\"name\":\"amount\",\"type\":\"uint224\"},{\"internalType\":\"uint32\",\"name\":\"currency\",\"type\":\"uint32\"}]},{\"internalType\":\"struct JBCurrencyAmount[]\",\"name\":\"surplusAllowances\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"uint224\",\"name\":\"amount\",\"type\":\"uint224\"},{\"internalType\":\"uint32\",\"name\":\"currency\",\"type\":\"uint32\"}]}]}]},{\"internalType\":\"struct JBTerminalConfig[]\",\"name\":\"terminalConfigurations\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"contract IJBTerminal\",\"name\":\"terminal\",\"type\":\"address\"},{\"internalType\":\"struct JBAccountingContext[]\",\"name\":\"accountingContextsToAccept\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint8\",\"name\":\"decimals\",\"type\":\"uint8\"},{\"internalType\":\"uint32\",\"name\":\"currency\",\"type\":\"uint32\"}]}]},{\"internalType\":\"string\",\"name\":\"memo\",\"type\":\"string\"}]},{\"internalType\":\"contract IJBController\",\"name\":\"controller\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"salt\",\"type\":\"bytes32\"}],\"stateMutability\":\"payable\",\"type\":\"function\",\"name\":\"launchProjectFor\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"projectId\",\"type\":\"uint256\"},{\"internalType\":\"contract IJB721TiersHook\",\"name\":\"hook\",\"type\":\"address\"}]},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"projectId\",\"type\":\"uint256\"},{\"internalType\":\"struct JBDeploy721TiersHookConfig\",\"name\":\"deployTiersHookConfig\",\"type\":\"tuple\",\"components\":[{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"symbol\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"baseUri\",\"type\":\"string\"},{\"internalType\":\"contract IJB721TokenUriResolver\",\"name\":\"tokenUriResolver\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"contractUri\",\"type\":\"string\"},{\"internalType\":\"struct JB721InitTiersConfig\",\"name\":\"tiersConfig\",\"type\":\"tuple\",\"components\":[{\"internalType\":\"struct JB721TierConfig[]\",\"name\":\"tiers\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"uint104\",\"name\":\"price\",\"type\":\"uint104\"},{\"internalType\":\"uint32\",\"name\":\"initialSupply\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"votingUnits\",\"type\":\"uint32\"},{\"internalType\":\"uint16\",\"name\":\"reserveFrequency\",\"type\":\"uint16\"},{\"internalType\":\"address\",\"name\":\"reserveBeneficiary\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"encodedIpfsUri\",\"type\":\"bytes32\"},{\"internalType\":\"uint24\",\"name\":\"category\",\"type\":\"uint24\"},{\"internalType\":\"uint8\",\"name\":\"discountPercent\",\"type\":\"uint8\"},{\"internalType\":\"struct JB721TierConfigFlags\",\"name\":\"flags\",\"type\":\"tuple\",\"components\":[{\"internalType\":\"bool\",\"name\":\"allowOwnerMint\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"useReserveBeneficiaryAsDefault\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"transfersPausable\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"useVotingUnits\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"cantBeRemoved\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"cantIncreaseDiscountPercent\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"cantBuyWithCredits\",\"type\":\"bool\"}]},{\"internalType\":\"uint32\",\"name\":\"splitPercent\",\"type\":\"uint32\"},{\"internalType\":\"struct JBSplit[]\",\"name\":\"splits\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"uint32\",\"name\":\"percent\",\"type\":\"uint32\"},{\"internalType\":\"uint64\",\"name\":\"projectId\",\"type\":\"uint64\"},{\"internalType\":\"address payable\",\"name\":\"beneficiary\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"preferAddToBalance\",\"type\":\"bool\"},{\"internalType\":\"uint48\",\"name\":\"lockedUntil\",\"type\":\"uint48\"},{\"internalType\":\"contract IJBSplitHook\",\"name\":\"hook\",\"type\":\"address\"}]}]},{\"internalType\":\"uint32\",\"name\":\"currency\",\"type\":\"uint32\"},{\"internalType\":\"uint8\",\"name\":\"decimals\",\"type\":\"uint8\"}]},{\"internalType\":\"struct JB721TiersHookFlags\",\"name\":\"flags\",\"type\":\"tuple\",\"components\":[{\"internalType\":\"bool\",\"name\":\"noNewTiersWithReserves\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"noNewTiersWithVotes\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"noNewTiersWithOwnerMinting\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"preventOverspending\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"issueTokensForSplits\",\"type\":\"bool\"}]}]},{\"internalType\":\"struct JBLaunchRulesetsConfig\",\"name\":\"launchRulesetsConfig\",\"type\":\"tuple\",\"components\":[{\"internalType\":\"uint64\",\"name\":\"projectId\",\"type\":\"uint64\"},{\"internalType\":\"struct JBPayDataHookRulesetConfig[]\",\"name\":\"rulesetConfigurations\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"uint48\",\"name\":\"mustStartAtOrAfter\",\"type\":\"uint48\"},{\"internalType\":\"uint32\",\"name\":\"duration\",\"type\":\"uint32\"},{\"internalType\":\"uint112\",\"name\":\"weight\",\"type\":\"uint112\"},{\"internalType\":\"uint32\",\"name\":\"weightCutPercent\",\"type\":\"uint32\"},{\"internalType\":\"contract IJBRulesetApprovalHook\",\"name\":\"approvalHook\",\"type\":\"address\"},{\"internalType\":\"struct JBPayDataHookRulesetMetadata\",\"name\":\"metadata\",\"type\":\"tuple\",\"components\":[{\"internalType\":\"uint16\",\"name\":\"reservedPercent\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"cashOutTaxRate\",\"type\":\"uint16\"},{\"internalType\":\"uint32\",\"name\":\"baseCurrency\",\"type\":\"uint32\"},{\"internalType\":\"bool\",\"name\":\"pausePay\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"pauseCreditTransfers\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"allowOwnerMinting\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"allowSetCustomToken\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"allowTerminalMigration\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"allowSetTerminals\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"allowSetController\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"allowAddAccountingContext\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"allowAddPriceFeed\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"ownerMustSendPayouts\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"holdFees\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"scopeCashOutsToLocalBalances\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"useDataHookForCashOut\",\"type\":\"bool\"},{\"internalType\":\"uint16\",\"name\":\"metadata\",\"type\":\"uint16\"}]},{\"internalType\":\"struct JBSplitGroup[]\",\"name\":\"splitGroups\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"uint256\",\"name\":\"groupId\",\"type\":\"uint256\"},{\"internalType\":\"struct JBSplit[]\",\"name\":\"splits\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"uint32\",\"name\":\"percent\",\"type\":\"uint32\"},{\"internalType\":\"uint64\",\"name\":\"projectId\",\"type\":\"uint64\"},{\"internalType\":\"address payable\",\"name\":\"beneficiary\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"preferAddToBalance\",\"type\":\"bool\"},{\"internalType\":\"uint48\",\"name\":\"lockedUntil\",\"type\":\"uint48\"},{\"internalType\":\"contract IJBSplitHook\",\"name\":\"hook\",\"type\":\"address\"}]}]},{\"internalType\":\"struct JBFundAccessLimitGroup[]\",\"name\":\"fundAccessLimitGroups\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"address\",\"name\":\"terminal\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"struct JBCurrencyAmount[]\",\"name\":\"payoutLimits\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"uint224\",\"name\":\"amount\",\"type\":\"uint224\"},{\"internalType\":\"uint32\",\"name\":\"currency\",\"type\":\"uint32\"}]},{\"internalType\":\"struct JBCurrencyAmount[]\",\"name\":\"surplusAllowances\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"uint224\",\"name\":\"amount\",\"type\":\"uint224\"},{\"internalType\":\"uint32\",\"name\":\"currency\",\"type\":\"uint32\"}]}]}]},{\"internalType\":\"struct JBTerminalConfig[]\",\"name\":\"terminalConfigurations\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"contract IJBTerminal\",\"name\":\"terminal\",\"type\":\"address\"},{\"internalType\":\"struct JBAccountingContext[]\",\"name\":\"accountingContextsToAccept\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint8\",\"name\":\"decimals\",\"type\":\"uint8\"},{\"internalType\":\"uint32\",\"name\":\"currency\",\"type\":\"uint32\"}]}]},{\"internalType\":\"string\",\"name\":\"memo\",\"type\":\"string\"}]},{\"internalType\":\"string\",\"name\":\"projectUri\",\"type\":\"string\"},{\"internalType\":\"contract IJBController\",\"name\":\"controller\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"salt\",\"type\":\"bytes32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\",\"name\":\"launchRulesetsFor\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"rulesetId\",\"type\":\"uint256\"},{\"internalType\":\"contract IJB721TiersHook\",\"name\":\"hook\",\"type\":\"address\"}]},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"name\":\"onERC721Received\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}]},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"projectId\",\"type\":\"uint256\"},{\"internalType\":\"struct JBDeploy721TiersHookConfig\",\"name\":\"deployTiersHookConfig\",\"type\":\"tuple\",\"components\":[{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"symbol\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"baseUri\",\"type\":\"string\"},{\"internalType\":\"contract IJB721TokenUriResolver\",\"name\":\"tokenUriResolver\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"contractUri\",\"type\":\"string\"},{\"internalType\":\"struct JB721InitTiersConfig\",\"name\":\"tiersConfig\",\"type\":\"tuple\",\"components\":[{\"internalType\":\"struct JB721TierConfig[]\",\"name\":\"tiers\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"uint104\",\"name\":\"price\",\"type\":\"uint104\"},{\"internalType\":\"uint32\",\"name\":\"initialSupply\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"votingUnits\",\"type\":\"uint32\"},{\"internalType\":\"uint16\",\"name\":\"reserveFrequency\",\"type\":\"uint16\"},{\"internalType\":\"address\",\"name\":\"reserveBeneficiary\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"encodedIpfsUri\",\"type\":\"bytes32\"},{\"internalType\":\"uint24\",\"name\":\"category\",\"type\":\"uint24\"},{\"internalType\":\"uint8\",\"name\":\"discountPercent\",\"type\":\"uint8\"},{\"internalType\":\"struct JB721TierConfigFlags\",\"name\":\"flags\",\"type\":\"tuple\",\"components\":[{\"internalType\":\"bool\",\"name\":\"allowOwnerMint\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"useReserveBeneficiaryAsDefault\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"transfersPausable\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"useVotingUnits\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"cantBeRemoved\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"cantIncreaseDiscountPercent\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"cantBuyWithCredits\",\"type\":\"bool\"}]},{\"internalType\":\"uint32\",\"name\":\"splitPercent\",\"type\":\"uint32\"},{\"internalType\":\"struct JBSplit[]\",\"name\":\"splits\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"uint32\",\"name\":\"percent\",\"type\":\"uint32\"},{\"internalType\":\"uint64\",\"name\":\"projectId\",\"type\":\"uint64\"},{\"internalType\":\"address payable\",\"name\":\"beneficiary\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"preferAddToBalance\",\"type\":\"bool\"},{\"internalType\":\"uint48\",\"name\":\"lockedUntil\",\"type\":\"uint48\"},{\"internalType\":\"contract IJBSplitHook\",\"name\":\"hook\",\"type\":\"address\"}]}]},{\"internalType\":\"uint32\",\"name\":\"currency\",\"type\":\"uint32\"},{\"internalType\":\"uint8\",\"name\":\"decimals\",\"type\":\"uint8\"}]},{\"internalType\":\"struct JB721TiersHookFlags\",\"name\":\"flags\",\"type\":\"tuple\",\"components\":[{\"internalType\":\"bool\",\"name\":\"noNewTiersWithReserves\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"noNewTiersWithVotes\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"noNewTiersWithOwnerMinting\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"preventOverspending\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"issueTokensForSplits\",\"type\":\"bool\"}]}]},{\"internalType\":\"struct JBQueueRulesetsConfig\",\"name\":\"queueRulesetsConfig\",\"type\":\"tuple\",\"components\":[{\"internalType\":\"uint64\",\"name\":\"projectId\",\"type\":\"uint64\"},{\"internalType\":\"struct JBPayDataHookRulesetConfig[]\",\"name\":\"rulesetConfigurations\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"uint48\",\"name\":\"mustStartAtOrAfter\",\"type\":\"uint48\"},{\"internalType\":\"uint32\",\"name\":\"duration\",\"type\":\"uint32\"},{\"internalType\":\"uint112\",\"name\":\"weight\",\"type\":\"uint112\"},{\"internalType\":\"uint32\",\"name\":\"weightCutPercent\",\"type\":\"uint32\"},{\"internalType\":\"contract IJBRulesetApprovalHook\",\"name\":\"approvalHook\",\"type\":\"address\"},{\"internalType\":\"struct JBPayDataHookRulesetMetadata\",\"name\":\"metadata\",\"type\":\"tuple\",\"components\":[{\"internalType\":\"uint16\",\"name\":\"reservedPercent\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"cashOutTaxRate\",\"type\":\"uint16\"},{\"internalType\":\"uint32\",\"name\":\"baseCurrency\",\"type\":\"uint32\"},{\"internalType\":\"bool\",\"name\":\"pausePay\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"pauseCreditTransfers\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"allowOwnerMinting\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"allowSetCustomToken\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"allowTerminalMigration\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"allowSetTerminals\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"allowSetController\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"allowAddAccountingContext\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"allowAddPriceFeed\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"ownerMustSendPayouts\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"holdFees\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"scopeCashOutsToLocalBalances\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"useDataHookForCashOut\",\"type\":\"bool\"},{\"internalType\":\"uint16\",\"name\":\"metadata\",\"type\":\"uint16\"}]},{\"internalType\":\"struct JBSplitGroup[]\",\"name\":\"splitGroups\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"uint256\",\"name\":\"groupId\",\"type\":\"uint256\"},{\"internalType\":\"struct JBSplit[]\",\"name\":\"splits\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"uint32\",\"name\":\"percent\",\"type\":\"uint32\"},{\"internalType\":\"uint64\",\"name\":\"projectId\",\"type\":\"uint64\"},{\"internalType\":\"address payable\",\"name\":\"beneficiary\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"preferAddToBalance\",\"type\":\"bool\"},{\"internalType\":\"uint48\",\"name\":\"lockedUntil\",\"type\":\"uint48\"},{\"internalType\":\"contract IJBSplitHook\",\"name\":\"hook\",\"type\":\"address\"}]}]},{\"internalType\":\"struct JBFundAccessLimitGroup[]\",\"name\":\"fundAccessLimitGroups\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"address\",\"name\":\"terminal\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"struct JBCurrencyAmount[]\",\"name\":\"payoutLimits\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"uint224\",\"name\":\"amount\",\"type\":\"uint224\"},{\"internalType\":\"uint32\",\"name\":\"currency\",\"type\":\"uint32\"}]},{\"internalType\":\"struct JBCurrencyAmount[]\",\"name\":\"surplusAllowances\",\"type\":\"tuple[]\",\"components\":[{\"internalType\":\"uint224\",\"name\":\"amount\",\"type\":\"uint224\"},{\"internalType\":\"uint32\",\"name\":\"currency\",\"type\":\"uint32\"}]}]}]},{\"internalType\":\"string\",\"name\":\"memo\",\"type\":\"string\"}]},{\"internalType\":\"contract IJBController\",\"name\":\"controller\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"salt\",\"type\":\"bytes32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\",\"name\":\"queueRulesetsOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"rulesetId\",\"type\":\"uint256\"},{\"internalType\":\"contract IJB721TiersHook\",\"name\":\"hook\",\"type\":\"address\"}]},{\"inputs\":[],\"stateMutability\":\"view\",\"type\":\"function\",\"name\":\"trustedForwarder\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}]}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"constructor\":{\"params\":{\"directory\":\"The directory of terminals and controllers for projects.\",\"hookDeployer\":\"The 721 tiers hook deployer.\",\"permissions\":\"A contract storing permissions.\",\"trustedForwarder\":\"The trusted forwarder for the ERC2771Context.\"}},\"isTrustedForwarder(address)\":{\"details\":\"Indicates whether any particular address is the trusted forwarder.\"},\"launchProjectFor(address,(string,string,string,address,string,((uint104,uint32,uint32,uint16,address,bytes32,uint24,uint8,(bool,bool,bool,bool,bool,bool,bool),uint32,(uint32,uint64,address,bool,uint48,address)[])[],uint32,uint8),(bool,bool,bool,bool,bool)),(string,(uint48,uint32,uint112,uint32,address,(uint16,uint16,uint32,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,uint16),(uint256,(uint32,uint64,address,bool,uint48,address)[])[],(address,address,(uint224,uint32)[],(uint224,uint32)[])[])[],(address,(address,uint8,uint32)[])[],string),address,bytes32)\":{\"details\":\"Forwards `msg.value` to `JBProjects.createFor` to cover any configured project creation fee.\",\"params\":{\"controller\":\"The controller that the project's rulesets will be queued with.\",\"deployTiersHookConfig\":\"Configuration which dictates the behavior of the 721 tiers hook to deploy.\",\"launchProjectConfig\":\"Configuration which dictates the behavior of the project to launch.\",\"owner\":\"The address to set as the owner of the project. The ERC-721 which confers this project's ownership will be sent to this address.\",\"salt\":\"A salt to use for the deterministic deployment.\"},\"returns\":{\"hook\":\"The 721 tiers hook that was deployed for the project.\",\"projectId\":\"The ID of the newly launched project.\"}},\"launchRulesetsFor(uint256,(string,string,string,address,string,((uint104,uint32,uint32,uint16,address,bytes32,uint24,uint8,(bool,bool,bool,bool,bool,bool,bool),uint32,(uint32,uint64,address,bool,uint48,address)[])[],uint32,uint8),(bool,bool,bool,bool,bool)),(uint64,(uint48,uint32,uint112,uint32,address,(uint16,uint16,uint32,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,uint16),(uint256,(uint32,uint64,address,bool,uint48,address)[])[],(address,address,(uint224,uint32)[],(uint224,uint32)[])[])[],(address,(address,uint8,uint32)[])[],string),string,address,bytes32)\":{\"details\":\"Only a project's owner or an operator with the `LAUNCH_RULESETS & SET_TERMINALS` permission can launch its rulesets.\",\"params\":{\"controller\":\"The controller that the project's rulesets will be queued with.\",\"deployTiersHookConfig\":\"Configuration which dictates the behavior of the 721 tiers hook to deploy.\",\"launchRulesetsConfig\":\"Configuration which dictates the project's new rulesets.\",\"projectId\":\"The ID of the project to launch rulesets for.\",\"projectUri\":\"Metadata URI to associate with the project. Pass an empty string to leave it unchanged.\",\"salt\":\"A salt to use for the deterministic deployment.\"},\"returns\":{\"hook\":\"The 721 tiers hook that was deployed for the project.\",\"rulesetId\":\"The ID of the successfully created ruleset.\"}},\"queueRulesetsOf(uint256,(string,string,string,address,string,((uint104,uint32,uint32,uint16,address,bytes32,uint24,uint8,(bool,bool,bool,bool,bool,bool,bool),uint32,(uint32,uint64,address,bool,uint48,address)[])[],uint32,uint8),(bool,bool,bool,bool,bool)),(uint64,(uint48,uint32,uint112,uint32,address,(uint16,uint16,uint32,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,uint16),(uint256,(uint32,uint64,address,bool,uint48,address)[])[],(address,address,(uint224,uint32)[],(uint224,uint32)[])[])[],string),address,bytes32)\":{\"details\":\"Only a project's owner or an operator with the `QUEUE_RULESETS` permission can queue its rulesets.\",\"params\":{\"controller\":\"The controller that the project's rulesets will be queued with.\",\"deployTiersHookConfig\":\"Configuration which dictates the behavior of the 721 tiers hook to deploy.\",\"projectId\":\"The ID of the project to queue rulesets for.\",\"queueRulesetsConfig\":\"Configuration which dictates the project's newly queued rulesets.\",\"salt\":\"A salt to use for the deterministic deployment.\"},\"returns\":{\"hook\":\"The 721 tiers hook that was deployed for the project.\",\"rulesetId\":\"The ID of the successfully created ruleset.\"}},\"trustedForwarder()\":{\"details\":\"Returns the address of the trusted forwarder.\"}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"DIRECTORY()\":{\"notice\":\"The directory of terminals and controllers for projects.\"},\"HOOK_DEPLOYER()\":{\"notice\":\"The deployer contract used to create new 721 tiers hook instances via clone.\"},\"PERMISSIONS()\":{\"notice\":\"A contract storing permissions.\"},\"launchProjectFor(address,(string,string,string,address,string,((uint104,uint32,uint32,uint16,address,bytes32,uint24,uint8,(bool,bool,bool,bool,bool,bool,bool),uint32,(uint32,uint64,address,bool,uint48,address)[])[],uint32,uint8),(bool,bool,bool,bool,bool)),(string,(uint48,uint32,uint112,uint32,address,(uint16,uint16,uint32,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,uint16),(uint256,(uint32,uint64,address,bool,uint48,address)[])[],(address,address,(uint224,uint32)[],(uint224,uint32)[])[])[],(address,(address,uint8,uint32)[])[],string),address,bytes32)\":{\"notice\":\"Launches a new project with a 721 tiers hook attached.\"},\"launchRulesetsFor(uint256,(string,string,string,address,string,((uint104,uint32,uint32,uint16,address,bytes32,uint24,uint8,(bool,bool,bool,bool,bool,bool,bool),uint32,(uint32,uint64,address,bool,uint48,address)[])[],uint32,uint8),(bool,bool,bool,bool,bool)),(uint64,(uint48,uint32,uint112,uint32,address,(uint16,uint16,uint32,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,uint16),(uint256,(uint32,uint64,address,bool,uint48,address)[])[],(address,address,(uint224,uint32)[],(uint224,uint32)[])[])[],(address,(address,uint8,uint32)[])[],string),string,address,bytes32)\":{\"notice\":\"Launches rulesets for a project with an attached 721 tiers hook.\"},\"onERC721Received(address,address,uint256,bytes)\":{\"notice\":\"Accepts project NFT reservations minted by `JBProjects.createFor`.\"},\"queueRulesetsOf(uint256,(string,string,string,address,string,((uint104,uint32,uint32,uint16,address,bytes32,uint24,uint8,(bool,bool,bool,bool,bool,bool,bool),uint32,(uint32,uint64,address,bool,uint48,address)[])[],uint32,uint8),(bool,bool,bool,bool,bool)),(uint64,(uint48,uint32,uint112,uint32,address,(uint16,uint16,uint32,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,bool,uint16),(uint256,(uint32,uint64,address,bool,uint48,address)[])[],(address,address,(uint224,uint32)[],(uint224,uint32)[])[])[],string),address,bytes32)\":{\"notice\":\"Queues rulesets for a project with an attached 721 tiers hook.\"}},\"version\":1}},\"settings\":{\"remappings\":[\"@arbitrum/=node_modules/@arbitrum/\",\"@ballkidz/=node_modules/@ballkidz/\",\"@bananapus/=node_modules/@bananapus/\",\"@bannynet/=node_modules/@bannynet/\",\"@chainlink/=node_modules/@chainlink/\",\"@croptop/=node_modules/@croptop/\",\"@ensdomains/=node_modules/@ensdomains/\",\"@eth-optimism/=node_modules/@eth-optimism/\",\"@offchainlabs/=node_modules/@offchainlabs/\",\"@openzeppelin/=node_modules/@openzeppelin/\",\"@prb/=node_modules/@prb/\",\"@rev-net/=node_modules/@rev-net/\",\"@scroll-tech/=node_modules/@scroll-tech/\",\"@sphinx-labs/=node_modules/@sphinx-labs/\",\"@uniswap/=node_modules/@uniswap/\",\"@unruggable/=node_modules/@unruggable/\",\"@zksync/=node_modules/@zksync/\",\"base64-sol/=node_modules/base64-sol/\",\"ds-test/=node_modules/@uniswap/v4-core/lib/solmate/lib/ds-test/\",\"erc4626-tests/=node_modules/@uniswap/v4-core/lib/openzeppelin-contracts/lib/erc4626-tests/\",\"forge-gas-snapshot/=node_modules/@uniswap/v4-periphery/lib/permit2/lib/forge-gas-snapshot/\",\"forge-std/=lib/forge-std/src/\",\"hardhat/=node_modules/hardhat/\",\"lib/base64/=node_modules/base64-sol/\",\"openzeppelin-contracts/=node_modules/@uniswap/v4-core/lib/openzeppelin-contracts/\",\"permit2/=node_modules/@uniswap/v4-periphery/lib/permit2/\",\"scripty.sol/=node_modules/scripty.sol\",\"solady/=node_modules/solady/\",\"solmate/=node_modules/solmate/\",\"typeface/=lib/typeface/contracts/\",\"v4-core/=node_modules/@uniswap/v4-periphery/lib/v4-core/\"],\"optimizer\":{\"enabled\":true,\"runs\":200},\"metadata\":{\"bytecodeHash\":\"none\"},\"compilationTarget\":{\"node_modules/@bananapus/721-hook-v6/src/JB721TiersHookProjectDeployer.sol\":\"JB721TiersHookProjectDeployer\"},\"evmVersion\":\"cancun\",\"libraries\":{}},\"sources\":{\"node_modules/@bananapus/721-hook-v6/src/JB721TiersHookProjectDeployer.sol\":{\"keccak256\":\"0x322ca8ae90584303c91bd8032fc9193a170043615a3cf2e8a1073f97d5b2c3df\",\"urls\":[\"bzz-raw://ef7c3eab662caf88bf8e6f799b324138ea2161c2c7203d45c6f5e9ee6ed1ab57\",\"dweb:/ipfs/QmZX2bjNwFbsgt7fgUfFjeSJQewGXXWcLxJbehwxEZbEro\"],\"license\":\"MIT\"},\"node_modules/@bananapus/721-hook-v6/src/interfaces/IJB721Checkpoints.sol\":{\"keccak256\":\"0x7f71281ddc11bbd9a96dd2afe6e7dc3d88b5cfedbda3c1db8ce02bd625596e9e\",\"urls\":[\"bzz-raw://8917aaca5c42b4c9aa18f5d18906c7c5443e9c362f337fb7f72d6339b34b2d3d\",\"dweb:/ipfs/QmQ13ezD9aYbTWjbnC14GCGXo7h3Fj7MuzteejYWQG5cHf\"],\"license\":\"MIT\"},\"node_modules/@bananapus/721-hook-v6/src/interfaces/IJB721Hook.sol\":{\"keccak256\":\"0x7bd4927dc430e63f4cb2f7592a4072798357216ab8b62e49e97a91eef842e88a\",\"urls\":[\"bzz-raw://1be3a8d952223912ca26e0038675ecfe58617ca8eb3f3542538532c3527b0cb7\",\"dweb:/ipfs/QmW8WF6gHxHTFCJU3kUMRCRdDvTJcpRomDS8nxeYmr8jPF\"],\"license\":\"MIT\"},\"node_modules/@bananapus/721-hook-v6/src/interfaces/IJB721TiersHook.sol\":{\"keccak256\":\"0x6f491ac7be743ff5158d926c8469715d547cf96fb3fadf5d4f4465c6d3cf2eb8\",\"urls\":[\"bzz-raw://dd895113d75eff371338228666249159b4abdc27fc1d4afc40019392f0520931\",\"dweb:/ipfs/QmPhM9HzibiNf8AESzfqn1yJ7WD2AFcRUcTgfBSaTxGJLX\"],\"license\":\"MIT\"},\"node_modules/@bananapus/721-hook-v6/src/interfaces/IJB721TiersHookDeployer.sol\":{\"keccak256\":\"0xdcc60f2dd90ed23856051df61651ee65d097ef32531c2ea40b9ddf817e556877\",\"urls\":[\"bzz-raw://3d5ffaf617c20b5c6346bad6654d9ca865678256fa97a3b8032deba13ccb614b\",\"dweb:/ipfs/QmTyhfKK2HVUe83pTV6Y88uWGFK659VHvB4emyHv4Lx7wp\"],\"license\":\"MIT\"},\"node_modules/@bananapus/721-hook-v6/src/interfaces/IJB721TiersHookProjectDeployer.sol\":{\"keccak256\":\"0xaadacbf692c25f26ad6c1c78be6013882854166cd1bc131062cf81e2a7dfb378\",\"urls\":[\"bzz-raw://c602ffc9e72e249e93bebc69a6f816f2fb2888b5a6649baef2e971542cc57f25\",\"dweb:/ipfs/QmWP286MM6X2dggsfu1e96CpCiSyAz65b2nncshEWXGZVr\"],\"license\":\"MIT\"},\"node_modules/@bananapus/721-hook-v6/src/interfaces/IJB721TiersHookStore.sol\":{\"keccak256\":\"0x56567896f88cdc5219465e442e03caf788c90667f12dcdb34ef8a344e0083afa\",\"urls\":[\"bzz-raw://71cfd66c63e93ba8597090efc5b306c745724bec72ebe8311b14c8d7ea074387\",\"dweb:/ipfs/QmVvXNekwpJfoGeRHaC1rS2v1eZ2S8XzZWJkj1yXp99ivv\"],\"license\":\"MIT\"},\"node_modules/@bananapus/721-hook-v6/src/interfaces/IJB721TokenUriResolver.sol\":{\"keccak256\":\"0xef418fff2bb7811dc41c1807709741049889818bfb6096954b61b73edcf09f07\",\"urls\":[\"bzz-raw://5aea971649e1f5e17c258442e85d7cc4f8ca0faf9ad185f6b010784b7c6aa1dd\",\"dweb:/ipfs/QmQDZ3cfTdooCRLdRn8p4VKbSqPdZ8rSXL6vvYtNUJc5Vx\"],\"license\":\"MIT\"},\"node_modules/@bananapus/721-hook-v6/src/structs/JB721InitTiersConfig.sol\":{\"keccak256\":\"0x04a9e63f7f61e1c506d53ca70ae9c0e71b03b957f535d4e769b5d488ba425b7d\",\"urls\":[\"bzz-raw://b545fe59f580127a07a8ee7bc082c13c292337d30dc89b535cb5fbc255c29b96\",\"dweb:/ipfs/QmWTBb2LnXDvcJDDyD93ZJMhuybS5z6528TGQVjWQYaTTd\"],\"license\":\"MIT\"},\"node_modules/@bananapus/721-hook-v6/src/structs/JB721Tier.sol\":{\"keccak256\":\"0xf0e249848a1385d00956b9ba50d1a983515a6d40e932e0705c96b63b4d0f1ca7\",\"urls\":[\"bzz-raw://0fb9df1dfd7124dd3e7f37426d47944cace9ade5177064cd8c593e931103f907\",\"dweb:/ipfs/QmQDtwfqeDUGPJsipHPDoo4q3yNFtogQg5ZF1z8E6JbWvv\"],\"license\":\"MIT\"},\"node_modules/@bananapus/721-hook-v6/src/structs/JB721TierConfig.sol\":{\"keccak256\":\"0x0ad3eb9440c15f69e4d82a3d1a90fc6cf01703816f4c2534e9eab1a2d0e26d80\",\"urls\":[\"bzz-raw://e55fb400ffeddfad6eb94c259e5cc2406a93945414dd326f2e2733ddbd1c0513\",\"dweb:/ipfs/QmebwiqWs8XE5JRPbk1eJSaekTHdLUr3p3SRh4Ye3jkJJC\"],\"license\":\"MIT\"},\"node_modules/@bananapus/721-hook-v6/src/structs/JB721TierConfigFlags.sol\":{\"keccak256\":\"0xa96d61224a0c57d2cf1a15c8123925246b64c017a08f92a6d45dd5f5643960c1\",\"urls\":[\"bzz-raw://4689458074886b2569d1661a44d64129b7bae028b786d34578b8e34384ef9779\",\"dweb:/ipfs/QmTphmLU98MZb4DKWEMH4UFbAggchpshfHanH141LVDzta\"],\"license\":\"MIT\"},\"node_modules/@bananapus/721-hook-v6/src/structs/JB721TierFlags.sol\":{\"keccak256\":\"0x5f73fa3c927b1902b5d0927ad11a06960e29ad88a6e29b9405b9eaae8846c2c5\",\"urls\":[\"bzz-raw://13b0db30829eca17769c0e9fb011ccaebbda15e027c24175d8d6cc1163c0ca1c\",\"dweb:/ipfs/QmYmXASJGwsXRU2NYNyVzTyFbF78GjGTqo15Z5R64EX8AT\"],\"license\":\"MIT\"},\"node_modules/@bananapus/721-hook-v6/src/structs/JB721TiersHookFlags.sol\":{\"keccak256\":\"0xf59d1106597f60959606a8c7e55fae3fa7e8e95572ca8aca7c3b109679f456ee\",\"urls\":[\"bzz-raw://c883611c1fd3a046a81b7604711637624c11ee4f8a7413651d812a9f4d34671e\",\"dweb:/ipfs/Qmbsx8qoab3BQNm6q725hLb5XjSinKkZFZVQ1jDLiNH8wf\"],\"license\":\"MIT\"},\"node_modules/@bananapus/721-hook-v6/src/structs/JB721TiersMintReservesConfig.sol\":{\"keccak256\":\"0x86fe586a05e6d4bc6fab9b68996a7f4b74c5362ca6f24b9d8057ed7e4cd1c5ac\",\"urls\":[\"bzz-raw://0915f17d1f958ab1fe6b214d99ed62f1f858684898c803f1a8a6a557472dd140\",\"dweb:/ipfs/QmUhdnSV8UzkgvbtkYEKHrpyDEmc2aJxW5HQ1gucuxxu5A\"],\"license\":\"MIT\"},\"node_modules/@bananapus/721-hook-v6/src/structs/JB721TiersSetDiscountPercentConfig.sol\":{\"keccak256\":\"0x4672eacb6b0cda5e6f5f72ddb91463c52fb90b4df421053e3b40024f19a59954\",\"urls\":[\"bzz-raw://9d8e3a0b35d6b2a6ec66527594263400189b6c766bfd6943c83704380a989aec\",\"dweb:/ipfs/QmUE7NhFWsxjFRzTuRyHJ7oRx3JXD9CnG83t29PjGAhwPR\"],\"license\":\"MIT\"},\"node_modules/@bananapus/721-hook-v6/src/structs/JBDeploy721TiersHookConfig.sol\":{\"keccak256\":\"0x49cf6d840225467ff5e092419d28220afa51ff005730200bff454450225949a9\",\"urls\":[\"bzz-raw://002caf83fa409f5f94290d3fec875ee92ffd6d27237198e1c6d4d712c9db6966\",\"dweb:/ipfs/Qmc3nJxy4T7QRvEtXD5heH69942bcKepLR3qny58CoijBy\"],\"license\":\"MIT\"},\"node_modules/@bananapus/721-hook-v6/src/structs/JBLaunchProjectConfig.sol\":{\"keccak256\":\"0xdfb075abe4c6a468f4a7fac3b9362a6e3263b868654425a9970a08b75012a069\",\"urls\":[\"bzz-raw://fee2aae31db9e94a47368429523f5414b124d4f04db6182bbec1cdc7b4b398cd\",\"dweb:/ipfs/QmdGky5bbKbH4fDw1F1Urta5mP9ard6iMsoVXxXJ7Dj9wP\"],\"license\":\"MIT\"},\"node_modules/@bananapus/721-hook-v6/src/structs/JBLaunchRulesetsConfig.sol\":{\"keccak256\":\"0xa555f13101f23ca0496c82bb79d5b79524c9bf524a38da6593020f26a0c50404\",\"urls\":[\"bzz-raw://f0c6d1b582169d25db41a3fe3e65637ccd52e026755dcb9debe75806df05c05c\",\"dweb:/ipfs/QmZNWHPcijmx1asYnqXQoVQooPZyUsTgvX6zX7v3uLNe1c\"],\"license\":\"MIT\"},\"node_modules/@bananapus/721-hook-v6/src/structs/JBPayDataHookRulesetConfig.sol\":{\"keccak256\":\"0x7f299e3154d55d290e203c9473f86497d139f6305a148a980a47f160b4a24d81\",\"urls\":[\"bzz-raw://e8dc9fd3268a967806643dd4e6dcb07f8cbac90b4c4b49672ba4cc5d28d82ffd\",\"dweb:/ipfs/QmVHokMKoe7JRH1hSB5U6BazPRoH3ZXdihMvZQP33X7t34\"],\"license\":\"MIT\"},\"node_modules/@bananapus/721-hook-v6/src/structs/JBPayDataHookRulesetMetadata.sol\":{\"keccak256\":\"0x542f8165d38864fb5e175db275525cb974f3a6500059611dcd97f914e8ef5320\",\"urls\":[\"bzz-raw://1997ea89494e89d614b97fa7635f346e70ad7d1e94cdf2b04a6e066fb90400b9\",\"dweb:/ipfs/QmVdXeRUrygwQrKqMXgqF8t3odiiV4Ah9BmtGJWPcDgiSx\"],\"license\":\"MIT\"},\"node_modules/@bananapus/721-hook-v6/src/structs/JBQueueRulesetsConfig.sol\":{\"keccak256\":\"0x2a5cd16da5b916fc0b0755264fd33f39b03077048266324991b682a3a526e911\",\"urls\":[\"bzz-raw://5d0604e409d7328ba2779220b7b677cc23099582b0044ba57a4e13bbc6771baa\",\"dweb:/ipfs/QmS5ckLxxr3vcDScSE71spwMjnwS3myogW3tVtt6DNUBBB\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/abstract/JBPermissioned.sol\":{\"keccak256\":\"0x5757a3dbf72b5a99c96226c3da72b9cd4afd55a0a1dc582ef24b766d64e54960\",\"urls\":[\"bzz-raw://22e1df0bf62907be9da6944f4fad2cdf1019b04a9a0332360e04e4e3146edf4e\",\"dweb:/ipfs/QmRAftniuiZab58KJ43uSZxnxPqFyB2YnprwcJKouNnSnE\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/enums/JBApprovalStatus.sol\":{\"keccak256\":\"0x58f3eed8b6ecea6b640f4eb78a5a416ce8737f9155e350ef4077db422b3fca8f\",\"urls\":[\"bzz-raw://0b56bde97ef9d8ec2a3e464202c5d2fee9c39597485b3fb8baaeef971cc63bc8\",\"dweb:/ipfs/QmSdPaNfPm83yibuSvgLbaqgZw7LYkTLhacrxDagH3sprJ\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/interfaces/IJBCashOutHook.sol\":{\"keccak256\":\"0x2a6d327092775fdbeaf922b8364403102cae437f765f662fe142bf97e87c2ef1\",\"urls\":[\"bzz-raw://5f9a23971860b907569917fe14cbcc85993d83fb32e5342dd5338a1721e540f7\",\"dweb:/ipfs/Qmamt2n7HaWo2cUDn8K2FhrZPHBVxuaCWh9jf8V3WYPXMN\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/interfaces/IJBController.sol\":{\"keccak256\":\"0x9ccb22b59001c28c309746e6717cb6cf201feb8133cae17b09821a6b5f5e3438\",\"urls\":[\"bzz-raw://9704aa1a2ecf34b7277c9ccf8db054701ab97666b64af490e0a0dc1db884febd\",\"dweb:/ipfs/QmcJMQe2eWmCbscFykz9LURhngdpRx9EX17BxoAhUrN5Cf\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/interfaces/IJBDirectory.sol\":{\"keccak256\":\"0xb8f3ba0a544360b32c9f0a704168ee93c2960accfc010735c8cbea54941e63d5\",\"urls\":[\"bzz-raw://e9f14d5daa2357db4afe96313b40bf0c53c606315c9cb55109fffdc9c2fd85d0\",\"dweb:/ipfs/QmRPHFAiivM9CqdfocRyahdSjfWTbaSepPNCGGQU23ABcv\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/interfaces/IJBDirectoryAccessControl.sol\":{\"keccak256\":\"0x963e641f7b02187389fa813ab177b8d0f20a7a543f6ce2306e8d5f9db95d56e3\",\"urls\":[\"bzz-raw://b500161bcc70fac6830211b2f9855c2c1ab17a91226619cedde7daa166f9196c\",\"dweb:/ipfs/QmV92TK8CTZxVJoGBDEsBfUDidoLAobFmyL1NdQVJARpCD\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/interfaces/IJBFundAccessLimits.sol\":{\"keccak256\":\"0x0cb50a855cccbbe7c74a1ebc454112b7b63f502badd019895dd936365ac73340\",\"urls\":[\"bzz-raw://226be05349028b8f055e386fbc41f7db0feb6d027b6068c1c929b0924688e129\",\"dweb:/ipfs/QmXyotizn7pR8DQJtuj6Xkcr7LKorSkm9q8kQGaSDDikSw\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/interfaces/IJBPayHook.sol\":{\"keccak256\":\"0x08599d439d898566b311bc4bedf7f0050ce25c86e246c43f673f3ab4d2457f21\",\"urls\":[\"bzz-raw://db19e95707920262c79197be9296fe381782220bfaf00b71df3a4271da83832f\",\"dweb:/ipfs/QmYzdomQzXNSk46U5vkiEnDErJJdR17deL4S6hPundstZd\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/interfaces/IJBPermissioned.sol\":{\"keccak256\":\"0xa43d05c9cc31cd768072e60d4f097d60dfe199469bfc96aa8df29346a15ee4dc\",\"urls\":[\"bzz-raw://de7caab7841a56b681140993557374edb54763a08b28aaaba35f1bc1a01f7937\",\"dweb:/ipfs/QmQKG6QNm7PNebRtKeLSzzXgp71Yw5Ja37nGPCvVa62Rzu\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/interfaces/IJBPermissions.sol\":{\"keccak256\":\"0xb32e13d512a7deb9ba1e47bbc0992817a63caa9e1f2913d6c55b637a57084037\",\"urls\":[\"bzz-raw://0d291ccc6edc581febf386779423001b0ed4d3b5b021ec444f7bef01cb2f9d28\",\"dweb:/ipfs/QmSUFhJpcpWYLEUzt4KrzyC4am39TNost8tWAtn5GdAUg2\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/interfaces/IJBPriceFeed.sol\":{\"keccak256\":\"0x3a948500b5397c90e926f3bdef9423e7f095f906b23cd1503009802c80bedb41\",\"urls\":[\"bzz-raw://a0ea0b7e5d442257f6159799b7bf262615b0f04e5cd542b0980f131ae40a63bb\",\"dweb:/ipfs/QmX7uugLaXtT5XmYxqfrmDqU2YuknAeYjHMiLm9iHaRfHw\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/interfaces/IJBPrices.sol\":{\"keccak256\":\"0xed5e532f6ee86029a1a4a1ba8b593296f772909a5f9d95da6cc6c595a838446f\",\"urls\":[\"bzz-raw://4314cbfe4ebd96a48eaf1c14af860aa08b7cd6a73da10391746b4d3410d13d67\",\"dweb:/ipfs/QmfRkWFbxmJUMew6DsDGbK88PypDBUA6PDTJFvfBaMno5n\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/interfaces/IJBProjectUriRegistry.sol\":{\"keccak256\":\"0x4342aaa8b9566e17691f69fc71e050350dd89b63f5040f092f115610d7a6c0eb\",\"urls\":[\"bzz-raw://88ce07791403524a229b080ad05604962d5b54e57106a533f62bff8a32896b1d\",\"dweb:/ipfs/QmSYxFpoH714CF7mZVhgKvFdYHHgg8R4UGXVXhMS69C7H2\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/interfaces/IJBProjects.sol\":{\"keccak256\":\"0x72c6cbda5a93593e3cc49ef6c4e0848a4b6daa88c188c4192776af86c49911dc\",\"urls\":[\"bzz-raw://448ed5d7a704b5f4dd759514dbcb78160b82732ac6bd7bc368a9f8822045e6de\",\"dweb:/ipfs/QmbnpCPxQLDvQx5ymEy1Ty3aks7bjonydops1CsjCACJBN\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/interfaces/IJBRulesetApprovalHook.sol\":{\"keccak256\":\"0x11dd67effb025396bec1bb97d35a9ba162340e9a824c048e8286802a12acaa45\",\"urls\":[\"bzz-raw://bae11f483c66d98e7fad9bbf47249f6fa4434693e8bace78cbe6d4da9afee009\",\"dweb:/ipfs/QmWjrjPtr8dLGtXQBrz6idwcNqyx2yVSVVQtqo74yqUSZV\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/interfaces/IJBRulesetDataHook.sol\":{\"keccak256\":\"0xf9aad7d3c7de29e020af4fea893bbaa6a1c0e9a8ae5860331c9f4d68d1a5a99f\",\"urls\":[\"bzz-raw://e10b6ed0827ac155153544b8018d2fa812628016e8a168f7df771616f92fd6f4\",\"dweb:/ipfs/QmUB3zuj8B2MAdgSYEMPh7ovXuM1fBb7jN6gLVxstjcAE7\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/interfaces/IJBRulesets.sol\":{\"keccak256\":\"0x8fd69e04aa2b5962a917394c0a4baa6653f7cea93629a1915c1f9c2e870143e5\",\"urls\":[\"bzz-raw://6c7ce64037e6a11cc03e5c66607a219eb25c953ad76aa7b914d2a9e8f0cd5434\",\"dweb:/ipfs/QmYoTec9wfd89HAnNckC2XJWegtgUmfjmi1vJYT4LTXQ61\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/interfaces/IJBSplitHook.sol\":{\"keccak256\":\"0x8155763689f6f51b5c6712ac6f23728b248a8924e69e63f8aa14d01c78ea17f1\",\"urls\":[\"bzz-raw://7bab14bd7250cc3ba6665573f2a961308a3453015af7a0305488c0db1745f95b\",\"dweb:/ipfs/QmYpKwToPcSChWXyJ75SBEeWKugBygAnQ1WaZ8wWcu5rha\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/interfaces/IJBSplits.sol\":{\"keccak256\":\"0x9d27fe4d9aa6dcbb24a24ee1fc16e51b51fab1c4ab1eace93981e73f3c4ce636\",\"urls\":[\"bzz-raw://7a6a1243102ac23cb1643bcc670b6b16b70566877941233964159f9b37755113\",\"dweb:/ipfs/Qmewa2o3nyoRwZ4pdhWqUh1ShWXA3GHJffiVafcKYXg2Ao\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/interfaces/IJBTerminal.sol\":{\"keccak256\":\"0xa3621c12f7c2e33ee38b5de626a5939190d8a12b1e5318a7cd8d398595480cec\",\"urls\":[\"bzz-raw://1341254389038383117d9b23ed2f9d1812fc30ef1c11cfd6c8423918894d7ba3\",\"dweb:/ipfs/QmV2WJ5a3NW12RnZAM3ySbEfGHNN6GfqqpsMHXorfoxiQo\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/interfaces/IJBToken.sol\":{\"keccak256\":\"0xadb3a7c3c149b60b6b51fdfb2acc814956d8aa9bb94e745c0e907c171b0983f2\",\"urls\":[\"bzz-raw://dddd118b37582f19c7559bdf848f53a29fb16289311bd14957c95fdee9cd28e6\",\"dweb:/ipfs/QmbwWXXVR4SGH9tz6pMKKMZxZ8YF8iRQpMCP3DnXDadx3L\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/interfaces/IJBTokenUriResolver.sol\":{\"keccak256\":\"0xcbdb1448260ebea5937411516957ef199099e34ff997e7f2a617c2898f921994\",\"urls\":[\"bzz-raw://d1cbf97e5684c987be6703c096e8230d870fab25a23eec8d209cd082e3f2637b\",\"dweb:/ipfs/QmNmzeuQoFiaUTQAcV1tyJyjUYEJ3t7386zTw4ofT7HoZM\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/interfaces/IJBTokens.sol\":{\"keccak256\":\"0xf7b458ce7e75e1c4daf2052873846b7c99abb098c0d5fbb2ee5d18e132e4a76c\",\"urls\":[\"bzz-raw://ee20abdc20787df386809255eaee2ef27daca71d4769a0d146cc249502ab0604\",\"dweb:/ipfs/QmP3ZpnnnTQKKGNV9KyLxCYXkjBDuiAgqHX6NRGYuYzTaW\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/structs/JBAccountingContext.sol\":{\"keccak256\":\"0x8c73e24e0dd7c444b5433b2ad4a391489f4d3b80edef5dcf5f7475b6a622fce8\",\"urls\":[\"bzz-raw://08c462947d5301a9d1dfdf6986c8ed6650292d19bc28b7e173580bc78e4b61f5\",\"dweb:/ipfs/QmS67Qt15LQvpiiKmtNeZEq6ByPJ2Ji3frgHv9Wj3HdwYV\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/structs/JBAfterCashOutRecordedContext.sol\":{\"keccak256\":\"0x2bd6b75b18468bebba3ac89483f349909886f3b40b8d248d275ff8e5381373fa\",\"urls\":[\"bzz-raw://11b5fdc3bed39205ccd3a9286f42c9b9f9849ecd9af6374c939940b0671cc983\",\"dweb:/ipfs/QmTqUaRMNtz5ChCwVKNQFQu8TQb23wxiQtmwJUpAMfb22A\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/structs/JBAfterPayRecordedContext.sol\":{\"keccak256\":\"0xcf1761f48e4cbd6eeeb64bb19e434eff50a7f666b2116657f88f63d19620c6de\",\"urls\":[\"bzz-raw://842fe47a4ad56c830040864b458de398efd0cf82eb0add9349e792d0c8b0c275\",\"dweb:/ipfs/QmXBj6EVnzvVX8ZYa2ndyjoSZDGjpXxaoy7dBuoGMaAmRX\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/structs/JBBeforeCashOutRecordedContext.sol\":{\"keccak256\":\"0xd3af6ce6d8ef731aa746e08de846f0422b34a568a3d1000fb8f85a32ba5701b0\",\"urls\":[\"bzz-raw://237e31d3ee24305c1ff4ffb9f829a4159fbd6bb8b4ecb5b557aa16e7eb924bcd\",\"dweb:/ipfs/QmeW4zTaM2J8DDxdC7zLwaHryBLcC3ydbHNSTHcmyETGvG\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/structs/JBBeforePayRecordedContext.sol\":{\"keccak256\":\"0xa5e4dd0ffa54c8e56f3bb6a437b2e13ef8728ee15aee3d7cb1d0dc96317e75dd\",\"urls\":[\"bzz-raw://fcd2113962a3f34e782090a553f1ba5ace6653bd5d5f932e8bb5279f42bbcb5b\",\"dweb:/ipfs/QmWLhDEprdQsNFmPhmNojRHDhqwG2QMx58AV5j4o56P4mx\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/structs/JBCashOutHookSpecification.sol\":{\"keccak256\":\"0x1745110d00305a2534d3f325512259c3a7d1ac301330f717bb66149577b2de44\",\"urls\":[\"bzz-raw://e5ab6c6db18d9f82e17a2da63a133f40f89cb4f572a07c50875cd2b29de67ccf\",\"dweb:/ipfs/QmWxpxr26iHx1ruNCmD21rwSNBAxP6ep4S3M8JVVKCtK4n\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/structs/JBCurrencyAmount.sol\":{\"keccak256\":\"0x7f321bbcbd13abfbc8f0d08a5adaaf8ef312db5bb899012fcffb6170fbb962a9\",\"urls\":[\"bzz-raw://bf9301ef1dbb3abda7b492585377617508ba048c6170f21a5e7d2b3c034eb384\",\"dweb:/ipfs/QmcetEFxSYLLNSZzPBpNn3Fc8sFcrFE8A8h12ZSj2tLgxD\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/structs/JBFundAccessLimitGroup.sol\":{\"keccak256\":\"0x7e62015441edc056c3959fb0e5d0b59a1b209a91ce4beab9d3f6c25e02daf0c0\",\"urls\":[\"bzz-raw://5c77a27155794a7c05ea17ed4bdb382039187b9effecc300563d7fb144029983\",\"dweb:/ipfs/QmXE4FptihU4wSqFLeGWsaNDpZmmNYFLEXMnWGhEC5pf3X\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/structs/JBPayHookSpecification.sol\":{\"keccak256\":\"0x41eaaab47cffb9be6adb61fef19c6daf34b03e06dec8a66129cdcac0449ddbd0\",\"urls\":[\"bzz-raw://e1e4cfe1aff9a82b1c9783b3da32f40df4e009c4d1d56a0b1c6a17286ff27bfb\",\"dweb:/ipfs/QmbMosdKhAYstDmZL5Hdz2kdLYLtH3Etzvu3qfgimP6HgD\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/structs/JBPermissionsData.sol\":{\"keccak256\":\"0x9cb75b1171657be08950f9fc9f6c2bcb2496f618de4ab932141d424dec29d9df\",\"urls\":[\"bzz-raw://a8f578d6132c92048ae553a3c13260ecfa657f4a1bbe18f6c550d96988167590\",\"dweb:/ipfs/QmSYfGm2mcYfMm4wfnZMTjuUr1kBJoq4vZSCkwdgi9BRFk\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/structs/JBRuleset.sol\":{\"keccak256\":\"0xd03f45345597fca43effe3bc593572c989f4294d909505e331cbd2640a801d23\",\"urls\":[\"bzz-raw://2cc09b335549f4982c16c1109f3078f09fb81c32370baff007633a38badb7a83\",\"dweb:/ipfs/QmYJHBvXscvokRqzdGdTCRQtHUpnePS2uaCDfgHLuuMo56\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/structs/JBRulesetConfig.sol\":{\"keccak256\":\"0x812ca14f18e228fde272c0caf56a59b71302bfb4f9c514ac6fb0989ab8e1c48e\",\"urls\":[\"bzz-raw://9b234704315ac567db402c89dd5be46ca029094872f6dd52698324dd6ddf6a2d\",\"dweb:/ipfs/QmYPUJHLkyUwbYfJ7UdcpgvyzPtibUmhrKtzXQcRtA8Kvz\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/structs/JBRulesetMetadata.sol\":{\"keccak256\":\"0xbb9bda3b7ebb6796fa091ee6ce3182ad2a03dc35b89df0fb1107fae7c26ae0b4\",\"urls\":[\"bzz-raw://1b400674d8ec4e3495041c03d5601c07a68eb5d18a0cff83a5823007d6bad36e\",\"dweb:/ipfs/Qma76CRFPwV9WZq2ttZ2FFvui5BvzRHnftrL3Tz1m9uGKv\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/structs/JBRulesetWithMetadata.sol\":{\"keccak256\":\"0x1bcfadf20488f6df65227f8d4d0fbf9b7539456a2389567f7fe3900d23289bc3\",\"urls\":[\"bzz-raw://0a15c399a71e5373f8c0484c6d6b83521eda31e063a2c53e4c5cec4e74550343\",\"dweb:/ipfs/QmQwi8zkjoTVXbK89NeETYimWCacTrNsesJdpLSvGdqMPX\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/structs/JBSplit.sol\":{\"keccak256\":\"0x3b29d1544f373693c945be450778ada48ecbf66dfac32ef9c08cacd648a3b718\",\"urls\":[\"bzz-raw://150b6d204296a23847495409b48bebc8650e2d4237ef013b8bbda181f90c097d\",\"dweb:/ipfs/QmTeev8hH5bDtx15L6cD8A93Y8YksExAsDG1UxH3zhX68k\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/structs/JBSplitGroup.sol\":{\"keccak256\":\"0x8dc98fa9e730bee8bcc0a8acf1bc4db1c9b0edf307d969c9c9caa4d6b8d856d9\",\"urls\":[\"bzz-raw://66f4306e0e69c82033927952564fd617e7c4b29aa8b165d5b53a0ebe3109ea12\",\"dweb:/ipfs/QmQqN1u7FHAdEtEZNRcKvZwYtXEQVQnLd6FMzHESP7wDtx\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/structs/JBSplitHookContext.sol\":{\"keccak256\":\"0xa2246f4960ec2b24db3fbfce5d59782cdb9a8fb3c3f832a2c39ddc92859ff170\",\"urls\":[\"bzz-raw://3e3a0ae100c15bb15f0484cb68e3052c3d3d764f84e37020e8dd6b658ff98076\",\"dweb:/ipfs/QmPAv99zN7senrfCMMkeT4RMWpwTdqLgMURQR73BLRe4ZG\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/structs/JBTerminalConfig.sol\":{\"keccak256\":\"0x9e31505080d3754b6d7db96095b0545930ef6dbc035b91fcc32fdc76a0e7c2a5\",\"urls\":[\"bzz-raw://f7702ab33a1b713c37e5397a55d8ef089289f4da8034cfe9622cbc69a98c47de\",\"dweb:/ipfs/QmXyiXps4aJyiM7vtDC373QUoqwB4DMETaZzC5cZPJKaAK\"],\"license\":\"MIT\"},\"node_modules/@bananapus/core-v6/src/structs/JBTokenAmount.sol\":{\"keccak256\":\"0xc61593d33d5ec30e695d382948a1b944d01e29a8f2bfd29f75ecebcdbc7816de\",\"urls\":[\"bzz-raw://8992c1e5fca0c2342ecc0e734dfba6a2a752e4c29184784931d0971e44305051\",\"dweb:/ipfs/QmYNcaW3qeCkgAExUaFTq238fgfJuoYCTwjCn7jm94U4dJ\"],\"license\":\"MIT\"},\"node_modules/@bananapus/ownable-v6/src/JBOwnable.sol\":{\"keccak256\":\"0xdbeb8ffa2b20c84e6f75e67a8239ecf7aee4e0328058ff5e55ee710080e7a84e\",\"urls\":[\"bzz-raw://4c55d5b568b5a6bce1e51474f638c8de1d285a6382837ffea93dfbcfec6b878f\",\"dweb:/ipfs/QmWCCYiVPT9UrKXcCPEHoAnSCywemLkYp3G265XhWRvXct\"],\"license\":\"MIT\"},\"node_modules/@bananapus/ownable-v6/src/JBOwnableOverrides.sol\":{\"keccak256\":\"0x0716e43cc152b2b614b7dfd72c482b4a661a87a533b73c680f025cd207c1a982\",\"urls\":[\"bzz-raw://d5e8af0e23022978564513e6adb901d848146865291e4dcd304d807a863d3baa\",\"dweb:/ipfs/QmUCyxudyh9bda8LCgMYnhMcKaNbTG84WqpCfXr4KuqyHG\"],\"license\":\"MIT\"},\"node_modules/@bananapus/ownable-v6/src/interfaces/IJBOwnable.sol\":{\"keccak256\":\"0x412aa3a3b9095fe3c7c81e08b8e0ab7775e0d57709648756cf565d78f991db5e\",\"urls\":[\"bzz-raw://0cdf10b412dfce9f6372192c6e5ee4262f994ec793455f8ff8f0c9f6ace6d4fd\",\"dweb:/ipfs/QmRGzsFo7Xb4JvKPQ7uwCLG7FiyEEMz6h1EGTiJCSuqwbB\"],\"license\":\"MIT\"},\"node_modules/@bananapus/ownable-v6/src/structs/JBOwner.sol\":{\"keccak256\":\"0xabdb1d1ac3542bc428519e0684e191222a67c8370296da1abce87b2865764c36\",\"urls\":[\"bzz-raw://8adfe62cee8df91cec9d99282af4971a600473e9c7cafb034c4bf09a27d56de1\",\"dweb:/ipfs/QmX4qn3ohYxTsUYyXicqMRC3BuEYL2zE1czVL9KdEvK8Fg\"],\"license\":\"MIT\"},\"node_modules/@bananapus/permission-ids-v6/src/JBPermissionIds.sol\":{\"keccak256\":\"0x5105c29834e0dce4e395e262f23089a1077404f5317c591c89f3621cdfda9628\",\"urls\":[\"bzz-raw://54deca2c06d77f5d1087911e8035d244dde2b08a5dc0dff146b86e6a314419e8\",\"dweb:/ipfs/QmNdpTioAbk6bahJx4aT1WFUY9aV182JH1Dn4FqfuqC8QC\"],\"license\":\"MIT\"},\"node_modules/@openzeppelin/contracts/governance/utils/IVotes.sol\":{\"keccak256\":\"0xdf466d4c6aa9da903595262100def9c6d960045b2ada0357edc47953bc5e18d6\",\"urls\":[\"bzz-raw://889512f1c9468f4d5e0f90f46b849709fd6fedab29b8377f64f6c3ee8373beee\",\"dweb:/ipfs/QmefA385JqnvagxdFDpM3kxnxUtpJvkxkbTr66naQbAko9\"],\"license\":\"MIT\"},\"node_modules/@openzeppelin/contracts/interfaces/IERC5805.sol\":{\"keccak256\":\"0x8fbf3dddff71246ff9ffe21f9f0195a40583c4101c94c747691291f8b9e14ebd\",\"urls\":[\"bzz-raw://8d69db7468e95a56999df81f1c555215b3359483d610dbef17d898ef48801578\",\"dweb:/ipfs/QmSPaSUsHDGqffinNgwajKp8RUdwj3GyW3VqWWNPfwH4b4\"],\"license\":\"MIT\"},\"node_modules/@openzeppelin/contracts/interfaces/IERC6372.sol\":{\"keccak256\":\"0xed0f7f14eb30c80a82855ddc3f7267bb6290546e5847a8ffc33f599ce4bc5eb6\",\"urls\":[\"bzz-raw://63fab00bbb42ce6f132a93d1c1e1cfed5175821521fb8746caa48129787d2435\",\"dweb:/ipfs/QmVMBNhmVW1h35LsaYNyDChfyTwF8M3EW9T1JDFpsXiaQF\"],\"license\":\"MIT\"},\"node_modules/@openzeppelin/contracts/metatx/ERC2771Context.sol\":{\"keccak256\":\"0x9695d220b99dcf62910533bdf5d40d4cf6a4e04d5b106b6803a80586486dc7f7\",\"urls\":[\"bzz-raw://83b7aecd65882d8953643dce144efe91367082cc01830c9c4ed3c8a4837fb558\",\"dweb:/ipfs/QmQ5HxGavcCKjuhd8buv177qjG6A4kvxx4pZviceKdspdM\"],\"license\":\"MIT\"},\"node_modules/@openzeppelin/contracts/token/ERC721/IERC721.sol\":{\"keccak256\":\"0xf78f05f3b8c9f75570e85300d7b4600d7f6f6a198449273f31d44c1641adb46f\",\"urls\":[\"bzz-raw://e28b872613b45e0e801d4995aa4380be2531147bfe2d85c1d6275f1de514fba3\",\"dweb:/ipfs/QmeeFcfShHYaS3BdgVj78nxR28ZaVUwbvr66ud8bT6kzw9\"],\"license\":\"MIT\"},\"node_modules/@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol\":{\"keccak256\":\"0x88cd5e3bee2e8c36b8d9058fbcaa81ad5704281b25634122234b55ea853d8055\",\"urls\":[\"bzz-raw://8dc7e7ab5b8ea36c15027ab04221b05d1c970f47a53e9fd47ead8ca665d49c7e\",\"dweb:/ipfs/Qmeeph7fsDyfRr8vb2L8KcDEmKPb224TAayMvgqgGAnqpL\"],\"license\":\"MIT\"},\"node_modules/@openzeppelin/contracts/utils/Context.sol\":{\"keccak256\":\"0x493033a8d1b176a037b2cc6a04dad01a5c157722049bbecf632ca876224dd4b2\",\"urls\":[\"bzz-raw://6a708e8a5bdb1011c2c381c9a5cfd8a9a956d7d0a9dc1bd8bcdaf52f76ef2f12\",\"dweb:/ipfs/Qmax9WHBnVsZP46ZxEMNRQpLQnrdE4dK8LehML1Py8FowF\"],\"license\":\"MIT\"},\"node_modules/@openzeppelin/contracts/utils/introspection/IERC165.sol\":{\"keccak256\":\"0x8891738ffe910f0cf2da09566928589bf5d63f4524dd734fd9cedbac3274dd5c\",\"urls\":[\"bzz-raw://971f954442df5c2ef5b5ebf1eb245d7105d9fbacc7386ee5c796df1d45b21617\",\"dweb:/ipfs/QmadRjHbkicwqwwh61raUEapaVEtaLMcYbQZWs9gUkgj3u\"],\"license\":\"MIT\"}},\"version\":1}",
+	"gitCommit": "npm:@bananapus/721-hook-v6@0.0.69",
+	"gitDirty": false,
+	"history": []
+}
