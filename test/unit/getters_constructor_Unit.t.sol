@@ -539,16 +539,16 @@ contract Test_Getters_Constructor_Unit is UnitTestSetup {
         hook.mintFor(tiersToMint, previousOwner);
         uint256 mintBlock = block.number;
 
-        // Unenrolled tokens return address(0) — enrollment is required for distribution eligibility.
-        assertEq(hook.checkpoints().ownerOfAt(tokenId, mintBlock), address(0));
+        // Mint writes the first ownership checkpoint.
+        assertEq(hook.checkpoints().ownerOfAt(tokenId, mintBlock), previousOwner);
 
         vm.roll(block.number + 1);
         vm.prank(previousOwner);
         IERC721(hook).transferFrom(previousOwner, newOwner, tokenId);
         uint256 transferBlock = block.number;
 
-        // Transfer writes an owner checkpoint, so the token is now eligible.
-        assertEq(hook.checkpoints().ownerOfAt(tokenId, transferBlock - 1), address(0));
+        // Transfer writes the next owner checkpoint, preserving the prior owner at earlier blocks.
+        assertEq(hook.checkpoints().ownerOfAt(tokenId, transferBlock - 1), previousOwner);
         assertEq(hook.checkpoints().ownerOfAt(tokenId, transferBlock), newOwner);
     }
 

@@ -12,6 +12,19 @@ This file describes the verified change from `nana-721-hook-v5` to the current `
 - `JB721TiersHookProjectDeployer`
 - `JB721TiersHookLib`
 
+## 0.0.71 — Per-tier active vote totals
+
+`JB721Checkpoints` now exposes active delegated vote totals per tier:
+
+- `getPastTierActiveVotes(uint256 tierId, uint256 blockNumber) → uint256`
+- `getTierActiveVotes(uint256 tierId) → uint256`
+
+Mint, transfer, and burn events now write ownership checkpoints so `ownerOfAt` can prove the owner of freshly minted tokens as well as transferred tokens. The owner-tracked per-tier total (`getPastTierVotingUnits`) follows owned tier units, while active totals follow only units held by accounts with a nonzero delegate. Delegating updates the active totals for every tier the account currently holds; transfers update only the moved token's tier.
+
+ABI change: `IJB721Checkpoints` adds the two per-tier active vote views.
+
+`package.json`: version `0.0.70 → 0.0.71`.
+
 ## 0.0.70 — Active delegated vote totals
 
 `JB721Checkpoints` now exposes the active delegated vote total:
@@ -19,7 +32,7 @@ This file describes the verified change from `nana-721-hook-v5` to the current `
 - `getPastTotalActiveVotes(uint256 blockNumber) → uint256`
 - `getTotalActiveVotes() → uint256`
 
-These totals count voting units held by accounts with a nonzero delegate. Undelegated holders and undelegated custody addresses are excluded; if tokens return to a holder whose delegation is still set, those voting units become active again. This is separate from `getPastTierVotingUnits`, which remains the owner-based denominator for tier-scoped reward pots.
+These totals count voting units held by accounts with a nonzero delegate. Undelegated holders and undelegated custody addresses are excluded; if tokens return to a holder whose delegation is still set, those voting units become active again. Per-tier active totals were added in `0.0.71`.
 
 ABI change: `IJB721Checkpoints` now extends `IJBActiveVotes`.
 
@@ -90,15 +103,14 @@ aggregate equals a full per-tier recompute across fuzzed operation sequences.
 `package.json`: version `0.0.63 → 0.0.64`. ABI change: `totalCashOutWeight` → `totalCashOutWeightOf` on
 `IJB721TiersHookStore` (and the hook's no-arg view).
 
-## 0.0.63 — Per-tier eligible voting units checkpoint
+## 0.0.63 — Per-tier owner-tracked voting units checkpoint
 
-`JB721Checkpoints` now maintains a checkpointed per-tier eligible-voting-units trace (`_tierEligibleUnitsOf`), exposed through a new external view:
+`JB721Checkpoints` introduced a checkpointed per-tier owner-tracked voting-units trace (`_tierEligibleUnitsOf`), exposed through an external view:
 
-- `getPastTierVotingUnits(uint256 tierId, uint256 blockNumber) → uint256` — the per-tier analogue of `getPastTotalSupply`. Distributors read it as the exact historical denominator for tier-scoped reward pots (rewards claimable only by holders of a chosen tier set).
-- Write rules mirror `ownerOfAt` eligibility: a token contributes its tier voting units from the block it first gains an owner checkpoint — enrollment via `delegate(address, uint256[])` or its first transfer (the `from != address(0)` branch of `onTransfer`) — and is removed on burn.
-- **Mints write nothing.** The `from == address(0)` path is skipped, so a minted-but-unenrolled token is excluded from the tier total and the mint path carries zero added checkpoint gas.
+- `getPastTierVotingUnits(uint256 tierId, uint256 blockNumber) → uint256` — the per-tier analogue of `getPastTotalSupply`.
+- Write rules mirror owner-tracked supply as of `0.0.71`: mints add tier voting units, transfers write owner checkpoints, and burns remove tier voting units.
 
-`package.json`: version `0.0.62 → 0.0.63`. No ABI breakage — this only adds the `getPastTierVotingUnits` view to `IJB721Checkpoints`.
+`package.json`: version `0.0.62 → 0.0.63`. No ABI breakage — this only added the `getPastTierVotingUnits` view to `IJB721Checkpoints`.
 
 ## 0.0.50 — Bump nana-core-v6 to 0.0.53
 

@@ -14,14 +14,24 @@ interface IJB721Checkpoints is IERC5805, IJBActiveVotes {
     // forge-lint: disable-next-line(mixed-case-function)
     function STORE() external view returns (IJB721TiersHookStore);
 
-    /// @notice The total eligible voting units of a tier at a past block.
-    /// @dev "Eligible" means a token has an owner checkpoint: it was enrolled via `delegate(address,uint256[])` or
-    /// transferred at least once. Minted-but-unenrolled tokens are excluded, mirroring `ownerOfAt` eligibility, and
-    /// mints never write to this trace. Distributors use this as the denominator for tier-scoped reward pots.
-    /// @param tierId The tier to get the eligible voting units of.
+    /// @notice The total owner-checkpointed voting units of a tier at a past block.
+    /// @dev Owner-checkpointed voting units are the tier's total owned units, regardless of delegation status.
+    /// @param tierId The tier to get the owner-checkpointed voting units of.
     /// @param blockNumber The block number to look up (must be strictly in the past).
-    /// @return The tier's eligible voting units at `blockNumber`.
-    function getPastTierVotingUnits(uint256 tierId, uint256 blockNumber) external view returns (uint256);
+    /// @return votingUnits The tier's owner-checkpointed voting units at `blockNumber`.
+    function getPastTierVotingUnits(uint256 tierId, uint256 blockNumber) external view returns (uint256 votingUnits);
+
+    /// @notice The total delegated voting units of a tier at a past block.
+    /// @dev Counts only tier voting units held by accounts with a nonzero delegate.
+    /// @param tierId The tier to get the delegated voting units of.
+    /// @param timepoint The past block number to look up.
+    /// @return activeVotes The tier's delegated voting units at `timepoint`.
+    function getPastTierActiveVotes(uint256 tierId, uint256 timepoint) external view returns (uint256 activeVotes);
+
+    /// @notice The current total delegated voting units of a tier.
+    /// @param tierId The tier to get the current delegated voting units of.
+    /// @return activeVotes The tier's current delegated voting units.
+    function getTierActiveVotes(uint256 tierId) external view returns (uint256 activeVotes);
 
     /// @notice The hook that this module tracks voting power for.
     /// @return The hook address.
@@ -29,19 +39,17 @@ interface IJB721Checkpoints is IERC5805, IJBActiveVotes {
     function hook() external view returns (address);
 
     /// @notice The owner of an NFT at a past block.
-    /// @dev Returns `address(0)` for tokens that have never been enrolled (via `delegate(address, uint256[])`) or
-    /// transferred. Unenrolled tokens are ineligible for snapshot-based distribution.
+    /// @dev Returns `address(0)` if no ownership checkpoint exists or the query predates the first checkpoint.
     /// @param tokenId The token ID of the NFT to get the historical owner of.
     /// @param blockNumber The block number to look up.
-    /// @return The owner of the token at `blockNumber`, or zero if the token is unenrolled or has no known owner.
+    /// @return The owner of the token at `blockNumber`, or zero if no owner is proven at that block.
     function ownerOfAt(uint256 tokenId, uint256 blockNumber) external view returns (address);
 
-    /// @notice Delegates voting power and enrolls tokens for distribution eligibility.
-    /// @dev Writes per-token owner checkpoints so `ownerOfAt` can prove ownership at past blocks.
-    /// Only the current token owner can enroll. Tokens without checkpoints are ineligible for snapshot-based
-    /// distribution.
+    /// @notice Delegates voting power and backfills ownership history for listed tokens if needed.
+    /// @dev Mint and transfer hooks normally write owner checkpoints automatically. The token ID list keeps
+    /// pre-upgrade or otherwise uncheckpointed tokens recoverable while preserving the owner-only authorization check.
     /// @param delegatee The address to delegate voting power to. Use your own address for self-delegation.
-    /// @param tokenIds The token IDs to enroll for distribution eligibility.
+    /// @param tokenIds The token IDs whose owner checkpoints should be backfilled if missing.
     function delegate(address delegatee, uint256[] calldata tokenIds) external;
 
     /// @notice Initializes a cloned module with its hook reference.
