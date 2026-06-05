@@ -23,7 +23,7 @@ These totals count voting units held by accounts with a nonzero delegate. Undele
 
 ABI change: `IJB721Checkpoints` now extends `IJBActiveVotes`.
 
-`package.json`: version `0.0.69 → 0.0.70`, core dep `^0.0.81 → ^0.0.84`.
+`package.json`: version `0.0.69 → 0.0.70`, core dep `^0.0.81 → ^0.0.85`.
 
 ## 0.0.67 — Raise dependency floors to the latest published versions
 
