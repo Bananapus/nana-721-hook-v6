@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {Votes} from "@openzeppelin/contracts/governance/utils/Votes.sol";
+import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {Checkpoints} from "@openzeppelin/contracts/utils/structs/Checkpoints.sol";
 
 import {IJB721Checkpoints} from "./interfaces/IJB721Checkpoints.sol";
@@ -19,6 +20,7 @@ import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 /// `address(this)` — correct behavior, tiny gas overhead.
 contract JB721Checkpoints is Votes, IJB721Checkpoints {
     using Checkpoints for Checkpoints.Trace160;
+    using Checkpoints for Checkpoints.Trace208;
 
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
@@ -60,6 +62,13 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// nothing, mirroring `_ownerCheckpointsOf` eligibility. Distributors read this as the tier-scoped denominator.
     /// @custom:param tierId The tier to get the historical eligible voting units for.
     mapping(uint256 tierId => Checkpoints.Trace160) internal _tierEligibleUnitsOf;
+
+    //*********************************************************************//
+    // -------------------- private stored properties -------------------- //
+    //*********************************************************************//
+
+    /// @notice The total voting units currently delegated to nonzero delegates.
+    Checkpoints.Trace208 private _activeSupplyCheckpoints;
 
     //*********************************************************************//
     // -------------------------- constructor ---------------------------- //
@@ -172,6 +181,21 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
         return _tierEligibleUnitsOf[tierId].upperLookupRecent(uint96(_validateTimepoint(blockNumber)));
     }
 
+    /// @notice The total delegated voting units at a past block.
+    /// @dev This tracks delegated vote participation and is separate from tier reward eligibility.
+    /// @param timepoint The past block number to look up.
+    /// @return activeVotes The total voting units delegated to nonzero delegates at `timepoint`.
+    function getPastTotalActiveVotes(uint256 timepoint) external view override returns (uint256 activeVotes) {
+        activeVotes = _activeSupplyCheckpoints.upperLookupRecent(_validateTimepoint(timepoint));
+    }
+
+    /// @notice The current total delegated voting units.
+    /// @dev This tracks delegated vote participation and is separate from tier reward eligibility.
+    /// @return activeVotes The current total voting units delegated to nonzero delegates.
+    function getTotalActiveVotes() external view override returns (uint256 activeVotes) {
+        activeVotes = _activeSupplyCheckpoints.latest();
+    }
+
     /// @notice The owner of an NFT at a past block.
     /// @dev Returns `address(0)` for tokens that have never been enrolled (via `delegate(address, uint256[])`) or
     /// transferred. Unenrolled tokens are ineligible for snapshot-based distribution.
@@ -195,6 +219,35 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     }
 
     //*********************************************************************//
+    // ---------------------- internal transactions ---------------------- //
+    //*********************************************************************//
+
+    /// @notice Track active-supply changes when an account moves between undelegated and delegated states.
+    function _delegate(address account, address delegatee) internal virtual override {
+        address oldDelegate = delegates(account);
+        uint256 votingUnits = _getVotingUnits(account);
+
+        super._delegate({account: account, delegatee: delegatee});
+
+        if (oldDelegate == address(0) && delegatee != address(0)) {
+            _updateActiveVotes({amount: votingUnits, increase: true});
+        } else if (oldDelegate != address(0) && delegatee == address(0)) {
+            _updateActiveVotes({amount: votingUnits, increase: false});
+        }
+    }
+
+    /// @notice Track active-supply changes when voting units move between delegated and undelegated accounts.
+    function _transferVotingUnits(address from, address to, uint256 amount) internal virtual override {
+        bool decreaseActiveVotes = from != address(0) && delegates(from) != address(0);
+        bool increaseActiveVotes = to != address(0) && delegates(to) != address(0);
+
+        super._transferVotingUnits({from: from, to: to, amount: amount});
+
+        if (decreaseActiveVotes == increaseActiveVotes) return;
+        _updateActiveVotes({amount: amount, increase: increaseActiveVotes});
+    }
+
+    //*********************************************************************//
     // ----------------------- internal views ---------------------------- //
     //*********************************************************************//
 
@@ -209,6 +262,18 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     //*********************************************************************//
     // ------------------------ private helpers -------------------------- //
     //*********************************************************************//
+
+    /// @notice Update the checkpointed total of delegated voting units.
+    /// @param amount The amount of voting units to add or remove.
+    /// @param increase Whether to add `amount`; if false, `amount` is removed.
+    function _updateActiveVotes(uint256 amount, bool increase) private {
+        if (amount == 0) return;
+
+        uint256 updated =
+            increase ? _activeSupplyCheckpoints.latest() + amount : _activeSupplyCheckpoints.latest() - amount;
+
+        _activeSupplyCheckpoints.push({key: clock(), value: SafeCast.toUint208(updated)});
+    }
 
     /// @notice Add or remove units from a tier's eligible-voting-units checkpoint at the current block.
     /// @param tierId The tier whose eligible-voting-units trace to update.

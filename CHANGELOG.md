@@ -12,6 +12,17 @@ This file describes the verified change from `nana-721-hook-v5` to the current `
 - `JB721TiersHookProjectDeployer`
 - `JB721TiersHookLib`
 
+## Next — Active delegated vote totals
+
+`JB721Checkpoints` now exposes the active delegated vote total:
+
+- `getPastTotalActiveVotes(uint256 blockNumber) → uint256`
+- `getTotalActiveVotes() → uint256`
+
+These totals count voting units held by accounts with a nonzero delegate. Undelegated holders and undelegated custody addresses are excluded; if tokens return to a holder whose delegation is still set, those voting units become active again. This is separate from `getPastTierVotingUnits`, which remains the owner-based denominator for tier-scoped reward pots.
+
+ABI change: `IJB721Checkpoints` now extends `IJBActiveVotes`.
+
 ## 0.0.67 — Raise dependency floors to the latest published versions
 
 Applies the dependency floor bump that 0.0.66 had to hold back. In 0.0.66 the higher `@bananapus/core-v6`

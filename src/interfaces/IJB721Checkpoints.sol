@@ -2,12 +2,18 @@
 pragma solidity ^0.8.0;
 
 import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
+import {IJBActiveVotes} from "./IJBActiveVotes.sol";
 import {IJB721TiersHookStore} from "./IJB721TiersHookStore.sol";
 
 /// @notice A checkpoint module that provides IVotes-compatible checkpointed voting power for a JB721TiersHook.
 /// @dev Deployed as a clone via JB721CheckpointsDeployer during hook initialization. One module per hook.
 /// Pass this address to JBTokenDistributor as the IVotes token.
-interface IJB721Checkpoints is IERC5805 {
+interface IJB721Checkpoints is IERC5805, IJBActiveVotes {
+    /// @notice The store that holds tier and voting data for the hook's NFTs.
+    /// @return The store contract.
+    // forge-lint: disable-next-line(mixed-case-function)
+    function STORE() external view returns (IJB721TiersHookStore);
+
     /// @notice The total eligible voting units of a tier at a past block.
     /// @dev "Eligible" means a token has an owner checkpoint: it was enrolled via `delegate(address,uint256[])` or
     /// transferred at least once. Minted-but-unenrolled tokens are excluded, mirroring `ownerOfAt` eligibility, and
@@ -29,11 +35,6 @@ interface IJB721Checkpoints is IERC5805 {
     /// @param blockNumber The block number to look up.
     /// @return The owner of the token at `blockNumber`, or zero if the token is unenrolled or has no known owner.
     function ownerOfAt(uint256 tokenId, uint256 blockNumber) external view returns (address);
-
-    /// @notice The store that holds tier and voting data for the hook's NFTs.
-    /// @return The store contract.
-    // forge-lint: disable-next-line(mixed-case-function)
-    function STORE() external view returns (IJB721TiersHookStore);
 
     /// @notice Delegates voting power and enrolls tokens for distribution eligibility.
     /// @dev Writes per-token owner checkpoints so `ownerOfAt` can prove ownership at past blocks.
