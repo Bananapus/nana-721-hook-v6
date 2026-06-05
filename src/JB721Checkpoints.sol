@@ -60,17 +60,17 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// @custom:param tokenId The token ID to get historical owner checkpoints for.
     mapping(uint256 tokenId => Checkpoints.Trace160) internal _ownerCheckpointsOf;
 
-    /// @notice Checkpointed total owner-tracked voting units per tier.
-    /// @dev Increased on mint or backfill and decreased on burn. Transfers keep the total unchanged because the token
-    /// still has a nonzero owner.
-    /// @custom:param tierId The tier to get the historical owner-tracked voting units for.
-    mapping(uint256 tierId => Checkpoints.Trace160) internal _tierEligibleUnitsOf;
-
     /// @notice Checkpointed total active voting units per tier.
     /// @dev Maintained when delegation changes activate/deactivate all of an account's tier units, and when transfers
     /// move one token's tier units between delegated and undelegated custody.
     /// @custom:param tierId The tier to get the historical delegated voting units for.
     mapping(uint256 tierId => Checkpoints.Trace160) internal _tierActiveSupplyCheckpointsOf;
+
+    /// @notice Checkpointed total owner-tracked voting units per tier.
+    /// @dev Increased on mint or backfill and decreased on burn. Transfers keep the total unchanged because the token
+    /// still has a nonzero owner.
+    /// @custom:param tierId The tier to get the historical owner-tracked voting units for.
+    mapping(uint256 tierId => Checkpoints.Trace160) internal _tierEligibleUnitsOf;
 
     //*********************************************************************//
     // -------------------- private stored properties -------------------- //

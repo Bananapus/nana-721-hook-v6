@@ -27,6 +27,11 @@ These totals count only voting units held by accounts with a nonzero delegate. U
 custody addresses are excluded; if tokens return to a holder whose delegation is still set, those voting units become
 active again.
 
+## Package Notes
+
+- `0.0.72`: bumps `@bananapus/core-v6` to `^0.0.86`.
+- `0.0.71`: adds per-tier active vote totals for delegated reward accounting.
+
 ## Summary
 
 - V6 adds tier-level split routing. Tier configs can carry `splitPercent` and `splits` so part of a mint payment can be routed through Juicebox splits.
