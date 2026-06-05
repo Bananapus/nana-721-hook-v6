@@ -192,7 +192,7 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
         // If both sides are delegated or both sides are undelegated, this tier's active total is unchanged.
         if (decreaseTierActiveVotes != increaseTierActiveVotes) {
             // Otherwise apply the one-sided active-tier delta implied by the receiver's delegated status.
-            _updateTierActiveVotes({tierId: tierId, amount: votingUnits, increase: increaseTierActiveVotes});
+            _adjustTierActiveVotes({tierId: tierId, amount: votingUnits, increase: increaseTierActiveVotes});
         }
     }
 
@@ -304,13 +304,13 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
             _updateActiveVotes({amount: votingUnits, increase: true});
 
             // Add the account's voting units to each tier-level active total it currently contributes to.
-            _updateTierActiveVotesOf({account: account, increase: true});
+            _applyAccountDelegationToTierActiveVotes({account: account, increase: true});
         } else if (oldDelegate != address(0) && delegatee == address(0)) {
             // If the account had a delegate and now has none, its voting units just became inactive.
             _updateActiveVotes({amount: votingUnits, increase: false});
 
             // Remove the account's voting units from each tier-level active total it currently contributes to.
-            _updateTierActiveVotesOf({account: account, increase: false});
+            _applyAccountDelegationToTierActiveVotes({account: account, increase: false});
         }
     }
 
@@ -354,6 +354,51 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     // ------------------------ private helpers -------------------------- //
     //*********************************************************************//
 
+    /// @notice Add or remove units from a tier's active-voting-units checkpoint at the current block.
+    /// @param tierId The tier whose active-voting-units trace to update.
+    /// @param amount The voting units to add or remove.
+    /// @param increase Whether to add `amount`; if false, `amount` is removed.
+    function _adjustTierActiveVotes(uint256 tierId, uint256 amount, bool increase) private {
+        // Ignore zero-unit updates because they do not change this tier's active total.
+        if (amount == 0) return;
+
+        // Keep a reference to the tier's active-voting-units trace.
+        Checkpoints.Trace160 storage trace = _tierActiveSupplyCheckpointsOf[tierId];
+
+        // Calculate the next tier active total by adding or subtracting from the latest checkpointed value.
+        uint256 updated = increase ? trace.latest() + amount : trace.latest() - amount;
+
+        // Write the new tier active total at the current block.
+        // forge-lint: disable-next-line(unsafe-typecast)
+        trace.push({key: uint96(block.number), value: uint160(updated)});
+    }
+
+    /// @notice Apply an account delegation change to every tier-level active total the account contributes to.
+    /// @dev Delegation is account-wide in OZ Votes, so changing an account's delegate activates or deactivates every
+    /// tier balance currently held by the account. Transfer hooks handle one-token tier deltas separately.
+    /// @param account The account whose tier voting units should be added or removed.
+    /// @param increase Whether to add `account`'s tier voting units; if false, they are removed.
+    function _applyAccountDelegationToTierActiveVotes(address account, bool increase) private {
+        // Read the largest tier ID once; tier IDs are sequential and 1-indexed for each hook.
+        uint256 tierId = STORE.maxTierIdOf(hook);
+
+        // Walk each tier from max to 1 so empty hooks skip cleanly when maxTierId is zero.
+        while (tierId != 0) {
+            // Read only this account's units for the tier; empty tiers return zero and are ignored below.
+            uint256 tierVotingUnits = STORE.tierVotingUnitsOf({hook: hook, account: account, tierId: tierId});
+
+            // Only write checkpoints for tiers whose active totals actually change.
+            if (tierVotingUnits != 0) {
+                _adjustTierActiveVotes({tierId: tierId, amount: tierVotingUnits, increase: increase});
+            }
+
+            unchecked {
+                // The loop condition proves tierId is nonzero, so the decrement cannot underflow.
+                --tierId;
+            }
+        }
+    }
+
     /// @notice Update the checkpointed total of delegated voting units.
     /// @dev Writes at most one active-total checkpoint at the current OZ clock. A zero amount is ignored so zero-value
     /// delegation or transfer hooks do not create empty checkpoints.
@@ -369,51 +414,6 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
 
         // Write the new active total at the current ERC-6372 clock using the same uint208 width as OZ `Votes`.
         _activeSupplyCheckpoints.push({key: clock(), value: SafeCast.toUint208(updated)});
-    }
-
-    /// @notice Add or remove units from a tier's active-voting-units checkpoint at the current block.
-    /// @param tierId The tier whose active-voting-units trace to update.
-    /// @param amount The voting units to add or remove.
-    /// @param increase Whether to add `amount`; if false, `amount` is removed.
-    function _updateTierActiveVotes(uint256 tierId, uint256 amount, bool increase) private {
-        // Ignore zero-unit updates because they do not change this tier's active total.
-        if (amount == 0) return;
-
-        // Keep a reference to the tier's active-voting-units trace.
-        Checkpoints.Trace160 storage trace = _tierActiveSupplyCheckpointsOf[tierId];
-
-        // Calculate the next tier active total by adding or subtracting from the latest checkpointed value.
-        uint256 updated = increase ? trace.latest() + amount : trace.latest() - amount;
-
-        // Write the new tier active total at the current block.
-        // forge-lint: disable-next-line(unsafe-typecast)
-        trace.push({key: uint96(block.number), value: uint160(updated)});
-    }
-
-    /// @notice Update every tier-level active total affected by an account's delegation status change.
-    /// @dev Delegation is account-wide in OZ Votes, so changing an account's delegate activates or deactivates every
-    /// tier balance currently held by the account. Transfer hooks handle one-token tier deltas separately.
-    /// @param account The account whose tier voting units should be added or removed.
-    /// @param increase Whether to add `account`'s tier voting units; if false, they are removed.
-    function _updateTierActiveVotesOf(address account, bool increase) private {
-        // Read the largest tier ID once; tier IDs are sequential and 1-indexed for each hook.
-        uint256 tierId = STORE.maxTierIdOf(hook);
-
-        // Walk each tier from max to 1 so empty hooks skip cleanly when maxTierId is zero.
-        while (tierId != 0) {
-            // Read only this account's units for the tier; empty tiers return zero and are ignored below.
-            uint256 tierVotingUnits = STORE.tierVotingUnitsOf({hook: hook, account: account, tierId: tierId});
-
-            // Only write checkpoints for tiers whose active totals actually change.
-            if (tierVotingUnits != 0) {
-                _updateTierActiveVotes({tierId: tierId, amount: tierVotingUnits, increase: increase});
-            }
-
-            unchecked {
-                // The loop condition proves tierId is nonzero, so the decrement cannot underflow.
-                --tierId;
-            }
-        }
     }
 
     /// @notice Add or remove units from a tier's owner-tracked voting-units checkpoint at the current block.
