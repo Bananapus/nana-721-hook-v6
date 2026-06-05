@@ -20,7 +20,7 @@
 - Reserve accounting: edits around `reserveFrequency`, pending reserves, or owner minting must preserve the store's supply protections.
 - Tier splits: split forwarding changes affect both payer economics and project treasury accounting. Check both `beforePayRecordedWith` and the distribution path.
 - Discount behavior: price discounts affect mint eligibility but cash-out weight still tracks the original tier price. Do not conflate the two.
-- Voting units: verify whether a tier uses explicit voting units or falls back to price-based voting power before changing governance-facing math.
+- Voting units: verify whether a tier uses explicit voting units or falls back to price-based voting power before changing governance-facing math. Active vote totals count only units delegated to nonzero delegates and are separate from tier reward eligibility.
 - Tier removal and cleanup: removing tiers is not the same as cleaning the sorted tier list. Storage cleanup behavior matters.
 - Default reserve beneficiary changes: they affect which tiers count pending reserves unless a tier-specific beneficiary overrides it. That is an economic change, not just an admin update.
 

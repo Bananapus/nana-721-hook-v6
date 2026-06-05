@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {Votes} from "@openzeppelin/contracts/governance/utils/Votes.sol";
+import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {Checkpoints} from "@openzeppelin/contracts/utils/structs/Checkpoints.sol";
 
 import {IJB721Checkpoints} from "./interfaces/IJB721Checkpoints.sol";
@@ -19,6 +20,7 @@ import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 /// `address(this)` — correct behavior, tiny gas overhead.
 contract JB721Checkpoints is Votes, IJB721Checkpoints {
     using Checkpoints for Checkpoints.Trace160;
+    using Checkpoints for Checkpoints.Trace208;
 
     //*********************************************************************//
     // --------------------------- custom errors ------------------------- //
@@ -60,6 +62,13 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// nothing, mirroring `_ownerCheckpointsOf` eligibility. Distributors read this as the tier-scoped denominator.
     /// @custom:param tierId The tier to get the historical eligible voting units for.
     mapping(uint256 tierId => Checkpoints.Trace160) internal _tierEligibleUnitsOf;
+
+    //*********************************************************************//
+    // -------------------- private stored properties -------------------- //
+    //*********************************************************************//
+
+    /// @notice The total voting units currently delegated to nonzero delegates.
+    Checkpoints.Trace208 private _activeSupplyCheckpoints;
 
     //*********************************************************************//
     // -------------------------- constructor ---------------------------- //
@@ -172,6 +181,21 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
         return _tierEligibleUnitsOf[tierId].upperLookupRecent(uint96(_validateTimepoint(blockNumber)));
     }
 
+    /// @notice The total delegated voting units at a past block.
+    /// @dev This tracks delegated vote participation and is separate from tier reward eligibility.
+    /// @param timepoint The past block number to look up.
+    /// @return activeVotes The total voting units delegated to nonzero delegates at `timepoint`.
+    function getPastTotalActiveVotes(uint256 timepoint) external view override returns (uint256 activeVotes) {
+        activeVotes = _activeSupplyCheckpoints.upperLookupRecent(_validateTimepoint(timepoint));
+    }
+
+    /// @notice The current total delegated voting units.
+    /// @dev This tracks delegated vote participation and is separate from tier reward eligibility.
+    /// @return activeVotes The current total voting units delegated to nonzero delegates.
+    function getTotalActiveVotes() external view override returns (uint256 activeVotes) {
+        activeVotes = _activeSupplyCheckpoints.latest();
+    }
+
     /// @notice The owner of an NFT at a past block.
     /// @dev Returns `address(0)` for tokens that have never been enrolled (via `delegate(address, uint256[])`) or
     /// transferred. Unenrolled tokens are ineligible for snapshot-based distribution.
@@ -195,6 +219,60 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     }
 
     //*********************************************************************//
+    // ---------------------- internal transactions ---------------------- //
+    //*********************************************************************//
+
+    /// @notice Track active-vote-total changes when an account changes its delegate.
+    /// @dev Delegating to a nonzero address makes all of `account`'s voting units active. Clearing delegation removes
+    /// all of `account`'s voting units from the active total. Redelegating between two nonzero delegates only moves
+    /// votes inside OZ `Votes`, so the active total does not change.
+    /// @param account The account whose delegation is changing.
+    /// @param delegatee The new delegate. Use `address(0)` to clear delegation.
+    function _delegate(address account, address delegatee) internal virtual override {
+        // Read the current delegate before OZ mutates the delegate mapping.
+        address oldDelegate = delegates(account);
+
+        // Read the account's current voting units so any active-total delta matches the units OZ moves.
+        uint256 votingUnits = _getVotingUnits(account);
+
+        // Let OZ update the delegate mapping and the per-delegate vote checkpoints.
+        super._delegate({account: account, delegatee: delegatee});
+
+        // If the account had no delegate and now has one, its voting units just became active.
+        if (oldDelegate == address(0) && delegatee != address(0)) {
+            // Add the account's voting units to the checkpointed active total.
+            _updateActiveVotes({amount: votingUnits, increase: true});
+        } else if (oldDelegate != address(0) && delegatee == address(0)) {
+            // If the account had a delegate and now has none, its voting units just became inactive.
+            _updateActiveVotes({amount: votingUnits, increase: false});
+        }
+    }
+
+    /// @notice Track active-vote-total changes when voting units move between accounts.
+    /// @dev Moving voting units between two accounts with the same delegation status does not change the active total.
+    /// Moving voting units out of a delegated account and into an undelegated account decreases the active total, while
+    /// moving voting units out of an undelegated account and into a delegated account increases it.
+    /// @param from The account whose voting units are leaving. `address(0)` means the units are being minted.
+    /// @param to The account whose voting units are arriving. `address(0)` means the units are being burned.
+    /// @param amount The voting units moving between `from` and `to`.
+    function _transferVotingUnits(address from, address to, uint256 amount) internal virtual override {
+        // The active total decreases if units leave an account that already has a nonzero delegate.
+        bool decreaseActiveVotes = from != address(0) && delegates(from) != address(0);
+
+        // The active total increases if units arrive at an account that already has a nonzero delegate.
+        bool increaseActiveVotes = to != address(0) && delegates(to) != address(0);
+
+        // Let OZ update total voting-unit supply and per-delegate checkpoints first.
+        super._transferVotingUnits({from: from, to: to, amount: amount});
+
+        // If both sides are delegated or both sides are undelegated, the active total is unchanged.
+        if (decreaseActiveVotes == increaseActiveVotes) return;
+
+        // Otherwise apply the one-sided active-total delta implied by the receiver's delegated status.
+        _updateActiveVotes({amount: amount, increase: increaseActiveVotes});
+    }
+
+    //*********************************************************************//
     // ----------------------- internal views ---------------------------- //
     //*********************************************************************//
 
@@ -209,6 +287,23 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     //*********************************************************************//
     // ------------------------ private helpers -------------------------- //
     //*********************************************************************//
+
+    /// @notice Update the checkpointed total of delegated voting units.
+    /// @dev Writes at most one active-total checkpoint at the current OZ clock. A zero amount is ignored so zero-value
+    /// delegation or transfer hooks do not create empty checkpoints.
+    /// @param amount The amount of voting units to add or remove.
+    /// @param increase Whether to add `amount`; if false, `amount` is removed.
+    function _updateActiveVotes(uint256 amount, bool increase) private {
+        // Ignore zero-unit updates because they do not change the active total.
+        if (amount == 0) return;
+
+        // Calculate the next active total by adding or subtracting from the latest checkpointed value.
+        uint256 updated =
+            increase ? _activeSupplyCheckpoints.latest() + amount : _activeSupplyCheckpoints.latest() - amount;
+
+        // Write the new active total at the current ERC-6372 clock using the same uint208 width as OZ `Votes`.
+        _activeSupplyCheckpoints.push({key: clock(), value: SafeCast.toUint208(updated)});
+    }
 
     /// @notice Add or remove units from a tier's eligible-voting-units checkpoint at the current block.
     /// @param tierId The tier whose eligible-voting-units trace to update.

@@ -38,7 +38,7 @@ This repo does more than "mint NFTs on pay." It changes how payment value, tier 
 | `JB721TiersHookDeployer` | Clone factory for deploying a hook for an existing project. |
 | `JB721TiersHookProjectDeployer` | Convenience deployer for launching a project with a hook already wired in. |
 | `JB721Hook` | Abstract base for 721 pay and cash-out hook behavior. |
-| `JB721Checkpoints` | Per-hook IVotes checkpoint module. Tracks historical owner checkpoints plus per-tier eligible voting units (`getPastTierVotingUnits`) for tier-scoped reward distribution. |
+| `JB721Checkpoints` | Per-hook IVotes checkpoint module. Tracks historical owner checkpoints, per-tier eligible voting units (`getPastTierVotingUnits`) for tier-scoped reward distribution, and active delegated vote totals (`getPastTotalActiveVotes`). |
 
 ## Mental model
 
@@ -65,6 +65,7 @@ If a bug affects supply, reserve minting, or tier lookup, it usually lives in th
 - adding a 721 hook through a deployer is easy; carrying the right ruleset behavior forward is where mistakes happen
 - projects should be explicit about whether the hook affects pay, cash out, or only metadata-facing paths
 - per-tier eligible voting units are queryable via `getPastTierVotingUnits(tierId, blockNumber)` for tier-scoped reward denominators, but minting alone does not enroll a token: a token only counts toward that total once it is enrolled (`delegate(address, uint256[])`) or transferred for the first time, and stops counting when burned
+- active delegated vote totals are queryable via `getPastTotalActiveVotes(blockNumber)` and `getTotalActiveVotes()`. These totals include only voting units held by accounts with a nonzero delegate, so a token in undelegated custody does not count; this is a governance/reward-participation primitive, not the owner-based tier reward denominator.
 
 ## Where state lives
 

@@ -389,6 +389,7 @@ contract TestCheckpoints is UnitTestSetup {
 
         assertEq(module.delegates(user), delegatee, "Should delegate to specified delegatee");
         assertEq(module.getVotes(delegatee), 100, "Delegatee should have user's votes");
+        assertEq(module.getTotalActiveVotes(), 100, "Active votes should include delegated voting units");
     }
 
     // -------------------------------------------------------------------
@@ -585,5 +586,68 @@ contract TestCheckpoints is UnitTestSetup {
             )
         );
         module.onTransfer(address(0), address(1), 1);
+    }
+
+    // -------------------------------------------------------------------
+    // Test 17: Active votes follow delegated voting units through inactive custody
+    // -------------------------------------------------------------------
+    function test_activeVotes_inactiveRecipientThenDelegatedHolderAgain() public {
+        defaultTierConfig.flags.allowOwnerMint = true;
+        defaultTierConfig.reserveFrequency = 0;
+        defaultTierConfig.flags.useVotingUnits = true;
+        defaultTierConfig.votingUnits = 100;
+
+        ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
+
+        address alice = makeAddr("alice");
+        address amm = makeAddr("amm");
+
+        uint16[] memory tiersToMint = new uint16[](1);
+        tiersToMint[0] = 1;
+        vm.prank(owner);
+        tiersHook.mintFor(tiersToMint, alice);
+
+        IJB721Checkpoints module = tiersHook.checkpoints();
+        uint256 tokenId = _generateTokenId(1, 1);
+
+        assertEq(module.getVotes(alice), 0, "Alice should have no votes before delegation");
+        assertEq(module.getTotalActiveVotes(), 0, "Undelegated voting units should be inactive");
+
+        uint256 inactiveBlock = block.number;
+        vm.roll(block.number + 1);
+
+        assertEq(module.getPastTotalSupply(inactiveBlock), 100, "Total supply should include undelegated voting units");
+        assertEq(module.getPastTotalActiveVotes(inactiveBlock), 0, "Active total should exclude undelegated units");
+
+        vm.prank(alice);
+        module.delegate(alice);
+
+        assertEq(module.getVotes(alice), 100, "Alice should have votes after delegation");
+        assertEq(module.getTotalActiveVotes(), 100, "Delegated voting units should be active");
+
+        uint256 activeBlock = block.number;
+        vm.roll(block.number + 1);
+
+        assertEq(module.getPastTotalActiveVotes(activeBlock), 100, "Active total should checkpoint delegation");
+
+        vm.prank(alice);
+        IERC721(address(tiersHook)).transferFrom(alice, amm, tokenId);
+
+        assertEq(module.getVotes(alice), 0, "Alice should lose votes while token is in inactive custody");
+        assertEq(module.getVotes(amm), 0, "Inactive custodian should not receive votes");
+        assertEq(module.getTotalActiveVotes(), 0, "Inactive custody should remove voting units from active total");
+
+        uint256 inactiveCustodyBlock = block.number;
+        vm.roll(block.number + 1);
+
+        assertEq(
+            module.getPastTotalActiveVotes(inactiveCustodyBlock), 0, "Active total should checkpoint inactive custody"
+        );
+
+        vm.prank(amm);
+        IERC721(address(tiersHook)).transferFrom(amm, alice, tokenId);
+
+        assertEq(module.getVotes(alice), 100, "Alice should regain votes when token returns");
+        assertEq(module.getTotalActiveVotes(), 100, "Delegated holder should make returned voting units active again");
     }
 }
