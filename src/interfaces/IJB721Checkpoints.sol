@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IJBActiveVotes} from "@bananapus/core-v6/src/interfaces/IJBActiveVotes.sol";
 import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
+
 import {IJB721TiersHookStore} from "./IJB721TiersHookStore.sol";
 
 /// @notice A checkpoint module that provides IVotes-compatible checkpointed voting power for a JB721TiersHook.
@@ -10,9 +11,16 @@ import {IJB721TiersHookStore} from "./IJB721TiersHookStore.sol";
 /// Pass this address to JBTokenDistributor as the IVotes token.
 interface IJB721Checkpoints is IERC5805, IJBActiveVotes {
     /// @notice The store that holds tier and voting data for the hook's NFTs.
-    /// @return The store contract.
+    /// @return store The store contract.
     // forge-lint: disable-next-line(mixed-case-function)
-    function STORE() external view returns (IJB721TiersHookStore);
+    function STORE() external view returns (IJB721TiersHookStore store);
+
+    /// @notice The total delegated voting units of a tier at a past block.
+    /// @dev Counts only tier voting units held by accounts with a nonzero delegate.
+    /// @param tierId The tier to get the delegated voting units of.
+    /// @param blockNumber The past block number to look up.
+    /// @return activeVotes The tier's delegated voting units at `blockNumber`.
+    function getPastTierActiveVotes(uint256 tierId, uint256 blockNumber) external view returns (uint256 activeVotes);
 
     /// @notice The total owner-checkpointed voting units of a tier at a past block.
     /// @dev Owner-checkpointed voting units are the tier's total owned units, regardless of delegation status.
@@ -21,29 +29,22 @@ interface IJB721Checkpoints is IERC5805, IJBActiveVotes {
     /// @return votingUnits The tier's owner-checkpointed voting units at `blockNumber`.
     function getPastTierVotingUnits(uint256 tierId, uint256 blockNumber) external view returns (uint256 votingUnits);
 
-    /// @notice The total delegated voting units of a tier at a past block.
-    /// @dev Counts only tier voting units held by accounts with a nonzero delegate.
-    /// @param tierId The tier to get the delegated voting units of.
-    /// @param timepoint The past block number to look up.
-    /// @return activeVotes The tier's delegated voting units at `timepoint`.
-    function getPastTierActiveVotes(uint256 tierId, uint256 timepoint) external view returns (uint256 activeVotes);
-
     /// @notice The current total delegated voting units of a tier.
     /// @param tierId The tier to get the current delegated voting units of.
     /// @return activeVotes The tier's current delegated voting units.
     function getTierActiveVotes(uint256 tierId) external view returns (uint256 activeVotes);
 
     /// @notice The hook that this module tracks voting power for.
-    /// @return The hook address.
+    /// @return hookAddress The hook address.
     // forge-lint: disable-next-line(mixed-case-function)
-    function hook() external view returns (address);
+    function hook() external view returns (address hookAddress);
 
     /// @notice The owner of an NFT at a past block.
     /// @dev Returns `address(0)` if no ownership checkpoint exists or the query predates the first checkpoint.
     /// @param tokenId The token ID of the NFT to get the historical owner of.
     /// @param blockNumber The block number to look up.
-    /// @return The owner of the token at `blockNumber`, or zero if no owner is proven at that block.
-    function ownerOfAt(uint256 tokenId, uint256 blockNumber) external view returns (address);
+    /// @return owner The owner of the token at `blockNumber`, or zero if no owner is proven at that block.
+    function ownerOfAt(uint256 tokenId, uint256 blockNumber) external view returns (address owner);
 
     /// @notice Delegates voting power and backfills ownership history for listed tokens if needed.
     /// @dev Mint and transfer hooks normally write owner checkpoints automatically. The token ID list keeps

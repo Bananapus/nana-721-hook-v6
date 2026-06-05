@@ -135,8 +135,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
         cashOutTaxRate = context.cashOutTaxRate;
     }
 
-    /// @notice The data calculated before a payment is recorded in the terminal store. This data is provided to the
-    /// terminal's `pay(...)` transaction.
+    /// @notice The data calculated before a payment is recorded in the terminal store for `pay(...)`.
     /// @dev Sets this contract as the pay hook. Part of `IJBRulesetDataHook`.
     /// @param context The payment context passed to this contract by the `pay(...)` function.
     /// @return weight The new `weight` to use, overriding the ruleset's `weight`.
@@ -164,8 +163,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     // -------------------------- public views --------------------------- //
     //*********************************************************************//
 
-    /// @notice Returns the cumulative cash out weight of the specified token IDs relative to the
-    /// `totalCashOutWeight`.
+    /// @notice Returns the cumulative cash out weight of the specified token IDs relative to `totalCashOutWeight`.
     /// @param tokenIds The NFT token IDs to calculate the cumulative cash out weight of.
     /// @return The cumulative cash out weight of the specified token IDs.
     function cashOutWeightOf(uint256[] memory tokenIds) public view virtual returns (uint256) {
@@ -248,8 +246,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
         _didBurn(decodedTokenIds);
     }
 
-    /// @notice Mints one or more NFTs to the `context.beneficiary` upon payment if conditions are met. Part of
-    /// `IJBPayHook`.
+    /// @notice Mints NFTs to `context.beneficiary` upon payment if conditions are met. Part of `IJBPayHook`.
     /// @dev Reverts if the calling contract is not one of the project's terminals.
     /// @param context The payment context passed in by the terminal.
     function afterPayRecordedWith(JBAfterPayRecordedContext calldata context) external payable virtual override {

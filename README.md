@@ -10,7 +10,7 @@
 - [AUDIT_INSTRUCTIONS.md](./AUDIT_INSTRUCTIONS.md) — what to focus on for a security audit and how to start.
 - [SKILLS.md](./SKILLS.md) — implementation nuances, gotchas, and reading order for working on this codebase.
 - [STYLE_GUIDE.md](./STYLE_GUIDE.md) — Solidity conventions and repo layout used across the V6 ecosystem.
-- [CHANGELOG.md](./CHANGELOG.md) — v5 → v6 ABI and behavior deltas.
+- [CHANGELOG.md](./CHANGELOG.md) - V5 to V6 ABI and behavior deltas.
 - [references/runtime.md](./references/runtime.md) — contract roles, the runtime pay and cash-out path, and high-risk areas.
 - [references/operations.md](./references/operations.md) — deployment surface, change checklist, and common failure modes.
 

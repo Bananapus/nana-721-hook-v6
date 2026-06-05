@@ -73,8 +73,7 @@ library JB721TiersHookLib {
     /// @param caller The address that called the function.
     event SetDiscountPercent(uint256 indexed tierId, uint256 discountPercent, address caller);
 
-    /// @notice Emitted when a split payout reverts during distribution. The failed split's funds route to the
-    /// project's balance.
+    /// @notice Emitted when a split payout reverts during distribution, routing funds to the project's balance.
     /// @param projectId The project ID the split belongs to.
     /// @param split The split that reverted.
     /// @param amount The amount that was paid out.

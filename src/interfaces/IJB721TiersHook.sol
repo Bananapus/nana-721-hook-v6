@@ -96,8 +96,7 @@ interface IJB721TiersHook is IJB721Hook {
     /// @param caller The address that called the function.
     event SetTokenUriResolver(IJB721TokenUriResolver indexed resolver, address caller);
 
-    /// @notice Emitted when a split payout reverts during distribution. The failed split's funds route to the
-    /// project's balance.
+    /// @notice Emitted when a split payout reverts during distribution, routing funds to the project's balance.
     /// @param projectId The project ID the split belongs to.
     /// @param split The split that reverted.
     /// @param amount The amount that was paid out.
@@ -213,9 +212,8 @@ interface IJB721TiersHook is IJB721Hook {
     /// @param symbol The new collection symbol. Send empty to leave unchanged.
     /// @param baseUri The new base URI. Send empty to leave unchanged.
     /// @param contractUri The new contract URI. Send empty to leave unchanged.
-    /// @param tokenUriResolver The new URI resolver. Pass `IJB721TokenUriResolver(address(this))` as a sentinel value
-    /// to leave unchanged. `address(this)` is used instead of `address(0)` because `address(0)` is a valid value that
-    /// clears the resolver.
+    /// @param tokenUriResolver The new URI resolver. Pass `IJB721TokenUriResolver(address(this))` to leave it
+    /// unchanged; `address(0)` clears the resolver.
     /// @param encodedIpfsUriTierId The ID of the tier to set the encoded IPFS URI of.
     /// @param encodedIpfsUri The encoded IPFS URI to set.
     function setMetadata(

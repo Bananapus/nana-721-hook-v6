@@ -40,6 +40,7 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     //*********************************************************************//
 
     /// @notice The store that holds tier and voting data for the hook's NFTs.
+    /// @dev All tier lookups are scoped by `hook`; this immutable only identifies the shared store contract.
     IJB721TiersHookStore public immutable override STORE;
 
     //*********************************************************************//
@@ -47,22 +48,27 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     //*********************************************************************//
 
     /// @notice The hook that this module tracks voting power for.
+    /// @dev Clones set this once in `initialize`; the implementation uses `address(1)` as a locked sentinel.
     address public override hook;
 
     //*********************************************************************//
     // -------------------- internal stored properties ------------------- //
     //*********************************************************************//
 
-    /// @notice Checkpointed token owners for historical reward eligibility. Written on mint, enrollment, or transfer.
+    /// @notice Checkpointed token owners for historical reward eligibility.
+    /// @dev Mint and transfer hooks write this automatically; `delegate` only backfills missing pre-upgrade history.
     /// @custom:param tokenId The token ID to get historical owner checkpoints for.
     mapping(uint256 tokenId => Checkpoints.Trace160) internal _ownerCheckpointsOf;
 
     /// @notice Checkpointed total owner-tracked voting units per tier.
-    /// @dev Each minted token contributes its tier voting units while it has a nonzero owner.
+    /// @dev Increased on mint or backfill and decreased on burn. Transfers keep the total unchanged because the token
+    /// still has a nonzero owner.
     /// @custom:param tierId The tier to get the historical owner-tracked voting units for.
     mapping(uint256 tierId => Checkpoints.Trace160) internal _tierEligibleUnitsOf;
 
-    /// @notice Checkpointed total voting units per tier held by accounts with nonzero delegates.
+    /// @notice Checkpointed total active voting units per tier.
+    /// @dev Maintained when delegation changes activate/deactivate all of an account's tier units, and when transfers
+    /// move one token's tier units between delegated and undelegated custody.
     /// @custom:param tierId The tier to get the historical delegated voting units for.
     mapping(uint256 tierId => Checkpoints.Trace160) internal _tierActiveSupplyCheckpointsOf;
 
@@ -70,13 +76,15 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     // -------------------- private stored properties -------------------- //
     //*********************************************************************//
 
-    /// @notice The total voting units currently delegated to nonzero delegates.
+    /// @notice Checkpointed total voting units held by accounts with nonzero delegates.
+    /// @dev Maintained by `_delegate` and `_transferVotingUnits` using the same clock as OZ `Votes`.
     Checkpoints.Trace208 private _activeSupplyCheckpoints;
 
     //*********************************************************************//
     // -------------------------- constructor ---------------------------- //
     //*********************************************************************//
 
+    /// @notice Initializes the checkpoint implementation and locks it against direct use.
     /// @dev The implementation contract is initialized in the constructor to prevent direct use. Clones are initialized
     /// via `initialize()`.
     /// @param store The store that holds tier data for each hook's NFTs.
@@ -192,6 +200,24 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     // ----------------------- external views ---------------------------- //
     //*********************************************************************//
 
+    /// @notice The total delegated voting units of a tier at a past block.
+    /// @dev Counts only tier voting units held by accounts with a nonzero delegate.
+    /// @param tierId The tier to get the delegated voting units of.
+    /// @param blockNumber The past block number to look up.
+    /// @return activeVotes The tier's delegated voting units at `blockNumber`.
+    function getPastTierActiveVotes(
+        uint256 tierId,
+        uint256 blockNumber
+    )
+        external
+        view
+        override
+        returns (uint256 activeVotes)
+    {
+        // forge-lint: disable-next-line(unsafe-typecast)
+        activeVotes = _tierActiveSupplyCheckpointsOf[tierId].upperLookupRecent(uint96(_validateTimepoint(blockNumber)));
+    }
+
     /// @notice The total owner-checkpointed voting units of a tier at a past block.
     /// @param tierId The tier to get the owner-checkpointed voting units of.
     /// @param blockNumber The block number to look up (must be strictly in the past).
@@ -209,22 +235,12 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
         votingUnits = _tierEligibleUnitsOf[tierId].upperLookupRecent(uint96(_validateTimepoint(blockNumber)));
     }
 
-    /// @notice The total delegated voting units of a tier at a past block.
-    /// @dev Counts only tier voting units held by accounts with a nonzero delegate.
-    /// @param tierId The tier to get the delegated voting units of.
-    /// @param timepoint The past block number to look up.
-    /// @return activeVotes The tier's delegated voting units at `timepoint`.
-    function getPastTierActiveVotes(
-        uint256 tierId,
-        uint256 timepoint
-    )
-        external
-        view
-        override
-        returns (uint256 activeVotes)
-    {
-        // forge-lint: disable-next-line(unsafe-typecast)
-        activeVotes = _tierActiveSupplyCheckpointsOf[tierId].upperLookupRecent(uint96(_validateTimepoint(timepoint)));
+    /// @notice The total delegated voting units at a past block.
+    /// @dev This tracks delegated vote participation and is separate from tier reward eligibility.
+    /// @param blockNumber The past block number to look up.
+    /// @return activeVotes The total voting units delegated to nonzero delegates at `blockNumber`.
+    function getPastTotalActiveVotes(uint256 blockNumber) external view override returns (uint256 activeVotes) {
+        activeVotes = _activeSupplyCheckpoints.upperLookupRecent(_validateTimepoint(blockNumber));
     }
 
     /// @notice The current total delegated voting units of a tier.
@@ -232,14 +248,6 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// @return activeVotes The tier's current delegated voting units.
     function getTierActiveVotes(uint256 tierId) external view override returns (uint256 activeVotes) {
         activeVotes = _tierActiveSupplyCheckpointsOf[tierId].latest();
-    }
-
-    /// @notice The total delegated voting units at a past block.
-    /// @dev This tracks delegated vote participation and is separate from tier reward eligibility.
-    /// @param timepoint The past block number to look up.
-    /// @return activeVotes The total voting units delegated to nonzero delegates at `timepoint`.
-    function getPastTotalActiveVotes(uint256 timepoint) external view override returns (uint256 activeVotes) {
-        activeVotes = _activeSupplyCheckpoints.upperLookupRecent(_validateTimepoint(timepoint));
     }
 
     /// @notice The current total delegated voting units.
@@ -253,8 +261,8 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// @dev Returns `address(0)` if no ownership checkpoint exists or the query predates the first checkpoint.
     /// @param tokenId The token ID of the NFT to get the historical owner of.
     /// @param blockNumber The block number to look up.
-    /// @return The owner of the token at `blockNumber`, or zero if no owner is proven at that block.
-    function ownerOfAt(uint256 tokenId, uint256 blockNumber) external view override returns (address) {
+    /// @return owner The owner of the token at `blockNumber`, or zero if no owner is proven at that block.
+    function ownerOfAt(uint256 tokenId, uint256 blockNumber) external view override returns (address owner) {
         // forge-lint: disable-next-line(unsafe-typecast)
         uint96 blockNumber96 = uint96(blockNumber);
 
@@ -337,8 +345,8 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// @notice Returns the total voting units held by an account (across all tiers).
     /// @dev Called by OZ Votes when re-delegating to compute the account's total voting units.
     /// @param account The address to get the voting units of.
-    /// @return The total voting units the account holds.
-    function _getVotingUnits(address account) internal view override returns (uint256) {
+    /// @return votingUnits The total voting units the account holds.
+    function _getVotingUnits(address account) internal view override returns (uint256 votingUnits) {
         return STORE.votingUnitsOf({hook: hook, account: account});
     }
 
@@ -363,13 +371,21 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
         _activeSupplyCheckpoints.push({key: clock(), value: SafeCast.toUint208(updated)});
     }
 
-    /// @notice Add or remove units from a tier's owner-tracked voting-units checkpoint at the current block.
-    /// @param tierId The tier whose owner-tracked voting-units trace to update.
+    /// @notice Add or remove units from a tier's active-voting-units checkpoint at the current block.
+    /// @param tierId The tier whose active-voting-units trace to update.
     /// @param amount The voting units to add or remove.
     /// @param increase Whether to add `amount`; if false, `amount` is removed.
-    function _updateTierEligibleUnits(uint256 tierId, uint256 amount, bool increase) private {
-        Checkpoints.Trace160 storage trace = _tierEligibleUnitsOf[tierId];
+    function _updateTierActiveVotes(uint256 tierId, uint256 amount, bool increase) private {
+        // Ignore zero-unit updates because they do not change this tier's active total.
+        if (amount == 0) return;
+
+        // Keep a reference to the tier's active-voting-units trace.
+        Checkpoints.Trace160 storage trace = _tierActiveSupplyCheckpointsOf[tierId];
+
+        // Calculate the next tier active total by adding or subtracting from the latest checkpointed value.
         uint256 updated = increase ? trace.latest() + amount : trace.latest() - amount;
+
+        // Write the new tier active total at the current block.
         // forge-lint: disable-next-line(unsafe-typecast)
         trace.push({key: uint96(block.number), value: uint160(updated)});
     }
@@ -394,26 +410,27 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
             }
 
             unchecked {
+                // The loop condition proves tierId is nonzero, so the decrement cannot underflow.
                 --tierId;
             }
         }
     }
 
-    /// @notice Add or remove units from a tier's active-voting-units checkpoint at the current block.
-    /// @param tierId The tier whose active-voting-units trace to update.
+    /// @notice Add or remove units from a tier's owner-tracked voting-units checkpoint at the current block.
+    /// @param tierId The tier whose owner-tracked voting-units trace to update.
     /// @param amount The voting units to add or remove.
     /// @param increase Whether to add `amount`; if false, `amount` is removed.
-    function _updateTierActiveVotes(uint256 tierId, uint256 amount, bool increase) private {
-        // Ignore zero-unit updates because they do not change this tier's active total.
+    function _updateTierEligibleUnits(uint256 tierId, uint256 amount, bool increase) private {
+        // Ignore zero-unit updates because they do not change this tier's owner-tracked total.
         if (amount == 0) return;
 
-        // Keep a reference to the tier's active-voting-units trace.
-        Checkpoints.Trace160 storage trace = _tierActiveSupplyCheckpointsOf[tierId];
+        // Keep a reference to the tier's owner-tracked voting-units trace.
+        Checkpoints.Trace160 storage trace = _tierEligibleUnitsOf[tierId];
 
-        // Calculate the next tier active total by adding or subtracting from the latest checkpointed value.
+        // Calculate the next owner-tracked total by adding or subtracting from the latest checkpointed value.
         uint256 updated = increase ? trace.latest() + amount : trace.latest() - amount;
 
-        // Write the new tier active total at the current block.
+        // Write the new owner-tracked total at the current block.
         // forge-lint: disable-next-line(unsafe-typecast)
         trace.push({key: uint96(block.number), value: uint160(updated)});
     }
