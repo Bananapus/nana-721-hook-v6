@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {IJBActiveVotes} from "@bananapus/core-v6/src/interfaces/IJBActiveVotes.sol";
 import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
-import {IJBActiveVotes} from "./IJBActiveVotes.sol";
 import {IJB721TiersHookStore} from "./IJB721TiersHookStore.sol";
 
 /// @notice A checkpoint module that provides IVotes-compatible checkpointed voting power for a JB721TiersHook.
