@@ -148,8 +148,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @custom:param hook The 721 contract to get the custom token URI resolver of.
     mapping(address hook => IJB721TokenUriResolver) public override tokenUriResolverOf;
 
-    /// @notice The combined cash-out weight of all of a hook's NFTs, as a running aggregate so cash-out pricing is
-    /// O(1) instead of O(maxTierId).
+    /// @notice The combined cash-out weight of all hook NFTs, tracked so cash-out pricing is O(1).
     /// @dev Maintained incrementally in `recordMint` (+ the tier's full price for the new outstanding NFT plus any
     /// newly-accrued pending reserve) and `recordBurn` (- the tier's full price). It is invariant under everything
     /// else: reserve mints are weight-neutral (a pending reserve becomes an outstanding NFT), removed tiers keep
@@ -610,8 +609,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @param hook The 721 contract to get the tier from.
     /// @param tierId The ID of the tier to get.
     /// @param storedTier The stored tier to get the corresponding tier for.
-    /// @param includeResolvedUri If set to `true`, if the contract has a token URI resolver, its content will be
-    /// resolved and included.
+    /// @param includeResolvedUri If true and the contract has a token URI resolver, resolve and include its content.
     /// @return tier The tier as a `JB721Tier` struct.
     function _getTierFrom(
         address hook,

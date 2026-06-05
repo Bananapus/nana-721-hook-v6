@@ -11,8 +11,8 @@ import {IJB721TiersHook} from "../src/interfaces/IJB721TiersHook.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 /// @title TestTierEligibleUnits
-/// @notice Tests the per-tier eligible-voting-units checkpoint trace: it increments when a token first gains an
-/// owner checkpoint (enrollment or first transfer) and decrements on burn, and is NEVER written on mint.
+/// @notice Tests the per-tier owner-tracked voting-units checkpoint trace: it increments on mint, stays stable across
+/// transfers, and decrements on burn.
 contract TestTierEligibleUnits is UnitTestSetup {
     /// @notice Deploys a ForTest hook with the given number of tiers and `useVotingUnits` enabled.
     function _initializeHook(uint256 numberOfTiers) internal returns (ForTest_JB721TiersHook tiersHook) {
@@ -55,8 +55,8 @@ contract TestTierEligibleUnits is UnitTestSetup {
         tiersHook.mintFor(tiers, to);
     }
 
-    /// @notice Helper to enroll a single token for `account`.
-    function _enroll(IJB721Checkpoints module, address account, uint256 tokenId) internal {
+    /// @notice Helper to backfill a single token for `account`.
+    function _backfill(IJB721Checkpoints module, address account, uint256 tokenId) internal {
         uint256[] memory ids = new uint256[](1);
         ids[0] = tokenId;
         vm.prank(account);
@@ -64,9 +64,9 @@ contract TestTierEligibleUnits is UnitTestSetup {
     }
 
     // -------------------------------------------------------------------
-    // Mint writes nothing; enroll increments; history before enroll is 0.
+    // Mint increments; backfill is idempotent.
     // -------------------------------------------------------------------
-    function test_mintWritesNothing_enrollIncrements() public {
+    function test_mintIncrements_backfillIsIdempotent() public {
         defaultTierConfig.flags.allowOwnerMint = true;
         defaultTierConfig.reserveFrequency = 0;
         defaultTierConfig.flags.useVotingUnits = true;
@@ -75,6 +75,9 @@ contract TestTierEligibleUnits is UnitTestSetup {
         ForTest_JB721TiersHook tiersHook = _initializeHook(1);
         address alice = makeAddr("alice");
 
+        uint256 beforeMintBlock = block.number;
+        vm.roll(block.number + 1);
+
         _mint(tiersHook, 1, alice);
         IJB721Checkpoints module = tiersHook.checkpoints();
         uint256 tokenId = _generateTokenId(1, 1);
@@ -82,22 +85,22 @@ contract TestTierEligibleUnits is UnitTestSetup {
         uint256 mintBlock = block.number;
         vm.roll(block.number + 1);
 
-        // Mint wrote nothing to the tier trace.
-        assertEq(module.getPastTierVotingUnits(1, mintBlock), 0, "mint must not write tier units");
+        // Mint writes the tier's owner-tracked voting units.
+        assertEq(module.getPastTierVotingUnits(1, beforeMintBlock), 0, "history before mint should be 0");
+        assertEq(module.getPastTierVotingUnits(1, mintBlock), 100, "mint should add tier units");
 
-        // Enroll increments by the tier's voting units.
-        _enroll(module, alice, tokenId);
-        uint256 enrollBlock = block.number;
+        // Backfill cannot double-count a token that already has a mint checkpoint.
+        _backfill(module, alice, tokenId);
+        uint256 backfillBlock = block.number;
         vm.roll(block.number + 1);
 
-        assertEq(module.getPastTierVotingUnits(1, enrollBlock), 100, "enroll should add tier units");
-        assertEq(module.getPastTierVotingUnits(1, enrollBlock - 1), 0, "history before enroll should be 0");
+        assertEq(module.getPastTierVotingUnits(1, backfillBlock), 100, "backfill should not double-count");
     }
 
     // -------------------------------------------------------------------
-    // First transfer of an unenrolled token makes it eligible (+units).
+    // Transfer keeps the owner-tracked tier total stable.
     // -------------------------------------------------------------------
-    function test_firstTransferIncrements() public {
+    function test_transferKeepsTierTotalStable() public {
         defaultTierConfig.flags.allowOwnerMint = true;
         defaultTierConfig.reserveFrequency = 0;
         defaultTierConfig.flags.useVotingUnits = true;
@@ -111,17 +114,18 @@ contract TestTierEligibleUnits is UnitTestSetup {
         IJB721Checkpoints module = tiersHook.checkpoints();
         uint256 tokenId = _generateTokenId(1, 1);
 
+        uint256 mintBlock = block.number;
         vm.roll(block.number + 1);
+        assertEq(module.getPastTierVotingUnits(1, mintBlock), 100, "mint should add tier units");
 
-        // Transfer (never enrolled) makes it eligible.
         vm.prank(alice);
         IERC721(address(tiersHook)).transferFrom(alice, bob, tokenId);
         uint256 transferBlock = block.number;
         vm.roll(block.number + 1);
 
-        assertEq(module.getPastTierVotingUnits(1, transferBlock), 100, "first transfer should add tier units");
+        assertEq(module.getPastTierVotingUnits(1, transferBlock), 100, "transfer should keep tier total stable");
 
-        // A second transfer of the (already eligible) token does NOT change the tier total.
+        // A second transfer does not change the owner-tracked tier total either.
         vm.prank(bob);
         IERC721(address(tiersHook)).transferFrom(bob, alice, tokenId);
         uint256 secondTransferBlock = block.number;
@@ -145,15 +149,12 @@ contract TestTierEligibleUnits is UnitTestSetup {
         _mint(tiersHook, 1, alice);
         IJB721Checkpoints module = tiersHook.checkpoints();
         uint256 tokenId1 = _generateTokenId(1, 1);
-        uint256 tokenId2 = _generateTokenId(1, 2);
 
-        _enroll(module, alice, tokenId1);
-        _enroll(module, alice, tokenId2);
-        uint256 enrolledBlock = block.number;
+        uint256 mintedBlock = block.number;
         vm.roll(block.number + 1);
-        assertEq(module.getPastTierVotingUnits(1, enrolledBlock), 200, "two enrolled tokens = 200");
+        assertEq(module.getPastTierVotingUnits(1, mintedBlock), 200, "two minted tokens = 200");
 
-        // Burn one eligible token.
+        // Burn one owner-tracked token.
         uint256[] memory toBurn = new uint256[](1);
         toBurn[0] = tokenId1;
         tiersHook.burn(toBurn);
@@ -179,13 +180,13 @@ contract TestTierEligibleUnits is UnitTestSetup {
         IJB721Checkpoints module = tiersHook.checkpoints();
         uint256 tokenId = _generateTokenId(1, 1);
 
-        _enroll(module, alice, tokenId);
+        _backfill(module, alice, tokenId);
         vm.roll(block.number + 5);
-        _enroll(module, alice, tokenId); // second enroll
+        _backfill(module, alice, tokenId); // second backfill
         uint256 b = block.number;
         vm.roll(block.number + 1);
 
-        assertEq(module.getPastTierVotingUnits(1, b), 100, "re-enroll must not double count");
+        assertEq(module.getPastTierVotingUnits(1, b), 100, "backfill must not double count");
     }
 
     // -------------------------------------------------------------------
@@ -202,7 +203,7 @@ contract TestTierEligibleUnits is UnitTestSetup {
 
         _mint(tiersHook, 1, alice);
         IJB721Checkpoints module = tiersHook.checkpoints();
-        _enroll(module, alice, _generateTokenId(1, 1));
+        _backfill(module, alice, _generateTokenId(1, 1));
 
         vm.expectRevert();
         module.getPastTierVotingUnits(1, block.number);
@@ -227,12 +228,12 @@ contract TestTierEligibleUnits is UnitTestSetup {
 
         vm.roll(block.number + 1);
         vm.prank(alice);
-        IERC721(address(tiersHook)).transferFrom(alice, bob, tokenId); // +100, now eligible
+        IERC721(address(tiersHook)).transferFrom(alice, bob, tokenId); // total remains 100
         vm.roll(block.number + 1);
 
         uint256[] memory toBurn = new uint256[](1);
         toBurn[0] = tokenId;
-        tiersHook.burn(toBurn); // -100
+        tiersHook.burn(toBurn); // total becomes 0
         uint256 b = block.number;
         vm.roll(block.number + 1);
 
@@ -240,9 +241,9 @@ contract TestTierEligibleUnits is UnitTestSetup {
     }
 
     // -------------------------------------------------------------------
-    // A minted-then-burned, never-enrolled token never touches the trace.
+    // A minted-then-burned token returns the trace to zero.
     // -------------------------------------------------------------------
-    function test_burnNeverEligibleNoOp() public {
+    function test_mintThenBurnRemovesUnits() public {
         defaultTierConfig.flags.allowOwnerMint = true;
         defaultTierConfig.reserveFrequency = 0;
         defaultTierConfig.flags.useVotingUnits = true;
@@ -255,16 +256,17 @@ contract TestTierEligibleUnits is UnitTestSetup {
         IJB721Checkpoints module = tiersHook.checkpoints();
         uint256 tokenId = _generateTokenId(1, 1);
 
+        uint256 mintBlock = block.number;
         vm.roll(block.number + 1);
+        assertEq(module.getPastTierVotingUnits(1, mintBlock), 100, "mint should add tier units");
 
-        // Burn without ever enrolling/transferring.
         uint256[] memory toBurn = new uint256[](1);
         toBurn[0] = tokenId;
         tiersHook.burn(toBurn);
         uint256 b = block.number;
         vm.roll(block.number + 1);
 
-        assertEq(module.getPastTierVotingUnits(1, b), 0, "burn of never-eligible token is a no-op");
+        assertEq(module.getPastTierVotingUnits(1, b), 0, "burn should remove minted token units");
     }
 
     // -------------------------------------------------------------------
@@ -286,14 +288,11 @@ contract TestTierEligibleUnits is UnitTestSetup {
         _mint(tiersHook, 3, alice);
 
         IJB721Checkpoints module = tiersHook.checkpoints();
-        // Enroll only tiers 1 and 3.
-        _enroll(module, alice, _generateTokenId(1, 1));
-        _enroll(module, alice, _generateTokenId(3, 1));
         uint256 b = block.number;
         vm.roll(block.number + 1);
 
         assertEq(module.getPastTierVotingUnits(1, b), 100, "tier 1 = 100");
-        assertEq(module.getPastTierVotingUnits(2, b), 0, "tier 2 unenrolled = 0");
+        assertEq(module.getPastTierVotingUnits(2, b), 200, "tier 2 = 200");
         assertEq(module.getPastTierVotingUnits(3, b), 500, "tier 3 = 500");
     }
 }

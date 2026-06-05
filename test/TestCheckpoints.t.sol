@@ -319,9 +319,9 @@ contract TestCheckpoints is UnitTestSetup {
     }
 
     // -------------------------------------------------------------------
-    // Test 9: delegate(address, uint256[]) writes owner checkpoint
+    // Test 9: mint writes owner checkpoint
     // -------------------------------------------------------------------
-    function test_delegateWithTokenIds_writesOwnerCheckpoint() public {
+    function test_mint_writesOwnerCheckpoint() public {
         defaultTierConfig.flags.allowOwnerMint = true;
         defaultTierConfig.reserveFrequency = 0;
         defaultTierConfig.flags.useVotingUnits = true;
@@ -338,21 +338,14 @@ contract TestCheckpoints is UnitTestSetup {
 
         IJB721Checkpoints module = tiersHook.checkpoints();
         uint256 tokenId = _generateTokenId(1, 1);
-
-        // Before enrollment, ownerOfAt returns address(0).
-        assertEq(module.ownerOfAt(tokenId, block.number), address(0), "Unenrolled token should return address(0)");
-
-        uint256 enrollBlock = block.number;
+        uint256 mintBlock = block.number;
         vm.roll(block.number + 1);
 
-        // Enroll via delegate(address, uint256[]).
-        uint256[] memory tokenIds = new uint256[](1);
-        tokenIds[0] = tokenId;
-        vm.prank(user);
-        module.delegate(user, tokenIds);
+        // Minting writes the initial owner checkpoint.
+        assertEq(module.ownerOfAt(tokenId, mintBlock), user, "Minted token should return its initial owner");
 
-        // ownerOfAt returns the owner for blocks >= enrollment.
-        assertEq(module.ownerOfAt(tokenId, enrollBlock + 1), user, "Enrolled token should return owner");
+        // Minting also tracks the tier's owner-based voting units.
+        assertEq(module.getPastTierVotingUnits(1, mintBlock), 100, "Minted token should count in tier units");
     }
 
     // -------------------------------------------------------------------
@@ -381,7 +374,7 @@ contract TestCheckpoints is UnitTestSetup {
         vm.prank(delegatee);
         module.delegate(delegatee);
 
-        // Enroll and delegate to a different address.
+        // Backfill if needed and delegate to a different address.
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = tokenId;
         vm.prank(user);
@@ -390,6 +383,7 @@ contract TestCheckpoints is UnitTestSetup {
         assertEq(module.delegates(user), delegatee, "Should delegate to specified delegatee");
         assertEq(module.getVotes(delegatee), 100, "Delegatee should have user's votes");
         assertEq(module.getTotalActiveVotes(), 100, "Active votes should include delegated voting units");
+        assertEq(module.getTierActiveVotes(1), 100, "Tier active votes should include delegated voting units");
     }
 
     // -------------------------------------------------------------------
@@ -446,26 +440,26 @@ contract TestCheckpoints is UnitTestSetup {
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = tokenId;
 
-        // Enroll once.
+        // Backfill once.
         vm.prank(user);
         module.delegate(user, tokenIds);
 
-        uint256 enrollBlock = block.number;
+        uint256 checkpointBlock = block.number;
         vm.roll(block.number + 10);
 
-        // Enroll again — should not write a duplicate checkpoint.
+        // Backfill again — should not write a duplicate checkpoint.
         vm.prank(user);
         module.delegate(user, tokenIds);
 
-        // ownerOfAt at the enrollment block should still return user (first checkpoint).
-        assertEq(module.ownerOfAt(tokenId, enrollBlock), user, "First enrollment checkpoint should persist");
+        // ownerOfAt at the mint block should still return user (first checkpoint).
+        assertEq(module.ownerOfAt(tokenId, checkpointBlock), user, "First owner checkpoint should persist");
         assertEq(module.ownerOfAt(tokenId, block.number), user, "Current block should return user");
     }
 
     // -------------------------------------------------------------------
-    // Test 13: ownerOfAt returns address(0) for unenrolled token
+    // Test 13: ownerOfAt returns the initial owner for a freshly minted token
     // -------------------------------------------------------------------
-    function test_ownerOfAt_returnsZeroForUnenrolledToken() public {
+    function test_ownerOfAt_returnsMintOwnerForFreshToken() public {
         defaultTierConfig.flags.allowOwnerMint = true;
         defaultTierConfig.reserveFrequency = 0;
         defaultTierConfig.flags.useVotingUnits = true;
@@ -483,14 +477,14 @@ contract TestCheckpoints is UnitTestSetup {
         IJB721Checkpoints module = tiersHook.checkpoints();
         uint256 tokenId = _generateTokenId(1, 1);
 
-        // Never enrolled, never transferred — ownerOfAt should return address(0).
-        assertEq(module.ownerOfAt(tokenId, block.number), address(0), "Unenrolled token should return address(0)");
+        // Fresh mints are ownership-checkpointed immediately.
+        assertEq(module.ownerOfAt(tokenId, block.number), user, "Minted token should return initial owner");
     }
 
     // -------------------------------------------------------------------
-    // Test 14: ownerOfAt returns address(0) before enrollment block
+    // Test 14: ownerOfAt returns address(0) before mint block
     // -------------------------------------------------------------------
-    function test_ownerOfAt_returnsZeroBeforeEnrollmentBlock() public {
+    function test_ownerOfAt_returnsZeroBeforeMintBlock() public {
         defaultTierConfig.flags.allowOwnerMint = true;
         defaultTierConfig.reserveFrequency = 0;
         defaultTierConfig.flags.useVotingUnits = true;
@@ -500,6 +494,9 @@ contract TestCheckpoints is UnitTestSetup {
 
         address user = makeAddr("user");
 
+        uint256 blockBeforeMint = block.number;
+        vm.roll(block.number + 5);
+
         uint16[] memory tiersToMint = new uint16[](1);
         tiersToMint[0] = 1;
         vm.prank(owner);
@@ -508,24 +505,11 @@ contract TestCheckpoints is UnitTestSetup {
         IJB721Checkpoints module = tiersHook.checkpoints();
         uint256 tokenId = _generateTokenId(1, 1);
 
-        uint256 blockBeforeEnroll = block.number;
-        vm.roll(block.number + 5);
+        // Querying before mint returns address(0).
+        assertEq(module.ownerOfAt(tokenId, blockBeforeMint), address(0), "ownerOfAt before mint should return zero");
 
-        // Enroll at block + 5.
-        uint256[] memory tokenIds = new uint256[](1);
-        tokenIds[0] = tokenId;
-        vm.prank(user);
-        module.delegate(user, tokenIds);
-
-        // Querying before enrollment block returns address(0).
-        assertEq(
-            module.ownerOfAt(tokenId, blockBeforeEnroll),
-            address(0),
-            "ownerOfAt before enrollment should return address(0)"
-        );
-
-        // Querying at/after enrollment block returns owner.
-        assertEq(module.ownerOfAt(tokenId, block.number), user, "ownerOfAt at enrollment block should return owner");
+        // Querying at/after mint returns owner.
+        assertEq(module.ownerOfAt(tokenId, block.number), user, "ownerOfAt at mint block should return owner");
     }
 
     // -------------------------------------------------------------------
@@ -550,8 +534,8 @@ contract TestCheckpoints is UnitTestSetup {
         IJB721Checkpoints module = tiersHook.checkpoints();
         uint256 tokenId = _generateTokenId(1, 1);
 
-        // Before transfer — unenrolled, returns address(0).
-        assertEq(module.ownerOfAt(tokenId, block.number), address(0), "Before transfer should return address(0)");
+        // Before transfer — mint checkpoint records alice.
+        assertEq(module.ownerOfAt(tokenId, block.number), alice, "Before transfer should return alice");
 
         vm.roll(block.number + 1);
 
@@ -618,17 +602,22 @@ contract TestCheckpoints is UnitTestSetup {
 
         assertEq(module.getPastTotalSupply(inactiveBlock), 100, "Total supply should include undelegated voting units");
         assertEq(module.getPastTotalActiveVotes(inactiveBlock), 0, "Active total should exclude undelegated units");
+        assertEq(
+            module.getPastTierActiveVotes(1, inactiveBlock), 0, "Tier active total should exclude undelegated units"
+        );
 
         vm.prank(alice);
         module.delegate(alice);
 
         assertEq(module.getVotes(alice), 100, "Alice should have votes after delegation");
         assertEq(module.getTotalActiveVotes(), 100, "Delegated voting units should be active");
+        assertEq(module.getTierActiveVotes(1), 100, "Delegated voting units should be tier-active");
 
         uint256 activeBlock = block.number;
         vm.roll(block.number + 1);
 
         assertEq(module.getPastTotalActiveVotes(activeBlock), 100, "Active total should checkpoint delegation");
+        assertEq(module.getPastTierActiveVotes(1, activeBlock), 100, "Tier active total should checkpoint delegation");
 
         vm.prank(alice);
         IERC721(address(tiersHook)).transferFrom(alice, amm, tokenId);
@@ -636,6 +625,7 @@ contract TestCheckpoints is UnitTestSetup {
         assertEq(module.getVotes(alice), 0, "Alice should lose votes while token is in inactive custody");
         assertEq(module.getVotes(amm), 0, "Inactive custodian should not receive votes");
         assertEq(module.getTotalActiveVotes(), 0, "Inactive custody should remove voting units from active total");
+        assertEq(module.getTierActiveVotes(1), 0, "Inactive custody should remove units from tier active total");
 
         uint256 inactiveCustodyBlock = block.number;
         vm.roll(block.number + 1);
@@ -643,11 +633,72 @@ contract TestCheckpoints is UnitTestSetup {
         assertEq(
             module.getPastTotalActiveVotes(inactiveCustodyBlock), 0, "Active total should checkpoint inactive custody"
         );
+        assertEq(
+            module.getPastTierActiveVotes(1, inactiveCustodyBlock),
+            0,
+            "Tier active total should checkpoint inactive custody"
+        );
 
         vm.prank(amm);
         IERC721(address(tiersHook)).transferFrom(amm, alice, tokenId);
 
         assertEq(module.getVotes(alice), 100, "Alice should regain votes when token returns");
         assertEq(module.getTotalActiveVotes(), 100, "Delegated holder should make returned voting units active again");
+        assertEq(module.getTierActiveVotes(1), 100, "Returned token should become tier-active again");
+    }
+
+    // -------------------------------------------------------------------
+    // Test 18: Tier active votes track delegation across multiple tiers
+    // -------------------------------------------------------------------
+    function test_tierActiveVotes_followDelegationAcrossTiers() public {
+        defaultTierConfig.flags.allowOwnerMint = true;
+        defaultTierConfig.reserveFrequency = 0;
+        defaultTierConfig.flags.useVotingUnits = true;
+
+        ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(3);
+
+        tiersHook.test_store().ForTest_setTierVotingUnits(address(tiersHook), 1, 100);
+        tiersHook.test_store().ForTest_setTierVotingUnits(address(tiersHook), 2, 200);
+        tiersHook.test_store().ForTest_setTierVotingUnits(address(tiersHook), 3, 500);
+
+        address alice = makeAddr("alice");
+        address bob = makeAddr("bob");
+
+        uint16[] memory aliceTiers = new uint16[](2);
+        aliceTiers[0] = 1;
+        aliceTiers[1] = 2;
+
+        uint16[] memory bobTiers = new uint16[](1);
+        bobTiers[0] = 3;
+
+        vm.startPrank(owner);
+        tiersHook.mintFor(aliceTiers, alice);
+        tiersHook.mintFor(bobTiers, bob);
+        vm.stopPrank();
+
+        IJB721Checkpoints module = tiersHook.checkpoints();
+
+        vm.prank(alice);
+        module.delegate(alice);
+
+        assertEq(module.getTotalActiveVotes(), 300, "Alice's delegated tiers should set the active total");
+        assertEq(module.getTierActiveVotes(1), 100, "Tier 1 should include Alice's delegated units");
+        assertEq(module.getTierActiveVotes(2), 200, "Tier 2 should include Alice's delegated units");
+        assertEq(module.getTierActiveVotes(3), 0, "Tier 3 should exclude undelegated Bob units");
+
+        uint256 activeBlock = block.number;
+        vm.roll(block.number + 1);
+
+        assertEq(module.getPastTierActiveVotes(1, activeBlock), 100, "Past tier 1 active units should be checkpointed");
+        assertEq(module.getPastTierActiveVotes(2, activeBlock), 200, "Past tier 2 active units should be checkpointed");
+        assertEq(module.getPastTierActiveVotes(3, activeBlock), 0, "Past tier 3 active units should be zero");
+
+        vm.prank(alice);
+        module.delegate(address(0));
+
+        assertEq(module.getTotalActiveVotes(), 0, "Clearing delegation should remove active total");
+        assertEq(module.getTierActiveVotes(1), 0, "Clearing delegation should remove tier 1 active units");
+        assertEq(module.getTierActiveVotes(2), 0, "Clearing delegation should remove tier 2 active units");
+        assertEq(module.getTierActiveVotes(3), 0, "Clearing delegation should leave tier 3 inactive");
     }
 }

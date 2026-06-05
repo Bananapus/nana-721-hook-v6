@@ -18,8 +18,8 @@ Custom token URI resolvers usually live outside this repo, but they still affect
 - reserve minting and split routing must not drift from stored tier state
 - store-linked list and bitmap assumptions must stay valid under tier add, remove, and clean operations
 - deployer wiring must preserve the expected ruleset and hook shape
-- the per-tier eligible-voting-units trace must move only when a token's eligibility changes: it increments on enrollment or a token's first transfer, decrements on burn, and writes nothing on mint (so the mint path adds no checkpoint gas)
-- the active-vote-total trace must track only voting units delegated to nonzero delegates, increasing when an account delegates held units and decreasing when units move into undelegated custody
+- the per-tier owner-tracked voting-units trace must follow owned supply: it increments on mint, moves through transfers via owner checkpoints, and decrements on burn
+- the active-vote-total traces must track only voting units delegated to nonzero delegates, both globally and per tier, increasing when an account delegates held units and decreasing when units move into undelegated custody
 
 ## Modules
 
@@ -30,11 +30,11 @@ Custom token URI resolvers usually live outside this repo, but they still affect
 | `JB721TiersHookDeployer` | Clone deployer for existing projects | Wiring helper |
 | `JB721TiersHookProjectDeployer` | Project-launch deployer with hook setup | Launch helper |
 | `JB721Hook` | Abstract 721 hook base | Shared behavior |
-| `JB721Checkpoints` | IVotes-compatible checkpoint module (one clone per hook) | Tracks historical owner checkpoints, per-tier eligible-voting-units totals, and active delegated vote totals |
+| `JB721Checkpoints` | IVotes-compatible checkpoint module (one clone per hook) | Tracks historical owner checkpoints, per-tier owner-tracked voting-unit totals, and global/per-tier active delegated vote totals |
 
-The checkpoint module keeps three kinds of checkpointed state. Per-token owner checkpoints back `ownerOfAt` for snapshot-based reward eligibility. A per-tier eligible-voting-units trace (`_tierEligibleUnitsOf`, read via `getPastTierVotingUnits(tierId, blockNumber)`) is the tier-scoped analogue of a total-supply snapshot: it is the running total of voting units across tokens that are currently eligible. A token contributes its tier voting units from the block it first gains an owner checkpoint — enrollment via `delegate(address, uint256[])` or its first transfer — and stops contributing when it is burned. Mints write nothing to either eligibility trace, so the mint path carries no added checkpoint gas; a minted-but-unenrolled token is ineligible until enrolled or transferred, exactly as `ownerOfAt` reports.
+The checkpoint module keeps four kinds of checkpointed state. Per-token owner checkpoints back `ownerOfAt` for snapshot-based reward eligibility. A per-tier owner-tracked voting-units trace (`_tierEligibleUnitsOf`, read via `getPastTierVotingUnits(tierId, blockNumber)`) is the tier-scoped analogue of a total-supply snapshot: it increments on mint, follows owner checkpoints through transfers, and decrements on burn.
 
-The active delegated vote trace (`_activeSupplyCheckpoints`, read via `getPastTotalActiveVotes(blockNumber)` and `getTotalActiveVotes()`) is separate. It tracks voting units held by accounts with a nonzero delegate. If a holder self-delegates and later transfers a token into undelegated custody, those units leave the active total; if the token returns to that already-delegated holder, those units become active again. Do not use this active total as the tier-scoped owner-claim denominator.
+The active delegated vote traces (`_activeSupplyCheckpoints` globally and `_tierActiveSupplyCheckpointsOf` per tier) are separate. They track voting units held by accounts with a nonzero delegate. If a holder self-delegates and later transfers a token into undelegated custody, those units leave the active totals; if the token returns to that already-delegated holder, those units become active again. Reward distributors that should exclude inactive custody read these active totals as denominators.
 
 ## Trust boundaries
 

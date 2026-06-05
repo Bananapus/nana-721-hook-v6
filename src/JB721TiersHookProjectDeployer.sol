@@ -114,8 +114,7 @@ contract JB721TiersHookProjectDeployer is
     }
 
     /// @notice Launches rulesets for a project with an attached 721 tiers hook.
-    /// @dev Only a project's owner or an operator with the `LAUNCH_RULESETS & SET_TERMINALS` permission can launch its
-    /// rulesets.
+    /// @dev Only a project's owner or an operator with `LAUNCH_RULESETS & SET_TERMINALS` can launch its rulesets.
     /// @param projectId The ID of the project to launch rulesets for.
     /// @param deployTiersHookConfig Configuration which dictates the behavior of the 721 tiers hook to deploy.
     /// @param launchRulesetsConfig Configuration which dictates the project's new rulesets.
@@ -233,8 +232,7 @@ contract JB721TiersHookProjectDeployer is
     //*********************************************************************//
 
     /// @notice Configure and launch rulesets for a newly created project. Converts `JBPayDataHookRulesetConfig` entries
-    /// into standard `JBRulesetConfig` entries with `useDataHookForPay` forced to `true` and the deployed hook set as
-    /// the data hook.
+    /// into standard `JBRulesetConfig` entries that use the deployed hook as their data hook.
     /// @param projectId The ID of the reserved project.
     /// @param launchProjectConfig Configuration which dictates the behavior of the project to launch.
     /// @param dataHook The data hook to use for the project.
