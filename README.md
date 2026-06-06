@@ -38,7 +38,7 @@ This repo does more than "mint NFTs on pay." It changes how payment value, tier 
 | `JB721TiersHookDeployer` | Clone factory for deploying a hook for an existing project. |
 | `JB721TiersHookProjectDeployer` | Convenience deployer for launching a project with a hook already wired in. |
 | `JB721Hook` | Abstract base for 721 pay and cash-out hook behavior. |
-| `JB721Checkpoints` | Per-hook IVotes checkpoint module. Tracks historical owner checkpoints, per-tier owner-tracked voting units (`getPastTierVotingUnits`), global active vote totals (`getPastTotalActiveVotes`), and per-tier active vote totals (`getPastTierActiveVotes`). |
+| `JB721Checkpoints` | Per-hook IVotes checkpoint module. Tracks historical owner checkpoints, per-tier owner-tracked voting units (`getPastTierVotingUnits`), global active vote totals (`getPastTotalActiveVotes`), per-tier active vote totals (`getPastTotalTierActiveVotes`), and per-account active tier voting units (`getPastAccountTierActiveVotes`). |
 
 ## Mental model
 
@@ -65,7 +65,8 @@ If a bug affects supply, reserve minting, or tier lookup, it usually lives in th
 - adding a 721 hook through a deployer is easy; carrying the right ruleset behavior forward is where mistakes happen
 - projects should be explicit about whether the hook affects pay, cash out, or only metadata-facing paths
 - per-tier owner-tracked voting units are queryable via `getPastTierVotingUnits(tierId, blockNumber)`: mints, transfers, and burns write ownership history, so the trace follows owned units regardless of delegation
-- active delegated vote totals are queryable globally via `getPastTotalActiveVotes(blockNumber)` / `getTotalActiveVotes()` and per tier via `getPastTierActiveVotes(tierId, blockNumber)` / `getTierActiveVotes(tierId)`. These totals include only voting units held by accounts with a nonzero delegate, so a token in undelegated custody does not count and returned tokens become active again if the holder's delegation is still set.
+- active delegated vote totals are queryable globally via `getPastTotalActiveVotes(blockNumber)` / `getTotalActiveVotes()` and per tier via `getPastTotalTierActiveVotes(tierId, blockNumber)` / `getTotalTierActiveVotes(tierId)`. These totals include only voting units held by accounts with a nonzero delegate, so a token in undelegated custody does not count and returned tokens become active again if the holder's delegation is still set.
+- per-account active tier voting units are queryable via `getPastAccountTierActiveVotes(account, tierId, blockNumber)`. This follows the account holding the tier units, not the delegate receiving voting power, so reward distributors can cap tier-scoped claims against the holder's active units even when votes are delegated to another address.
 
 ## Where state lives
 

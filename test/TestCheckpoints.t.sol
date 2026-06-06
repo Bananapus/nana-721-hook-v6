@@ -383,7 +383,7 @@ contract TestCheckpoints is UnitTestSetup {
         assertEq(module.delegates(user), delegatee, "Should delegate to specified delegatee");
         assertEq(module.getVotes(delegatee), 100, "Delegatee should have user's votes");
         assertEq(module.getTotalActiveVotes(), 100, "Active votes should include delegated voting units");
-        assertEq(module.getTierActiveVotes(1), 100, "Tier active votes should include delegated voting units");
+        assertEq(module.getTotalTierActiveVotes(1), 100, "Tier active votes should include delegated voting units");
     }
 
     // -------------------------------------------------------------------
@@ -603,7 +603,14 @@ contract TestCheckpoints is UnitTestSetup {
         assertEq(module.getPastTotalSupply(inactiveBlock), 100, "Total supply should include undelegated voting units");
         assertEq(module.getPastTotalActiveVotes(inactiveBlock), 0, "Active total should exclude undelegated units");
         assertEq(
-            module.getPastTierActiveVotes(1, inactiveBlock), 0, "Tier active total should exclude undelegated units"
+            module.getPastTotalTierActiveVotes(1, inactiveBlock),
+            0,
+            "Tier active total should exclude undelegated units"
+        );
+        assertEq(
+            module.getPastAccountTierActiveVotes(alice, 1, inactiveBlock),
+            0,
+            "Alice tier active units should exclude undelegated units"
         );
 
         vm.prank(alice);
@@ -611,13 +618,20 @@ contract TestCheckpoints is UnitTestSetup {
 
         assertEq(module.getVotes(alice), 100, "Alice should have votes after delegation");
         assertEq(module.getTotalActiveVotes(), 100, "Delegated voting units should be active");
-        assertEq(module.getTierActiveVotes(1), 100, "Delegated voting units should be tier-active");
+        assertEq(module.getTotalTierActiveVotes(1), 100, "Delegated voting units should be tier-active");
 
         uint256 activeBlock = block.number;
         vm.roll(block.number + 1);
 
         assertEq(module.getPastTotalActiveVotes(activeBlock), 100, "Active total should checkpoint delegation");
-        assertEq(module.getPastTierActiveVotes(1, activeBlock), 100, "Tier active total should checkpoint delegation");
+        assertEq(
+            module.getPastTotalTierActiveVotes(1, activeBlock), 100, "Tier active total should checkpoint delegation"
+        );
+        assertEq(
+            module.getPastAccountTierActiveVotes(alice, 1, activeBlock),
+            100,
+            "Alice tier active units should checkpoint delegation"
+        );
 
         vm.prank(alice);
         IERC721(address(tiersHook)).transferFrom(alice, amm, tokenId);
@@ -625,7 +639,7 @@ contract TestCheckpoints is UnitTestSetup {
         assertEq(module.getVotes(alice), 0, "Alice should lose votes while token is in inactive custody");
         assertEq(module.getVotes(amm), 0, "Inactive custodian should not receive votes");
         assertEq(module.getTotalActiveVotes(), 0, "Inactive custody should remove voting units from active total");
-        assertEq(module.getTierActiveVotes(1), 0, "Inactive custody should remove units from tier active total");
+        assertEq(module.getTotalTierActiveVotes(1), 0, "Inactive custody should remove units from tier active total");
 
         uint256 inactiveCustodyBlock = block.number;
         vm.roll(block.number + 1);
@@ -634,9 +648,19 @@ contract TestCheckpoints is UnitTestSetup {
             module.getPastTotalActiveVotes(inactiveCustodyBlock), 0, "Active total should checkpoint inactive custody"
         );
         assertEq(
-            module.getPastTierActiveVotes(1, inactiveCustodyBlock),
+            module.getPastTotalTierActiveVotes(1, inactiveCustodyBlock),
             0,
             "Tier active total should checkpoint inactive custody"
+        );
+        assertEq(
+            module.getPastAccountTierActiveVotes(alice, 1, inactiveCustodyBlock),
+            0,
+            "Alice tier active units should checkpoint inactive custody"
+        );
+        assertEq(
+            module.getPastAccountTierActiveVotes(amm, 1, inactiveCustodyBlock),
+            0,
+            "AMM tier active units should exclude undelegated custody"
         );
 
         vm.prank(amm);
@@ -644,7 +668,16 @@ contract TestCheckpoints is UnitTestSetup {
 
         assertEq(module.getVotes(alice), 100, "Alice should regain votes when token returns");
         assertEq(module.getTotalActiveVotes(), 100, "Delegated holder should make returned voting units active again");
-        assertEq(module.getTierActiveVotes(1), 100, "Returned token should become tier-active again");
+        assertEq(module.getTotalTierActiveVotes(1), 100, "Returned token should become tier-active again");
+
+        uint256 returnedBlock = block.number;
+        vm.roll(block.number + 1);
+
+        assertEq(
+            module.getPastAccountTierActiveVotes(alice, 1, returnedBlock),
+            100,
+            "Alice tier active units should checkpoint returned custody"
+        );
     }
 
     // -------------------------------------------------------------------
@@ -682,23 +715,167 @@ contract TestCheckpoints is UnitTestSetup {
         module.delegate(alice);
 
         assertEq(module.getTotalActiveVotes(), 300, "Alice's delegated tiers should set the active total");
-        assertEq(module.getTierActiveVotes(1), 100, "Tier 1 should include Alice's delegated units");
-        assertEq(module.getTierActiveVotes(2), 200, "Tier 2 should include Alice's delegated units");
-        assertEq(module.getTierActiveVotes(3), 0, "Tier 3 should exclude undelegated Bob units");
+        assertEq(module.getTotalTierActiveVotes(1), 100, "Tier 1 should include Alice's delegated units");
+        assertEq(module.getTotalTierActiveVotes(2), 200, "Tier 2 should include Alice's delegated units");
+        assertEq(module.getTotalTierActiveVotes(3), 0, "Tier 3 should exclude undelegated Bob units");
 
         uint256 activeBlock = block.number;
         vm.roll(block.number + 1);
 
-        assertEq(module.getPastTierActiveVotes(1, activeBlock), 100, "Past tier 1 active units should be checkpointed");
-        assertEq(module.getPastTierActiveVotes(2, activeBlock), 200, "Past tier 2 active units should be checkpointed");
-        assertEq(module.getPastTierActiveVotes(3, activeBlock), 0, "Past tier 3 active units should be zero");
+        assertEq(
+            module.getPastTotalTierActiveVotes(1, activeBlock), 100, "Past tier 1 active units should be checkpointed"
+        );
+        assertEq(
+            module.getPastTotalTierActiveVotes(2, activeBlock), 200, "Past tier 2 active units should be checkpointed"
+        );
+        assertEq(module.getPastTotalTierActiveVotes(3, activeBlock), 0, "Past tier 3 active units should be zero");
+        assertEq(
+            module.getPastAccountTierActiveVotes(alice, 1, activeBlock),
+            100,
+            "Alice tier 1 active units should be checkpointed"
+        );
+        assertEq(
+            module.getPastAccountTierActiveVotes(alice, 2, activeBlock),
+            200,
+            "Alice tier 2 active units should be checkpointed"
+        );
+        assertEq(module.getPastAccountTierActiveVotes(bob, 3, activeBlock), 0, "Bob tier 3 active units should be zero");
 
         vm.prank(alice);
         module.delegate(address(0));
 
         assertEq(module.getTotalActiveVotes(), 0, "Clearing delegation should remove active total");
-        assertEq(module.getTierActiveVotes(1), 0, "Clearing delegation should remove tier 1 active units");
-        assertEq(module.getTierActiveVotes(2), 0, "Clearing delegation should remove tier 2 active units");
-        assertEq(module.getTierActiveVotes(3), 0, "Clearing delegation should leave tier 3 inactive");
+        assertEq(module.getTotalTierActiveVotes(1), 0, "Clearing delegation should remove tier 1 active units");
+        assertEq(module.getTotalTierActiveVotes(2), 0, "Clearing delegation should remove tier 2 active units");
+        assertEq(module.getTotalTierActiveVotes(3), 0, "Clearing delegation should leave tier 3 inactive");
+    }
+
+    // -------------------------------------------------------------------
+    // Test 19: Account tier active votes track holder activity, not delegatee voting power
+    // -------------------------------------------------------------------
+    function test_accountTierActiveVotes_trackHolderWhenDelegatedToAnotherAddress() public {
+        defaultTierConfig.flags.allowOwnerMint = true;
+        defaultTierConfig.reserveFrequency = 0;
+        defaultTierConfig.flags.useVotingUnits = true;
+
+        ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(2);
+
+        tiersHook.test_store().ForTest_setTierVotingUnits(address(tiersHook), 1, 100);
+        tiersHook.test_store().ForTest_setTierVotingUnits(address(tiersHook), 2, 200);
+
+        address alice = makeAddr("alice");
+        address delegatee = makeAddr("delegatee");
+
+        uint16[] memory tiersToMint = new uint16[](2);
+        tiersToMint[0] = 1;
+        tiersToMint[1] = 2;
+
+        vm.prank(owner);
+        tiersHook.mintFor(tiersToMint, alice);
+
+        IJB721Checkpoints module = tiersHook.checkpoints();
+
+        vm.prank(alice);
+        module.delegate(delegatee);
+
+        assertEq(module.getVotes(delegatee), 300, "Delegatee should receive Alice's votes");
+        assertEq(module.getTotalTierActiveVotes(1), 100, "Tier 1 should include Alice's active units");
+        assertEq(module.getTotalTierActiveVotes(2), 200, "Tier 2 should include Alice's active units");
+
+        uint256 delegatedBlock = block.number;
+        vm.roll(block.number + 1);
+
+        assertEq(
+            module.getPastAccountTierActiveVotes(alice, 1, delegatedBlock),
+            100,
+            "Alice tier 1 active units should be tracked"
+        );
+        assertEq(
+            module.getPastAccountTierActiveVotes(alice, 2, delegatedBlock),
+            200,
+            "Alice tier 2 active units should be tracked"
+        );
+        assertEq(
+            module.getPastAccountTierActiveVotes(delegatee, 1, delegatedBlock),
+            0,
+            "Delegatee tier active units should only include held units"
+        );
+    }
+
+    // -------------------------------------------------------------------
+    // Test 20: Account tier active votes move between delegated holders
+    // -------------------------------------------------------------------
+    function test_accountTierActiveVotes_moveBetweenDelegatedHolders() public {
+        defaultTierConfig.flags.allowOwnerMint = true;
+        defaultTierConfig.reserveFrequency = 0;
+        defaultTierConfig.flags.useVotingUnits = true;
+        defaultTierConfig.votingUnits = 100;
+
+        ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
+
+        address alice = makeAddr("alice");
+        address bob = makeAddr("bob");
+
+        uint16[] memory tiersToMint = new uint16[](1);
+        tiersToMint[0] = 1;
+
+        vm.prank(owner);
+        tiersHook.mintFor(tiersToMint, alice);
+
+        IJB721Checkpoints module = tiersHook.checkpoints();
+        uint256 tokenId = _generateTokenId(1, 1);
+
+        vm.prank(alice);
+        module.delegate(alice);
+
+        vm.prank(bob);
+        module.delegate(bob);
+
+        vm.prank(alice);
+        IERC721(address(tiersHook)).transferFrom(alice, bob, tokenId);
+
+        assertEq(module.getTotalTierActiveVotes(1), 100, "Tier active total should stay constant");
+        assertEq(module.getVotes(alice), 0, "Alice should lose transferred votes");
+        assertEq(module.getVotes(bob), 100, "Bob should receive transferred votes");
+
+        uint256 transferBlock = block.number;
+        vm.roll(block.number + 1);
+
+        assertEq(
+            module.getPastAccountTierActiveVotes(alice, 1, transferBlock),
+            0,
+            "Alice tier active units should be removed"
+        );
+        assertEq(
+            module.getPastAccountTierActiveVotes(bob, 1, transferBlock), 100, "Bob tier active units should be added"
+        );
+    }
+
+    // -------------------------------------------------------------------
+    // Test 21: Account tier active vote history rejects current-block lookups
+    // -------------------------------------------------------------------
+    function test_accountTierActiveVotes_revertsForCurrentBlock() public {
+        defaultTierConfig.flags.allowOwnerMint = true;
+        defaultTierConfig.reserveFrequency = 0;
+        defaultTierConfig.flags.useVotingUnits = true;
+        defaultTierConfig.votingUnits = 100;
+
+        ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
+
+        address alice = makeAddr("alice");
+
+        uint16[] memory tiersToMint = new uint16[](1);
+        tiersToMint[0] = 1;
+
+        vm.prank(owner);
+        tiersHook.mintFor(tiersToMint, alice);
+
+        IJB721Checkpoints module = tiersHook.checkpoints();
+
+        vm.prank(alice);
+        module.delegate(alice);
+
+        vm.expectRevert();
+        module.getPastAccountTierActiveVotes(alice, 1, block.number);
     }
 }

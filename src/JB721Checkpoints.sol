@@ -55,6 +55,13 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     // -------------------- internal stored properties ------------------- //
     //*********************************************************************//
 
+    /// @notice Checkpointed active voting units per account and tier.
+    /// @dev Maintained only for units held by accounts with nonzero delegates. Undelegated custody is not checkpointed
+    /// in this trace because those units are inactive for active-vote reward accounting.
+    /// @custom:param account The account to get historical active tier voting units for.
+    /// @custom:param tierId The tier to get historical active voting units for.
+    mapping(address account => mapping(uint256 tierId => Checkpoints.Trace160)) internal _accountTierActiveVotesOf;
+
     /// @notice Checkpointed token owners for historical reward eligibility.
     /// @dev Mint and transfer hooks write this automatically; `delegate` only backfills missing pre-upgrade history.
     /// @custom:param tokenId The token ID to get historical owner checkpoints for.
@@ -189,10 +196,20 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
         // Move checkpointed voting power from the previous owner to the new owner.
         _transferVotingUnits({from: from, to: to, amount: votingUnits});
 
+        // If the sender was delegated, remove this token's tier units from the sender's active tier balance.
+        if (decreaseTierActiveVotes) {
+            _adjustAccountTierActiveVotes({account: from, tierId: tierId, amount: votingUnits, increase: false});
+        }
+
+        // If the receiver is delegated, add this token's tier units to the receiver's active tier balance.
+        if (increaseTierActiveVotes) {
+            _adjustAccountTierActiveVotes({account: to, tierId: tierId, amount: votingUnits, increase: true});
+        }
+
         // If both sides are delegated or both sides are undelegated, this tier's active total is unchanged.
         if (decreaseTierActiveVotes != increaseTierActiveVotes) {
             // Otherwise apply the one-sided active-tier delta implied by the receiver's delegated status.
-            _adjustTierActiveVotes({tierId: tierId, amount: votingUnits, increase: increaseTierActiveVotes});
+            _adjustTotalTierActiveVotes({tierId: tierId, amount: votingUnits, increase: increaseTierActiveVotes});
         }
     }
 
@@ -200,12 +217,14 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     // ----------------------- external views ---------------------------- //
     //*********************************************************************//
 
-    /// @notice The total delegated voting units of a tier at a past block.
-    /// @dev Counts only tier voting units held by accounts with a nonzero delegate.
+    /// @notice The delegated voting units held by an account in a tier at a past block.
+    /// @dev Counts only tier voting units held by `account` while `account` had a nonzero delegate.
+    /// @param account The account to get the delegated tier voting units of.
     /// @param tierId The tier to get the delegated voting units of.
     /// @param blockNumber The past block number to look up.
-    /// @return activeVotes The tier's delegated voting units at `blockNumber`.
-    function getPastTierActiveVotes(
+    /// @return activeVotes The account's delegated tier voting units at `blockNumber`.
+    function getPastAccountTierActiveVotes(
+        address account,
         uint256 tierId,
         uint256 blockNumber
     )
@@ -215,7 +234,8 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
         returns (uint256 activeVotes)
     {
         // forge-lint: disable-next-line(unsafe-typecast)
-        activeVotes = _tierActiveSupplyCheckpointsOf[tierId].upperLookupRecent(uint96(_validateTimepoint(blockNumber)));
+        activeVotes =
+            _accountTierActiveVotesOf[account][tierId].upperLookupRecent(uint96(_validateTimepoint(blockNumber)));
     }
 
     /// @notice The total owner-checkpointed voting units of a tier at a past block.
@@ -243,11 +263,22 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
         activeVotes = _activeSupplyCheckpoints.upperLookupRecent(_validateTimepoint(blockNumber));
     }
 
-    /// @notice The current total delegated voting units of a tier.
-    /// @param tierId The tier to get the current delegated voting units of.
-    /// @return activeVotes The tier's current delegated voting units.
-    function getTierActiveVotes(uint256 tierId) external view override returns (uint256 activeVotes) {
-        activeVotes = _tierActiveSupplyCheckpointsOf[tierId].latest();
+    /// @notice The total delegated voting units of a tier at a past block.
+    /// @dev Counts only tier voting units held by accounts with a nonzero delegate.
+    /// @param tierId The tier to get the delegated voting units of.
+    /// @param blockNumber The past block number to look up.
+    /// @return activeVotes The tier's delegated voting units at `blockNumber`.
+    function getPastTotalTierActiveVotes(
+        uint256 tierId,
+        uint256 blockNumber
+    )
+        external
+        view
+        override
+        returns (uint256 activeVotes)
+    {
+        // forge-lint: disable-next-line(unsafe-typecast)
+        activeVotes = _tierActiveSupplyCheckpointsOf[tierId].upperLookupRecent(uint96(_validateTimepoint(blockNumber)));
     }
 
     /// @notice The current total delegated voting units.
@@ -255,6 +286,13 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// @return activeVotes The current total voting units delegated to nonzero delegates.
     function getTotalActiveVotes() external view override returns (uint256 activeVotes) {
         activeVotes = _activeSupplyCheckpoints.latest();
+    }
+
+    /// @notice The current total delegated voting units of a tier.
+    /// @param tierId The tier to get the current delegated voting units of.
+    /// @return activeVotes The tier's current delegated voting units.
+    function getTotalTierActiveVotes(uint256 tierId) external view override returns (uint256 activeVotes) {
+        activeVotes = _tierActiveSupplyCheckpointsOf[tierId].latest();
     }
 
     /// @notice The owner of an NFT at a past block.
@@ -354,11 +392,31 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     // ------------------------ private helpers -------------------------- //
     //*********************************************************************//
 
+    /// @notice Add or remove units from an account's active-voting-units checkpoint for a tier at the current block.
+    /// @param account The account whose active-voting-units trace should be updated.
+    /// @param tierId The tier whose active-voting-units trace should be updated.
+    /// @param amount The voting units to add or remove.
+    /// @param increase Whether to add `amount`; if false, `amount` is removed.
+    function _adjustAccountTierActiveVotes(address account, uint256 tierId, uint256 amount, bool increase) private {
+        // Ignore zero-unit updates because they do not change the account's active tier total.
+        if (amount == 0) return;
+
+        // Keep a reference to the account's active-voting-units trace for this tier.
+        Checkpoints.Trace160 storage trace = _accountTierActiveVotesOf[account][tierId];
+
+        // Calculate the next account-tier active total from its latest checkpointed value.
+        uint256 updated = increase ? trace.latest() + amount : trace.latest() - amount;
+
+        // Write the new account-tier active total at the current block.
+        // forge-lint: disable-next-line(unsafe-typecast)
+        trace.push({key: uint96(block.number), value: uint160(updated)});
+    }
+
     /// @notice Add or remove units from a tier's active-voting-units checkpoint at the current block.
     /// @param tierId The tier whose active-voting-units trace to update.
     /// @param amount The voting units to add or remove.
     /// @param increase Whether to add `amount`; if false, `amount` is removed.
-    function _adjustTierActiveVotes(uint256 tierId, uint256 amount, bool increase) private {
+    function _adjustTotalTierActiveVotes(uint256 tierId, uint256 amount, bool increase) private {
         // Ignore zero-unit updates because they do not change this tier's active total.
         if (amount == 0) return;
 
@@ -389,7 +447,10 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
 
             // Only write checkpoints for tiers whose active totals actually change.
             if (tierVotingUnits != 0) {
-                _adjustTierActiveVotes({tierId: tierId, amount: tierVotingUnits, increase: increase});
+                _adjustTotalTierActiveVotes({tierId: tierId, amount: tierVotingUnits, increase: increase});
+                _adjustAccountTierActiveVotes({
+                    account: account, tierId: tierId, amount: tierVotingUnits, increase: increase
+                });
             }
 
             unchecked {

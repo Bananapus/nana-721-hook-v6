@@ -20,15 +20,18 @@ This is a V5-to-V6 migration changelog, not a package release log or commit hist
 
 - `getPastTotalActiveVotes(uint256 blockNumber) → uint256`
 - `getTotalActiveVotes() → uint256`
-- `getPastTierActiveVotes(uint256 tierId, uint256 blockNumber) → uint256`
-- `getTierActiveVotes(uint256 tierId) → uint256`
+- `getPastAccountTierActiveVotes(address account, uint256 tierId, uint256 blockNumber) → uint256`
+- `getPastTotalTierActiveVotes(uint256 tierId, uint256 blockNumber) → uint256`
+- `getTotalTierActiveVotes(uint256 tierId) → uint256`
 
 These totals count only voting units held by accounts with a nonzero delegate. Undelegated holders and undelegated
 custody addresses are excluded; if tokens return to a holder whose delegation is still set, those voting units become
-active again.
+active again. Account-tier active vote history follows the holder of the tier units, not the delegate receiving voting
+power.
 
 ## Package Notes
 
+- `0.0.73`: adds account-scoped per-tier active vote history for tier-scoped reward accounting.
 - `0.0.72`: bumps `@bananapus/core-v6` to `^0.0.86`.
 - `0.0.71`: adds per-tier active vote totals for delegated reward accounting.
 
@@ -46,6 +49,7 @@ active again.
   - `PRICES()`
   - `SPLITS()`
   - `getPastTierVotingUnits(...)`
+  - `getPastAccountTierActiveVotes(...)`
   - store aggregate getters such as `totalCashOutWeightOf(...)`
 - Changed functions:
   - `pricingContext()`
@@ -79,9 +83,9 @@ Generated from Foundry `out/**/*.json` artifacts, filtered to this repo's own ru
 - Shared-name ABI item deltas: `90` added, `60` removed, `17` modified.
 
 Added V6 ABI artifacts:
-- `IJB721Checkpoints` from `src/interfaces/IJB721Checkpoints.sol`: `15` functions, `2` events, `1` errors.
+- `IJB721Checkpoints` from `src/interfaces/IJB721Checkpoints.sol`: `16` functions, `2` events, `1` errors.
 - `IJB721CheckpointsDeployer` from `src/interfaces/IJB721CheckpointsDeployer.sol`: `3` functions, `0` events, `0` errors.
-- `JB721Checkpoints` from `src/JB721Checkpoints.sol`: `17` functions, `3` events, `14` errors.
+- `JB721Checkpoints` from `src/JB721Checkpoints.sol`: `18` functions, `3` events, `14` errors.
 - `JB721CheckpointsDeployer` from `src/JB721CheckpointsDeployer.sol`: `3` functions, `0` events, `1` errors.
 - `JB721TiersHookLib` from `src/libraries/JB721TiersHookLib.sol`: `3` functions, `4` events, `9` errors.
 
