@@ -30,11 +30,11 @@ Custom token URI resolvers usually live outside this repo, but they still affect
 | `JB721TiersHookDeployer` | Clone deployer for existing projects | Wiring helper |
 | `JB721TiersHookProjectDeployer` | Project-launch deployer with hook setup | Launch helper |
 | `JB721Hook` | Abstract 721 hook base | Shared behavior |
-| `JB721Checkpoints` | IVotes-compatible checkpoint module (one clone per hook) | Tracks historical owner checkpoints, per-tier owner-tracked voting-unit totals, and global/per-tier active delegated vote totals |
+| `JB721Checkpoints` | IVotes-compatible checkpoint module (one clone per hook) | Tracks historical owner checkpoints, per-tier owner-tracked voting-unit totals, global/per-tier active delegated vote totals, and per-account active tier voting units |
 
-The checkpoint module keeps four kinds of checkpointed state. Per-token owner checkpoints back `ownerOfAt` for snapshot-based reward eligibility. A per-tier owner-tracked voting-units trace (`_tierEligibleUnitsOf`, read via `getPastTierVotingUnits(tierId, blockNumber)`) is the tier-scoped analogue of a total-supply snapshot: it increments on mint, follows owner checkpoints through transfers, and decrements on burn.
+The checkpoint module keeps five kinds of checkpointed state. Per-token owner checkpoints back `ownerOfAt` for snapshot-based reward eligibility. A per-tier owner-tracked voting-units trace (`_tierEligibleUnitsOf`, read via `getPastTierVotingUnits(tierId, blockNumber)`) is the tier-scoped analogue of a total-supply snapshot: it increments on mint, follows owner checkpoints through transfers, and decrements on burn.
 
-The active delegated vote traces (`_activeSupplyCheckpoints` globally and `_tierActiveSupplyCheckpointsOf` per tier) are separate. They track voting units held by accounts with a nonzero delegate. If a holder self-delegates and later transfers a token into undelegated custody, those units leave the active totals; if the token returns to that already-delegated holder, those units become active again. Reward distributors that should exclude inactive custody read these active totals as denominators.
+The active delegated vote traces (`_activeSupplyCheckpoints` globally and `_tierActiveSupplyCheckpointsOf` per tier) are separate. They track voting units held by accounts with a nonzero delegate. The account-tier active trace (`_accountTierActiveVotesOf`, read via `getPastAccountTierActiveVotes(account, tierId, blockNumber)`) records the same active accounting at holder scope. If a holder delegates and later transfers a token into undelegated custody, those units leave the active totals; if the token returns to that delegated holder, those units become active again. Reward distributors that should exclude inactive custody read these active totals as denominators and holder-level caps.
 
 ## Trust boundaries
 

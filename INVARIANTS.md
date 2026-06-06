@@ -34,7 +34,7 @@ The underlying terminal / controller / fee guarantees are inherited from `@banan
 - **Lazy checkpoint deployment hazard.** `checkpoints` is `address(0)` after `initialize`. The first transfer (mint, send, or burn) triggers `CHECKPOINTS_DEPLOYER.deploy(address(this))` which CREATE2-clones `JB721Checkpoints` (`JB721TiersHook.sol:794-796`). **The first transferer pays the deployment cost (~1M gas).** This is a known hazard; integrators that mint a large batch and immediately transfer should price the gas for the first transfer accordingly. The deployer authenticates `msg.sender == hook` (`JB721CheckpointsDeployer.sol:52-54`), and `initialize` is one-shot (`JB721Checkpoints.sol:125-131`).
 - **Voting power follows tier configuration.** Each tier contributes `balance × (useVotingUnits ? customVotingUnits : storedTier.price)` (`JB721TiersHookStore.sol:380-383, 436-440`). The checkpoint module reads tier voting units from the store on every transfer (`JB721Checkpoints.sol:142-143`).
 - **`getPastTierVotingUnits` is the per-tier analogue of `getPastTotalSupply`.** `JB721Checkpoints` maintains a checkpointed per-tier owner-tracked voting-units trace (`_tierEligibleUnitsOf`) that follows owned tier units. Mints add a token's tier voting units, transfers write owner checkpoints, and burns remove the token's tier voting units.
-- **Active vote totals track delegated participation.** `JB721Checkpoints` maintains `_activeSupplyCheckpoints` globally and `_tierActiveSupplyCheckpointsOf` per tier. Delegating held units increases active totals, clearing delegation decreases them, and transfers move active units only when the sender and receiver differ in delegated status. A self-delegated holder who transfers a token into undelegated AMM custody makes those units inactive; if the token returns while the holder's delegation remains set, those units become active again.
+- **Active vote totals track delegated participation.** `JB721Checkpoints` maintains `_activeSupplyCheckpoints` globally, `_tierActiveSupplyCheckpointsOf` per tier, and `_accountTierActiveVotesOf` per account and tier. Delegating held units increases active totals, clearing delegation decreases them, and transfers move active units only when custody enters or leaves nonzero delegation. A delegated holder who transfers a token into undelegated AMM custody makes those units inactive; if the token returns while the holder's delegation remains set, those units become active again.
 
 ## A.3 Protections against external interference
 
@@ -180,11 +180,12 @@ The hook's project association is bound at `initialize`; once set, it cannot cha
 
 - `JB721CheckpointsDeployer.deploy(hook)` (`JB721CheckpointsDeployer.sol:51-56`). Reverts `JB721CheckpointsDeployer_Unauthorized` unless `msg.sender == hook`. Uses CREATE2 with `hook` as salt so clones land at the same address across chains.
 - `JB721Checkpoints.initialize(hookAddress)` (`JB721Checkpoints.sol:125-131`). One-shot; the implementation pre-sets `hook = address(1)` in its constructor (`JB721Checkpoints.sol:80-82`).
-- `JB721Checkpoints.onTransfer(from, to, tokenId)`. Hook-only. It writes owner history for mints, transfers, and burns; updates owner-tracked tier units on mint/burn/backfill; moves IVotes voting units; and updates the moved token's tier active total when delegated status changes across custody.
-- `JB721Checkpoints.delegate(delegatee, tokenIds[])`. Delegates voting power; updates global and per-tier active totals for the account's current holdings; and backfills missing owner checkpoints for listed tokens owned by the caller.
+- `JB721Checkpoints.onTransfer(from, to, tokenId)`. Hook-only. It writes owner history for mints, transfers, and burns; updates owner-tracked tier units on mint/burn/backfill; moves IVotes voting units; and updates the moved token's tier active total and account-tier active balances when delegated status changes across custody.
+- `JB721Checkpoints.delegate(delegatee, tokenIds[])`. Delegates voting power; updates global, per-tier, and account-tier active totals for the account's current holdings; and backfills missing owner checkpoints for listed tokens owned by the caller.
 - `JB721Checkpoints.getPastTierVotingUnits(tierId, blockNumber)`. The per-tier analogue of `getPastTotalSupply`: returns the tier's total owner-tracked voting units at a past block.
 - `JB721Checkpoints.getPastTotalActiveVotes(blockNumber)` and `getTotalActiveVotes()`. Return historical and current totals of voting units held by accounts with nonzero delegates.
-- `JB721Checkpoints.getPastTierActiveVotes(tierId, blockNumber)` and `getTierActiveVotes(tierId)`. Return historical and current tier voting units held by accounts with nonzero delegates.
+- `JB721Checkpoints.getPastTotalTierActiveVotes(tierId, blockNumber)` and `getTotalTierActiveVotes(tierId)`. Return historical and current tier voting units held by accounts with nonzero delegates.
+- `JB721Checkpoints.getPastAccountTierActiveVotes(account, tierId, blockNumber)`. Returns historical tier voting units held by an account while the account had a nonzero delegate.
 - `JB721Checkpoints.ownerOfAt(tokenId, blockNumber)`. Returns the checkpointed owner at a past block, or `address(0)` if no owner is proven at that block.
 
 ---
@@ -255,7 +256,7 @@ The hook's project association is bound at `initialize`; once set, it cannot cha
 | Hook deployer permissionless + registry | `src/JB721TiersHookDeployer.sol` | 71-116 |
 | CheckpointsDeployer hook-only auth | `src/JB721CheckpointsDeployer.sol` | 51-56 |
 | Checkpoints `onTransfer` hook-only | `src/JB721Checkpoints.sol` | 139-168 |
-| Checkpoints active delegated vote traces (`getPastTotalActiveVotes`, `getPastTierActiveVotes`) | `src/JB721Checkpoints.sol` | active checkpoint storage and views |
+| Checkpoints active delegated vote traces (`getPastTotalActiveVotes`, `getPastTotalTierActiveVotes`, `getPastAccountTierActiveVotes`) | `src/JB721Checkpoints.sol` | active checkpoint storage and views |
 | Checkpoints per-tier owner-tracked units (`getPastTierVotingUnits`) | `src/JB721Checkpoints.sol` | owner-tracked tier storage and view |
 | Checkpoints mint writes owner history and tier units | `src/JB721Checkpoints.sol` | `onTransfer` mint branch |
 | Discount denominator = 200 | `src/libraries/JB721Constants.sol` | 7 |

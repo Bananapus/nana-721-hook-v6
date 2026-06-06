@@ -15,12 +15,20 @@ interface IJB721Checkpoints is IERC5805, IJBActiveVotes {
     // forge-lint: disable-next-line(mixed-case-function)
     function STORE() external view returns (IJB721TiersHookStore store);
 
-    /// @notice The total delegated voting units of a tier at a past block.
-    /// @dev Counts only tier voting units held by accounts with a nonzero delegate.
+    /// @notice The delegated voting units held by an account in a tier at a past block.
+    /// @dev Counts only tier voting units held by `account` while `account` had a nonzero delegate.
+    /// @param account The account to get the delegated tier voting units of.
     /// @param tierId The tier to get the delegated voting units of.
     /// @param blockNumber The past block number to look up.
-    /// @return activeVotes The tier's delegated voting units at `blockNumber`.
-    function getPastTierActiveVotes(uint256 tierId, uint256 blockNumber) external view returns (uint256 activeVotes);
+    /// @return activeVotes The account's delegated tier voting units at `blockNumber`.
+    function getPastAccountTierActiveVotes(
+        address account,
+        uint256 tierId,
+        uint256 blockNumber
+    )
+        external
+        view
+        returns (uint256 activeVotes);
 
     /// @notice The total owner-checkpointed voting units of a tier at a past block.
     /// @dev Owner-checkpointed voting units are the tier's total owned units, regardless of delegation status.
@@ -29,10 +37,23 @@ interface IJB721Checkpoints is IERC5805, IJBActiveVotes {
     /// @return votingUnits The tier's owner-checkpointed voting units at `blockNumber`.
     function getPastTierVotingUnits(uint256 tierId, uint256 blockNumber) external view returns (uint256 votingUnits);
 
+    /// @notice The total delegated voting units of a tier at a past block.
+    /// @dev Counts only tier voting units held by accounts with a nonzero delegate.
+    /// @param tierId The tier to get the delegated voting units of.
+    /// @param blockNumber The past block number to look up.
+    /// @return activeVotes The tier's delegated voting units at `blockNumber`.
+    function getPastTotalTierActiveVotes(
+        uint256 tierId,
+        uint256 blockNumber
+    )
+        external
+        view
+        returns (uint256 activeVotes);
+
     /// @notice The current total delegated voting units of a tier.
     /// @param tierId The tier to get the current delegated voting units of.
     /// @return activeVotes The tier's current delegated voting units.
-    function getTierActiveVotes(uint256 tierId) external view returns (uint256 activeVotes);
+    function getTotalTierActiveVotes(uint256 tierId) external view returns (uint256 activeVotes);
 
     /// @notice The hook that this module tracks voting power for.
     /// @return hookAddress The hook address.

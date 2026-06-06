@@ -113,7 +113,8 @@ This repo adds tiered NFT logic to Juicebox payment and cash-out flows. It owns 
 **Voting and tier-scoped rewards note**
 - Voting power and snapshot eligibility are tracked by the per-hook `JB721Checkpoints` module, lazily deployed on the first transfer.
 - A freshly minted token immediately has ownership history through `ownerOfAt`; minting adds its tier voting units to the owner-tracked `getPastTierVotingUnits(tierId, blockNumber)` total, and burning removes them.
-- Delegation is the active-participation switch. Active voting totals are tracked globally with `getPastTotalActiveVotes(blockNumber)` / `getTotalActiveVotes()` and per tier with `getPastTierActiveVotes(tierId, blockNumber)` / `getTierActiveVotes(tierId)`.
+- Delegation is the active-participation switch. Active voting totals are tracked globally with `getPastTotalActiveVotes(blockNumber)` / `getTotalActiveVotes()` and per tier with `getPastTotalTierActiveVotes(tierId, blockNumber)` / `getTotalTierActiveVotes(tierId)`.
+- Holder-scoped active tier units are tracked with `getPastAccountTierActiveVotes(account, tierId, blockNumber)`, so tier rewards can measure the account holding active tier units even when that account delegates voting power elsewhere.
 - A self-delegated holder is active, an undelegated AMM or custody address is inactive, and returned tokens become active again automatically if the holder's delegation is still set.
 
 ## Trust boundaries
