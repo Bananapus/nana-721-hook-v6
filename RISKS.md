@@ -22,6 +22,7 @@ This file covers the tiered-NFT accounting, reserve-mint, and cash-out risks in 
 - **Tier configuration is partly immutable.** Price, supply, reserve frequency, category, voting units, and split percent are permanent after creation.
 - **Category ordering matters.** The store's linked-list assumptions depend on correct sorted insertion.
 - **`useReserveBeneficiaryAsDefault` has wide effects.** Setting it on a new tier can change the default reserve beneficiary for older tiers without their own explicit beneficiary.
+- **Reserve-beneficiary defaulting is array-order-sensitive.** `recordAddTiers` validates each tier strictly in array order and only consults `defaultReserveBeneficiaryOf` as written by *earlier* tiers in the same batch (`JB721TiersHookStore.sol:1027-1032`, default written at `:1069-1077`). A tier with `reserveFrequency > 0` and no tier-specific `reserveBeneficiary` placed *before* the tier that sets `useReserveBeneficiaryAsDefault: true` reverts `JB721TiersHookStore_MissingReserveBeneficiary(tierId)`, even though a later tier sets the default. Because tiers must be sorted by ascending category, you cannot always reorder freely — so each reserve tier must either carry its own `reserveBeneficiary`, or appear after the tier that sets the default.
 - **Clone initialization is one-shot.** Clones are deployed and initialized atomically.
 - **Directory and prices are trusted.** Terminal authentication and cross-currency behavior depend on core.
 
