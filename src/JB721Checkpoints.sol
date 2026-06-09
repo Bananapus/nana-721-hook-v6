@@ -144,7 +144,10 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// @param hookAddress The hook this module serves.
     function initialize(address hookAddress) external override {
         if (hook != address(0)) revert JB721Checkpoints_AlreadyInitialized({hook: hook});
-        // `hook` cannot be zero when called through the deployer because `msg.sender` must equal `hook`.
+        // No caller check is needed (and there is none): `JB721CheckpointsDeployer.deploy` creates this clone with
+        // the hook as the CREATE2 salt and calls `initialize(hook)` atomically in the same call, so a clone can only
+        // ever be bound to its salt-designated hook and there is no front-run window between cloning and init. The
+        // implementation itself is locked against direct use by the `address(1)` sentinel set in its constructor.
         hook = hookAddress;
     }
 
