@@ -67,6 +67,12 @@ If a bug affects supply, reserve minting, or tier lookup, it usually lives in th
 - per-tier owner-tracked voting units are queryable via `getPastTierVotingUnits(tierId, blockNumber)`: mints, transfers, and burns write ownership history, so the trace follows owned units regardless of delegation
 - active delegated vote totals are queryable globally via `getPastTotalActiveVotes(blockNumber)` / `getTotalActiveVotes()` and per tier via `getPastTotalTierActiveVotes(tierId, blockNumber)` / `getTotalTierActiveVotes(tierId)`. These totals include only voting units held by accounts with a nonzero delegate, so a token in undelegated custody does not count and returned tokens become active again if the holder's delegation is still set.
 - per-account active tier voting units are queryable via `getPastAccountTierActiveVotes(account, tierId, blockNumber)`. This follows the account holding the tier units, not the delegate receiving voting power, so reward distributors can cap tier-scoped claims against the holder's active units even when votes are delegated to another address.
+- current and historical tier membership is queryable via `hasTiersOfAt(account, tierIds, matchMode, blockNumber)`,
+  using checkpointed per-account tier balances with `Any` and `All` match modes. Empty tier arrays fail closed, and
+  future blocks revert.
+- voting-unit reads and delegation activation use each owner's nonzero held-tier bitmap, not every tier in the catalog.
+  This scans one storage word per 256 tier IDs (at most 256 words at the `uint16` tier cap) plus the owner's held
+  tiers, and updates one bitmap word when an account first enters or fully exits a tier.
 
 ## Where state lives
 

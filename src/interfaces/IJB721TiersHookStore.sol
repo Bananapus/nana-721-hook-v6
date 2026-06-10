@@ -56,6 +56,25 @@ interface IJB721TiersHookStore {
     /// @return The flags.
     function flagsOf(address hook) external view returns (JB721TiersHookFlags memory);
 
+    /// @notice The tier IDs whose balances are nonzero for the provided owner.
+    /// @param hook The 721 contract to get held tier IDs from.
+    /// @param owner The address to get held tier IDs for.
+    /// @return tierIds The tier IDs with a nonzero balance for the owner.
+    function heldTierIdsOf(address hook, address owner) external view returns (uint256[] memory tierIds);
+
+    /// @notice The tier IDs and voting units whose balances are nonzero for the provided account.
+    /// @param hook The 721 contract to get held tier IDs from.
+    /// @param account The address to get held tier IDs and voting units for.
+    /// @return tierIds The tier IDs with a nonzero balance for the account.
+    /// @return units The account's voting units for each returned tier ID.
+    function heldTierVotingUnitsOf(
+        address hook,
+        address account
+    )
+        external
+        view
+        returns (uint256[] memory tierIds, uint256[] memory units);
+
     /// @notice Check if the provided tier has been removed from the provided 721 contract.
     /// @param hook The 721 contract the tier belongs to.
     /// @param tierId The ID of the tier to check the removal status of.

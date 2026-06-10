@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {IJBActiveVotes} from "@bananapus/core-v6/src/interfaces/IJBActiveVotes.sol";
 import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
 
+import {JB721TierOwnerMatch} from "../enums/JB721TierOwnerMatch.sol";
 import {IJB721TiersHookStore} from "./IJB721TiersHookStore.sol";
 
 /// @notice A checkpoint module that provides IVotes-compatible checkpointed voting power for a JB721TiersHook.
@@ -55,15 +56,32 @@ interface IJB721Checkpoints is IERC5805, IJBActiveVotes {
     /// @return activeVotes The tier's current delegated voting units.
     function getTotalTierActiveVotes(uint256 tierId) external view returns (uint256 activeVotes);
 
+    /// @notice Whether an owner held any or all of the provided tier IDs at a block.
+    /// @dev Empty arrays return `false`. `blockNumber` may be the current block, but not a future block.
+    /// @param account The account to check.
+    /// @param tierIds The tier IDs to check.
+    /// @param matchMode Whether to require any or all tier IDs to be held.
+    /// @param blockNumber The block number to look up.
+    /// @return hasTiers Whether the owner satisfies the requested tier match at `blockNumber`.
+    function hasTiersOfAt(
+        address account,
+        uint256[] calldata tierIds,
+        JB721TierOwnerMatch matchMode,
+        uint256 blockNumber
+    )
+        external
+        view
+        returns (bool hasTiers);
+
     /// @notice The hook that this module tracks voting power for.
     /// @return hookAddress The hook address.
     // forge-lint: disable-next-line(mixed-case-function)
     function hook() external view returns (address hookAddress);
 
-    /// @notice The owner of an NFT at a past block.
+    /// @notice The owner of an NFT at a current or past block.
     /// @dev Returns `address(0)` if no ownership checkpoint exists or the query predates the first checkpoint.
     /// @param tokenId The token ID of the NFT to get the historical owner of.
-    /// @param blockNumber The block number to look up.
+    /// @param blockNumber The current or past block number to look up.
     /// @return owner The owner of the token at `blockNumber`, or zero if no owner is proven at that block.
     function ownerOfAt(uint256 tokenId, uint256 blockNumber) external view returns (address owner);
 

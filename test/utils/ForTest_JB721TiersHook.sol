@@ -232,9 +232,20 @@ contract ForTest_JB721TiersHookStore is JB721TiersHookStore, IJB721TiersHookStor
 
     // forge-lint: disable-next-line(mixed-case-function)
     function ForTest_setBalanceOf(address hook, address holder, uint256 tier, uint256 balance) public override {
+        // Keep a reference to the manufactured balance before the override.
+        uint256 currentBalance = tierBalanceOf[address(hook)][holder][tier];
+
         // Keep the O(1) `balanceOf` aggregate in sync with the manufactured per-tier balance.
-        balanceOf[address(hook)][holder] =
-            balanceOf[address(hook)][holder] - tierBalanceOf[address(hook)][holder][tier] + balance;
+        balanceOf[address(hook)][holder] = balanceOf[address(hook)][holder] - currentBalance + balance;
+
+        // Keep the held-tier bitmap in sync with zero/nonzero balance transitions.
+        if (currentBalance == 0 && balance != 0) {
+            _addHeldTier({hook: address(hook), owner: holder, tierId: tier});
+        } else if (currentBalance != 0 && balance == 0) {
+            _removeHeldTier({hook: address(hook), owner: holder, tierId: tier});
+        }
+
+        // Store the manufactured per-tier balance.
         tierBalanceOf[address(hook)][holder][tier] = balance;
     }
 

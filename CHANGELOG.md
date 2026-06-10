@@ -14,15 +14,17 @@ This is a V5-to-V6 migration changelog, not a package release log or commit hist
 - `JB721TiersHookLib`
 - related interfaces, libraries, and structs under `src/`
 
-## Current Checkpoint Reward Surfaces
+## Current Checkpoint Reward And Membership Surfaces
 
-`JB721Checkpoints` exposes active delegated vote totals used by reward distributors:
+`JB721Checkpoints` exposes active delegated vote totals and current-or-historical tier-membership checks used by reward
+distributors:
 
 - `getPastTotalActiveVotes(uint256 blockNumber) → uint256`
 - `getTotalActiveVotes() → uint256`
 - `getPastAccountTierActiveVotes(address account, uint256 tierId, uint256 blockNumber) → uint256`
 - `getPastTotalTierActiveVotes(uint256 tierId, uint256 blockNumber) → uint256`
 - `getTotalTierActiveVotes(uint256 tierId) → uint256`
+- `hasTiersOfAt(address account, uint256[] tierIds, JB721TierOwnerMatch matchMode, uint256 blockNumber) → bool`
 
 These totals count only voting units held by accounts with a nonzero delegate. Undelegated holders and undelegated
 custody addresses are excluded; if tokens return to a holder whose delegation is still set, those voting units become
@@ -31,6 +33,9 @@ power.
 
 ## Package Notes
 
+- `0.0.76`: bounds voting-unit reads and delegation tier activation with per-owner held-tier bitmaps (one storage word
+  per 256 tier IDs plus held tiers), adds current-or-historical tier-membership checks, uses checked tier-checkpoint
+  downcasts, and corrects clone metadata-target comments.
 - `0.0.73`: adds account-scoped per-tier active vote history for tier-scoped reward accounting.
 - `0.0.72`: bumps `@bananapus/core-v6` to `^0.0.86`.
 - `0.0.71`: adds per-tier active vote totals for delegated reward accounting.

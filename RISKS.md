@@ -50,8 +50,15 @@ This file covers the tiered-NFT accounting, reserve-mint, and cash-out risks in 
 - **`totalCashOutWeightOf` and `balanceOf` are O(1).** Both read running aggregates maintained on mint/burn/transfer
   rather than iterating tiers, so cash-out pricing and balance reads cannot be gas-DoS'd by inflating the tier count
   (e.g. via delegated tier creation through Croptop).
-- **`votingUnitsOf` and `totalSupplyOf` still iterate all tiers.** These are not on the cash-out fund-stranding path,
-  but very large tier catalogs can still make them expensive.
+- **`votingUnitsOf` and delegation tier activation are bounded by bitmap words plus held-tier count.** The store
+  maintains per-owner held-tier bitmap words on ownership transitions, updating one bitmap word when an account enters
+  or exits a tier. Reads scan one storage word per 256 tier IDs (at most 256 words at the `uint16` tier cap) plus the
+  owner's held tiers, so they do not walk every tier ID.
+- **`hasTiersOfAt` is backed by checkpointed tier balances.** The checkpoint module writes per-account tier-balance
+  traces on ownership transitions so membership checks scale with the queried tier array, not with minted token count.
+  Empty tier arrays fail closed, and future-block queries revert.
+- **`totalSupplyOf` still iterates all tiers.** This is not on the cash-out fund-stranding path, but very large tier
+  catalogs can still make total-supply reads expensive.
 - **Large tier catalogs are technically allowed but not the supported operating shape.**
 - **`tiersOf` still traverses removed tiers until cleanup runs.** `cleanTiers` compacts removed tiers out of the
   sorted traversal path, including removed trailing tiers when at least one active tier remains.

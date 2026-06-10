@@ -7,6 +7,7 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {Checkpoints} from "@openzeppelin/contracts/utils/structs/Checkpoints.sol";
 
+import {JB721TierOwnerMatch} from "./enums/JB721TierOwnerMatch.sol";
 import {IJB721Checkpoints} from "./interfaces/IJB721Checkpoints.sol";
 import {IJB721TiersHook} from "./interfaces/IJB721TiersHook.sol";
 import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
@@ -61,6 +62,13 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// @custom:param account The account to get historical active tier voting units for.
     /// @custom:param tierId The tier to get historical active voting units for.
     mapping(address account => mapping(uint256 tierId => Checkpoints.Trace160)) internal _accountTierActiveVotesOf;
+
+    /// @notice Checkpointed NFT balances per account and tier.
+    /// @dev Maintained by `onTransfer` and owner-checkpoint backfills so tier-membership checks can be queried at a
+    /// block without scanning every token in the tier.
+    /// @custom:param account The account to get historical tier balances for.
+    /// @custom:param tierId The tier to get historical balances for.
+    mapping(address account => mapping(uint256 tierId => Checkpoints.Trace160)) internal _accountTierBalancesOf;
 
     /// @notice Checkpointed token owners for historical reward eligibility.
     /// @dev Mint and transfer hooks write this automatically; `delegate` only backfills missing pre-upgrade history.
@@ -126,8 +134,16 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
             if (_ownerCheckpointsOf[tokenId].length() == 0) {
                 // forge-lint: disable-next-line(unsafe-typecast)
                 _ownerCheckpointsOf[tokenId].push({key: uint96(block.number), value: uint160(msg.sender)});
+
+                // Reuse the token's encoded tier ID for both account-balance and tier-supply traces.
+                uint256 tierId = STORE.tierIdOfToken(tokenId);
+
+                // Add this backfilled token to the caller's checkpointed tier balance.
+                _adjustAccountTierBalance({account: msg.sender, tierId: tierId, increase: true});
+
+                // Add this backfilled token's units to the tier's owner-tracked total.
                 _updateTierEligibleUnits({
-                    tierId: STORE.tierIdOfToken(tokenId),
+                    tierId: tierId,
                     amount: STORE.tierVotingUnitsOfTokenId({hook: hook, tokenId: tokenId}),
                     increase: true
                 });
@@ -159,6 +175,9 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     function onTransfer(address from, address to, uint256 tokenId) external override {
         if (msg.sender != hook) revert JB721Checkpoints_Unauthorized({caller: msg.sender, hook: hook});
 
+        // Self-transfers leave ownership, voting units, and tier-balance traces unchanged.
+        if (from == to) return;
+
         // Look up this token's tier ID and voting units once; both the owner and active traces need them.
         uint256 tierId = STORE.tierIdOfToken(tokenId);
 
@@ -179,15 +198,22 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
 
         if (from == address(0) && to != address(0)) {
             // Mint: add the token's tier units to the owner-tracked tier supply.
+            _adjustAccountTierBalance({account: to, tierId: tierId, increase: true});
             _updateTierEligibleUnits({tierId: tierId, amount: votingUnits, increase: true});
         } else if (to == address(0)) {
             // Burn: remove the tier's units only if the token was already part of the owner-tracked supply.
             if (wasEligible) {
+                _adjustAccountTierBalance({account: from, tierId: tierId, increase: false});
                 _updateTierEligibleUnits({tierId: tierId, amount: votingUnits, increase: false});
             }
         } else if (!wasEligible) {
             // First transfer of a pre-upgrade uncheckpointed token makes its ownership history trackable.
+            _adjustAccountTierBalance({account: to, tierId: tierId, increase: true});
             _updateTierEligibleUnits({tierId: tierId, amount: votingUnits, increase: true});
+        } else {
+            // Transfer: move one tier balance unit between checkpointed accounts.
+            _adjustAccountTierBalance({account: from, tierId: tierId, increase: false});
+            _adjustAccountTierBalance({account: to, tierId: tierId, increase: true});
         }
 
         // The tier active total decreases if units leave an account that already has a nonzero delegate.
@@ -298,14 +324,66 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
         activeVotes = _tierActiveSupplyCheckpointsOf[tierId].latest();
     }
 
-    /// @notice The owner of an NFT at a past block.
+    /// @notice Whether an owner held any or all of the provided tier IDs at a block.
+    /// @dev Empty arrays return `false`. `blockNumber` may be the current block, but not a future block.
+    /// @param account The account to check.
+    /// @param tierIds The tier IDs to check.
+    /// @param matchMode Whether to require any or all tier IDs to be held.
+    /// @param blockNumber The block number to look up.
+    /// @return hasTiers Whether the owner satisfies the requested tier match at `blockNumber`.
+    function hasTiersOfAt(
+        address account,
+        uint256[] calldata tierIds,
+        JB721TierOwnerMatch matchMode,
+        uint256 blockNumber
+    )
+        external
+        view
+        override
+        returns (bool hasTiers)
+    {
+        // Empty tier requirements fail closed so default-decoded calls cannot grant membership.
+        if (tierIds.length == 0) return false;
+
+        // Convert once so every tier lookup uses the same checkpoint key.
+        uint96 blockNumber96 = _validateCurrentOrPastTimepoint(blockNumber);
+
+        if (matchMode == JB721TierOwnerMatch.Any) {
+            // In `Any` mode, one nonzero tier balance is enough to satisfy the query.
+            for (uint256 i; i < tierIds.length;) {
+                // A nonzero checkpointed balance means the account held this tier at the requested block.
+                if (_accountTierBalancesOf[account][tierIds[i]].upperLookupRecent(blockNumber96) != 0) return true;
+
+                unchecked {
+                    ++i;
+                }
+            }
+
+            // None of the queried tiers had a nonzero balance for the account at the requested block.
+            return false;
+        }
+
+        // In `All` mode, every queried tier must have a nonzero balance.
+        for (uint256 i; i < tierIds.length;) {
+            // Missing any queried tier is enough to fail the all-tiers match.
+            if (_accountTierBalancesOf[account][tierIds[i]].upperLookupRecent(blockNumber96) == 0) return false;
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        // Every queried tier matched.
+        return true;
+    }
+
+    /// @notice The owner of an NFT at a current or past block.
     /// @dev Returns `address(0)` if no ownership checkpoint exists or the query predates the first checkpoint.
     /// @param tokenId The token ID of the NFT to get the historical owner of.
-    /// @param blockNumber The block number to look up.
+    /// @param blockNumber The current or past block number to look up.
     /// @return owner The owner of the token at `blockNumber`, or zero if no owner is proven at that block.
     function ownerOfAt(uint256 tokenId, uint256 blockNumber) external view override returns (address owner) {
-        // forge-lint: disable-next-line(unsafe-typecast)
-        uint96 blockNumber96 = uint96(blockNumber);
+        uint96 blockNumber96 = _validateCurrentOrPastTimepoint(blockNumber);
 
         Checkpoints.Trace160 storage checkpoints = _ownerCheckpointsOf[tokenId];
         uint256 checkpointCount = checkpoints.length();
@@ -401,18 +479,15 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// @param amount The voting units to add or remove.
     /// @param increase Whether to add `amount`; if false, `amount` is removed.
     function _adjustAccountTierActiveVotes(address account, uint256 tierId, uint256 amount, bool increase) private {
-        // Ignore zero-unit updates because they do not change the account's active tier total.
-        if (amount == 0) return;
+        _pushTraceDelta({trace: _accountTierActiveVotesOf[account][tierId], amount: amount, increase: increase});
+    }
 
-        // Keep a reference to the account's active-voting-units trace for this tier.
-        Checkpoints.Trace160 storage trace = _accountTierActiveVotesOf[account][tierId];
-
-        // Calculate the next account-tier active total from its latest checkpointed value.
-        uint256 updated = increase ? trace.latest() + amount : trace.latest() - amount;
-
-        // Write the new account-tier active total at the current block.
-        // forge-lint: disable-next-line(unsafe-typecast)
-        trace.push({key: uint96(block.number), value: uint160(updated)});
+    /// @notice Add or remove one NFT from an account's tier-balance checkpoint at the current block.
+    /// @param account The account whose tier-balance trace should be updated.
+    /// @param tierId The tier whose balance should be updated.
+    /// @param increase Whether to add one NFT; if false, one NFT is removed.
+    function _adjustAccountTierBalance(address account, uint256 tierId, bool increase) private {
+        _pushTraceDelta({trace: _accountTierBalancesOf[account][tierId], amount: 1, increase: increase});
     }
 
     /// @notice Add or remove units from a tier's active-voting-units checkpoint at the current block.
@@ -420,18 +495,7 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// @param amount The voting units to add or remove.
     /// @param increase Whether to add `amount`; if false, `amount` is removed.
     function _adjustTotalTierActiveVotes(uint256 tierId, uint256 amount, bool increase) private {
-        // Ignore zero-unit updates because they do not change this tier's active total.
-        if (amount == 0) return;
-
-        // Keep a reference to the tier's active-voting-units trace.
-        Checkpoints.Trace160 storage trace = _tierActiveSupplyCheckpointsOf[tierId];
-
-        // Calculate the next tier active total by adding or subtracting from the latest checkpointed value.
-        uint256 updated = increase ? trace.latest() + amount : trace.latest() - amount;
-
-        // Write the new tier active total at the current block.
-        // forge-lint: disable-next-line(unsafe-typecast)
-        trace.push({key: uint96(block.number), value: uint160(updated)});
+        _pushTraceDelta({trace: _tierActiveSupplyCheckpointsOf[tierId], amount: amount, increase: increase});
     }
 
     /// @notice Apply an account delegation change to every tier-level active total the account contributes to.
@@ -440,25 +504,28 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// @param account The account whose tier voting units should be added or removed.
     /// @param increase Whether to add `account`'s tier voting units; if false, they are removed.
     function _applyAccountDelegationToTierActiveVotes(address account, bool increase) private {
-        // Read the largest tier ID once; tier IDs are sequential and 1-indexed for each hook.
-        uint256 tierId = STORE.maxTierIdOf(hook);
+        // Read the account's held-tier IDs and voting units once so empty tiers are never visited.
+        (uint256[] memory tierIds, uint256[] memory tierVotingUnits) =
+            STORE.heldTierVotingUnitsOf({hook: hook, account: account});
 
-        // Walk each tier from max to 1 so empty hooks skip cleanly when maxTierId is zero.
-        while (tierId != 0) {
-            // Read only this account's units for the tier; empty tiers return zero and are ignored below.
-            uint256 tierVotingUnits = STORE.tierVotingUnitsOf({hook: hook, account: account, tierId: tierId});
+        // Walk only tiers the account currently holds.
+        for (uint256 i; i < tierIds.length;) {
+            // Get a reference to the tier ID being iterated on.
+            uint256 tierId = tierIds[i];
+
+            // Keep a reference to this account's voting units for the tier.
+            uint256 votingUnits = tierVotingUnits[i];
 
             // Only write checkpoints for tiers whose active totals actually change.
-            if (tierVotingUnits != 0) {
-                _adjustTotalTierActiveVotes({tierId: tierId, amount: tierVotingUnits, increase: increase});
+            if (votingUnits != 0) {
+                _adjustTotalTierActiveVotes({tierId: tierId, amount: votingUnits, increase: increase});
                 _adjustAccountTierActiveVotes({
-                    account: account, tierId: tierId, amount: tierVotingUnits, increase: increase
+                    account: account, tierId: tierId, amount: votingUnits, increase: increase
                 });
             }
 
             unchecked {
-                // The loop condition proves tierId is nonzero, so the decrement cannot underflow.
-                --tierId;
+                ++i;
             }
         }
     }
@@ -485,17 +552,30 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
     /// @param amount The voting units to add or remove.
     /// @param increase Whether to add `amount`; if false, `amount` is removed.
     function _updateTierEligibleUnits(uint256 tierId, uint256 amount, bool increase) private {
-        // Ignore zero-unit updates because they do not change this tier's owner-tracked total.
+        _pushTraceDelta({trace: _tierEligibleUnitsOf[tierId], amount: amount, increase: increase});
+    }
+
+    /// @notice Add or remove an amount from a `Trace160` checkpoint at the current block.
+    /// @param trace The checkpoint trace to update.
+    /// @param amount The amount to add or remove.
+    /// @param increase Whether to add `amount`; if false, `amount` is removed.
+    function _pushTraceDelta(Checkpoints.Trace160 storage trace, uint256 amount, bool increase) private {
+        // Ignore zero-unit updates because they do not change the checkpointed total.
         if (amount == 0) return;
 
-        // Keep a reference to the tier's owner-tracked voting-units trace.
-        Checkpoints.Trace160 storage trace = _tierEligibleUnitsOf[tierId];
-
-        // Calculate the next owner-tracked total by adding or subtracting from the latest checkpointed value.
+        // Calculate the next trace total by adding or subtracting from the latest checkpointed value.
         uint256 updated = increase ? trace.latest() + amount : trace.latest() - amount;
 
-        // Write the new owner-tracked total at the current block.
-        // forge-lint: disable-next-line(unsafe-typecast)
-        trace.push({key: uint96(block.number), value: uint160(updated)});
+        // Write the new trace total at the current block.
+        trace.push({key: uint96(block.number), value: SafeCast.toUint160(updated)});
+    }
+
+    /// @notice Validate a timepoint that may be current or past, but not future.
+    /// @param timepoint The block number to validate.
+    /// @return The timepoint as a uint96 checkpoint key.
+    function _validateCurrentOrPastTimepoint(uint256 timepoint) private view returns (uint96) {
+        uint48 currentTimepoint = clock();
+        if (timepoint > currentTimepoint) revert ERC5805FutureLookup(timepoint, currentTimepoint);
+        return SafeCast.toUint96(timepoint);
     }
 }

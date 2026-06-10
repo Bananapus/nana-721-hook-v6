@@ -32,9 +32,13 @@ Custom token URI resolvers usually live outside this repo, but they still affect
 | `JB721Hook` | Abstract 721 hook base | Shared behavior |
 | `JB721Checkpoints` | IVotes-compatible checkpoint module (one clone per hook) | Tracks historical owner checkpoints, per-tier owner-tracked voting-unit totals, global/per-tier active delegated vote totals, and per-account active tier voting units |
 
-The checkpoint module keeps five kinds of checkpointed state. Per-token owner checkpoints back `ownerOfAt` for snapshot-based reward eligibility. A per-tier owner-tracked voting-units trace (`_tierEligibleUnitsOf`, read via `getPastTierVotingUnits(tierId, blockNumber)`) is the tier-scoped analogue of a total-supply snapshot: it increments on mint, follows owner checkpoints through transfers, and decrements on burn.
+The checkpoint module keeps six kinds of checkpointed state. Per-token owner checkpoints back `ownerOfAt` for snapshot-based reward eligibility. A per-tier owner-tracked voting-units trace (`_tierEligibleUnitsOf`, read via `getPastTierVotingUnits(tierId, blockNumber)`) is the tier-scoped analogue of a total-supply snapshot: it increments on mint, follows owner checkpoints through transfers, and decrements on burn.
 
 The active delegated vote traces (`_activeSupplyCheckpoints` globally and `_tierActiveSupplyCheckpointsOf` per tier) are separate. They track voting units held by accounts with a nonzero delegate. The account-tier active trace (`_accountTierActiveVotesOf`, read via `getPastAccountTierActiveVotes(account, tierId, blockNumber)`) records the same active accounting at holder scope. If a holder delegates and later transfers a token into undelegated custody, those units leave the active totals; if the token returns to that delegated holder, those units become active again. Reward distributors that should exclude inactive custody read these active totals as denominators and holder-level caps.
+
+The checkpoint module also keeps per-account tier-balance traces. `hasTiersOfAt(account, tierIds, matchMode, blockNumber)` reads those traces so contracts can check current or historical `Any`/`All` tier membership without scanning every token in a tier. Empty tier arrays fail closed, and future blocks revert.
+
+The store also keeps per-owner held-tier bitmap words. `recordTransferForTier` updates one bitmap word when an account first receives a tier or fully exits one, which keeps `votingUnitsOf` and delegation tier activation bounded by one storage read per 256 tier IDs (at most 256 words at the `uint16` tier cap) plus the owner's set bits instead of the full tier catalog.
 
 ## Trust boundaries
 
