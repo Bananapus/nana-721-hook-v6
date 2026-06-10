@@ -87,6 +87,19 @@ contract TestJBBitmap is Test {
         assertTrue(bitmap.isTierIdRemoved(10), "should still be removed");
     }
 
+    function test_setId_clearId_roundTrip() public {
+        bitmap.setId(255);
+        bitmap.setId(256);
+
+        assertTrue(bitmap.isTierIdRemoved(255), "index 255 should be set");
+        assertTrue(bitmap.isTierIdRemoved(256), "index 256 should be set");
+
+        bitmap.clearId(255);
+
+        assertFalse(bitmap.isTierIdRemoved(255), "index 255 should be cleared");
+        assertTrue(bitmap.isTierIdRemoved(256), "index 256 should stay set");
+    }
+
     //*********************************************************************//
     // --- isTierIdRemoved (memory struct variant) ----------------------- //
     //*********************************************************************//
@@ -169,5 +182,13 @@ contract TestJBBitmap is Test {
         assertTrue(bitmap.isTierIdRemoved(a));
         assertTrue(bitmap.isTierIdRemoved(b));
         assertTrue(bitmap.isTierIdRemoved(c));
+    }
+
+    function testFuzz_setId_clearId_roundTrip(uint16 index) public {
+        bitmap.setId(index);
+        assertTrue(bitmap.isTierIdRemoved(index), "index should be set");
+
+        bitmap.clearId(index);
+        assertFalse(bitmap.isTierIdRemoved(index), "index should be cleared");
     }
 }

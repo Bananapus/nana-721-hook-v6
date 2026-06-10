@@ -6,6 +6,7 @@ import "./utils/UnitTestSetup.sol";
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "./utils/ForTest_JB721TiersHook.sol";
 import {JB721Checkpoints} from "../src/JB721Checkpoints.sol";
+import {JB721TierOwnerMatch} from "../src/enums/JB721TierOwnerMatch.sol";
 import {IJB721Checkpoints} from "../src/interfaces/IJB721Checkpoints.sol";
 import {IJB721TiersHook} from "../src/interfaces/IJB721TiersHook.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
@@ -548,7 +549,175 @@ contract TestCheckpoints is UnitTestSetup {
     }
 
     // -------------------------------------------------------------------
-    // Test 16: Unauthorized onTransfer reverts
+    // Test 16: hasTiersOfAt matches historical tier ownership
+    // -------------------------------------------------------------------
+    function test_hasTiersOfAt_matchesHistoricalTierOwnership() public {
+        defaultTierConfig.flags.allowOwnerMint = true;
+        defaultTierConfig.reserveFrequency = 0;
+        defaultTierConfig.flags.useVotingUnits = true;
+        defaultTierConfig.votingUnits = 100;
+
+        ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(3);
+
+        address alice = makeAddr("alice");
+        address bob = makeAddr("bob");
+
+        uint256 blockBeforeMint = block.number;
+        vm.roll(block.number + 1);
+
+        uint16[] memory tiersToMint = new uint16[](2);
+        tiersToMint[0] = 1;
+        tiersToMint[1] = 2;
+
+        vm.prank(owner);
+        tiersHook.mintFor(tiersToMint, alice);
+
+        IJB721Checkpoints module = tiersHook.checkpoints();
+        uint256 mintBlock = block.number;
+
+        uint256[] memory tiersOneAndTwo = new uint256[](2);
+        tiersOneAndTwo[0] = 1;
+        tiersOneAndTwo[1] = 2;
+
+        uint256[] memory tiersOneAndThree = new uint256[](2);
+        tiersOneAndThree[0] = 1;
+        tiersOneAndThree[1] = 3;
+
+        uint256[] memory emptyTiers = new uint256[](0);
+
+        assertFalse(
+            module.hasTiersOfAt(alice, tiersOneAndTwo, JB721TierOwnerMatch.Any, blockBeforeMint),
+            "alice should not hold queried tiers before mint"
+        );
+        assertTrue(
+            module.hasTiersOfAt(alice, tiersOneAndTwo, JB721TierOwnerMatch.All, mintBlock),
+            "alice should hold both tiers at mint block"
+        );
+        assertFalse(
+            module.hasTiersOfAt(alice, tiersOneAndThree, JB721TierOwnerMatch.All, mintBlock),
+            "alice should not hold all queried tiers at mint block"
+        );
+        assertTrue(
+            module.hasTiersOfAt(alice, tiersOneAndThree, JB721TierOwnerMatch.Any, mintBlock),
+            "alice should hold one queried tier at mint block"
+        );
+        assertFalse(
+            module.hasTiersOfAt(alice, emptyTiers, JB721TierOwnerMatch.All, mintBlock),
+            "all of an empty tier set should fail closed"
+        );
+        assertFalse(
+            module.hasTiersOfAt(alice, emptyTiers, JB721TierOwnerMatch.Any, mintBlock),
+            "any of an empty tier set should be false"
+        );
+
+        vm.roll(block.number + 1);
+        vm.prank(alice);
+        IERC721(address(tiersHook)).transferFrom(alice, bob, _generateTokenId(1, 1));
+
+        uint256 transferBlock = block.number;
+
+        assertFalse(
+            module.hasTiersOfAt(alice, tiersOneAndTwo, JB721TierOwnerMatch.All, transferBlock),
+            "alice should stop matching all after transferring tier 1"
+        );
+        assertTrue(
+            module.hasTiersOfAt(alice, tiersOneAndTwo, JB721TierOwnerMatch.Any, transferBlock),
+            "alice should still hold tier 2 after transfer"
+        );
+        assertFalse(
+            module.hasTiersOfAt(bob, tiersOneAndTwo, JB721TierOwnerMatch.All, transferBlock),
+            "bob should not hold all queried tiers after receiving only tier 1"
+        );
+        assertTrue(
+            module.hasTiersOfAt(bob, tiersOneAndTwo, JB721TierOwnerMatch.Any, transferBlock),
+            "bob should hold one queried tier after transfer"
+        );
+        assertTrue(
+            module.hasTiersOfAt(alice, tiersOneAndTwo, JB721TierOwnerMatch.All, mintBlock),
+            "alice's mint-block membership should remain queryable after transfer"
+        );
+
+        vm.roll(block.number + 1);
+
+        uint256[] memory tokensToBurn = new uint256[](1);
+        tokensToBurn[0] = _generateTokenId(2, 1);
+        tiersHook.burn(tokensToBurn);
+
+        assertFalse(
+            module.hasTiersOfAt(alice, tiersOneAndTwo, JB721TierOwnerMatch.Any, block.number),
+            "alice should hold neither queried tier after burning tier 2"
+        );
+        assertTrue(
+            module.hasTiersOfAt(alice, tiersOneAndTwo, JB721TierOwnerMatch.Any, transferBlock),
+            "alice's transfer-block membership should remain queryable after burn"
+        );
+    }
+
+    // -------------------------------------------------------------------
+    // Test 17: hasTiersOfAt and ownerOfAt reject future blocks
+    // -------------------------------------------------------------------
+    function test_membershipAndOwnerLookups_revertForFutureBlock() public {
+        defaultTierConfig.flags.allowOwnerMint = true;
+        defaultTierConfig.reserveFrequency = 0;
+        defaultTierConfig.flags.useVotingUnits = true;
+        defaultTierConfig.votingUnits = 100;
+
+        ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
+
+        address alice = makeAddr("alice");
+
+        uint16[] memory tiersToMint = new uint16[](1);
+        tiersToMint[0] = 1;
+
+        vm.prank(owner);
+        tiersHook.mintFor(tiersToMint, alice);
+
+        IJB721Checkpoints module = tiersHook.checkpoints();
+
+        uint256[] memory tiers = new uint256[](1);
+        tiers[0] = 1;
+
+        vm.expectRevert();
+        module.hasTiersOfAt(alice, tiers, JB721TierOwnerMatch.All, block.number + 1);
+
+        vm.expectRevert();
+        module.ownerOfAt(_generateTokenId(1, 1), block.number + 1);
+    }
+
+    // -------------------------------------------------------------------
+    // Test 18: self-transfers leave checkpoint state unchanged
+    // -------------------------------------------------------------------
+    function test_selfTransfer_leavesCheckpointStateUnchanged() public {
+        defaultTierConfig.flags.allowOwnerMint = true;
+        defaultTierConfig.reserveFrequency = 0;
+        defaultTierConfig.flags.useVotingUnits = true;
+        defaultTierConfig.votingUnits = 100;
+
+        ForTest_JB721TiersHook tiersHook = _initializeHookWithCheckpoints(1);
+
+        address alice = makeAddr("alice");
+
+        uint16[] memory tiersToMint = new uint16[](1);
+        tiersToMint[0] = 1;
+
+        vm.prank(owner);
+        tiersHook.mintFor(tiersToMint, alice);
+
+        IJB721Checkpoints module = tiersHook.checkpoints();
+        uint256 tokenId = _generateTokenId(1, 1);
+        uint256 mintBlock = block.number;
+
+        vm.roll(block.number + 1);
+        vm.prank(alice);
+        IERC721(address(tiersHook)).transferFrom(alice, alice, tokenId);
+
+        assertEq(module.ownerOfAt(tokenId, mintBlock), alice, "mint-block owner should stay alice");
+        assertEq(module.ownerOfAt(tokenId, block.number), alice, "current owner should stay alice");
+        assertEq(module.getVotes(alice), 0, "self-transfer should not activate votes");
+    }
+
+    // -------------------------------------------------------------------
+    // Test 19: Unauthorized onTransfer reverts
     // -------------------------------------------------------------------
     function test_unauthorizedOnTransfer_reverts() public {
         defaultTierConfig.flags.allowOwnerMint = true;
@@ -573,7 +742,7 @@ contract TestCheckpoints is UnitTestSetup {
     }
 
     // -------------------------------------------------------------------
-    // Test 17: Active votes follow delegated voting units through inactive custody
+    // Test 18: Active votes follow delegated voting units through inactive custody
     // -------------------------------------------------------------------
     function test_activeVotes_inactiveRecipientThenDelegatedHolderAgain() public {
         defaultTierConfig.flags.allowOwnerMint = true;
@@ -681,7 +850,7 @@ contract TestCheckpoints is UnitTestSetup {
     }
 
     // -------------------------------------------------------------------
-    // Test 18: Tier active votes track delegation across multiple tiers
+    // Test 19: Tier active votes track delegation across multiple tiers
     // -------------------------------------------------------------------
     function test_tierActiveVotes_followDelegationAcrossTiers() public {
         defaultTierConfig.flags.allowOwnerMint = true;
@@ -751,7 +920,7 @@ contract TestCheckpoints is UnitTestSetup {
     }
 
     // -------------------------------------------------------------------
-    // Test 19: Account tier active votes track holder activity, not delegatee voting power
+    // Test 20: Account tier active votes track holder activity, not delegatee voting power
     // -------------------------------------------------------------------
     function test_accountTierActiveVotes_trackHolderWhenDelegatedToAnotherAddress() public {
         defaultTierConfig.flags.allowOwnerMint = true;
@@ -803,7 +972,7 @@ contract TestCheckpoints is UnitTestSetup {
     }
 
     // -------------------------------------------------------------------
-    // Test 20: Account tier active votes move between delegated holders
+    // Test 21: Account tier active votes move between delegated holders
     // -------------------------------------------------------------------
     function test_accountTierActiveVotes_moveBetweenDelegatedHolders() public {
         defaultTierConfig.flags.allowOwnerMint = true;
@@ -852,7 +1021,7 @@ contract TestCheckpoints is UnitTestSetup {
     }
 
     // -------------------------------------------------------------------
-    // Test 21: Account tier active vote history rejects current-block lookups
+    // Test 22: Account tier active vote history rejects current-block lookups
     // -------------------------------------------------------------------
     function test_accountTierActiveVotes_revertsForCurrentBlock() public {
         defaultTierConfig.flags.allowOwnerMint = true;

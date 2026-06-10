@@ -43,12 +43,33 @@ library JBBitmap {
         return _retrieveDepth(index) != self.currentDepth;
     }
 
+    /// @notice Clear the bit at the given index.
+    /// @param self The bitmap to clear the bit from.
+    /// @param index The index of the bit to clear.
+    function clearId(mapping(uint256 => uint256) storage self, uint256 index) internal {
+        self[_retrieveDepth(index)] &= ~_retrieveBitMask(index);
+    }
+
     /// @notice Set the bit at the given index to true, indicating that the corresponding tier has been removed.
     /// @dev This is a one-way operation.
     function removeTier(mapping(uint256 => uint256) storage self, uint256 index) internal {
-        uint256 depth = _retrieveDepth(index);
+        setId({self: self, index: index});
+    }
+
+    /// @notice Set the bit at the given index.
+    /// @param self The bitmap to set the bit in.
+    /// @param index The index of the bit to set.
+    function setId(mapping(uint256 => uint256) storage self, uint256 index) internal {
+        self[_retrieveDepth(index)] |= _retrieveBitMask(index);
+    }
+
+    /// @notice Return the bit mask of a given index within its bitmap row.
+    /// @param index The index to get a bit mask for.
+    /// @return mask The bit mask for `index`.
+    function _retrieveBitMask(uint256 index) internal pure returns (uint256 mask) {
+        // The modulo keeps the bit offset inside one 256-bit bitmap word.
         // forge-lint: disable-next-line(incorrect-shift)
-        self[depth] |= uint256(1 << (index % 256));
+        return 1 << (index % 256);
     }
 
     /// @notice Return the line number (depth) of a given index within the bitmap matrix.

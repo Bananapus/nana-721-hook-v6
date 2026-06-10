@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {mulDiv} from "@prb/math/src/Common.sol";
 import {JBConstants} from "@bananapus/core-v6/src/libraries/JBConstants.sol";
+import {mulDiv} from "@prb/math/src/Common.sol";
+import {LibBit} from "solady/src/utils/LibBit.sol";
 
 import {IJB721TiersHookStore} from "./interfaces/IJB721TiersHookStore.sol";
 import {IJB721TokenUriResolver} from "./interfaces/IJB721TokenUriResolver.sol";
@@ -166,6 +167,15 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @custom:returns The flags.
     mapping(address hook => JB721TiersHookFlags) internal _flagsOf;
 
+    /// @notice Bitmap words whose set bits indicate tier IDs with nonzero balances for the provided owner.
+    /// @dev Maintained in `recordTransferForTier`, so voting-unit reads and delegation updates walk set bits instead
+    /// of every tier ever added to the hook. Each word tracks 256 tier IDs.
+    /// @custom:param hook The 721 contract to get held tier IDs from.
+    /// @custom:param owner The address to get held tier IDs for.
+    /// @custom:param depth The bitmap word depth to read. Each depth stores 256 tier IDs.
+    mapping(address hook => mapping(address owner => mapping(uint256 depth => uint256 word))) internal
+        _heldTiersBitmapWordOf;
+
     /// @notice Return the ID of the last sorted tier from the provided 721 contract.
     /// @dev If not set, it is assumed the `maxTierIdOf` is the last sorted tier ID.
     /// @custom:param hook The 721 contract to get the last sorted tier ID from.
@@ -230,6 +240,72 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @return The hook's flags.
     function flagsOf(address hook) external view override returns (JB721TiersHookFlags memory) {
         return _flagsOf[hook];
+    }
+
+    /// @notice The tier IDs whose balances are nonzero for the provided owner.
+    /// @param hook The 721 hook contract to get held tier IDs from.
+    /// @param owner The address to get held tier IDs for.
+    /// @return tierIds The tier IDs with a nonzero balance for the owner.
+    function heldTierIdsOf(
+        address hook,
+        address owner
+    )
+        external
+        view
+        virtual
+        override
+        returns (uint256[] memory tierIds)
+    {
+        return _heldTierIdsOf({hook: hook, owner: owner});
+    }
+
+    /// @notice The tier IDs and voting units whose balances are nonzero for the provided account.
+    /// @param hook The 721 hook contract to get held tier IDs from.
+    /// @param account The address to get held tier IDs and voting units for.
+    /// @return tierIds The tier IDs with a nonzero balance for the account.
+    /// @return units The account's voting units for each returned tier ID.
+    function heldTierVotingUnitsOf(
+        address hook,
+        address account
+    )
+        external
+        view
+        virtual
+        override
+        returns (uint256[] memory tierIds, uint256[] memory units)
+    {
+        // Allocate both arrays to the exact number of held tier IDs.
+        tierIds = new uint256[](_numberOfHeldTiersOf({hook: hook, owner: account}));
+        units = new uint256[](tierIds.length);
+
+        // Fill both arrays in ascending tier ID order.
+        uint256 index;
+        uint256 maxDepth = maxTierIdOf[hook] >> 8;
+        for (uint256 depth; depth <= maxDepth;) {
+            // Keep a local copy so consumed bits do not mutate storage.
+            uint256 heldTiersBitmapWord = _heldTiersBitmapWordOf[hook][account][depth];
+
+            // Resolve each set bit to its tier ID and voting units.
+            while (heldTiersBitmapWord != 0) {
+                // Store the tier ID represented by the lowest set bit.
+                uint256 tierId = (depth << 8) + LibBit.ffs(heldTiersBitmapWord);
+                tierIds[index] = tierId;
+
+                // Store the account's voting units for the tier at the same index.
+                units[index] = _votingUnitsForHeldTier({hook: hook, account: account, tierId: tierId});
+
+                unchecked {
+                    ++index;
+                }
+
+                // Clear the consumed bit from the local word.
+                heldTiersBitmapWord &= heldTiersBitmapWord - 1;
+            }
+
+            unchecked {
+                ++depth;
+            }
+        }
     }
 
     /// @notice Check whether a tier has been removed. Removed tiers can no longer be minted from, but existing NFTs
@@ -441,19 +517,7 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         override
         returns (uint256)
     {
-        // Get a reference to the account's balance in this tier.
-        uint256 balance = tierBalanceOf[hook][account][tierId];
-
-        if (balance == 0) return 0;
-
-        // Keep a reference to the stored tier.
-        JBStored721Tier memory storedTier = _storedTierOf[hook][tierId];
-
-        // Check if voting units should be used. Price will be used otherwise.
-        (,, bool useVotingUnits,,,) = _unpackBools(storedTier.packedBools);
-
-        // Return the address' voting units within the tier.
-        return balance * (useVotingUnits ? _tierVotingUnitsOf[hook][tierId] : storedTier.price);
+        return _votingUnitsForHeldTier({hook: hook, account: account, tierId: tierId});
     }
 
     /// @notice The total number of NFTs currently in circulation for a hook (minted minus burned, across all tiers).
@@ -486,34 +550,27 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @param account The address to get the voting unit total of.
     /// @return units The total voting units the address holds across all tiers.
     function votingUnitsOf(address hook, address account) external view virtual override returns (uint256 units) {
-        // Keep a reference to the greatest tier ID.
-        uint256 maxTierId = maxTierIdOf[hook];
+        // Keep a reference to the last bitmap word which can contain a valid tier ID.
+        uint256 maxDepth = maxTierIdOf[hook] >> 8;
 
-        // Loop through all tiers.
-        for (uint256 i = maxTierId; i != 0;) {
-            // Get a reference to the account's balance in this tier.
-            uint256 balance = tierBalanceOf[hook][account][i];
+        // Loop only through 256-tier bitmap words that can contain known tiers.
+        for (uint256 depth; depth <= maxDepth;) {
+            // Keep a local copy so consumed bits do not mutate storage.
+            uint256 heldTiersBitmapWord = _heldTiersBitmapWordOf[hook][account][depth];
 
-            // If the account has no balance, return.
-            if (balance == 0) {
-                unchecked {
-                    --i;
-                }
-                continue;
+            // Walk only set bits, so empty tiers in the word are skipped.
+            while (heldTiersBitmapWord != 0) {
+                // Add the voting units represented by the lowest set bit.
+                units += _votingUnitsForHeldTier({
+                    hook: hook, account: account, tierId: (depth << 8) + LibBit.ffs(heldTiersBitmapWord)
+                });
+
+                // Clear the consumed bit from the local word.
+                heldTiersBitmapWord &= heldTiersBitmapWord - 1;
             }
 
-            // Get the tier.
-            JBStored721Tier memory storedTier = _storedTierOf[hook][i];
-
-            // Parse the flags.
-            (,, bool useVotingUnits,,,) = _unpackBools(storedTier.packedBools);
-
-            // Add the voting units for the address' balance in this tier.
-            // Use custom voting units if set. Otherwise, use the tier's price.
-            units += balance * (useVotingUnits ? _tierVotingUnitsOf[hook][i] : storedTier.price);
-
             unchecked {
-                --i;
+                ++depth;
             }
         }
     }
@@ -656,6 +713,58 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         });
     }
 
+    /// @notice The tier IDs whose balances are nonzero for the provided owner.
+    /// @param hook The 721 hook contract to get held tier IDs from.
+    /// @param owner The address to get held tier IDs for.
+    /// @return tierIds The tier IDs with a nonzero balance for the owner.
+    function _heldTierIdsOf(address hook, address owner) internal view returns (uint256[] memory tierIds) {
+        // Allocate the exact number of held tier IDs.
+        tierIds = new uint256[](_numberOfHeldTiersOf({hook: hook, owner: owner}));
+
+        // Fill the returned array in ascending tier ID order.
+        uint256 index;
+        uint256 maxDepth = maxTierIdOf[hook] >> 8;
+        for (uint256 depth; depth <= maxDepth;) {
+            // Keep a local copy so consumed bits do not mutate storage.
+            uint256 heldTiersBitmapWord = _heldTiersBitmapWordOf[hook][owner][depth];
+
+            // Resolve each set bit to its tier ID.
+            while (heldTiersBitmapWord != 0) {
+                // Store the tier ID represented by the lowest set bit.
+                tierIds[index] = (depth << 8) + LibBit.ffs(heldTiersBitmapWord);
+
+                unchecked {
+                    ++index;
+                }
+
+                // Clear the consumed bit from the local word.
+                heldTiersBitmapWord &= heldTiersBitmapWord - 1;
+            }
+
+            unchecked {
+                ++depth;
+            }
+        }
+    }
+
+    /// @notice The number of tier IDs whose balances are nonzero for the provided owner.
+    /// @param hook The 721 hook contract to count held tier IDs from.
+    /// @param owner The address to count held tier IDs for.
+    /// @return numberOfHeldTiers The number of tier IDs with a nonzero balance for the owner.
+    function _numberOfHeldTiersOf(address hook, address owner) internal view returns (uint256 numberOfHeldTiers) {
+        // Keep a reference to the last bitmap word which can contain a valid tier ID.
+        uint256 maxDepth = maxTierIdOf[hook] >> 8;
+
+        for (uint256 depth; depth <= maxDepth;) {
+            // Count only set bits, because each set bit represents one held tier ID.
+            numberOfHeldTiers += LibBit.popCount(_heldTiersBitmapWordOf[hook][owner][depth]);
+
+            unchecked {
+                ++depth;
+            }
+        }
+    }
+
     /// @notice Check whether a tier has been removed while refreshing the relevant bitmap word if needed.
     /// @param hook The 721 contract to check for removals on.
     /// @param tierId The ID of the tier to check the removal status of.
@@ -761,6 +870,27 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
         unchecked {
             return totalNumberOfAvailableReserveMints - numberOfReserveMints;
         }
+    }
+
+    /// @notice Get an address's voting units within one held tier.
+    /// @param hook The 721 hook contract that the tier belongs to.
+    /// @param account The address to get voting units for.
+    /// @param tierId The ID of the tier.
+    /// @return units The account's total voting units within the tier.
+    function _votingUnitsForHeldTier(address hook, address account, uint256 tierId) internal view returns (uint256) {
+        // Get a reference to the account's balance in this tier.
+        uint256 balance = tierBalanceOf[hook][account][tierId];
+
+        if (balance == 0) return 0;
+
+        // Keep a reference to the stored tier.
+        JBStored721Tier memory storedTier = _storedTierOf[hook][tierId];
+
+        // Check if voting units should be used. Price will be used otherwise.
+        (,, bool useVotingUnits,,,) = _unpackBools(storedTier.packedBools);
+
+        // Return the address' voting units within the tier.
+        return balance * (useVotingUnits ? _tierVotingUnitsOf[hook][tierId] : storedTier.price);
     }
 
     /// @notice Pack six tier-level boolean flags into a single uint8 for compact storage in `JBStored721Tier`.
@@ -1458,20 +1588,56 @@ contract JB721TiersHookStore is IJB721TiersHookStore {
     /// @param from The address to transfer the 721 from.
     /// @param to The address to transfer the 721 to.
     function recordTransferForTier(uint256 tierId, address from, address to) external override {
+        // Self-transfers leave the per-tier balance, aggregate balance, and held-tier bitmap unchanged.
+        if (from == to) return;
+
         // If this is not a mint,
         if (from != address(0)) {
-            // then subtract the tier balance from the sender, and the running per-owner balance read by `balanceOf`.
-            --tierBalanceOf[msg.sender][from][tierId];
+            // then subtract the tier balance from the sender.
+            uint256 fromTierBalance = --tierBalanceOf[msg.sender][from][tierId];
+
+            // Remove the tier from the sender's held bitmap if this transfer consumed their last NFT in the tier.
+            if (fromTierBalance == 0) _removeHeldTier({hook: msg.sender, owner: from, tierId: tierId});
+
+            // Keep the running per-owner balance read by `balanceOf` in sync.
             --balanceOf[msg.sender][from];
         }
 
         // If this is not a burn,
         if (to != address(0)) {
+            // Keep a reference to the receiver's current tier balance before mutating it.
+            uint256 toTierBalance = tierBalanceOf[msg.sender][to][tierId];
+
+            // Add the tier to the receiver's held bitmap before their first NFT in the tier is recorded.
+            if (toTierBalance == 0) _addHeldTier({hook: msg.sender, owner: to, tierId: tierId});
+
             unchecked {
                 // then increase the tier balance for the receiver, and the running per-owner balance.
-                ++tierBalanceOf[msg.sender][to][tierId];
+                tierBalanceOf[msg.sender][to][tierId] = toTierBalance + 1;
                 ++balanceOf[msg.sender][to];
             }
         }
+    }
+
+    //*********************************************************************//
+    // ----------------------- internal helpers -------------------------- //
+    //*********************************************************************//
+
+    /// @notice Add a tier to an owner's held-tier bitmap.
+    /// @param hook The 721 hook contract the tier belongs to.
+    /// @param owner The owner whose held-tier bitmap is being updated.
+    /// @param tierId The tier ID to add.
+    function _addHeldTier(address hook, address owner, uint256 tierId) internal {
+        // Set the bit representing this tier ID.
+        _heldTiersBitmapWordOf[hook][owner].setId(tierId);
+    }
+
+    /// @notice Remove a tier from an owner's held-tier bitmap.
+    /// @param hook The 721 hook contract the tier belongs to.
+    /// @param owner The owner whose held-tier bitmap is being updated.
+    /// @param tierId The tier ID to remove.
+    function _removeHeldTier(address hook, address owner, uint256 tierId) internal {
+        // Clear the bit representing this tier ID.
+        _heldTiersBitmapWordOf[hook][owner].clearId(tierId);
     }
 }

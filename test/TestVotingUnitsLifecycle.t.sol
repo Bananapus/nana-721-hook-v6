@@ -238,7 +238,61 @@ contract TestVotingUnitsLifecycle is UnitTestSetup {
     }
 
     // ---------------------------------------------------------------
-    // Test 5: Voting units are zero for addresses with no NFTs
+    // Test 5: Held-tier index tracks zero/nonzero balance transitions
+    // ---------------------------------------------------------------
+    /// @notice Verifies that an owner appears in a tier's held set only while their tier balance is nonzero.
+    function test_heldTierIds_trackZeroNonzeroTransitions() public {
+        defaultTierConfig.flags.allowOwnerMint = true;
+        defaultTierConfig.reserveFrequency = 0;
+        defaultTierConfig.flags.useVotingUnits = true;
+        defaultTierConfig.votingUnits = 50;
+
+        ForTest_JB721TiersHook testHook = _initializeForTestHook(2);
+        IJB721TiersHookStore hookStore = testHook.STORE();
+
+        address alice = makeAddr("alice");
+        address bob = makeAddr("bob");
+
+        uint16[] memory tiersToMint = new uint16[](3);
+        tiersToMint[0] = 1;
+        tiersToMint[1] = 1;
+        tiersToMint[2] = 2;
+
+        vm.prank(owner);
+        testHook.mintFor(tiersToMint, alice);
+
+        uint256[] memory aliceHeldTierIds = hookStore.heldTierIdsOf(address(testHook), alice);
+        assertEq(aliceHeldTierIds.length, 2, "alice should hold two distinct tiers");
+        assertEq(aliceHeldTierIds[0], 1, "tier 1 should be tracked");
+        assertEq(aliceHeldTierIds[1], 2, "tier 2 should be tracked");
+
+        vm.prank(alice);
+        IERC721(address(testHook)).transferFrom(alice, bob, _generateTokenId(1, 1));
+
+        aliceHeldTierIds = hookStore.heldTierIdsOf(address(testHook), alice);
+        assertEq(aliceHeldTierIds.length, 2, "alice still holds tier 1 after one tier-1 transfer");
+
+        vm.prank(alice);
+        IERC721(address(testHook)).transferFrom(alice, bob, _generateTokenId(1, 2));
+
+        aliceHeldTierIds = hookStore.heldTierIdsOf(address(testHook), alice);
+        assertEq(aliceHeldTierIds.length, 1, "alice should stop tracking tier 1 after sending both tier-1 NFTs");
+        assertEq(aliceHeldTierIds[0], 2, "alice should still track tier 2");
+
+        uint256[] memory bobHeldTierIds = hookStore.heldTierIdsOf(address(testHook), bob);
+        assertEq(bobHeldTierIds.length, 1, "bob should track tier 1 once despite receiving two tier-1 NFTs");
+        assertEq(bobHeldTierIds[0], 1, "bob should hold tier 1");
+
+        uint256[] memory tokensToBurn = new uint256[](1);
+        tokensToBurn[0] = _generateTokenId(2, 1);
+        testHook.burn(tokensToBurn);
+
+        aliceHeldTierIds = hookStore.heldTierIdsOf(address(testHook), alice);
+        assertEq(aliceHeldTierIds.length, 0, "alice should track no tiers after burning her last NFT");
+    }
+
+    // ---------------------------------------------------------------
+    // Test 6: Voting units are zero for addresses with no NFTs
     // ---------------------------------------------------------------
     /// @notice Verifies that addresses with no NFTs always return 0 voting units.
     function test_votingUnits_zeroForNonHolders() public {
@@ -255,7 +309,7 @@ contract TestVotingUnitsLifecycle is UnitTestSetup {
     }
 
     // ---------------------------------------------------------------
-    // Test 6: Voting units with mixed tier configs
+    // Test 7: Voting units with mixed tier configs
     // ---------------------------------------------------------------
     /// @notice Verifies that voting units work correctly when some tiers use custom voting units
     /// and others use price-based voting. The tier with useVotingUnits=false should use price.

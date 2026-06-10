@@ -3,6 +3,7 @@ pragma solidity 0.8.28;
 
 // forge-lint: disable-next-line(unaliased-plain-import)
 import "./utils/UnitTestSetup.sol";
+import {IJB721Checkpoints} from "../src/interfaces/IJB721Checkpoints.sol";
 import {IJB721TiersHookStore} from "../src/interfaces/IJB721TiersHookStore.sol";
 import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 import {JBSplitHookContext} from "@bananapus/core-v6/src/structs/JBSplitHookContext.sol";
@@ -425,7 +426,7 @@ contract TestRegressionGaps_GasLimits is UnitTestSetup {
 
     /// @dev The block gas limit on mainnet is 30M. We use a generous limit for safety.
     uint256 constant BLOCK_GAS_LIMIT = 30_000_000;
-    uint256 constant OPERATING_ENVELOPE_SOFT_LIMIT = 200;
+    uint256 constant OPERATING_ENVELOPE_SOFT_LIMIT = 300;
 
     // ---------------------------------------------------------------
     // Test 1: Add 100 tiers in a single adjustTiers call
@@ -962,6 +963,32 @@ contract TestRegressionGaps_GasLimits is UnitTestSetup {
         emit log_named_uint("Gas used for totalCashOutWeightOf (100 tiers)", gasFor100);
     }
 
+    /// @notice `votingUnitsOf` scans bitmap words and then walks set bits, so empty-tier spam is capped to one word
+    /// read per 256 tier IDs plus the holder's nonzero tiers.
+    function test_operatingEnvelope_votingUnitsOf_isBoundedByBitmapWordsAndHeldTierCount() public {
+        uint256 gasFor10 = _measureVotingUnitsOfGas({tierCount: 10});
+        uint256 gasFor300 = _measureVotingUnitsOfGas({tierCount: 300});
+
+        // O(maxTierId / 256 + held tiers): crossing a bitmap word adds bounded scan cost, not a raw per-tier walk.
+        assertGt(gasFor300, gasFor10, "crossing the bitmap-word boundary should add scan cost");
+        assertLt(gasFor300, gasFor10 * 2, "votingUnitsOf must be bounded by bitmap words and held tier count");
+        emit log_named_uint("Gas used for votingUnitsOf (10 tiers, 1 held)", gasFor10);
+        emit log_named_uint("Gas used for votingUnitsOf (300 tiers, 1 held)", gasFor300);
+    }
+
+    /// @notice Delegation tier activation scans bitmap words and then walks set bits, so empty-tier spam is capped to
+    /// one word read per 256 tier IDs plus the holder's nonzero tiers.
+    function test_operatingEnvelope_delegate_isBoundedByBitmapWordsAndHeldTierCount() public {
+        uint256 gasFor10 = _measureDelegateGas({tierCount: 10});
+        uint256 gasFor300 = _measureDelegateGas({tierCount: 300});
+
+        // O(maxTierId / 256 + held tiers): crossing a bitmap word adds bounded scan cost, not a raw per-tier walk.
+        assertGt(gasFor300, gasFor10, "crossing the bitmap-word boundary should add scan cost");
+        assertLt(gasFor300, gasFor10 * 2, "delegate must be bounded by bitmap words and held tier count");
+        emit log_named_uint("Gas used for delegate (10 tiers, 1 held)", gasFor10);
+        emit log_named_uint("Gas used for delegate (300 tiers, 1 held)", gasFor300);
+    }
+
     function _measureBalanceOfGas(uint256 tierCount) internal returns (uint256 gasUsed) {
         defaultTierConfig.initialSupply = 10;
         defaultTierConfig.reserveFrequency = 0;
@@ -1036,6 +1063,80 @@ contract TestRegressionGaps_GasLimits is UnitTestSetup {
         uint256 gasBefore = gasleft();
         hookStore.totalCashOutWeightOf(address(targetHook));
         gasUsed = gasBefore - gasleft();
+    }
+
+    function _measureVotingUnitsOfGas(uint256 tierCount) internal returns (uint256 gasUsed) {
+        (ForTest_JB721TiersHook targetHook, IJB721TiersHookStore hookStore) =
+            _hookWithOneHeldTierInCatalog({tierCount: tierCount});
+
+        uint256 gasBefore = gasleft();
+        hookStore.votingUnitsOf(address(targetHook), beneficiary);
+        gasUsed = gasBefore - gasleft();
+    }
+
+    function _measureDelegateGas(uint256 tierCount) internal returns (uint256 gasUsed) {
+        (ForTest_JB721TiersHook targetHook,) = _hookWithOneHeldTierInCatalog({tierCount: tierCount});
+        IJB721Checkpoints checkpoints = targetHook.checkpoints();
+
+        uint256 gasBefore = gasleft();
+        vm.prank(beneficiary);
+        checkpoints.delegate(beneficiary);
+        gasUsed = gasBefore - gasleft();
+    }
+
+    function _hookWithOneHeldTierInCatalog(uint256 tierCount)
+        internal
+        returns (ForTest_JB721TiersHook targetHook, IJB721TiersHookStore hookStore)
+    {
+        defaultTierConfig.initialSupply = 10;
+        defaultTierConfig.reserveFrequency = 0;
+
+        targetHook = _initializeForTestHook(0);
+        hookStore = targetHook.STORE();
+
+        vm.prank(address(targetHook));
+        hookStore.recordAddTiers(_sequentialTierConfigs(tierCount, 1e15, 10));
+
+        mockAndExpect(
+            address(mockJBDirectory),
+            abi.encodeWithSelector(IJBDirectory.isTerminalOf.selector, projectId, mockTerminalAddress),
+            abi.encode(true)
+        );
+
+        uint16[] memory tierIdsToMint = new uint16[](1);
+        tierIdsToMint[0] = 1;
+
+        bytes[] memory data = new bytes[](1);
+        data[0] = abi.encode(false, tierIdsToMint);
+        bytes4[] memory ids = new bytes4[](1);
+        ids[0] = metadataHelper.getId("pay", address(targetHook));
+        bytes memory payerMetadata = metadataHelper.createMetadata(ids, data);
+
+        JBAfterPayRecordedContext memory payContext = JBAfterPayRecordedContext({
+            payer: beneficiary,
+            projectId: projectId,
+            rulesetId: 0,
+            amount: JBTokenAmount({
+                token: JBConstants.NATIVE_TOKEN,
+                value: 1e15,
+                decimals: 18,
+                currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+            }),
+            forwardedAmount: JBTokenAmount({
+                token: JBConstants.NATIVE_TOKEN,
+                value: 0,
+                decimals: 18,
+                currency: uint32(uint160(JBConstants.NATIVE_TOKEN))
+            }),
+            weight: 10e18,
+            newlyIssuedTokenCount: 0,
+            beneficiary: beneficiary,
+            hookMetadata: bytes(""),
+            payerMetadata: payerMetadata
+        });
+
+        vm.prank(mockTerminalAddress);
+        targetHook.afterPayRecordedWith(payContext);
     }
 
     function _sequentialTierConfigs(
