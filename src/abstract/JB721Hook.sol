@@ -70,7 +70,7 @@ abstract contract JB721Hook is ERC721, IJB721Hook {
     /// @param directory A directory of terminals and controllers for projects.
     constructor(IJBDirectory directory) {
         DIRECTORY = directory;
-        // Store the implementation address. Clones use their own address when they initialize.
+        // Store the implementation address shared by clones, since immutables are baked into the reference bytecode.
         METADATA_ID_TARGET = address(this);
     }
 

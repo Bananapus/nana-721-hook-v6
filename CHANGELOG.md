@@ -31,6 +31,8 @@ power.
 
 ## Package Notes
 
+- `0.0.76`: uses checked tier-checkpoint downcasts, corrects clone metadata-target comments, and documents the
+  delegation tier-iteration tradeoff.
 - `0.0.73`: adds account-scoped per-tier active vote history for tier-scoped reward accounting.
 - `0.0.72`: bumps `@bananapus/core-v6` to `^0.0.86`.
 - `0.0.71`: adds per-tier active vote totals for delegated reward accounting.

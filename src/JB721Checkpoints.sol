@@ -411,8 +411,7 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
         uint256 updated = increase ? trace.latest() + amount : trace.latest() - amount;
 
         // Write the new account-tier active total at the current block.
-        // forge-lint: disable-next-line(unsafe-typecast)
-        trace.push({key: uint96(block.number), value: uint160(updated)});
+        trace.push({key: uint96(block.number), value: SafeCast.toUint160(updated)});
     }
 
     /// @notice Add or remove units from a tier's active-voting-units checkpoint at the current block.
@@ -430,8 +429,7 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
         uint256 updated = increase ? trace.latest() + amount : trace.latest() - amount;
 
         // Write the new tier active total at the current block.
-        // forge-lint: disable-next-line(unsafe-typecast)
-        trace.push({key: uint96(block.number), value: uint160(updated)});
+        trace.push({key: uint96(block.number), value: SafeCast.toUint160(updated)});
     }
 
     /// @notice Apply an account delegation change to every tier-level active total the account contributes to.
@@ -495,7 +493,6 @@ contract JB721Checkpoints is Votes, IJB721Checkpoints {
         uint256 updated = increase ? trace.latest() + amount : trace.latest() - amount;
 
         // Write the new owner-tracked total at the current block.
-        // forge-lint: disable-next-line(unsafe-typecast)
-        trace.push({key: uint96(block.number), value: uint160(updated)});
+        trace.push({key: uint96(block.number), value: SafeCast.toUint160(updated)});
     }
 }
