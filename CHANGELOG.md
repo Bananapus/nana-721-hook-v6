@@ -33,6 +33,10 @@ power.
 
 ## Package Notes
 
+- `1.0.1`: `JB721TiersHookProjectDeployer` advertises the resolved fee payer while forwarding a project creation fee.
+  It implements `IJBPayerTracker`, exposing a transient `originalPayer`, and sets it to `JBPayerTrackerLib.resolve(...)`
+  around the `JBProjects.createFor` call so a `pay`-routing fee receiver credits the end user instead of the deployer.
+  Bumps `@bananapus/core-v6` to `^1.0.2`.
 - `0.0.76`: bounds voting-unit reads and delegation tier activation with per-owner held-tier bitmaps (one storage word
   per 256 tier IDs plus held tiers), adds current-or-historical tier-membership checks, uses checked tier-checkpoint
   downcasts, and corrects clone metadata-target comments.

@@ -4,8 +4,10 @@ pragma solidity 0.8.28;
 import {JBPermissioned} from "@bananapus/core-v6/src/abstract/JBPermissioned.sol";
 import {IJBController} from "@bananapus/core-v6/src/interfaces/IJBController.sol";
 import {IJBDirectory} from "@bananapus/core-v6/src/interfaces/IJBDirectory.sol";
+import {IJBPayerTracker} from "@bananapus/core-v6/src/interfaces/IJBPayerTracker.sol";
 import {IJBPermissions} from "@bananapus/core-v6/src/interfaces/IJBPermissions.sol";
 import {IJBProjects} from "@bananapus/core-v6/src/interfaces/IJBProjects.sol";
+import {JBPayerTrackerLib} from "@bananapus/core-v6/src/libraries/JBPayerTrackerLib.sol";
 import {JBRulesetConfig} from "@bananapus/core-v6/src/structs/JBRulesetConfig.sol";
 import {JBRulesetMetadata} from "@bananapus/core-v6/src/structs/JBRulesetMetadata.sol";
 import {JBOwnable} from "@bananapus/ownable-v6/src/JBOwnable.sol";
@@ -31,6 +33,7 @@ contract JB721TiersHookProjectDeployer is
     ERC2771Context,
     JBPermissioned,
     IERC721Receiver,
+    IJBPayerTracker,
     IJB721TiersHookProjectDeployer
 {
     //*********************************************************************//
@@ -42,6 +45,16 @@ contract JB721TiersHookProjectDeployer is
 
     /// @notice The deployer contract used to create new 721 tiers hook instances via clone.
     IJB721TiersHookDeployer public immutable override HOOK_DEPLOYER;
+
+    //*********************************************************************//
+    // ------------------- public transient properties ------------------- //
+    //*********************************************************************//
+
+    /// @notice The account that paid the creation fee for the project currently being launched.
+    /// @dev Set to the resolved fee payer (this contract's caller, or that caller's upstream payer when the caller is
+    /// itself an `IJBPayerTracker`) while `JBProjects.createFor` runs, so `JBProjects` attributes the fee to the true
+    /// payer. Cleared back to `address(0)` once the call returns.
+    address public transient override originalPayer;
 
     //*********************************************************************//
     // -------------------------- constructor ---------------------------- //
@@ -92,7 +105,14 @@ contract JB721TiersHookProjectDeployer is
     {
         // Reserve the project ID up front so permissionless project creations cannot invalidate hook deployment.
         IJBProjects projects = DIRECTORY.PROJECTS();
+
+        // Expose the resolved fee payer so `JBProjects` attributes the creation fee to the true payer, not this
+        // contract. Cleared immediately after.
+        originalPayer = JBPayerTrackerLib.resolve(_msgSender());
+
         projectId = projects.createFor{value: msg.value}(address(this));
+
+        originalPayer = address(0);
 
         // Deploy the hook.
         hook = HOOK_DEPLOYER.deployHookFor({
