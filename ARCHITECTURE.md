@@ -69,6 +69,20 @@ cash out requested
   -> terminal reclaims value using hook-aware cash-out math
 ```
 
+### Project launch and fee-payer attribution
+
+```text
+launchProjectFor arrives with msg.value for the creation fee
+  -> deployer advertises the resolved fee payer via IJBPayerTracker.originalPayer
+  -> deployer forwards msg.value to JBProjects.createFor and reserves the project ID
+  -> deployer clears originalPayer once createFor returns
+  -> deployer deploys the hook, wires rulesets, and transfers the project to its owner
+```
+
+`JB721TiersHookProjectDeployer` is an `ERC2771Context` forwarder, so the deployer resolves the fee payer from
+`_msgSender()` (or that caller's upstream payer when the caller is itself an `IJBPayerTracker`) and exposes it for the
+duration of `createFor`. A `pay`-routing creation fee receiver then credits the end user, not the deployer.
+
 ## Accounting model
 
 This repo owns tier accounting and NFT lifecycle logic. It does not own the canonical project ledger for balances, fees, or surplus.
@@ -99,6 +113,7 @@ The most important state lives in the store: remaining supply, burned counts, re
 - split-credit and deployer regressions:
   `test/regression/SplitCreditsMismatch.t.sol`
   `test/regression/ProjectDeployerRulesets.t.sol`
+  `test/regression/ProjectDeployerFeePayer.t.sol`
 
 ## Source map
 

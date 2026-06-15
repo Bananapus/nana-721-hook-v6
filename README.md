@@ -63,6 +63,10 @@ If a bug affects supply, reserve minting, or tier lookup, it usually lives in th
 - this hook participates in treasury-facing execution, not only metadata
 - custom token URI resolvers should be treated as part of the trusted surface
 - adding a 721 hook through a deployer is easy; carrying the right ruleset behavior forward is where mistakes happen
+- `JB721TiersHookProjectDeployer` forwards the creation fee on a project launch and advertises the resolved fee payer
+  via `IJBPayerTracker.originalPayer`, so a `pay`-routing fee receiver credits the launching user rather than the
+  deployer. The deployer reads the payer from `_msgSender()` (ERC-2771), so a trusted forwarder still attributes the fee
+  to the relayed user.
 - projects should be explicit about whether the hook affects pay, cash out, or only metadata-facing paths
 - reserve beneficiary defaults are mutable hook state, so operators should not rely on later same-batch updates when
   computing who receives reserve NFTs
