@@ -57,4 +57,36 @@ contract JBBitmapHalmos {
 
         assert(word.refreshBitmapNeeded(indexB) == ((uint256(indexA) >> 8) != (uint256(indexB) >> 8)));
     }
+
+    /// @notice Proves `clearId` is the exact inverse of `removeTier`: clearing a removed tier makes it active again,
+    ///         restoring the bitmap word to zero. `removeTier` is documented as one-way, but `clearId` exists as the
+    ///         reactivation path, and this proves the two round-trip cleanly for any tier.
+    /// @param index The tier ID to remove and then clear, bounded to the first 256 bitmap words for solver speed.
+    function check_clearIdReversesRemoveTier(uint16 index) public {
+        _bitmap.removeTier(index);
+        assert(_bitmap.isTierIdRemoved(index));
+
+        _bitmap.clearId(index);
+
+        assert(!_bitmap.isTierIdRemoved(index));
+        assert(_bitmap.readId(index).currentWord == 0);
+    }
+
+    /// @notice Proves removing one tier does not affect a tier in a DIFFERENT bitmap word (different depth). The
+    ///         existing neighbor proof only covers bits sharing one word; this proves the mapping-keyed words never
+    ///         collide across depths, so a removal in one word can never flip a bit in another.
+    /// @param depthA The bitmap word holding the removed tier.
+    /// @param depthB A different bitmap word whose tier must remain active.
+    /// @param bit The bit offset used within each word.
+    function check_removeTierDoesNotAffectOtherWord(uint8 depthA, uint8 depthB, uint8 bit) public {
+        if (depthA == depthB) return;
+
+        uint256 indexA = (uint256(depthA) << 8) | uint256(bit);
+        uint256 indexB = (uint256(depthB) << 8) | uint256(bit);
+
+        _bitmap.removeTier(indexA);
+
+        assert(_bitmap.isTierIdRemoved(indexA));
+        assert(!_bitmap.isTierIdRemoved(indexB));
+    }
 }
