@@ -96,13 +96,41 @@ interface IJB721TiersHook is IJB721Hook {
     /// @param caller The address that called the function.
     event SetTokenUriResolver(IJB721TokenUriResolver indexed resolver, address caller);
 
-    /// @notice Emitted when a split payout reverts during distribution, routing funds to the project's balance.
-    /// @param projectId The project ID the split belongs to.
-    /// @param split The split that reverted.
-    /// @param amount The amount that was paid out.
-    /// @param reason The revert reason bytes.
-    /// @param caller The address that called the function.
-    event SplitPayoutReverted(uint256 indexed projectId, JBSplit split, uint256 amount, bytes reason, address caller);
+    /// @notice A tier split's recipient reverted, so the amount is held for the split until a retry succeeds.
+    /// @param projectId The ID of the project the payout is from.
+    /// @param token The token of the payout.
+    /// @param groupId The split group the split belongs to.
+    /// @param decimals The decimals of `token`, as forwarded into the split hook context.
+    /// @param split The split the amount is held for.
+    /// @param amount The amount held.
+    /// @param reason The revert reason, or the token's return data for a rejected transfer.
+    event HoldPayout(
+        uint256 indexed projectId,
+        address indexed token,
+        uint256 groupId,
+        uint256 decimals,
+        JBSplit split,
+        uint256 amount,
+        bytes reason
+    );
+
+    /// @notice A held tier split payout was retried and delivered.
+    /// @param projectId The ID of the project the payout is from.
+    /// @param token The token of the payout.
+    /// @param groupId The split group the split belongs to.
+    /// @param split The split that was paid.
+    /// @param amount The amount that was held.
+    /// @param sent The amount the recipient took; the rest went to the project's balance.
+    /// @param caller The address that retried the payout.
+    event ProcessHeldPayout(
+        uint256 indexed projectId,
+        address indexed token,
+        uint256 groupId,
+        JBSplit split,
+        uint256 amount,
+        uint256 sent,
+        address caller
+    );
 
     /// @notice Emitted when pay credits are used by an account.
     /// @param amount The amount of credits used.
@@ -130,6 +158,11 @@ interface IJB721TiersHook is IJB721Hook {
     /// @param addr The address to get the NFT credits balance of.
     /// @return The amount of credits the address has.
     function payCreditsOf(address addr) external view returns (uint256);
+
+    /// @notice A tier split payout held because its recipient could not take it.
+    /// @param heldPayoutId `keccak256(abi.encode(token, groupId, decimals, split))`, as emitted in `HoldPayout`.
+    /// @return The amount held.
+    function heldPayoutOf(bytes32 heldPayoutId) external view returns (uint256);
 
     /// @notice Context for the pricing of this hook's tiers.
     /// @return currency The currency used for tier prices.
@@ -197,6 +230,13 @@ interface IJB721TiersHook is IJB721Hook {
     /// @param tierId The ID of the tier to mint reserved NFTs from.
     /// @param count The number of reserved NFTs to mint.
     function mintPendingReservesFor(uint256 tierId, uint256 count) external;
+
+    /// @notice Retries a held tier split payout. Reverts if the recipient still cannot take it.
+    /// @param token The token of the payout.
+    /// @param tierId The tier whose split group the split belongs to.
+    /// @param decimals The decimals of `token`, as emitted in `HoldPayout`.
+    /// @param split The held split, as emitted in `HoldPayout`.
+    function processHeldPayoutOf(address token, uint16 tierId, uint256 decimals, JBSplit calldata split) external;
 
     /// @notice Set the discount percent for a tier.
     /// @param tierId The ID of the tier to set the discount of.
