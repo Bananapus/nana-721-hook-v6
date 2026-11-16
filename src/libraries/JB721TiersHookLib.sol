@@ -916,7 +916,6 @@ library JB721TiersHookLib {
     {
         JBSplit[] memory tierSplits = splitsContract.splitsOf({projectId: projectId, rulesetId: 0, groupId: groupId});
 
-        bool isNativeToken = token == JBConstants.NATIVE_TOKEN;
         uint256 leftoverPercentage = JBConstants.SPLITS_TOTAL_PERCENT;
         uint256 leftoverAmount = amount;
         amount = 0;
@@ -954,6 +953,18 @@ library JB721TiersHookLib {
 
         // Route failed payout amounts to the project's balance.
         leftoverAmount += amount;
+
+        _routeLeftover({directory: directory, projectId: projectId, token: token, leftoverAmount: leftoverAmount});
+    }
+
+    /// @notice Routes an amount nothing else consumed to the project's primary terminal for the token.
+    /// @dev Reverts if there is no terminal or the add to balance fails, so funds never stay stuck in the hook.
+    /// @param directory The directory used to resolve the primary terminal.
+    /// @param projectId The project ID whose primary terminal receives the leftover.
+    /// @param token The token being routed. Use `JBConstants.NATIVE_TOKEN` for ETH.
+    /// @param leftoverAmount The amount to route. Nothing happens when zero.
+    function _routeLeftover(IJBDirectory directory, uint256 projectId, address token, uint256 leftoverAmount) private {
+        bool isNativeToken = token == JBConstants.NATIVE_TOKEN;
 
         if (leftoverAmount != 0) {
             IJBTerminal terminal = directory.primaryTerminalOf({projectId: projectId, token: token});
