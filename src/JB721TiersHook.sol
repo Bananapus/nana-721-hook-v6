@@ -12,6 +12,7 @@ import {JBAfterPayRecordedContext} from "@bananapus/core-v6/src/structs/JBAfterP
 import {JBBeforePayRecordedContext} from "@bananapus/core-v6/src/structs/JBBeforePayRecordedContext.sol";
 import {JBPayHookSpecification} from "@bananapus/core-v6/src/structs/JBPayHookSpecification.sol";
 import {JBRuleset} from "@bananapus/core-v6/src/structs/JBRuleset.sol";
+import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
 import {JBOwnable} from "@bananapus/ownable-v6/src/JBOwnable.sol";
 import {JBPermissionIds} from "@bananapus/permission-ids-v6/src/JBPermissionIds.sol";
 import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
@@ -102,6 +103,13 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
     /// @custom:param addr The address to get the NFT credits balance of.
     /// @return The amount of credits the address has.
     mapping(address addr => uint256) public override payCreditsOf;
+
+    /// @notice Tier split payouts whose recipient could not take them, held here until a retry succeeds.
+    /// @dev Keyed by `keccak256(abi.encode(token, groupId, decimals, split))`, all emitted in `HoldPayout`. Anyone can
+    /// retry with `processHeldPayoutOf`. A failed split is never routed to the project's own balance, so the gas a
+    /// payer picks cannot change who the money belongs to.
+    /// @custom:param heldPayoutId The held payout's key.
+    mapping(bytes32 heldPayoutId => uint256 amount) public override heldPayoutOf;
 
     //*********************************************************************//
     // --------------------- internal stored properties ------------------ //
@@ -418,6 +426,31 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         }
     }
 
+    /// @notice Retries a held tier split payout. Reverts if the recipient still cannot take it.
+    /// @param token The token of the payout.
+    /// @param tierId The tier whose split group the split belongs to.
+    /// @param decimals The decimals of `token`, as emitted in `HoldPayout`.
+    /// @param split The held split, as emitted in `HoldPayout`.
+    function processHeldPayoutOf(
+        address token,
+        uint16 tierId,
+        uint256 decimals,
+        JBSplit calldata split
+    )
+        external
+        override
+    {
+        JB721TiersHookLib.processHeldPayout({
+            heldPayoutOf: heldPayoutOf,
+            directory: DIRECTORY,
+            projectId: projectId,
+            token: token,
+            tierId: tierId,
+            decimals: decimals,
+            split: split
+        });
+    }
+
     /// @notice Set a discount on a tier's price. Discounts reduce the price payers must pay, but don't affect the
     /// NFT's cash-out weight (which always uses the original price). The tier must have `cannotIncreaseDiscountPercent`
     /// set appropriately.
@@ -731,10 +764,10 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
             }
 
             JB721TiersHookLib.distributeAll({
+                heldPayoutOf: heldPayoutOf,
                 directory: DIRECTORY,
                 splits: SPLITS,
                 projectId: projectId,
-                hookAddress: address(this),
                 token: context.forwardedAmount.token,
                 amount: context.forwardedAmount.value,
                 decimals: context.forwardedAmount.decimals,
