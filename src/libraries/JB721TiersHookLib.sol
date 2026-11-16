@@ -116,7 +116,7 @@ library JB721TiersHookLib {
     //*********************************************************************//
 
     /// @notice Handles the full tier adjustment logic: removes tiers, adds tiers, emits events, and sets splits.
-    /// @dev Called via DELEGATECALL from the hook, so events are emitted from the hook's address.
+    /// @dev Inlined into the hook, so events are emitted from the hook's address.
     /// @param store The 721 tiers hook store.
     /// @param splits The splits contract to register tier split groups in.
     /// @param projectId The project ID.
@@ -133,7 +133,7 @@ library JB721TiersHookLib {
         JB721TierConfig[] calldata tiersToAdd,
         uint256[] calldata tierIdsToRemove
     )
-        external
+        internal
     {
         // Remove tiers.
         if (tierIdsToRemove.length != 0) {
@@ -188,9 +188,9 @@ library JB721TiersHookLib {
         address token,
         uint256 amount,
         uint256 decimals,
-        bytes calldata encodedSplitData
+        bytes memory encodedSplitData
     )
-        external
+        internal
     {
         // `encodedSplitData` is terminal-forwarded hook metadata. Each tier ID must have exactly one explicit amount so
         // later split-group routing cannot pair a tier with the wrong value or silently ignore trailing data.
@@ -271,7 +271,7 @@ library JB721TiersHookLib {
         uint256 decimals,
         JBSplit calldata split
     )
-        external
+        internal
     {
         uint256 groupId = _groupIdOf(tierId);
         bytes32 heldPayoutId = _heldPayoutIdOf({token: token, groupId: groupId, decimals: decimals, split: split});
@@ -306,7 +306,7 @@ library JB721TiersHookLib {
 
     /// @notice Prepares NFT minting data for a payment: combines credits, decodes metadata, records mint, and checks
     /// overspending.
-    /// @dev Called via DELEGATECALL from the hook; uses address(this) as the hook address.
+    /// @dev Inlined into the hook; uses address(this) as the hook address.
     /// Reverts with JB721TiersHook_CantBuyWithCredits or JB721TiersHook_Overspending on failure.
     /// @param store The 721 tiers hook store.
     /// @param metadataIdTarget The metadata ID target for resolving pay metadata.
@@ -327,7 +327,7 @@ library JB721TiersHookLib {
         uint256 payCredits,
         bytes calldata payerMetadata
     )
-        external
+        internal
         returns (uint256[] memory tokenIds, uint16[] memory tierIdsToMint, uint256 newPayCredits)
     {
         // Resolve metadata first (minimal stack: only 3 return vars). Scope block frees temporaries.
@@ -396,7 +396,7 @@ library JB721TiersHookLib {
         address caller,
         JB721TierConfig[] memory tiersToAdd
     )
-        external
+        internal
     {
         uint256[] memory tierIdsAdded = store.recordAddTiers(tiersToAdd);
 
@@ -429,7 +429,7 @@ library JB721TiersHookLib {
         uint256 discountPercent,
         address caller
     )
-        external
+        internal
     {
         emit SetDiscountPercent({tierId: tierId, discountPercent: discountPercent, caller: caller});
         store.recordSetDiscountPercentOf({tierId: tierId, discountPercent: discountPercent});
@@ -440,7 +440,7 @@ library JB721TiersHookLib {
     //*********************************************************************//
 
     /// @notice Computes split amounts, weight adjustment, and resolved beneficiary for a payment.
-    /// @dev Called via DELEGATECALL from the hook; uses address(this) as the hook address.
+    /// @dev Inlined into the hook; uses address(this) as the hook address.
     /// @param store The 721 tiers hook store.
     /// @param metadataIdTarget The metadata ID target for resolving pay metadata.
     /// @param packedPricingContext The packed pricing context (currency, decimals).
@@ -459,7 +459,7 @@ library JB721TiersHookLib {
         IJBPrices prices,
         JBBeforePayRecordedContext calldata context
     )
-        external
+        internal
         view
         returns (
             uint256 weight,
@@ -531,7 +531,7 @@ library JB721TiersHookLib {
         uint256 amountCurrency,
         uint256 amountDecimals
     )
-        external
+        internal
         view
         returns (uint256 value, bool valid)
     {
@@ -575,7 +575,7 @@ library JB721TiersHookLib {
         string memory baseUri,
         uint256 tokenId
     )
-        external
+        internal
         view
         returns (string memory)
     {
@@ -1311,7 +1311,7 @@ library JB721TiersHookLib {
     }
 
     /// @notice The split group ID of a tier: the hook address in the low 160 bits and the tier ID above it.
-    /// @dev Called via DELEGATECALL, so `address(this)` is the hook.
+    /// @dev Inlined into the hook, so `address(this)` is the hook.
     /// @param tierId The tier ID.
     /// @return The split group ID.
     function _groupIdOf(uint16 tierId) private view returns (uint256) {
