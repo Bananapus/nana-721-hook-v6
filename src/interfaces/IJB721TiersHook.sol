@@ -5,6 +5,7 @@ import {IJBPrices} from "@bananapus/core-v6/src/interfaces/IJBPrices.sol";
 import {IJBRulesets} from "@bananapus/core-v6/src/interfaces/IJBRulesets.sol";
 import {IJBSplits} from "@bananapus/core-v6/src/interfaces/IJBSplits.sol";
 import {JBSplit} from "@bananapus/core-v6/src/structs/JBSplit.sol";
+import {JB721HeldPayout} from "../structs/JB721HeldPayout.sol";
 
 import {IJB721Checkpoints} from "./IJB721Checkpoints.sol";
 import {IJB721Hook} from "./IJB721Hook.sol";
@@ -237,6 +238,10 @@ interface IJB721TiersHook is IJB721Hook {
     /// @param decimals The decimals of `token`, as emitted in `HoldPayout`.
     /// @param split The held split, as emitted in `HoldPayout`.
     function processHeldPayoutOf(address token, uint16 tierId, uint256 decimals, JBSplit calldata split) external;
+
+    /// @notice Retries several held tier split payouts. Reverts if any recipient still cannot take it.
+    /// @param payouts The held payouts, as emitted in `HoldPayout`.
+    function processHeldPayoutsOf(JB721HeldPayout[] calldata payouts) external;
 
     /// @notice Set the discount percent for a tier.
     /// @param tierId The ID of the tier to set the discount of.

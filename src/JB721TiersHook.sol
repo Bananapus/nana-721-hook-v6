@@ -27,6 +27,7 @@ import {IJB721TokenUriResolver} from "./interfaces/IJB721TokenUriResolver.sol";
 import {JB721TiersHookLib} from "./libraries/JB721TiersHookLib.sol";
 import {JB721TiersRulesetMetadataResolver} from "./libraries/JB721TiersRulesetMetadataResolver.sol";
 import {JB721InitTiersConfig} from "./structs/JB721InitTiersConfig.sol";
+import {JB721HeldPayout} from "./structs/JB721HeldPayout.sol";
 import {JB721TierConfig} from "./structs/JB721TierConfig.sol";
 import {JB721TiersHookFlags} from "./structs/JB721TiersHookFlags.sol";
 import {JB721TiersMintReservesConfig} from "./structs/JB721TiersMintReservesConfig.sol";
@@ -440,6 +441,23 @@ contract JB721TiersHook is JBOwnable, ERC2771Context, JB721Hook, IJB721TiersHook
         external
         override
     {
+        _processHeldPayoutOf(token, tierId, decimals, split);
+    }
+
+    /// @notice Retries several held tier split payouts in one call.
+    /// @dev Each entry follows `processHeldPayoutOf` exactly; one recipient that still fails reverts the whole call.
+    /// @param payouts The held payouts, as emitted in `HoldPayout`.
+    function processHeldPayoutsOf(JB721HeldPayout[] calldata payouts) external override {
+        for (uint256 i; i < payouts.length;) {
+            _processHeldPayoutOf(payouts[i].token, payouts[i].tierId, payouts[i].decimals, payouts[i].split);
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    /// @notice Retries one held tier split payout. See `processHeldPayoutOf`.
+    function _processHeldPayoutOf(address token, uint16 tierId, uint256 decimals, JBSplit calldata split) internal {
         JB721TiersHookLib.processHeldPayout({
             heldPayoutOf: heldPayoutOf,
             directory: DIRECTORY,
